@@ -45,6 +45,15 @@ export default function ProjectVariationsTable({ projectId, productType, variati
     grouped[key].push(v);
   });
 
+  const getGroupKey = (v) => {
+    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+    const product = products.find((p) => p.id === color?.product_id);
+    if (groupBy === "category") return product?.category || "Uncategorized";
+    if (groupBy === "sub_category") return product?.sub_category || "Uncategorized";
+    if (groupBy === "product") return product?.id || "unknown";
+    return "All";
+  };
+
   const buildGroups = () => {
     if (groupBy === "none") return [{ key: "all", label: null, items: filteredVariations }];
     const map = {};
@@ -54,15 +63,6 @@ export default function ProjectVariationsTable({ projectId, productType, variati
       map[k].items.push(v);
     }
     return Object.values(map);
-  };
-
-  const getGroupKey = (v) => {
-    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
-    const product = products.find((p) => p.id === color?.product_id);
-    if (groupBy === "category") return product?.category || "Uncategorized";
-    if (groupBy === "sub_category") return product?.sub_category || "Uncategorized";
-    if (groupBy === "product") return product?.id || "unknown";
-    return "All";
   };
 
   const groupOptions = [
