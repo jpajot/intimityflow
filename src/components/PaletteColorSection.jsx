@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, LayoutGrid, List } from "lucide-react";
 import DataTable from "./DataTable";
+import PaletteColorCard from "./PaletteColorCard";
 
-export default function PaletteColorSection({ paletteColors, getColorHex, getColorLabel, getColorCode, getColorSubType, onRemove, groupByType }) {
+export default function PaletteColorSection({ paletteColors, getColorHex, getColorLabel, getColorCode, getColorSubType, onRemove, view, onViewChange }) {
   if (paletteColors.length === 0) {
     return (
       <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -85,31 +86,57 @@ export default function PaletteColorSection({ paletteColors, getColorHex, getCol
     },
   ];
 
-  // Group by type if requested
-  const groupOptions = groupByType ? [
-    { value: "none", label: "None" },
-    { value: "color_type", label: "Type" },
-  ] : [];
-
-  const getGroupKey = groupByType ? (entry, groupBy) => {
-    if (groupBy === "color_type") return entry.color_type || "Unknown";
-    return "all";
-  } : null;
-
   return (
-    <DataTable
-      columns={columns}
-      rows={paletteColors}
-      fixedColumns={["color"]}
-      filterFields={[
-        { getValue: (entry) => getColorLabel(entry) },
-        { getValue: (entry) => getColorCode ? getColorCode(entry) : "" },
-        { getValue: (entry) => entry.color_type },
-        { getValue: (entry) => getColorSubType ? getColorSubType(entry) : "" },
-        { getValue: (entry) => getColorHex(entry) },
-      ]}
-      groupOptions={groupOptions}
-      getGroupKey={getGroupKey}
-    />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Colors ({paletteColors.length})</h3>
+        <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => onViewChange("gallery")}
+            className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+            title="Gallery view"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange("table")}
+            className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+            title="Table view"
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {view === "gallery" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {paletteColors.map((entry) => (
+            <PaletteColorCard
+              key={entry.id}
+              entry={entry}
+              hex={getColorHex(entry)}
+              label={getColorLabel(entry)}
+              code={getColorCode(entry)}
+              onRemove={() => onRemove(entry.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={paletteColors}
+          fixedColumns={["color"]}
+          filterFields={[
+            { getValue: (entry) => getColorLabel(entry) },
+            { getValue: (entry) => getColorCode ? getColorCode(entry) : "" },
+            { getValue: (entry) => entry.color_type },
+            { getValue: (entry) => getColorSubType ? getColorSubType(entry) : "" },
+            { getValue: (entry) => getColorHex(entry) },
+          ]}
+        />
+      )}
+    </div>
   );
 }
