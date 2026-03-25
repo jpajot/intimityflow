@@ -102,7 +102,6 @@ export default function Materials() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Materials</h1>
-        <p className="text-muted-foreground mt-1">Manage your material collection</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
