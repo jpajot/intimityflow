@@ -233,24 +233,24 @@ export default function Layout() {
            );
           })}
           {CONFIG_ITEMS.map((item) => {
-           const Icon = item.icon;
-           const isActive = location.pathname.startsWith(item.path);
-           return (
-             <Link
-               key={item.path}
-               to={item.path}
-               className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                 isActive
-                   ? "bg-primary text-primary-foreground"
-                   : "text-muted-foreground"
-               }`}
-             >
-               <Icon className="w-4 h-4" />
-               {item.label}
-             </Link>
-           );
-          })
-        </div>
+            const Icon = item.icon;
+            const isActive = location.pathname.startsWith(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+          </div>
       </header>
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
