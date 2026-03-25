@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Loader2, Search, ChevronDown, ChevronRight, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import DataTable from "@/components/DataTable";
 
 const emptyForm = { code: "", name: "", active: true, sample_size_id: "", base_size_id: "" };
 
@@ -193,39 +194,66 @@ export default function SizeGridLibrary() {
             <p className="text-sm text-muted-foreground">Select a grid to manage its sizes</p>
           ) : (
             <div className="space-y-4">
-              {linkedSizes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No sizes linked yet</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Code</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Name</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Active</th>
-                        <th className="px-4 py-2.5"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {linkedSizes.map((gs) => {
-                        const size = sizes.find((s) => s.id === gs.size_id);
-                        return (
-                          <tr key={gs.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                            <td className="px-4 py-3 font-mono text-xs">{size?.size_code || "—"}</td>
-                            <td className="px-4 py-3">{size?.name || "—"}</td>
-                            <td className="px-4 py-3">
-                              <Checkbox checked={gs.active !== false} onCheckedChange={() => handleToggleSizeActive(gs)} />
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSize(gs)}><X className="w-3 h-3" /></Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <DataTable
+                columns={[
+                  {
+                    id: "code",
+                    label: "Code",
+                    width: 120,
+                    sortKey: (gs) => {
+                      const size = sizes.find((s) => s.id === gs.size_id);
+                      return size?.size_code || "";
+                    },
+                    render: (gs) => {
+                      const size = sizes.find((s) => s.id === gs.size_id);
+                      return <span className="font-mono text-xs">{size?.size_code || "—"}</span>;
+                    },
+                  },
+                  {
+                    id: "name",
+                    label: "Name",
+                    width: 200,
+                    sortKey: (gs) => {
+                      const size = sizes.find((s) => s.id === gs.size_id);
+                      return size?.name || "";
+                    },
+                    render: (gs) => {
+                      const size = sizes.find((s) => s.id === gs.size_id);
+                      return <span>{size?.name || "—"}</span>;
+                    },
+                  },
+                  {
+                    id: "active",
+                    label: "Active",
+                    width: 100,
+                    sortKey: (gs) => (gs.active !== false ? "1" : "0"),
+                    render: (gs) => (
+                      <Checkbox checked={gs.active !== false} onCheckedChange={() => handleToggleSizeActive(gs)} />
+                    ),
+                  },
+                  {
+                    id: "actions",
+                    label: "",
+                    width: 50,
+                    render: (gs) => (
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSize(gs)}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    ),
+                  },
+                ]}
+                rows={linkedSizes}
+                filterFields={[
+                  { getValue: (gs) => {
+                    const size = sizes.find((s) => s.id === gs.size_id);
+                    return size?.size_code || "";
+                  }},
+                  { getValue: (gs) => {
+                    const size = sizes.find((s) => s.id === gs.size_id);
+                    return size?.name || "";
+                  }},
+                ]}
+              />
               <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => { setShowSizePicker(selectedGrid); setSizeSearch(""); }}>
                 <Plus className="w-3.5 h-3.5" /> Add Size
               </Button>
