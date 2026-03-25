@@ -25,8 +25,7 @@ import {
 const CATEGORIES = ["Briefs", "Boxers", "Trunks", "Thongs", "Bras", "Lingerie Sets", "Shapewear", "Loungewear"];
 const SUB_CATEGORIES = ["Basic", "Sport", "Seamless", "Lace", "Cotton", "Microfiber", "Thermal", "Premium"];
 const CUSTOMER_NEEDS = ["Everyday Comfort", "Active Performance", "Fashion Forward", "Special Occasion", "Maternity", "Plus Size", "Eco-Friendly", "Budget Value"];
-const SEASONS = ["SS25", "FW25", "SS26", "FW26"];
-const STATUSES = ["Draft", "Active", "Discontinued"];
+
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -67,7 +66,7 @@ export default function ProductDetail() {
       const created = await base44.entities.Product.create(product);
       navigate(`/products/${created.id}`, { replace: true });
     } else {
-      const { id: _, created_date, updated_date, created_by, sku, season, base_price, status, ...data } = product;
+      const { id: _, created_date, updated_date, created_by, ...data } = product;
       await base44.entities.Product.update(product.id, data);
     }
     setSaving(false);
