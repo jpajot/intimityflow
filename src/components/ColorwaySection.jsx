@@ -90,26 +90,34 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Colorways ({colorVariants.length})</h3>
-        {colorVariants.length > 0 && (
-          <div className="flex items-center border border-border rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-              title="Gallery view"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-              title="Table view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {colorVariants.length > 0 && (
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setView("grid")}
+                className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                title="Gallery view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                title="Table view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={onAddFromLibrary} className="gap-1.5 h-8 text-xs">
+            From Library
+          </Button>
+          <Button variant="outline" size="sm" onClick={onAddNew} className="gap-1.5 h-8 text-xs">
+            <Plus className="w-3.5 h-3.5" /> Add
+          </Button>
+        </div>
       </div>
 
       {colorVariants.length === 0 ? (
