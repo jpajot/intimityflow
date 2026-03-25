@@ -183,11 +183,6 @@ export default function ProjectPlannedVariations({
       render: (v) => (
         <span className="text-sm text-muted-foreground">{v.pack_code || "—"}</span>
       ),
-      editable: true,
-      entityField: "pack_code",
-      entityType: "ProductColorAndMore",
-      getValue: (v) => v.id,
-      getDisplayValue: (v) => v.pack_code || "",
     },
     {
       id: "actions",
