@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, Loader2, Link2, Unlink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import { tcxDisplayName } from "../lib/pantone-tcx";
+import ColorLibrarySinglePickerModal from "./ColorLibrarySinglePickerModal";
 
 
 export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
