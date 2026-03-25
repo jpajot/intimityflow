@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Search } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Trash2, Upload, X } from "lucide-react";
 import ColorwaySection from "../components/ColorwaySection";
 import ColorwayEditModal from "../components/ColorwayEditModal";
 import ColorLibraryPickerModal from "../components/ColorLibraryPickerModal";
