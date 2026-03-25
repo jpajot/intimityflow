@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler } from "lucide-react";
+import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
@@ -19,17 +19,24 @@ const SIZE_STUDIO_ITEMS = [
   { path: "/size-grid-library", label: "Size Grids", icon: Layers },
 ];
 
+const CONFIG_ITEMS = [
+  { path: "/list-of-values", label: "List of Values", icon: ListCollapse },
+];
+
 export default function Layout() {
   const location = useLocation();
   const [studioOpen, setStudioOpen] = useState(false);
   const [sizeStudioOpen, setSizeStudioOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
   const studioRef = useRef(null);
   const sizeStudioRef = useRef(null);
+  const configRef = useRef(null);
 
   useEffect(() => {
     const handleClick = (e) => {
       if (studioRef.current && !studioRef.current.contains(e.target)) setStudioOpen(false);
       if (sizeStudioRef.current && !sizeStudioRef.current.contains(e.target)) setSizeStudioOpen(false);
+      if (configRef.current && !configRef.current.contains(e.target)) setConfigOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -37,6 +44,7 @@ export default function Layout() {
 
   const isStudioActive = COLOR_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
   const isSizeStudioActive = SIZE_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
+  const isConfigActive = CONFIG_ITEMS.some((i) => location.pathname.startsWith(i.path));
 
   return (
     <div className="min-h-screen bg-background">
@@ -143,6 +151,43 @@ export default function Layout() {
                   </div>
                 )}
               </div>
+
+              {/* Config dropdown */}
+              <div ref={configRef} className="relative">
+                <button
+                  onClick={() => setConfigOpen((o) => !o)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isConfigActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <ListCollapse className="w-4 h-4" />
+                  Config
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${configOpen ? "rotate-180" : ""}`} />
+                </button>
+                {configOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-44 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                    {CONFIG_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname.startsWith(item.path);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setConfigOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                            isActive ? "text-primary font-medium bg-accent" : "text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </nav>
 
 
@@ -170,23 +215,41 @@ export default function Layout() {
             );
           })}
           {COLOR_STUDIO_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname.startsWith(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {item.label}
-              </Link>
-            );
+           const Icon = item.icon;
+           const isActive = location.pathname.startsWith(item.path);
+           return (
+             <Link
+               key={item.path}
+               to={item.path}
+               className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                 isActive
+                   ? "bg-primary text-primary-foreground"
+                   : "text-muted-foreground"
+               }`}
+             >
+               <Icon className="w-4 h-4" />
+               {item.label}
+             </Link>
+           );
           })}
+          {CONFIG_ITEMS.map((item) => {
+           const Icon = item.icon;
+           const isActive = location.pathname.startsWith(item.path);
+           return (
+             <Link
+               key={item.path}
+               to={item.path}
+               className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                 isActive
+                   ? "bg-primary text-primary-foreground"
+                   : "text-muted-foreground"
+               }`}
+             >
+               <Icon className="w-4 h-4" />
+               {item.label}
+             </Link>
+           );
+          })
         </div>
       </header>
 
