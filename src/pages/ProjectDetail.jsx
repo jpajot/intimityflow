@@ -290,7 +290,7 @@ export default function ProjectDetail() {
               <p className="text-sm text-muted-foreground">No styles yet. Create a new style or link existing color variants.</p>
             </div>
           ) : (
-            sortedKeys.map((key) => {
+            [].map((key) => {
               const groupProds = grouped[key];
               return (
                 <div key={key} className="bg-card rounded-xl border border-border overflow-hidden">
