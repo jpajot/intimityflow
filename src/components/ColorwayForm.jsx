@@ -110,8 +110,8 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
             </button>
           </div>
         ) : (
-          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setShowLibPicker(true)}>
-            <Link2 className="w-3.5 h-3.5" /> Link to Color Library
+          <Button type="button" variant="outline" size="sm" className="gap-1.5 mt-1" onClick={() => setShowLibPicker(true)}>
+            <Link2 className="w-3.5 h-3.5" /> From Library
           </Button>
         )}
       </div>
