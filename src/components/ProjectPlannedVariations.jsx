@@ -2,9 +2,8 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Copy, Loader2, Plus } from "lucide-react";
-import LinkProductVariationsModal from "./LinkProductVariationsModal";
 import DataTable from "@/components/DataTable";
-import _ from "lodash";
+import LinkProductVariationsModal from "./LinkProductVariationsModal";
 
 export default function ProjectPlannedVariations({
   projectId,
@@ -167,9 +166,6 @@ export default function ProjectPlannedVariations({
           </span>
         );
       },
-      editable: true,
-      onEdit: (variationId, newValue) =>
-        handleEditField(variationId, "product_color_id", newValue),
     },
     {
       id: "name",
@@ -199,9 +195,6 @@ export default function ProjectPlannedVariations({
           </span>
         );
       },
-      editable: true,
-      onEdit: (variationId, newValue) =>
-        handleEditField(variationId, "size_ids", newValue),
     },
     {
       id: "pack_code",
@@ -211,9 +204,6 @@ export default function ProjectPlannedVariations({
       render: (v) => (
         <span className="text-sm text-muted-foreground">{v.pack_code || "—"}</span>
       ),
-      editable: true,
-      onEdit: (variationId, newValue) =>
-        handleEditField(variationId, "pack_code", newValue),
     },
     {
       id: "actions",
@@ -240,33 +230,21 @@ export default function ProjectPlannedVariations({
     },
   ];
 
-  if (linkedVariations.length === 0) {
-    return (
-      <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
-        <p className="text-sm text-muted-foreground">
-          No planned variations yet. Link product variations to start.
-        </p>
-      </div>
-    );
-  }
-
-  const groups = buildGroups();
-
-  return (
-    <div className="space-y-4">
+  const renderContent = () => (
+    <>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">Group by</span>
-        <select
-          value={groupBy}
-          onChange={(e) => setGroupBy(e.target.value)}
-          className="h-8 px-2 text-xs rounded-md border border-input bg-transparent cursor-pointer"
-        >
-          <option value="none">None</option>
-          <option value="category">Category</option>
-          <option value="sub_category">Sub-Category</option>
-          <option value="product">Product</option>
-        </select>
+          <span className="text-xs text-muted-foreground">Group by</span>
+          <select
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.target.value)}
+            className="h-8 px-2 text-xs rounded-md border border-input bg-transparent cursor-pointer"
+          >
+            <option value="none">None</option>
+            <option value="category">Category</option>
+            <option value="sub_category">Sub-Category</option>
+            <option value="product">Product</option>
+          </select>
         </div>
         <Button
           variant="outline"
@@ -278,46 +256,57 @@ export default function ProjectPlannedVariations({
           Add Variations
         </Button>
       </div>
-      <div className="space-y-3">
-        {groups.map((group) => {
-          const itemCount = group.items.length;
-          return (
-            <div key={group.key} className="bg-card rounded-xl border border-border overflow-hidden">
-              {group.label && (
-                <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {group.label} ({itemCount})
-                  </span>
-                </div>
-              )}
-              <DataTable
-                columns={columns}
-                rows={group.items}
-                fixedColumns={["style"]}
-                filterFields={[
-                  {
-                    getValue: (v) => {
-                      const color = colorVariants.find(
-                        (cv) => cv.id === v.product_color_id
-                      );
-                      return color?.color_name || "";
-                    },
-                  },
-                  { getValue: (v) => v.name },
-                ]}
-                onEdit={handleEditField}
-                />
-                  </div>
-                );
-                })}
-                </div>
 
-                <LinkProductVariationsModal
-                open={showLinkModal}
-                onClose={() => setShowLinkModal(false)}
-                onLink={handleLinkVariations}
-                alreadyLinkedIds={linkedColorIds}
+      {linkedVariations.length === 0 ? (
+        <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+          <p className="text-sm text-muted-foreground">
+            No planned variations yet. Link product variations to start.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {buildGroups().map((group) => {
+            const itemCount = group.items.length;
+            return (
+              <div key={group.key} className="bg-card rounded-xl border border-border overflow-hidden">
+                {group.label && (
+                  <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {group.label} ({itemCount})
+                    </span>
+                  </div>
+                )}
+                <DataTable
+                  columns={columns}
+                  rows={group.items}
+                  fixedColumns={["style"]}
+                  filterFields={[
+                    {
+                      getValue: (v) => {
+                        const color = colorVariants.find(
+                          (cv) => cv.id === v.product_color_id
+                        );
+                        return color?.color_name || "";
+                      },
+                    },
+                    { getValue: (v) => v.name },
+                  ]}
+                  onEdit={handleEditField}
                 />
-                </div>
-                );
-                }
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <LinkProductVariationsModal
+        open={showLinkModal}
+        onClose={() => setShowLinkModal(false)}
+        onLink={handleLinkVariations}
+        alreadyLinkedIds={linkedColorIds}
+      />
+    </>
+  );
+
+  return <div className="space-y-4">{renderContent()}</div>;
+}
