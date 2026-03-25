@@ -24,6 +24,7 @@ export default function ColorLibrary() {
 
   const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", color_name: "" });
+  const [techSearch, setTechSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { loadData(); }, []);
@@ -83,11 +84,13 @@ export default function ColorLibrary() {
   const openNewComm = () => {
     setEditingComm(null);
     setCommForm({ sub_type: "Solid", code: "", main_technical_color_id: "", color_name: "" });
+    setTechSearch("");
     setShowCommDialog(true);
   };
   const openEditComm = (c) => {
     setEditingComm(c);
     setCommForm({ sub_type: c.sub_type, code: c.code, main_technical_color_id: c.main_technical_color_id || "", color_name: c.color_name });
+    setTechSearch("");
     setShowCommDialog(true);
   };
 
@@ -257,19 +260,32 @@ export default function ColorLibrary() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Main Technical Color</Label>
-              <Select value={commForm.main_technical_color_id} onValueChange={handleTechSelectForComm}>
-                <SelectTrigger><SelectValue placeholder="Select Pantone TCX…" /></SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {technicalColors.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
-                        <span className="text-xs">{tcxDisplayName(t)}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {commForm.main_technical_color_id ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
+                  {(() => { const t = technicalColors.find(t => t.id === commForm.main_technical_color_id); return t ? (<><div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} /><span className="text-xs flex-1">{tcxDisplayName(t)}</span></>) : null; })()}
+                  <button type="button" onClick={() => { setCommForm(f => ({ ...f, main_technical_color_id: "" })); setTechSearch(""); }} className="text-xs text-muted-foreground hover:text-foreground ml-auto">✕</button>
+                </div>
+              ) : (
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="p-2 border-b border-border">
+                    <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search by code or name…" className="h-8 text-xs" />
+                  </div>
+                  <div className="max-h-44 overflow-y-auto">
+                    {technicalColors
+                      .filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase()))
+                      .map((t) => (
+                        <button key={t.id} type="button" onClick={() => handleTechSelectForComm(t.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                          <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
+                          <span className="text-xs">{tcxDisplayName(t)}</span>
+                        </button>
+                      ))}
+                    {technicalColors.filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase())).length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">No colors found</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Color Name</Label>
