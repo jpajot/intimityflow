@@ -77,7 +77,12 @@ export default function StyleSizesSection({ product, onSizesChange }) {
       alert("This size cannot be deleted because it is used in one or more variations. Remove it from all variations first.");
       return;
     }
-    await base44.entities.StyleSize.delete(ss.id);
+    try {
+      await base44.entities.StyleSize.delete(ss.id);
+    } catch (error) {
+      // If the entity doesn't exist, just update local state
+      if (!error.message.includes("not found")) throw error;
+    }
     const updated = styleSizes.filter((x) => x.id !== ss.id);
     setStyleSizes(updated);
     if (onSizesChange) onSizesChange(updated.length > 0);
