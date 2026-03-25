@@ -96,9 +96,6 @@ export default function ProjectVariationsTable({ projectId, productType, variati
       id: "category",
       label: "Category",
       width: 120,
-      editable: true,
-      entityType: "Product",
-      entityField: "category",
       sortKey: (v) => {
         const color = colorVariants.find((cv) => cv.id === v.product_color_id);
         const product = products.find((p) => p.id === color?.product_id);
@@ -124,9 +121,6 @@ export default function ProjectVariationsTable({ projectId, productType, variati
       id: "sub_category",
       label: "Sub-Category",
       width: 120,
-      editable: true,
-      entityType: "Product",
-      entityField: "sub_category",
       sortKey: (v) => {
         const color = colorVariants.find((cv) => cv.id === v.product_color_id);
         const product = products.find((p) => p.id === color?.product_id);
@@ -179,9 +173,6 @@ export default function ProjectVariationsTable({ projectId, productType, variati
       id: "pack_code",
       label: "Pack Code",
       width: 100,
-      editable: true,
-      entityType: "ProductColorAndMore",
-      entityField: "pack_code",
       sortKey: (v) => v.pack_code || "",
       render: (v) => <span className="text-sm text-muted-foreground">{v.pack_code || "—"}</span>,
       getValue: (v) => v.id,
