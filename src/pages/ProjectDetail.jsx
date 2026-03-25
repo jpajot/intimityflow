@@ -45,6 +45,7 @@ export default function ProjectDetail() {
   // For creating a color within a newly picked product
   const [pendingProductId, setPendingProductId] = useState(null);
 
+  const [groupByVariations, setGroupByVariations] = useState("category");
   const [groupBy, setGroupBy] = useState("category");
   const [rowCriteria, setRowCriteria] = useState("category");
   const [colCriteria, setColCriteria] = useState("customer_need");
@@ -162,6 +163,15 @@ export default function ProjectDetail() {
   const getProductsAt = (rk, ck) =>
     linkedProducts.filter((p) => p[rowCriteria] === rk && p[colCriteria] === ck);
 
+  const getVariationGroupKey = (v) => {
+    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+    const product = products.find((p) => p.id === color?.product_id);
+    if (groupByVariations === "category") return product?.category || "Uncategorized";
+    if (groupByVariations === "sub_category") return product?.sub_category || "Uncategorized";
+    if (groupByVariations === "product") return product?.name || "Uncategorized";
+    return "All";
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -271,10 +281,23 @@ export default function ProjectDetail() {
 
         {/* STYLES TAB */}
         <TabsContent value="styles" className="mt-4 space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
             <Button onClick={() => setShowNewProductDialog(true)} className="gap-2" size="sm">
               <Plus className="w-4 h-4" /> New Style + Color
             </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Group by</span>
+              <select
+                value={groupByVariations}
+                onChange={(e) => setGroupByVariations(e.target.value)}
+                className="h-8 text-xs px-2 rounded-md border border-input bg-transparent"
+              >
+                <option value="none">None</option>
+                <option value="category">Category</option>
+                <option value="sub_category">Sub-Category</option>
+                <option value="product">Product</option>
+              </select>
+            </div>
           </div>
           <ProjectVariationsTable
             projectId={id}
@@ -283,6 +306,8 @@ export default function ProjectDetail() {
             products={products}
             colorVariants={colorVariants}
             onRefresh={loadData}
+            groupBy={groupByVariations}
+            getGroupKey={getVariationGroupKey}
           />
         </TabsContent>
 
