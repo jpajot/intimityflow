@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Search } from "lucide-react";
-import ColorwayForm from "../components/ColorwayForm";
 import ColorwayCard from "../components/ColorwayCard";
+import ColorwayEditModal from "../components/ColorwayEditModal";
 import ColorLibraryPickerModal from "../components/ColorLibraryPickerModal";
 import {
   AlertDialog,
@@ -41,8 +41,8 @@ export default function ProductDetail() {
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [showNewColor, setShowNewColor] = useState(false);
   const [editingColor, setEditingColor] = useState(null);
+  const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
 
   useEffect(() => {
@@ -76,7 +76,6 @@ export default function ProductDetail() {
   const handleAddColor = async (data) => {
     const created = await base44.entities.ProductColor.create({ ...data, product_id: product.id });
     setColorVariants((prev) => [...prev, created]);
-    setShowNewColor(false);
   };
 
   const handleAddFromLibrary = async (colorways) => {
@@ -87,16 +86,14 @@ export default function ProductDetail() {
   };
 
   const handleUpdateColor = async (data) => {
-    const { id: cid, created_date, updated_date, created_by, product_id, ...rest } = editingColor;
-    await base44.entities.ProductColor.update(cid, { ...rest, ...data });
+    const { id: cid } = editingColor;
+    await base44.entities.ProductColor.update(cid, data);
     setColorVariants((prev) => prev.map((cv) => (cv.id === cid ? { ...cv, ...data } : cv)));
-    setEditingColor(null);
   };
 
   const handleDeleteColor = async () => {
     await base44.entities.ProductColor.delete(editingColor.id);
     setColorVariants((prev) => prev.filter((cv) => cv.id !== editingColor.id));
-    setEditingColor(null);
   };
 
   const handleDeleteProduct = async () => {
@@ -274,24 +271,11 @@ export default function ProductDetail() {
               <Button variant="outline" size="sm" onClick={() => setShowLibraryPicker(true)} className="gap-2">
                 <Search className="w-4 h-4" /> From Color Library
               </Button>
-              <Button variant="outline" size="sm" onClick={() => { setShowNewColor(true); setEditingColor(null); }} className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setEditingColor(null); setShowNewColorModal(true); }} className="gap-2">
                 <Plus className="w-4 h-4" /> Add Colorway
               </Button>
             </div>
           </div>
-
-          {showNewColor && (
-            <ColorwayForm onSave={handleAddColor} onCancel={() => setShowNewColor(false)} />
-          )}
-
-          {editingColor && (
-            <ColorwayForm
-              variant={editingColor}
-              onSave={handleUpdateColor}
-              onCancel={() => setEditingColor(null)}
-              onDelete={handleDeleteColor}
-            />
-          )}
 
           {colorVariants.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -299,7 +283,7 @@ export default function ProductDetail() {
                 <ColorwayCard
                   key={cv.id}
                   variant={cv}
-                  onClick={() => { setEditingColor(cv); setShowNewColor(false); }}
+                  onEdit={() => setEditingColor(cv)}
                 />
               ))}
             </div>
