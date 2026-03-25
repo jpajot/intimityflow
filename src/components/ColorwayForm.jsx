@@ -9,13 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
-const MARKETS = ["Spain", "France", "Germany", "Italy"];
-const MARKET_VOLUME_KEYS = {
-  Spain: "volume_spain",
-  France: "volume_france",
-  Germany: "volume_germany",
-  Italy: "volume_italy",
-};
 
 export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState({
@@ -23,11 +16,6 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
     colorway_code: variant?.colorway_code || "",
     color_hex: variant?.color_hex || "#000000",
     image_url: variant?.image_url || "",
-    markets: variant?.markets || [],
-    volume_spain: variant?.volume_spain || 0,
-    volume_france: variant?.volume_france || 0,
-    volume_germany: variant?.volume_germany || 0,
-    volume_italy: variant?.volume_italy || 0,
     linked_color_type: variant?.linked_color_type || "",
     linked_color_id: variant?.linked_color_id || "",
   });
@@ -62,15 +50,6 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setForm((f) => ({ ...f, image_url: file_url }));
     setUploading(false);
-  };
-
-  const toggleMarket = (market) => {
-    setForm((f) => {
-      const markets = f.markets.includes(market)
-        ? f.markets.filter((m) => m !== market)
-        : [...f.markets, market];
-      return { ...f, markets };
-    });
   };
 
   const handleLinkColor = (type, id) => {
@@ -248,28 +227,6 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
         </div>
       </div>
 
-      {/* Markets */}
-      <div className="space-y-3">
-        <Label className="text-xs">Markets & Volumes</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {MARKETS.map((market) => (
-            <div key={market} className={`rounded-lg border p-3 transition-colors ${form.markets.includes(market) ? "border-primary bg-accent" : "border-border"}`}>
-              <div className="flex items-center gap-2">
-                <Checkbox checked={form.markets.includes(market)} onCheckedChange={() => toggleMarket(market)} />
-                <span className="text-sm font-medium">{market}</span>
-              </div>
-              {form.markets.includes(market) && (
-                <div className="mt-2 pl-6">
-                  <Input type="number" min={0} value={form[MARKET_VOLUME_KEYS[market]]}
-                    onChange={(e) => setForm((f) => ({ ...f, [MARKET_VOLUME_KEYS[market]]: parseInt(e.target.value) || 0 }))}
-                    placeholder="Est. volume" className="h-8 text-sm" />
-                  <span className="text-[10px] text-muted-foreground mt-1 block">Estimated units</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving} className="gap-2">
