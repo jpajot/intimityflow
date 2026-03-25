@@ -329,17 +329,30 @@ function EditableCell({ col, row, editingCell, setEditingCell, editValue, setEdi
       onClick={handleStart}
     >
       {isEditing ? (
-        <Input
-          autoFocus
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSave();
-            if (e.key === "Escape") setEditingCell(null);
-          }}
-          className="h-6 text-xs"
-        />
+        col.options ? (
+          <Select value={editValue} onValueChange={(val) => { setEditValue(val); }}>
+            <SelectTrigger className="h-6 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {col.options.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            autoFocus
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave();
+              if (e.key === "Escape") setEditingCell(null);
+            }}
+            className="h-6 text-xs"
+          />
+        )
       ) : (
         <div className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">{col.render(row)}</div>
       )}
