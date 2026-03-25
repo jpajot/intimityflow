@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Link2, Loader2, Trash2, LayoutList, Grid3X3, X, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import GroupBySelector from "../components/GroupBySelector";
 import MatrixCell from "../components/MatrixCell";
@@ -25,6 +26,10 @@ export default function ProjectDetail() {
   const [assignments, setAssignments] = useState([]);
   const [products, setProducts] = useState([]);
   const [colorVariants, setColorVariants] = useState([]);
+  const [palettes, setPalettes] = useState([]);
+  const [paletteColors, setPaletteColors] = useState([]);
+  const [techColors, setTechColors] = useState([]);
+  const [commColors, setCommColors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -52,17 +57,39 @@ export default function ProjectDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [proj, asns, prods, colors] = await Promise.all([
+    const [proj, asns, prods, colors, pals, palCols, tc, cc] = await Promise.all([
       base44.entities.Project.filter({ id }),
       base44.entities.ProjectAssignment.filter({ project_id: id }),
       base44.entities.Product.list("-created_date", 500),
       base44.entities.ProductColor.list("-created_date", 2000),
+      base44.entities.ColorPalette.filter({ project_id: id }),
+      base44.entities.ColorPaletteColor.list("-created_date", 2000),
+      base44.entities.TechnicalColor.list("code", 2000),
+      base44.entities.CommercialColor.list("code", 2000),
     ]);
     setProject(proj[0] || null);
     setAssignments(asns);
     setProducts(prods);
     setColorVariants(colors);
+    setPalettes(pals);
+    setPaletteColors(palCols);
+    setTechColors(tc);
+    setCommColors(cc);
     setLoading(false);
+  };
+
+  const getPaletteHexes = (paletteId) => {
+    return paletteColors
+      .filter((pc) => pc.palette_id === paletteId)
+      .map((e) => {
+        if (e.color_type === "technical") {
+          const t = techColors.find((c) => c.id === e.color_id);
+          return t?.hex || "#ccc";
+        }
+        const c = commColors.find((c) => c.id === e.color_id);
+        const t = techColors.find((t) => t.id === c?.main_technical_color_id);
+        return t?.hex || "#ccc";
+      });
   };
 
   // Derived: only product-colors in this project
@@ -183,6 +210,37 @@ export default function ProjectDetail() {
           </AlertDialog>
         </div>
       </div>
+
+      {/* Color Palettes section */}
+      {palettes.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Color Palettes</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {palettes.map((palette) => {
+              const hexes = getPaletteHexes(palette.id);
+              const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
+              return (
+                <Link key={palette.id} to={`/color-palettes/${palette.id}`}
+                  className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
+                  <div className="h-12 flex">
+                    {hexes.length === 0 ? (
+                      <div className="flex-1 bg-muted" />
+                    ) : (
+                      hexes.slice(0, 10).map((hex, i) => (
+                        <div key={i} className="flex-1" style={{ backgroundColor: hex }} />
+                      ))
+                    )}
+                  </div>
+                  <div className="px-4 py-2.5 flex items-center justify-between">
+                    <span className="font-medium text-sm">{palette.name}</span>
+                    <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Pending: add color to newly created product */}
       {pendingProductId && (
