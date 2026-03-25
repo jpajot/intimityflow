@@ -94,11 +94,7 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((cv) => {
-                  const total =
-                    (cv.volume_spain || 0) + (cv.volume_france || 0) +
-                    (cv.volume_germany || 0) + (cv.volume_italy || 0);
-                  return (
+                {filtered.map((cv) => (
                     <tr key={cv.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <div className="w-10 h-10 rounded-md overflow-hidden border border-border">
