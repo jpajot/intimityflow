@@ -320,7 +320,7 @@ export default function ProductDetail() {
 
         <Button type="submit" disabled={saving} className="gap-2">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isNew ? "Create Style" : "Save Changes"}
+          {isNew ? "Create" : "Save Changes"}
         </Button>
       </form>
 
