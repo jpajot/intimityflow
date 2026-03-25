@@ -1,0 +1,121 @@
+import { useState, useEffect, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
+
+export default function StyleSizesSection({ product }) {
+  const [styleSizes, setStyleSizes] = useState([]);
+  const [sizes, setSizes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const prevGridId = useRef(null);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    loadData();
+  }, [product?.id]);
+
+  // When size_grid_id changes on the product, sync StyleSize records
+  useEffect(() => {
+    if (!product?.id || loading) return;
+    if (prevGridId.current === product.size_grid_id) return;
+    prevGridId.current = product.size_grid_id;
+    syncGridSizes();
+  }, [product?.size_grid_id, loading]);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [ss, sz] = await Promise.all([
+      base44.entities.StyleSize.filter({ product_id: product.id }),
+      base44.entities.Size.list("size_code", 500),
+    ]);
+    setStyleSizes(ss);
+    setSizes(sz);
+    prevGridId.current = product.size_grid_id;
+    setLoading(false);
+  };
+
+  const syncGridSizes = async () => {
+    if (!product.size_grid_id) return;
+
+    // Get active sizes from the grid
+    const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
+    const activeSizes = gridSizes.filter((gs) => gs.active !== false);
+
+    // Get current style sizes
+    const current = await base44.entities.StyleSize.filter({ product_id: product.id });
+
+    const currentSizeIds = new Set(current.map((ss) => ss.size_id));
+    const gridSizeIds = new Set(activeSizes.map((gs) => gs.size_id));
+
+    // Add missing ones
+    const toAdd = activeSizes.filter((gs) => !currentSizeIds.has(gs.size_id));
+    const created = await Promise.all(
+      toAdd.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: true }))
+    );
+
+    // Remove ones no longer in the grid
+    const toRemove = current.filter((ss) => !gridSizeIds.has(ss.size_id));
+    await Promise.all(toRemove.map((ss) => base44.entities.StyleSize.delete(ss.id)));
+
+    setStyleSizes([...current.filter((ss) => gridSizeIds.has(ss.size_id)), ...created]);
+  };
+
+  const handleToggle = async (ss) => {
+    const updated = { active: !ss.active };
+    await base44.entities.StyleSize.update(ss.id, updated);
+    setStyleSizes((prev) => prev.map((x) => x.id === ss.id ? { ...x, ...updated } : x));
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+
+  if (!product.size_grid_id) {
+    return (
+      <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+        <p className="text-sm text-muted-foreground">No size grid selected. Set a Size Grid in Style Details above to link sizes.</p>
+      </div>
+    );
+  }
+
+  if (styleSizes.length === 0) {
+    return (
+      <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+        <p className="text-sm text-muted-foreground">No active sizes in the selected grid.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Sizes ({styleSizes.length})</h3>
+        <p className="text-xs text-muted-foreground">Synced from size grid — toggle to deactivate for this style</p>
+      </div>
+
+      <div className="rounded-xl border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/40">
+              <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground">Active</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Code</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {styleSizes.map((ss) => {
+              const size = sizes.find((s) => s.id === ss.size_id);
+              return (
+                <tr key={ss.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-5 py-3">
+                    <Checkbox checked={ss.active !== false} onCheckedChange={() => handleToggle(ss)} />
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold">{size?.size_code || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{size?.name || "—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
