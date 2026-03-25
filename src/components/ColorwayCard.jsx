@@ -1,19 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 
-const MARKET_FLAGS = {
-  Spain: "🇪🇸",
-  France: "🇫🇷",
-  Germany: "🇩🇪",
-  Italy: "🇮🇹",
-};
-
 export default function ColorwayCard({ variant, onEdit }) {
-  const totalVolume =
-    (variant.volume_spain || 0) +
-    (variant.volume_france || 0) +
-    (variant.volume_germany || 0) +
-    (variant.volume_italy || 0);
 
   return (
     <div

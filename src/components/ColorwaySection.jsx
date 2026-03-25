@@ -5,8 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { LayoutGrid, List, Search, Plus, Pencil } from "lucide-react";
 import ColorwayCard from "./ColorwayCard";
 
-const MARKET_FLAGS = { Spain: "🇪🇸", France: "🇫🇷", Germany: "🇩🇪", Italy: "🇮🇹" };
-
 function matchesFilter(cv, q) {
   if (!q) return true;
   const lower = q.toLowerCase();
@@ -14,8 +12,7 @@ function matchesFilter(cv, q) {
     cv.color_name?.toLowerCase().includes(lower) ||
     cv.colorway_code?.toLowerCase().includes(lower) ||
     cv.color_hex?.toLowerCase().includes(lower) ||
-    cv.linked_color_type?.toLowerCase().includes(lower) ||
-    (cv.markets || []).some((m) => m.toLowerCase().includes(lower))
+    cv.linked_color_type?.toLowerCase().includes(lower)
   );
 }
 
