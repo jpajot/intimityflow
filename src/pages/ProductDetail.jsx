@@ -47,6 +47,7 @@ export default function ProductDetail() {
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [originalSizeGridId, setOriginalSizeGridId] = useState("");
   const [editingColor, setEditingColor] = useState(null);
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
@@ -101,7 +102,10 @@ export default function ProductDetail() {
       base44.entities.Product.filter({ id }),
       base44.entities.ProductColor.filter({ product_id: id }),
     ]);
-    if (prod.length > 0) setProduct(prod[0]);
+    if (prod.length > 0) {
+      setProduct(prod[0]);
+      setOriginalSizeGridId(prod[0].size_grid_id || "");
+    }
     setColorVariants(colors);
     setLoading(false);
   };
@@ -119,13 +123,29 @@ export default function ProductDetail() {
         await base44.entities.Product.update(product.id, data);
       }
       
-      // If a size grid was selected and sizes were just created, populate StyleSize with grid's active status
-      if (product.size_grid_id && !hasStyleSizes) {
-        const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
-        if (gridSizes.length > 0) {
-          await Promise.all(
-            gridSizes.map((gs) => base44.entities.StyleSize.create({ product_id: productId, size_id: gs.size_id, active: gs.active !== false }))
-          );
+      // If a size grid was selected, populate or update StyleSize with grid's active status
+      if (product.size_grid_id) {
+        const gridSizeIdChanged = originalSizeGridId !== product.size_grid_id;
+        
+        if (!hasStyleSizes || gridSizeIdChanged) {
+          // Delete old sizes if grid changed
+          if (gridSizeIdChanged && hasStyleSizes) {
+            const oldSizes = await base44.entities.StyleSize.filter({ product_id: productId });
+            await Promise.all(oldSizes.map((ss) => base44.entities.StyleSize.delete(ss.id)));
+          }
+          
+          // Add new sizes from grid
+          const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
+          if (gridSizes.length > 0) {
+            await Promise.all(
+              gridSizes.map((gs) => base44.entities.StyleSize.create({ product_id: productId, size_id: gs.size_id, active: gs.active !== false }))
+            );
+          }
+          
+          if (gridSizeIdChanged) {
+            setOriginalSizeGridId(product.size_grid_id);
+            setHasStyleSizes(true);
+          }
         }
       }
       
