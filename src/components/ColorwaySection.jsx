@@ -126,14 +126,6 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
         </div>
       ) : view === "grid" ? (
         <>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={onAddFromLibrary} className="gap-1.5 h-8 text-xs">
-              From Library
-            </Button>
-            <Button variant="outline" size="sm" onClick={onAddNew} className="gap-1.5 h-8 text-xs">
-              <Plus className="w-3.5 h-3.5" /> Add
-            </Button>
-          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {colorVariants.map((cv) => (
               <ColorwayCard key={cv.id} variant={cv} onEdit={() => onEdit(cv)} />
