@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, X } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, X, LayoutGrid, List } from "lucide-react";
 import PaletteColorSection from "../components/PaletteColorSection";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
@@ -35,7 +35,7 @@ export default function ColorPaletteDetail() {
   const [commTechSearch, setCommTechSearch] = useState("");
 
   const [saving, setSaving] = useState(false);
-  const [groupByType, setGroupByType] = useState(false);
+  const [colorView, setColorView] = useState("gallery");
 
   useEffect(() => { loadData(); }, [id]);
 
@@ -213,7 +213,8 @@ export default function ColorPaletteDetail() {
         getColorCode={getColorCode}
         getColorSubType={getColorSubType}
         onRemove={handleRemove}
-        groupByType={groupByType}
+        view={colorView}
+        onViewChange={setColorView}
       />
 
       {/* Add Color Dialog */}
