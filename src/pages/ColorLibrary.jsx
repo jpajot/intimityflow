@@ -238,7 +238,7 @@ export default function ColorLibrary() {
           )}
         </TabsContent>
 
-        {/* COMMERCIAL COLORS */
+        {/* COMMERCIAL COLORS */}
         <TabsContent value="commercial" className="mt-4 space-y-4">
           <Button onClick={openNewComm} className="gap-2"><Plus className="w-4 h-4" />Add Commercial Color</Button>
 
