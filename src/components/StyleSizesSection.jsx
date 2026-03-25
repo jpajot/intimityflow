@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Trash2 } from "lucide-react";
 
 export default function StyleSizesSection({ product }) {
   const [styleSizes, setStyleSizes] = useState([]);
@@ -66,6 +67,11 @@ export default function StyleSizesSection({ product }) {
     setStyleSizes((prev) => prev.map((x) => x.id === ss.id ? { ...x, ...updated } : x));
   };
 
+  const handleDelete = async (ss) => {
+    await base44.entities.StyleSize.delete(ss.id);
+    setStyleSizes((prev) => prev.filter((x) => x.id !== ss.id));
+  };
+
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
 
   if (!product.size_grid_id) {
@@ -98,6 +104,7 @@ export default function StyleSizesSection({ product }) {
               <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground">Active</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Code</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
@@ -110,6 +117,11 @@ export default function StyleSizesSection({ product }) {
                   </td>
                   <td className="px-4 py-3 font-mono text-xs font-semibold">{size?.size_code || "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{size?.name || "—"}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(ss)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </td>
                 </tr>
               );
             })}
