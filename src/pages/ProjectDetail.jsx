@@ -188,12 +188,6 @@ export default function ProjectDetail() {
           {project.description && <p className="text-sm text-muted-foreground mt-1">{project.description}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button size="sm" onClick={() => setShowLinkModal(true)} className="gap-2">
-            <Link2 className="w-4 h-4" /> Link Existing Style-Colorways
-          </Button>
-          <Button size="sm" onClick={() => setShowNewProductDialog(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> New Style
-          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
