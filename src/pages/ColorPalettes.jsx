@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, LayoutGrid, List } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
 export default function ColorPalettes() {
@@ -20,6 +20,7 @@ export default function ColorPalettes() {
   const [showDialog, setShowDialog] = useState(false);
   const [form, setForm] = useState({ name: "", project_id: "" });
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState("table");
 
   useEffect(() => { loadData(); }, []);
 
@@ -140,9 +141,29 @@ export default function ColorPalettes() {
           <h1 className="font-display text-3xl font-semibold tracking-tight">Color Palettes</h1>
           <p className="text-muted-foreground mt-1">Organize colors into project palettes</p>
         </div>
-        <Button onClick={() => setShowDialog(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> New Palette
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setView("table")}
+              className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+              title="Table view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("gallery")}
+              className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+              title="Gallery view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
+          <Button onClick={() => setShowDialog(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> New Palette
+          </Button>
+        </div>
       </div>
 
       {palettes.length === 0 ? (
@@ -153,7 +174,7 @@ export default function ColorPalettes() {
           <h3 className="font-semibold">No palettes yet</h3>
           <p className="text-sm text-muted-foreground mt-1">Create a palette and link it to a project</p>
         </div>
-      ) : (
+      ) : view === "table" ? (
         <DataTable
           columns={columns}
           rows={palettes}
@@ -166,6 +187,45 @@ export default function ColorPalettes() {
             }},
           ]}
         />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {palettes.map((palette) => {
+            const swatches = getSwatches(palette.id);
+            const project = projects.find((p) => p.id === palette.project_id);
+            return (
+              <Link
+                key={palette.id}
+                to={`/color-palettes/${palette.id}`}
+                className="rounded-xl border border-border bg-card hover:shadow-md transition-shadow overflow-hidden"
+              >
+                <div className="h-24 flex">
+                  {swatches.length === 0 ? (
+                    <div className="w-full bg-muted" />
+                  ) : (
+                    swatches.map((hex, i) => (
+                      <div
+                        key={i}
+                        className="flex-1"
+                        style={{ backgroundColor: hex }}
+                      />
+                    ))
+                  )}
+                </div>
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold text-sm">{palette.name}</h3>
+                  {project && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <FolderOpen className="w-3 h-3" />{project.name}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {paletteColors.filter((pc) => pc.palette_id === palette.id).length} color{paletteColors.filter((pc) => pc.palette_id === palette.id).length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       )}
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
