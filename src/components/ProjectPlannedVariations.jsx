@@ -145,6 +145,15 @@ export default function ProjectPlannedVariations({
           </span>
         );
       },
+      editable: true,
+      options: colorVariants.map((cv) => cv.color_name),
+      entityField: "product_color_id",
+      entityType: "ProductColorAndMore",
+      getValue: (v) => v.id,
+      getDisplayValue: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        return color?.color_name || "";
+      },
     },
     {
       id: "name",
