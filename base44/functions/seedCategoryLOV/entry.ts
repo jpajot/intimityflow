@@ -11,6 +11,8 @@ const CATEGORIES = [
   "Loungewear"
 ];
 
+const PRODUCT_TYPES = ["Product", "Material"];
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -31,6 +33,17 @@ Deno.serve(async (req) => {
       categoryTypeId = existing[0].id;
     }
 
+    // Check if Product Type TypeOfLOV exists
+    const existingProdType = await base44.entities.TypeOfLOV.filter({ code: "Product Type" });
+    let productTypeId;
+
+    if (existingProdType.length === 0) {
+      const created = await base44.entities.TypeOfLOV.create({ code: "Product Type", name: "Product Type" });
+      productTypeId = created.id;
+    } else {
+      productTypeId = existingProdType[0].id;
+    }
+
     // Get existing category values
     const existingValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: categoryTypeId });
     const existingNames = new Set(existingValues.map((v) => v.name));
@@ -45,11 +58,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get existing product type values
+    const existingProdTypeValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: productTypeId });
+    const existingProdTypeNames = new Set(existingProdTypeValues.map((v) => v.name));
+
+    // Create missing product type values
+    const prodTypesToCreate = PRODUCT_TYPES.filter((type) => !existingProdTypeNames.has(type));
+    let prodTypesCreated = [];
+
+    if (prodTypesToCreate.length > 0) {
+      prodTypesCreated = await base44.entities.ListOfValues.bulkCreate(
+        prodTypesToCreate.map((name) => ({ type_of_lov_id: productTypeId, name }))
+      );
+    }
+
     return Response.json({
       success: true,
-      typeOfLovId: categoryTypeId,
-      created: created.length,
-      total: existingValues.length + created.length,
+      categoryTypeId,
+      productTypeId,
+      categoriesCreated: created.length,
+      productTypesCreated: prodTypesCreated.length,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
