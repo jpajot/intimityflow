@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Copy, Loader2, Trash2 } from "lucide-react";
+import { Copy, Loader2, Plus } from "lucide-react";
+import LinkProductVariationsModal from "./LinkProductVariationsModal";
 import DataTable from "@/components/DataTable";
 import _ from "lodash";
 
@@ -15,6 +16,7 @@ export default function ProjectPlannedVariations({
 }) {
   const [groupBy, setGroupBy] = useState("category");
   const [copying, setCopying] = useState(null);
+  const [showLinkModal, setShowLinkModal] = useState(false);
 
   const linkedColorIds = assignments.map((a) => a.product_color_id);
   const linkedVariations = variations.filter((v) =>
@@ -72,6 +74,19 @@ export default function ProjectPlannedVariations({
     } catch (error) {
       console.error("Edit failed:", error);
     }
+  };
+
+  const handleLinkVariations = async (colorIds) => {
+    await Promise.all(
+      colorIds.map((colorId) =>
+        base44.entities.ProjectAssignment.create({
+          project_id: projectId,
+          product_color_id: colorId,
+          product_id: colorVariants.find((cv) => cv.id === colorId)?.product_id,
+        })
+      )
+    );
+    onRefresh?.();
   };
 
   const columns = [
@@ -239,7 +254,8 @@ export default function ProjectPlannedVariations({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground">Group by</span>
         <select
           value={groupBy}
@@ -251,6 +267,16 @@ export default function ProjectPlannedVariations({
           <option value="sub_category">Sub-Category</option>
           <option value="product">Product</option>
         </select>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLinkModal(true)}
+          className="gap-2 h-8 text-xs"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add Variations
+        </Button>
       </div>
       <div className="space-y-3">
         {groups.map((group) => {
@@ -280,11 +306,18 @@ export default function ProjectPlannedVariations({
                   { getValue: (v) => v.name },
                 ]}
                 onEdit={handleEditField}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+                />
+                  </div>
+                );
+                })}
+                </div>
+
+                <LinkProductVariationsModal
+                open={showLinkModal}
+                onClose={() => setShowLinkModal(false)}
+                onLink={handleLinkVariations}
+                alreadyLinkedIds={linkedColorIds}
+                />
+                </div>
+                );
+                }
