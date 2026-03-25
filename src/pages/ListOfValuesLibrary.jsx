@@ -21,6 +21,7 @@ export default function ListOfValuesLibrary() {
 
   const [typeForm, setTypeForm] = useState({ code: "", name: "", depends_on_id: "" });
   const [valueForm, setValueForm] = useState({ type_of_lov_id: "", name: "", depends_on_value_id: "" });
+  const [typeSearch, setTypeSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -144,8 +145,21 @@ export default function ListOfValuesLibrary() {
               <Plus className="w-3.5 h-3.5" /> Add
             </Button>
           </div>
+          <Input
+            placeholder="Search types..."
+            value={typeSearch}
+            onChange={(e) => setTypeSearch(e.target.value)}
+            className="h-8 text-xs"
+          />
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {typesOfLOV.map((t) => (
+            {typesOfLOV
+              .filter(
+                (t) =>
+                  !typeSearch ||
+                  t.code.toLowerCase().includes(typeSearch.toLowerCase()) ||
+                  (t.name || "").toLowerCase().includes(typeSearch.toLowerCase())
+              )
+              .map((t) => (
               <div
                 key={t.id}
                 onClick={() => setSelectedType(t.id)}
