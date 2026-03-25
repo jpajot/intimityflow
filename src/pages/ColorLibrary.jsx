@@ -23,8 +23,9 @@ export default function ColorLibrary() {
   const [editingComm, setEditingComm] = useState(null);
 
   const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
-  const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", color_name: "" });
+  const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
+  const [linkedTechSearch, setLinkedTechSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { loadData(); }, []);
@@ -83,20 +84,29 @@ export default function ColorLibrary() {
 
   const openNewComm = () => {
     setEditingComm(null);
-    setCommForm({ sub_type: "Solid", code: "", main_technical_color_id: "", color_name: "" });
+    setCommForm({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
     setTechSearch("");
+    setLinkedTechSearch("");
     setShowCommDialog(true);
   };
   const openEditComm = (c) => {
     setEditingComm(c);
-    setCommForm({ sub_type: c.sub_type, code: c.code, main_technical_color_id: c.main_technical_color_id || "", color_name: c.color_name });
+    setCommForm({ sub_type: c.sub_type, code: c.code, main_technical_color_id: c.main_technical_color_id || "", linked_technical_color_ids: c.linked_technical_color_ids || (c.main_technical_color_id ? [c.main_technical_color_id] : []), color_name: c.color_name });
     setTechSearch("");
+    setLinkedTechSearch("");
     setShowCommDialog(true);
   };
 
   const handleTechSelectForComm = (techId) => {
     const tech = technicalColors.find((t) => t.id === techId);
-    setCommForm((f) => ({ ...f, main_technical_color_id: techId, color_name: f.color_name || tech?.name || "" }));
+    setCommForm((f) => ({
+      ...f,
+      main_technical_color_id: techId,
+      color_name: f.color_name || tech?.name || "",
+      linked_technical_color_ids: f.linked_technical_color_ids.includes(techId)
+        ? f.linked_technical_color_ids
+        : [...f.linked_technical_color_ids, techId],
+    }));
   };
 
   const saveComm = async (e) => {
@@ -291,7 +301,51 @@ export default function ColorLibrary() {
               <Label className="text-xs">Color Name</Label>
               <Input value={commForm.color_name} onChange={(e) => setCommForm((f) => ({ ...f, color_name: e.target.value }))} placeholder="Inherits from technical color, editable" required />
             </div>
-            <DialogFooter>
+
+            {/* Linked Technical Colors multiselect */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Linked Technical Colors</Label>
+              {commForm.linked_technical_color_ids.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {commForm.linked_technical_color_ids.map((id) => {
+                    const t = technicalColors.find((c) => c.id === id);
+                    if (!t) return null;
+                    const isMain = id === commForm.main_technical_color_id;
+                    return (
+                      <div key={id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted border border-border text-xs">
+                        <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                        <span>{tcxDisplayName(t)}</span>
+                        {isMain && <span className="text-[10px] text-primary font-medium">(main)</span>}
+                        <button type="button" onClick={() => setCommForm((f) => ({ ...f, linked_technical_color_ids: f.linked_technical_color_ids.filter((i) => i !== id) }))} className="text-muted-foreground hover:text-destructive ml-0.5">×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="p-2 border-b border-border">
+                  <Input value={linkedTechSearch} onChange={(e) => setLinkedTechSearch(e.target.value)} placeholder="Search to add more technical colors…" className="h-8 text-xs" />
+                </div>
+                <div className="max-h-36 overflow-y-auto">
+                  {technicalColors
+                    .filter((t) => !commForm.linked_technical_color_ids.includes(t.id))
+                    .filter((t) => !linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))
+                    .map((t) => (
+                      <button key={t.id} type="button"
+                        onClick={() => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, t.id] })); setLinkedTechSearch(""); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                        <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
+                        <span className="text-xs">{tcxDisplayName(t)}</span>
+                      </button>
+                    ))}
+                  {technicalColors.filter((t) => !commForm.linked_technical_color_ids.includes(t.id) && (!linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-3">No more colors to add</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
               <Button type="button" variant="outline" onClick={() => setShowCommDialog(false)}>Cancel</Button>
               <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save</Button>
             </DialogFooter>
