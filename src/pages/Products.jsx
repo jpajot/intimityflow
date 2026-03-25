@@ -105,30 +105,28 @@ export default function Products() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <Link to="/products/new" className="flex">
-          <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors">New Style</button>
-        </Link>
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
-            className="pl-10"
-          />
-        </div>
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
+         <div className="relative flex-1">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+           <Input
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             placeholder="Search products..."
+             className="pl-10"
+           />
+         </div>
+         <Select value={filterCategory} onValueChange={setFilterCategory}>
+           <SelectTrigger className="w-full sm:w-[180px]">
+             <SelectValue placeholder="All categories" />
+           </SelectTrigger>
+           <SelectContent>
+             <SelectItem value="all">All Categories</SelectItem>
+             {categories.map((c) => (
+               <SelectItem key={c} value={c}>{c}</SelectItem>
+             ))}
+           </SelectContent>
+         </Select>
+         <div className="flex items-center gap-2">
+           <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button
             type="button"
             onClick={() => setView("gallery")}
