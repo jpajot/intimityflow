@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu } from "lucide-react";
+import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
@@ -27,9 +27,17 @@ const CONFIG_ITEMS = [
 
 export default function Layout() {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem("sidebarOpen");
+    return saved ? JSON.parse(saved) : true;
+  });
   const [studioOpen, setStudioOpen] = useState(false);
   const [sizeStudioOpen, setSizeStudioOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("sidebarOpen", JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
 
   const isStudioActive = COLOR_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
   const isSizeStudioActive = SIZE_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
@@ -198,9 +206,22 @@ export default function Layout() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden sm:block w-64 border-r border-border bg-muted/30 overflow-y-auto">
-          <div className="p-4">
-            <NavContent />
+        <aside className={`hidden sm:flex flex-col border-r border-border bg-muted/30 transition-all duration-300 overflow-hidden ${
+          sidebarOpen ? "w-64" : "w-0"
+        }`}>
+          <div className="flex-1 overflow-y-auto p-4">
+            {sidebarOpen && <NavContent />}
+          </div>
+          <div className="border-t border-border p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="w-full"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </Button>
           </div>
         </aside>
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
