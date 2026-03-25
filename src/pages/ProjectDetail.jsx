@@ -281,22 +281,7 @@ export default function ProjectDetail() {
 
       {/* OLD VIEWS (Hidden but kept for now) */}
       <Tabs defaultValue="list" className="hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <TabsList>
-            <TabsTrigger value="list" className="gap-2"><LayoutList className="w-4 h-4" />List</TabsTrigger>
-            <TabsTrigger value="matrix" className="gap-2"><Grid3X3 className="w-4 h-4" />Matrix</TabsTrigger>
-          </TabsList>
 
-          <TabsContent value="list" className="mt-0 !p-0">
-            <GroupBySelector label="Group by" value={groupBy} onChange={setGroupBy} />
-          </TabsContent>
-          <TabsContent value="matrix" className="mt-0 !p-0">
-            <div className="flex gap-4">
-              <GroupBySelector label="Rows" value={rowCriteria} onChange={setRowCriteria} excludeValues={[colCriteria]} />
-              <GroupBySelector label="Columns" value={colCriteria} onChange={setColCriteria} excludeValues={[rowCriteria]} />
-            </div>
-          </TabsContent>
-        </div>
 
         {/* LIST VIEW */}
         <TabsContent value="list" className="mt-4 space-y-3">
