@@ -102,7 +102,6 @@ export default function Products() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Styles</h1>
-        <p className="text-muted-foreground mt-1">Manage your underwear collection</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
