@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Pencil, Loader2, X, Upload, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import DataTable from "./DataTable";
 
 const PACK_CODES = ["E1", "E2", "96", "97"];
 
@@ -25,49 +26,73 @@ function getGroupKey(v, groupBy, colorVariants) {
   return "all";
 }
 
-function VariationsTable({ rows, colorVariants, styleSizes, sizes, onEdit }) {
-  return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b border-border bg-muted/40">
-          <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Seq.</th>
-          <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Colorway</th>
-          <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Name</th>
-          <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Pack Code</th>
-          <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Sizes</th>
-          <th className="px-4 py-2.5"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((v) => {
-          const cw = colorVariants.find((cv) => cv.id === v.product_color_id);
-          const vSizes = (v.size_ids || []).map((sid) => {
-            const sz = sizes.find((s) => s.id === sid);
-            return sz?.size_code;
-          }).filter(Boolean);
-          return (
-            <tr key={v.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{v.sequence || "—"}</td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  {cw?.color_hex && <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: cw.color_hex }} />}
-                  <span className="text-xs">{cw?.color_name || "—"}</span>
-                </div>
-              </td>
-              <td className="px-4 py-3 font-medium">{v.name}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{v.pack_code || "—"}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{vSizes.join(", ") || "—"}</td>
-              <td className="px-4 py-3 text-right">
-                <button type="button" onClick={() => onEdit(v)} className="p-1.5 rounded-md hover:bg-muted transition-colors">
-                  <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
+function VariationsTable({ rows, colorVariants, sizes, onEdit }) {
+  const columns = [
+    {
+      id: "sequence",
+      label: "Seq.",
+      width: 80,
+      sortKey: (v) => v.sequence || "",
+      render: (v) => <span className="font-mono text-xs text-muted-foreground">{v.sequence || "—"}</span>,
+    },
+    {
+      id: "colorway",
+      label: "Colorway",
+      width: 150,
+      sortKey: (v) => {
+        const cw = colorVariants.find((cv) => cv.id === v.product_color_id);
+        return cw?.color_name || "";
+      },
+      render: (v) => {
+        const cw = colorVariants.find((cv) => cv.id === v.product_color_id);
+        return (
+          <div className="flex items-center gap-2">
+            {cw?.color_hex && <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: cw.color_hex }} />}
+            <span className="text-xs">{cw?.color_name || "—"}</span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "name",
+      label: "Name",
+      width: 120,
+      sortKey: (v) => v.name || "",
+      render: (v) => <span className="font-medium">{v.name}</span>,
+    },
+    {
+      id: "pack_code",
+      label: "Pack Code",
+      width: 100,
+      sortKey: (v) => v.pack_code || "",
+      render: (v) => <span className="text-xs text-muted-foreground">{v.pack_code || "—"}</span>,
+    },
+    {
+      id: "sizes",
+      label: "Sizes",
+      width: 150,
+      sortKey: (v) => (v.size_ids || []).length,
+      render: (v) => {
+        const vSizes = (v.size_ids || []).map((sid) => {
+          const sz = sizes.find((s) => s.id === sid);
+          return sz?.size_code;
+        }).filter(Boolean);
+        return <span className="text-xs text-muted-foreground">{vSizes.join(", ") || "—"}</span>;
+      },
+    },
+    {
+      id: "actions",
+      label: "",
+      width: 50,
+      render: (v) => (
+        <button type="button" onClick={() => onEdit(v)} className="p-1.5 rounded-md hover:bg-muted transition-colors ml-auto block">
+          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
+      ),
+    },
+  ];
+
+  return <DataTable columns={columns} rows={rows} fixedColumns={["sequence", "colorway"]} />;
 }
 
 const emptyForm = () => ({
