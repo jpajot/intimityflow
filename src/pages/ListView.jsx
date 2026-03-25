@@ -71,7 +71,7 @@ export default function ListView() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight">List View</h1>
-          <p className="text-muted-foreground mt-1">Products grouped by criteria</p>
+          <p className="text-muted-foreground mt-1">Styles grouped by criteria</p>
         </div>
         <GroupBySelector label="Group by" value={groupBy} onChange={setGroupBy} />
       </div>
@@ -81,8 +81,8 @@ export default function ListView() {
           <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
             <LayoutList className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold">No products to display</h3>
-          <p className="text-sm text-muted-foreground mt-1">Create some products first</p>
+          <h3 className="font-semibold">No styles to display</h3>
+          <p className="text-sm text-muted-foreground mt-1">Create some styles first</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -105,7 +105,7 @@ export default function ListView() {
                   )}
                   <span className="font-semibold flex-1">{key || "Unassigned"}</span>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{groupProducts.length} product{groupProducts.length !== 1 ? "s" : ""}</span>
+                    <span>{groupProducts.length} style{groupProducts.length !== 1 ? "s" : ""}</span>
                     <span>·</span>
                     <span>{colCount} color{colCount !== 1 ? "s" : ""}</span>
                     <span>·</span>
