@@ -94,7 +94,8 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((cv) => (
+                {filtered.map((cv) => {
+                  return (
                     <tr key={cv.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <div className="w-10 h-10 rounded-md overflow-hidden border border-border">
@@ -135,7 +136,8 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
                         </button>
                       </td>
                     </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
