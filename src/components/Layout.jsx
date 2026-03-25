@@ -194,7 +194,7 @@ export default function Layout() {
           </Button>
           <Link to="/" className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Package className="w-4 h-4 text-primary-foreground" />
+              <Shirt className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-display text-xl font-semibold tracking-tight">Linea</span>
           </Link>
