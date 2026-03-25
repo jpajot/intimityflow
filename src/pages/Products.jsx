@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Package, Loader2, LayoutGrid, List, Plus } from "lucide-react";
@@ -104,54 +105,54 @@ export default function Products() {
         <p className="text-muted-foreground mt-1">Manage your underwear collection</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-         <div className="relative flex-1">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-           <Input
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-             placeholder="Search products..."
-             className="pl-10"
-           />
-         </div>
-         <Select value={filterCategory} onValueChange={setFilterCategory}>
-           <SelectTrigger className="w-full sm:w-[180px]">
-             <SelectValue placeholder="All categories" />
-           </SelectTrigger>
-           <SelectContent>
-             <SelectItem value="all">All Categories</SelectItem>
-             {categories.map((c) => (
-               <SelectItem key={c} value={c}>{c}</SelectItem>
-             ))}
-           </SelectContent>
-         </Select>
-         <div className="flex items-center gap-2">
-           <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setView("gallery")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Gallery view"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("table")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Table view"
-          >
-            <List className="w-4 h-4" />
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products..."
+            className="pl-10"
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setView("gallery")}
+              className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+              title="Gallery view"
+            >
+              <LayoutGrid className="w-4 h-4" />
             </button>
-            </div>
-            <Link to="/products/new" asChild>
-            <button className="gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors flex items-center">
+            <button
+              type="button"
+              onClick={() => setView("table")}
+              className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+              title="Table view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <Link to="/products/new" asChild>
+            <Button className="gap-2">
               <Plus className="w-4 h-4" />
               New Style
-            </button>
-            </Link>
-            </div>
-            </div>
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-20">
