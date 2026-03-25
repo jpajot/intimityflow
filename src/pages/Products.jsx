@@ -22,7 +22,7 @@ export default function Products() {
   const loadData = async () => {
     setLoading(true);
     const [prods, colors] = await Promise.all([
-      base44.entities.Product.list("-created_date", 200),
+      base44.entities.Product.filter({ type: "Product" }),
       base44.entities.ProductColor.list("-created_date", 1000),
     ]);
     setProducts(prods);
