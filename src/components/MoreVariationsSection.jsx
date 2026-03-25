@@ -293,7 +293,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
       ) : (
         <div className="space-y-3">
           {groups.map((group) => {
-            const isExpanded = expandedGroups.has(group.key);
+            const isExpanded = !group.label || expandedGroups.has(group.key);
             const itemCount = group.subGroups ? group.subGroups.reduce((sum, sub) => sum + sub.items.length, 0) : group.items.length;
             return (
               <div key={group.key} className="rounded-xl border border-border overflow-hidden">
