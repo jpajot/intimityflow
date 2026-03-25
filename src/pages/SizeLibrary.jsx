@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Loader2, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 const LANG_FIELDS = [
   { key: "en_description", label: "EN" },
@@ -21,8 +22,6 @@ export default function SizeLibrary() {
   const [sizes, setSizes] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [expandedId, setExpandedId] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -92,13 +91,100 @@ export default function SizeLibrary() {
     }
   };
 
-  const filtered = sizes.filter((s) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return s.size_code?.toLowerCase().includes(q) || s.name?.toLowerCase().includes(q);
-  });
-
   if (loading) return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  const columns = [
+    {
+      id: "size_code",
+      label: "Code",
+      width: 100,
+      sortKey: (s) => s.size_code || "",
+      render: (s) => <span className="font-mono text-xs font-semibold">{s.size_code}</span>,
+    },
+    {
+      id: "name",
+      label: "Name",
+      width: 120,
+      sortKey: (s) => s.name || "",
+      render: (s) => <span className="font-medium">{s.name}</span>,
+    },
+    {
+      id: "en_description",
+      label: "EN",
+      width: 120,
+      sortKey: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return lang?.en_description || "";
+      },
+      render: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return <span className="text-xs text-muted-foreground">{lang?.en_description || "—"}</span>;
+      },
+    },
+    {
+      id: "fr_description",
+      label: "FR",
+      width: 120,
+      sortKey: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return lang?.fr_description || "";
+      },
+      render: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return <span className="text-xs text-muted-foreground">{lang?.fr_description || "—"}</span>;
+      },
+    },
+    {
+      id: "de_description",
+      label: "DE",
+      width: 120,
+      sortKey: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return lang?.de_description || "";
+      },
+      render: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return <span className="text-xs text-muted-foreground">{lang?.de_description || "—"}</span>;
+      },
+    },
+    {
+      id: "sp_description",
+      label: "SP",
+      width: 120,
+      sortKey: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return lang?.sp_description || "";
+      },
+      render: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return <span className="text-xs text-muted-foreground">{lang?.sp_description || "—"}</span>;
+      },
+    },
+    {
+      id: "it_description",
+      label: "IT",
+      width: 120,
+      sortKey: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return lang?.it_description || "";
+      },
+      render: (s) => {
+        const lang = languages.find((l) => l.size_id === s.id);
+        return <span className="text-xs text-muted-foreground">{lang?.it_description || "—"}</span>;
+      },
+    },
+    {
+      id: "actions",
+      label: "",
+      width: 80,
+      render: (s) => (
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(s)}><Trash2 className="w-3.5 h-3.5" /></Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -110,54 +196,15 @@ export default function SizeLibrary() {
         <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" />Add Size</Button>
       </div>
 
-      <div className="relative w-full sm:w-72">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filter sizes…" className="pl-10" />
-      </div>
-
-      <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40">
-              <th className="w-8 px-4 py-3"></th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Code</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">EN</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">FR</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">DE</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">SP</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden xl:table-cell">IT</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr><td colSpan={9} className="text-center py-12 text-sm text-muted-foreground">No sizes found.</td></tr>
-            )}
-            {filtered.map((s) => {
-              const lang = languages.find((l) => l.size_id === s.id) || {};
-              return (
-                <tr key={s.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3"></td>
-                  <td className="px-4 py-3 font-mono text-xs font-semibold">{s.size_code}</td>
-                  <td className="px-4 py-3 font-medium">{s.name}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">{lang.en_description || "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">{lang.fr_description || "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">{lang.de_description || "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground hidden xl:table-cell">{lang.sp_description || "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground hidden xl:table-cell">{lang.it_description || "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex gap-1 justify-end">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(s)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={sizes}
+        fixedColumns={["size_code"]}
+        filterFields={[
+          { getValue: (s) => s.size_code },
+          { getValue: (s) => s.name },
+        ]}
+      />
 
       <Dialog open={showDialog} onOpenChange={(o) => !o && setShowDialog(false)}>
         <DialogContent className="max-w-lg">
