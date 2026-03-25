@@ -34,9 +34,11 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = id === "new";
+  const queryParams = new URLSearchParams(window.location.search);
+  const typeFromQuery = queryParams.get("type") || "Product";
 
   const [product, setProduct] = useState({
-    name: "", category: "", sub_category: "", customer_need: "",
+    type: typeFromQuery, name: "", category: "", sub_category: "", customer_need: "",
     description: "", images: [], size_grid_id: "",
   });
   const [sizeGrids, setSizeGrids] = useState([]);
@@ -73,7 +75,7 @@ export default function ProductDetail() {
     e.preventDefault();
     setSaving(true);
     if (isNew) {
-      const created = await base44.entities.Product.create(product);
+      const created = await base44.entities.Product.create({ ...product, type: product.type || typeFromQuery });
       navigate(`/products/${created.id}`, { replace: true });
     } else {
       const { id: _, created_date, updated_date, created_by, ...data } = product;
@@ -162,7 +164,7 @@ export default function ProductDetail() {
         </Button>
         <div className="flex-1">
           <h1 className="font-display text-2xl font-semibold tracking-tight">
-            {isNew ? "New Style" : product.name}
+            {isNew ? `New ${product.type}` : product.name}
           </h1>
         </div>
         {!isNew && (
