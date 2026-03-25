@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, Loader2, LayoutGrid, List } from "lucide-react";
+import { Search, Package, Loader2, LayoutGrid, List, Plus } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
 export default function Products() {
