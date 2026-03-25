@@ -395,7 +395,7 @@ export default function ProductDetail() {
             />
           </TabsContent>
           <TabsContent value="sizes" className="mt-4">
-            <StyleSizesSection product={product} />
+           <StyleSizesSection product={product} onSizesChange={setHasStyleSizes} />
           </TabsContent>
           <TabsContent value="more" className="mt-4">
             <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
