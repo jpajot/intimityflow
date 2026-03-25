@@ -4,6 +4,7 @@ import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler } 
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
+  { path: "/materials", label: "Materials", icon: Package },
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/list-view", label: "List View", icon: LayoutList },
 ];
