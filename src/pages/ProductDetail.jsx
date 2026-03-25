@@ -195,7 +195,7 @@ export default function ProductDetail() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <h3 className="font-semibold text-sm">Style Details</h3>
+          <h3 className="font-semibold text-sm">Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">Name</Label>
@@ -260,7 +260,7 @@ export default function ProductDetail() {
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-sm">Style Images</h3>
+              <h3 className="font-semibold text-sm">Images</h3>
               <p className="text-xs text-muted-foreground mt-0.5">First image will be used as the main cover image</p>
             </div>
             <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
