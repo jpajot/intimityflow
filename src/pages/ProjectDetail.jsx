@@ -215,7 +215,7 @@ export default function ProjectDetail() {
       </div>
 
       {/* Color Palettes section */}
-      {palettes.length > 0 && (
+      {activeSection === "palettes" && palettes.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Color Palettes</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -439,6 +439,10 @@ export default function ProjectDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+        </div>
+      </div>
+    </div>
 
       {/* Link existing modal */}
       <LinkProductColorModal
