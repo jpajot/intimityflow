@@ -309,21 +309,64 @@ export default function ColorLibrary() {
 
         {/* COMMERCIAL COLORS */}
         <TabsContent value="commercial" className="mt-4 space-y-4">
-          <Button onClick={openNewComm} className="gap-2"><Plus className="w-4 h-4" />Add Commercial Color</Button>
-          <DataTable
-            columns={commColumns}
-            rows={commercialColors}
-            fixedColumns={["color"]}
-            filterFields={[
-              { getValue: (c) => c.code },
-              { getValue: (c) => c.color_name },
-              { getValue: (c) => c.sub_type },
-              { getValue: (c) => {
+          <div className="flex items-center justify-between">
+            <Button onClick={openNewComm} className="gap-2"><Plus className="w-4 h-4" />Add Commercial Color</Button>
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setCommView("gallery")}
+                className={`px-2.5 py-1.5 transition-colors ${commView === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                title="Gallery view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCommView("table")}
+                className={`px-2.5 py-1.5 transition-colors ${commView === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                title="Table view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          {commView === "gallery" ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {commercialColors.map((c) => {
                 const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
-                return tech?.code || tech?.name || "";
-              }},
-            ]}
-          />
+                const hex = tech ? colorToHex(tech) : "#ccc";
+                return (
+                  <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
+                    <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: hex }} />
+                    <div className="p-3 space-y-1">
+                      <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
+                      <Badge variant="secondary" className="text-[10px] w-full text-center justify-center">{c.sub_type}</Badge>
+                    </div>
+                    <div className="px-3 pb-3 flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6 flex-1" onClick={() => openEditComm(c)}><Pencil className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 flex-1 text-destructive" onClick={() => deleteComm(c)}><Trash2 className="w-3 h-3" /></Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <DataTable
+              columns={commColumns}
+              rows={commercialColors}
+              fixedColumns={["color"]}
+              filterFields={[
+                { getValue: (c) => c.code },
+                { getValue: (c) => c.color_name },
+                { getValue: (c) => c.sub_type },
+                { getValue: (c) => {
+                  const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
+                  return tech?.code || tech?.name || "";
+                }},
+              ]}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
