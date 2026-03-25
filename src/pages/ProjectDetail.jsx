@@ -13,6 +13,7 @@ import GroupBySelector from "../components/GroupBySelector";
 import MatrixCell from "../components/MatrixCell";
 import LinkProductColorModal from "../components/LinkProductColorModal";
 import ColorwayForm from "../components/ColorwayForm";
+import ProjectVariationsTable from "../components/ProjectVariationsTable";
 import _ from "lodash";
 
 const MARKET_FLAGS = { Spain: "🇪🇸", France: "🇫🇷", Germany: "🇩🇪", Italy: "🇮🇹" };
@@ -25,6 +26,7 @@ export default function ProjectDetail() {
   const [assignments, setAssignments] = useState([]);
   const [products, setProducts] = useState([]);
   const [colorVariants, setColorVariants] = useState([]);
+  const [variations, setVariations] = useState([]);
   const [palettes, setPalettes] = useState([]);
   const [paletteColors, setPaletteColors] = useState([]);
   const [techColors, setTechColors] = useState([]);
@@ -56,11 +58,12 @@ export default function ProjectDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [proj, asns, prods, colors, pals, palCols, tc, cc] = await Promise.all([
+    const [proj, asns, prods, colors, vars, pals, palCols, tc, cc] = await Promise.all([
       base44.entities.Project.filter({ id }),
       base44.entities.ProjectAssignment.filter({ project_id: id }),
       base44.entities.Product.list("-created_date", 500),
       base44.entities.ProductColor.list("-created_date", 2000),
+      base44.entities.ProductColorAndMore.list("-created_date", 5000),
       base44.entities.ColorPalette.filter({ project_id: id }),
       base44.entities.ColorPaletteColor.list("-created_date", 2000),
       base44.entities.TechnicalColor.list("code", 2000),
@@ -70,6 +73,7 @@ export default function ProjectDetail() {
     setAssignments(asns);
     setProducts(prods);
     setColorVariants(colors);
+    setVariations(vars);
     setPalettes(pals);
     setPaletteColors(palCols);
     setTechColors(tc);
@@ -258,7 +262,49 @@ export default function ProjectDetail() {
       )}
 
       {/* Views */}
-      <Tabs defaultValue="list">
+      <Tabs defaultValue="styles">
+        <TabsList>
+          <TabsTrigger value="styles">Styles</TabsTrigger>
+          <TabsTrigger value="materials">Materials</TabsTrigger>
+        </TabsList>
+
+        {/* STYLES TAB */}
+        <TabsContent value="styles" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setShowNewProductDialog(true)} className="gap-2" size="sm">
+              <Plus className="w-4 h-4" /> New Style + Color
+            </Button>
+          </div>
+          <ProjectVariationsTable
+            projectId={id}
+            productType="Product"
+            variations={variations}
+            products={products}
+            colorVariants={colorVariants}
+            onRefresh={loadData}
+          />
+        </TabsContent>
+
+        {/* MATERIALS TAB */}
+        <TabsContent value="materials" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setShowNewProductDialog(true)} className="gap-2" size="sm">
+              <Plus className="w-4 h-4" /> New Material + Color
+            </Button>
+          </div>
+          <ProjectVariationsTable
+            projectId={id}
+            productType="Material"
+            variations={variations}
+            products={products}
+            colorVariants={colorVariants}
+            onRefresh={loadData}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* OLD VIEWS (Hidden but kept for now) */}
+      <Tabs defaultValue="list" className="hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <TabsList>
             <TabsTrigger value="list" className="gap-2"><LayoutList className="w-4 h-4" />List</TabsTrigger>
@@ -347,8 +393,8 @@ export default function ProjectDetail() {
           )}
         </TabsContent>
 
-        {/* MATRIX VIEW */}
-        <TabsContent value="matrix" className="mt-4">
+        {/* MATRIX VIEW (Hidden) */}
+        <TabsContent value="matrix" className="mt-4 hidden">
           {linkedProducts.length === 0 ? (
             <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
               <p className="text-sm text-muted-foreground">No styles yet to display in matrix.</p>
@@ -392,7 +438,7 @@ export default function ProjectDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Link existing modal */}
+      {/* Link existing modal */
       <LinkProductColorModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
