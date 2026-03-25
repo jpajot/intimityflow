@@ -93,6 +93,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [groupBy1, setGroupBy1] = useState("none");
   const [groupBy2, setGroupBy2] = useState("none");
   const [filterText, setFilterText] = useState("");
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
   useEffect(() => {
     loadAll();
@@ -216,6 +217,22 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
   const groups = buildGroups();
 
+  const toggleGroup = (key) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const toggleAllGroups = () => {
+    if (expandedGroups.size === groups.length) {
+      setExpandedGroups(new Set());
+    } else {
+      setExpandedGroups(new Set(groups.map((g) => g.key)));
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
 
   return (
@@ -241,6 +258,17 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
               </SelectContent>
             </Select>
           </div>
+          {groupBy1 !== "none" && groups.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={toggleAllGroups}
+              className="h-8 text-xs gap-1"
+            >
+              {expandedGroups.size === groups.length ? "Collapse All" : "Expand All"}
+            </Button>
+          )}
           {groupBy1 !== "none" && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">then by</span>
@@ -264,27 +292,40 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map((group) => (
-            <div key={group.key} className="rounded-xl border border-border overflow-hidden">
-              {group.label && (
-                <div className="px-4 py-2 bg-muted/60 border-b border-border">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.label}</span>
-                </div>
-              )}
-              {group.subGroups ? (
-                group.subGroups.map((sub) => (
-                  <div key={sub.key}>
-                    <div className="px-4 py-1.5 bg-muted/30 border-b border-border">
-                      <span className="text-xs font-medium text-muted-foreground">{sub.label}</span>
-                    </div>
-                    <VariationsTable rows={sub.items} colorVariants={colorVariants} styleSizes={styleSizes} sizes={sizes} onEdit={openEdit} />
-                  </div>
-                ))
-              ) : (
-                <VariationsTable rows={group.items} colorVariants={colorVariants} styleSizes={styleSizes} sizes={sizes} onEdit={openEdit} />
-              )}
-            </div>
-          ))}
+          {groups.map((group) => {
+            const isExpanded = expandedGroups.has(group.key);
+            const itemCount = group.subGroups ? group.subGroups.reduce((sum, sub) => sum + sub.items.length, 0) : group.items.length;
+            return (
+              <div key={group.key} className="rounded-xl border border-border overflow-hidden">
+                {group.label ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.key)}
+                    className="w-full px-4 py-2 bg-muted/60 border-b border-border hover:bg-muted/80 transition-colors flex items-center justify-between"
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.label} ({itemCount})</span>
+                    <span className="text-sm font-semibold text-muted-foreground">{isExpanded ? "−" : "+"}</span>
+                  </button>
+                ) : null}
+                {isExpanded && (
+                  <>
+                    {group.subGroups ? (
+                      group.subGroups.map((sub) => (
+                        <div key={sub.key}>
+                          <div className="px-4 py-1.5 bg-muted/30 border-b border-border">
+                            <span className="text-xs font-medium text-muted-foreground">{sub.label} ({sub.items.length})</span>
+                          </div>
+                          <VariationsTable rows={sub.items} colorVariants={colorVariants} styleSizes={styleSizes} sizes={sizes} onEdit={openEdit} />
+                        </div>
+                      ))
+                    ) : (
+                      <VariationsTable rows={group.items} colorVariants={colorVariants} styleSizes={styleSizes} sizes={sizes} onEdit={openEdit} />
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
