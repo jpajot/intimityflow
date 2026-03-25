@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import MoreVariationsSection from "../components/MoreVariationsSection";
 import ColorwaySection from "../components/ColorwaySection";
 import ColorwayEditModal from "../components/ColorwayEditModal";
 import ColorLibraryPickerModal from "../components/ColorLibraryPickerModal";
@@ -43,6 +45,7 @@ export default function ProductDetail() {
   const [editingColor, setEditingColor] = useState(null);
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
+  const [activeTab, setActiveTab] = useState("colorways");
 
   useEffect(() => {
     if (!isNew) loadProduct();
@@ -263,27 +266,29 @@ export default function ProductDetail() {
       </form>
 
       {!isNew && (
-        <ColorwaySection
-          colorVariants={colorVariants}
-          onEdit={(cv) => setEditingColor(cv)}
-          onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
-          onAddFromLibrary={() => setShowLibraryPicker(true)}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="colorways">Colorways</TabsTrigger>
+            <TabsTrigger value="more">More Variations</TabsTrigger>
+          </TabsList>
+          <TabsContent value="colorways" className="mt-4">
+            <ColorwaySection
+              colorVariants={colorVariants}
+              onEdit={(cv) => setEditingColor(cv)}
+              onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
+              onAddFromLibrary={() => setShowLibraryPicker(true)}
+            />
+          </TabsContent>
+          <TabsContent value="more" className="mt-4">
+            <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
+          </TabsContent>
+        </Tabs>
       )}
 
       <ColorwayEditModal
         open={showNewColorModal}
         onClose={() => setShowNewColorModal(false)}
         onSave={handleAddColor}
-        existingColorways={colorVariants}
-      />
-
-      <ColorwayEditModal
-        variant={editingColor}
-        open={!!editingColor}
-        onClose={() => setEditingColor(null)}
-        onSave={handleUpdateColor}
-        onDelete={handleDeleteColor}
         existingColorways={colorVariants}
       />
 
