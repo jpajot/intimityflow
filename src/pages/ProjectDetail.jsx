@@ -263,49 +263,7 @@ export default function ProjectDetail() {
         </div>
       )}
 
-      {/* Products/Materials Views */}
-      {activeSection === "products" && (
-      <Tabs defaultValue="styles">
-        <TabsList>
-          <TabsTrigger value="styles">Styles</TabsTrigger>
-          <TabsTrigger value="materials">Materials</TabsTrigger>
-        </TabsList>
 
-        {/* STYLES TAB */}
-        <TabsContent value="styles" className="mt-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setShowNewProductDialog(true)} className="gap-2" size="sm">
-              <Plus className="w-4 h-4" /> New Style + Color
-            </Button>
-          </div>
-          <ProjectVariationsTable
-            projectId={id}
-            productType="Product"
-            variations={variations}
-            products={products}
-            colorVariants={colorVariants}
-            onRefresh={loadData}
-          />
-        </TabsContent>
-
-        {/* MATERIALS TAB */}
-        <TabsContent value="materials" className="mt-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setShowNewProductDialog(true)} className="gap-2" size="sm">
-              <Plus className="w-4 h-4" /> New Material + Color
-            </Button>
-          </div>
-          <ProjectVariationsTable
-            projectId={id}
-            productType="Material"
-            variations={variations}
-            products={products}
-            colorVariants={colorVariants}
-            onRefresh={loadData}
-          />
-        </TabsContent>
-      </Tabs>
-      )}
 
       {/* OLD VIEWS (Hidden but kept for now) */}
       <Tabs defaultValue="list" className="hidden">
