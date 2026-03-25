@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "/", label: "Styles", icon: Package },
-  { path: "/materials", label: "Materials", icon: Package },
+  { path: "/", label: "Styles", icon: Shirt },
+  { path: "/materials", label: "Materials", icon: SwatchBook },
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/list-view", label: "List View", icon: LayoutList },
 ];
