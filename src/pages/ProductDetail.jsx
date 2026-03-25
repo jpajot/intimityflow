@@ -82,9 +82,29 @@ export default function ProductDetail() {
     setSaving(false);
   };
 
+  const createDefaultVariation = async (productColorId, colorName) => {
+    const [allVars, styleSizes] = await Promise.all([
+      base44.entities.ProductColorAndMore.list("-created_date", 500),
+      base44.entities.StyleSize.filter({ product_id: product.id }),
+    ]);
+    const colorIds = colorVariants.map((cv) => cv.id);
+    const existing = allVars.filter((v) => [...colorIds, productColorId].includes(v.product_color_id));
+    const nums = existing.map((v) => parseInt(v.sequence || "0", 10)).filter((n) => !isNaN(n));
+    const max = nums.length > 0 ? Math.max(...nums) : 0;
+    const sequence = String(max + 1).padStart(4, "0");
+    const activeSizeIds = styleSizes.filter((ss) => ss.active !== false).map((ss) => ss.size_id);
+    await base44.entities.ProductColorAndMore.create({
+      product_color_id: productColorId,
+      name: colorName || "Default",
+      sequence,
+      size_ids: activeSizeIds,
+    });
+  };
+
   const handleAddColor = async (data) => {
     const created = await base44.entities.ProductColor.create({ ...data, product_id: product.id });
     setColorVariants((prev) => [...prev, created]);
+    await createDefaultVariation(created.id, created.color_name);
   };
 
   const handleAddFromLibrary = async (colorways) => {
@@ -92,6 +112,9 @@ export default function ProductDetail() {
       colorways.map(data => base44.entities.ProductColor.create({ ...data, product_id: product.id }))
     );
     setColorVariants(prev => [...prev, ...created]);
+    for (const cv of created) {
+      await createDefaultVariation(cv.id, cv.color_name);
+    }
   };
 
   const handleUpdateColor = async (data) => {
