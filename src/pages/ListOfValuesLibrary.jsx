@@ -44,11 +44,9 @@ export default function ListOfValuesLibrary() {
 
   const selectedTypeObj = typesOfLOV.find((t) => t.id === selectedType);
   const parentTypeId = selectedTypeObj?.depends_on_id;
+  const parentType = parentTypeId ? typesOfLOV.find((t) => t.id === parentTypeId) : null;
   const parentTypeValues = parentTypeId
-    ? listOfValues.filter((v) => {
-        const parentType = typesOfLOV.find((t) => t.id === parentTypeId);
-        return v.type_of_lov_id === parentType?.id;
-      })
+    ? listOfValues.filter((v) => v.type_of_lov_id === parentType?.id)
     : [];
 
   const openNewType = () => {
@@ -218,7 +216,7 @@ export default function ListOfValuesLibrary() {
                     <div className="font-medium text-sm">{v.name}</div>
                     {parentValue && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        ↳ {parentTypeObj?.name || parentTypeObj?.code}: {parentValue.name}
+                        ↳ {parentType?.name || parentType?.code}: {parentValue.name}
                       </div>
                     )}
                     <div className="flex gap-1 mt-2">
