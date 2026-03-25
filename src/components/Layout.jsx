@@ -218,7 +218,7 @@ export default function Layout() {
             </Button>
           </div>
         </aside>
-        <main className="flex-1 overflow-y-auto p-0">
+        <main className="flex-1 overflow-y-auto p-2">
           <Outlet />
         </main>
       </div>
