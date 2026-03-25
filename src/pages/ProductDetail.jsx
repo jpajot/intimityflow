@@ -194,7 +194,7 @@ export default function ProductDetail() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(product.type === "Material" ? "/materials" : "/")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="flex-1">
