@@ -250,23 +250,61 @@ export default function ColorLibrary() {
 
         {/* TECHNICAL COLORS */}
         <TabsContent value="technical" className="mt-4 space-y-4">
-          <div className="flex gap-2">
-            <Button onClick={openNewTech} className="gap-2"><Plus className="w-4 h-4" />Add Technical Color</Button>
-            <Button variant="outline" onClick={handleSeedPantone} disabled={seeding} className="gap-2">
-              {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Seed Pantone TCX
-            </Button>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button onClick={openNewTech} className="gap-2"><Plus className="w-4 h-4" />Add Technical Color</Button>
+              <Button variant="outline" onClick={handleSeedPantone} disabled={seeding} className="gap-2">
+                {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                Seed Pantone TCX
+              </Button>
+            </div>
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setTechView("gallery")}
+                className={`px-2.5 py-1.5 transition-colors ${techView === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                title="Gallery view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTechView("table")}
+                className={`px-2.5 py-1.5 transition-colors ${techView === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                title="Table view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <DataTable
-            columns={techColumns}
-            rows={technicalColors}
-            fixedColumns={["color"]}
-            filterFields={[
-              { getValue: (c) => c.code },
-              { getValue: (c) => c.name },
-              { getValue: (c) => colorToHex(c) },
-            ]}
-          />
+          {techView === "gallery" ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {technicalColors.map((c) => (
+                <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
+                  <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: colorToHex(c) }} />
+                  <div className="p-3 space-y-1">
+                    <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                    <p className="text-xs text-muted-foreground truncate">{c.name}</p>
+                  </div>
+                  <div className="px-3 pb-3 flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-1" onClick={() => openEditTech(c)}><Pencil className="w-3 h-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-1 text-destructive" onClick={() => deleteTech(c)}><Trash2 className="w-3 h-3" /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              columns={techColumns}
+              rows={technicalColors}
+              fixedColumns={["color"]}
+              filterFields={[
+                { getValue: (c) => c.code },
+                { getValue: (c) => c.name },
+                { getValue: (c) => colorToHex(c) },
+              ]}
+            />
+          )}
         </TabsContent>
 
         {/* COMMERCIAL COLORS */}
