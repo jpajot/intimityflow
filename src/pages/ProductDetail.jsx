@@ -207,13 +207,27 @@ export default function ProductDetail() {
     const newGridId = value === "none" ? "" : value;
     updateField("size_grid_id", newGridId);
     
-    // If changing grid and there are existing sizes, clear them
+    // Clear old sizes if changing grid
     if (hasStyleSizes && originalSizeGridId !== newGridId && newGridId) {
       const oldSizes = await base44.entities.StyleSize.filter({ product_id: product.id });
       if (oldSizes.length > 0) {
         await Promise.all(oldSizes.map((ss) => base44.entities.StyleSize.delete(ss.id)));
-        setHasStyleSizes(false);
       }
+    }
+    
+    // Create sizes from new grid immediately
+    if (newGridId) {
+      const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: newGridId });
+      if (gridSizes.length > 0) {
+        await Promise.all(
+          gridSizes.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: gs.active !== false }))
+        );
+        setHasStyleSizes(true);
+        setOriginalSizeGridId(newGridId);
+      }
+    } else {
+      setHasStyleSizes(false);
+      setOriginalSizeGridId("");
     }
   };
 
