@@ -13,7 +13,6 @@ export default function ProjectPlannedVariations({
   assignments,
   onRefresh,
 }) {
-  const [groupBy, setGroupBy] = useState("category");
   const [copying, setCopying] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
 
@@ -22,27 +21,7 @@ export default function ProjectPlannedVariations({
     linkedColorIds.includes(v.product_color_id)
   );
 
-  const getGroupKey = (v) => {
-    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
-    const product = products.find((p) => p.id === color?.product_id);
-    if (groupBy === "category") return product?.category || "Uncategorized";
-    if (groupBy === "sub_category")
-      return product?.sub_category || "Uncategorized";
-    if (groupBy === "product") return product?.name || "Uncategorized";
-    return "All";
-  };
 
-  const buildGroups = () => {
-    if (groupBy === "none")
-      return [{ key: "all", label: null, items: linkedVariations }];
-    const map = {};
-    for (const v of linkedVariations) {
-      const k = getGroupKey(v);
-      if (!map[k]) map[k] = { key: k, label: k, items: [] };
-      map[k].items.push(v);
-    }
-    return Object.values(map);
-  };
 
   const handleCopyVariation = async (variation) => {
     setCopying(variation.id);
@@ -232,20 +211,7 @@ export default function ProjectPlannedVariations({
 
   const renderContent = () => (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">Group by</span>
-          <select
-            value={groupBy}
-            onChange={(e) => setGroupBy(e.target.value)}
-            className="h-8 px-2 text-xs rounded-md border border-input bg-transparent cursor-pointer"
-          >
-            <option value="none">None</option>
-            <option value="category">Category</option>
-            <option value="sub_category">Sub-Category</option>
-            <option value="product">Product</option>
-          </select>
-        </div>
+      <div className="flex items-center justify-end">
         <Button
           variant="outline"
           size="sm"
@@ -264,38 +230,24 @@ export default function ProjectPlannedVariations({
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {buildGroups().map((group) => {
-            const itemCount = group.items.length;
-            return (
-              <div key={group.key} className="bg-card rounded-xl border border-border overflow-hidden">
-                {group.label && (
-                  <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {group.label} ({itemCount})
-                    </span>
-                  </div>
-                )}
-                <DataTable
-                  columns={columns}
-                  rows={group.items}
-                  fixedColumns={["style"]}
-                  filterFields={[
-                    {
-                      getValue: (v) => {
-                        const color = colorVariants.find(
-                          (cv) => cv.id === v.product_color_id
-                        );
-                        return color?.color_name || "";
-                      },
-                    },
-                    { getValue: (v) => v.name },
-                  ]}
-                  onEdit={handleEditField}
-                />
-              </div>
-            );
-          })}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <DataTable
+            columns={columns}
+            rows={linkedVariations}
+            fixedColumns={["style"]}
+            filterFields={[
+              {
+                getValue: (v) => {
+                  const color = colorVariants.find(
+                    (cv) => cv.id === v.product_color_id
+                  );
+                  return color?.color_name || "";
+                },
+              },
+              { getValue: (v) => v.name },
+            ]}
+            onEdit={handleEditField}
+          />
         </div>
       )}
 
