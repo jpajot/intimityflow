@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import MoreVariationsSection from "../components/MoreVariationsSection";
+import StyleSizesSection from "../components/StyleSizesSection";
 import ColorwaySection from "../components/ColorwaySection";
 import ColorwayEditModal from "../components/ColorwayEditModal";
 import ColorLibraryPickerModal from "../components/ColorLibraryPickerModal";
@@ -281,6 +282,7 @@ export default function ProductDetail() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="colorways">Colorways</TabsTrigger>
+            <TabsTrigger value="sizes">Sizes</TabsTrigger>
             <TabsTrigger value="more">More Variations</TabsTrigger>
           </TabsList>
           <TabsContent value="colorways" className="mt-4">
@@ -290,6 +292,9 @@ export default function ProductDetail() {
               onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
               onAddFromLibrary={() => setShowLibraryPicker(true)}
             />
+          </TabsContent>
+          <TabsContent value="sizes" className="mt-4">
+            <StyleSizesSection product={product} />
           </TabsContent>
           <TabsContent value="more" className="mt-4">
             <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
