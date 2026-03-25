@@ -124,19 +124,6 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          {(cv.markets || []).map((m) => (
-                            <span key={m} title={m}>{MARKET_FLAGS[m]}</span>
-                          ))}
-                          {(cv.markets || []).length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-xs">{cv.volume_spain ? cv.volume_spain.toLocaleString() : "—"}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-xs">{cv.volume_france ? cv.volume_france.toLocaleString() : "—"}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-xs">{cv.volume_germany ? cv.volume_germany.toLocaleString() : "—"}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-xs">{cv.volume_italy ? cv.volume_italy.toLocaleString() : "—"}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-xs font-semibold">{total > 0 ? total.toLocaleString() : "—"}</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
