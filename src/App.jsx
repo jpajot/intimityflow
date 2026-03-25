@@ -12,6 +12,8 @@ import ListView from './pages/ListView';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import ColorLibrary from './pages/ColorLibrary';
+import ColorPalettes from './pages/ColorPalettes';
+import ColorPaletteDetail from './pages/ColorPaletteDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +48,8 @@ const AuthenticatedApp = () => {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/list-view" element={<ListView />} />
         <Route path="/color-library" element={<ColorLibrary />} />
+        <Route path="/color-palettes" element={<ColorPalettes />} />
+        <Route path="/color-palettes/:id" element={<ColorPaletteDetail />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
