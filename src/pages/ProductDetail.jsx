@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2 } from "lucide-react";
-import ColorVariantForm from "../components/ColorVariantForm";
-import ColorVariantCard from "../components/ColorVariantCard";
+import ColorwayForm from "../components/ColorwayForm";
+import ColorwayCard from "../components/ColorwayCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -220,18 +220,18 @@ export default function ProductDetail() {
       {!isNew && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Color Variants ({colorVariants.length})</h3>
+            <h3 className="font-semibold">Colorways ({colorVariants.length})</h3>
             <Button variant="outline" size="sm" onClick={() => { setShowNewColor(true); setEditingColor(null); }} className="gap-2">
-              <Plus className="w-4 h-4" /> Add Color
+              <Plus className="w-4 h-4" /> Add Colorway
             </Button>
           </div>
 
           {showNewColor && (
-            <ColorVariantForm onSave={handleAddColor} onCancel={() => setShowNewColor(false)} />
+            <ColorwayForm onSave={handleAddColor} onCancel={() => setShowNewColor(false)} />
           )}
 
           {editingColor && (
-            <ColorVariantForm
+            <ColorwayForm
               variant={editingColor}
               onSave={handleUpdateColor}
               onCancel={() => setEditingColor(null)}
@@ -242,7 +242,7 @@ export default function ProductDetail() {
           {colorVariants.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {colorVariants.map((cv) => (
-                <ColorVariantCard
+                <ColorwayCard
                   key={cv.id}
                   variant={cv}
                   onClick={() => { setEditingColor(cv); setShowNewColor(false); }}

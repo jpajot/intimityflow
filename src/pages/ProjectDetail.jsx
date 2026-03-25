@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import GroupBySelector from "../components/GroupBySelector";
 import MatrixCell from "../components/MatrixCell";
 import LinkProductColorModal from "../components/LinkProductColorModal";
-import ColorVariantForm from "../components/ColorVariantForm";
+import ColorwayForm from "../components/ColorwayForm";
 import _ from "lodash";
 
 const MARKET_FLAGS = { Spain: "🇪🇸", France: "🇫🇷", Germany: "🇩🇪", Italy: "🇮🇹" };
@@ -188,12 +188,12 @@ export default function ProjectDetail() {
       {pendingProductId && (
         <div className="bg-accent/50 border border-primary/20 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Add a color variant to your new style</p>
+            <p className="text-sm font-semibold">Add a colorway to your new style</p>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPendingProductId(null)}>
               <X className="w-4 h-4" />
             </Button>
           </div>
-          <ColorVariantForm
+          <ColorwayForm
             onSave={handleAddColorToProject}
             onCancel={() => setPendingProductId(null)}
           />

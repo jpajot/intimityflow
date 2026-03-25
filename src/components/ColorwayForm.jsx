@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, Loader2, Link2, Unlink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 

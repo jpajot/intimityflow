@@ -1,10 +1,11 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Package, LayoutList, Plus, FolderOpen } from "lucide-react";
+import { Package, LayoutList, Plus, FolderOpen, Palette } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/list-view", label: "List View", icon: LayoutList },
+  { path: "/color-library", label: "Color Library", icon: Palette },
 ];
 
 export default function Layout() {
