@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Search } from "lucide-react";
-import ColorwayCard from "../components/ColorwayCard";
+import ColorwaySection from "../components/ColorwaySection";
 import ColorwayEditModal from "../components/ColorwayEditModal";
 import ColorLibraryPickerModal from "../components/ColorLibraryPickerModal";
 import {
@@ -264,35 +264,12 @@ export default function ProductDetail() {
       </form>
 
       {!isNew && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Colorways ({colorVariants.length})</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowLibraryPicker(true)} className="gap-2">
-                <Search className="w-4 h-4" /> From Color Library
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => { setEditingColor(null); setShowNewColorModal(true); }} className="gap-2">
-                <Plus className="w-4 h-4" /> Add Colorway
-              </Button>
-            </div>
-          </div>
-
-          {colorVariants.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {colorVariants.map((cv) => (
-                <ColorwayCard
-                  key={cv.id}
-                  variant={cv}
-                  onEdit={() => setEditingColor(cv)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No color variants yet. Add one to get started.</p>
-            </div>
-          )}
-        </div>
+        <ColorwaySection
+          colorVariants={colorVariants}
+          onEdit={(cv) => setEditingColor(cv)}
+          onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
+          onAddFromLibrary={() => setShowLibraryPicker(true)}
+        />
       )}
 
       <ColorwayEditModal
