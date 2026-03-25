@@ -40,6 +40,7 @@ export default function ProductDetail() {
     description: "", images: [], size_grid_id: "",
   });
   const [sizeGrids, setSizeGrids] = useState([]);
+  const [hasStyleSizes, setHasStyleSizes] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
@@ -51,7 +52,10 @@ export default function ProductDetail() {
 
   useEffect(() => {
     base44.entities.SizeGrid.list("name", 200).then(setSizeGrids);
-    if (!isNew) loadProduct();
+    if (!isNew) {
+      loadProduct();
+      base44.entities.StyleSize.filter({ product_id: id }).then((ss) => setHasStyleSizes(ss.length > 0));
+    }
   }, [id]);
 
   const loadProduct = async () => {
@@ -193,13 +197,22 @@ export default function ProductDetail() {
           </div>
           <div className="space-y-2">
             <Label className="text-xs">Size Grid</Label>
-            <Select value={product.size_grid_id || "none"} onValueChange={(v) => updateField("size_grid_id", v === "none" ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Select size grid…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.code} – {sg.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {hasStyleSizes ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/50 text-sm text-muted-foreground">
+                {sizeGrids.find(sg => sg.id === product.size_grid_id) 
+                  ? `${sizeGrids.find(sg => sg.id === product.size_grid_id).code} – ${sizeGrids.find(sg => sg.id === product.size_grid_id).name}`
+                  : "None"}
+                <span className="ml-auto text-xs">(remove all sizes first to change)</span>
+              </div>
+            ) : (
+              <Select value={product.size_grid_id || "none"} onValueChange={(v) => updateField("size_grid_id", v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Select size grid…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.code} – {sg.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-2">
             <Label className="text-xs">Description</Label>
