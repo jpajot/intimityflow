@@ -58,9 +58,14 @@ export default function ProductDetail() {
     base44.entities.SizeGrid.list("name", 200).then(setSizeGrids);
     if (!isNew) {
       loadProduct();
-      base44.entities.StyleSize.filter({ product_id: id }).then((ss) => setHasStyleSizes(ss.length > 0));
+      checkStyleSizes();
     }
   }, [id]);
+
+  const checkStyleSizes = async () => {
+    const ss = await base44.entities.StyleSize.filter({ product_id: id });
+    setHasStyleSizes(ss.length > 0);
+  };
 
   const loadLovData = async () => {
     const [types, values] = await Promise.all([
@@ -198,6 +203,20 @@ export default function ProductDetail() {
     setColorVariants((prev) => prev.map((cv) => (cv.id === cid ? { ...cv, ...data } : cv)));
   };
 
+  const handleSizeGridChange = async (value) => {
+    const newGridId = value === "none" ? "" : value;
+    updateField("size_grid_id", newGridId);
+    
+    // If changing grid and there are existing sizes, clear them
+    if (hasStyleSizes && originalSizeGridId !== newGridId && newGridId) {
+      const oldSizes = await base44.entities.StyleSize.filter({ product_id: product.id });
+      if (oldSizes.length > 0) {
+        await Promise.all(oldSizes.map((ss) => base44.entities.StyleSize.delete(ss.id)));
+        setHasStyleSizes(false);
+      }
+    }
+  };
+
   const handleDeleteColor = async () => {
     // Check if this colorway is referenced in any More Variation
     const allVars = await base44.entities.ProductColorAndMore.list("-created_date", 500);
@@ -313,7 +332,7 @@ export default function ProductDetail() {
                 <span className="ml-auto text-xs">(remove all sizes first to change)</span>
               </div>
             ) : (
-              <Select value={product.size_grid_id || "none"} onValueChange={(v) => updateField("size_grid_id", v === "none" ? "" : v)}>
+              <Select value={product.size_grid_id || "none"} onValueChange={handleSizeGridChange}>
                 <SelectTrigger><SelectValue placeholder="Select size grid…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
@@ -415,7 +434,7 @@ export default function ProductDetail() {
             />
           </TabsContent>
           <TabsContent value="sizes" className="mt-4">
-           <StyleSizesSection product={product} onSizesChange={setHasStyleSizes} />
+           <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
           </TabsContent>
           <TabsContent value="more" className="mt-4">
             <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
