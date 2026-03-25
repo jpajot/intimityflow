@@ -52,7 +52,6 @@ export default function ProductDetail() {
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [activeTab, setActiveTab] = useState("colorways");
-  const [gridChangeLoading, setGridChangeLoading] = useState(false);
 
   useEffect(() => {
     loadLovData();
@@ -209,32 +208,6 @@ export default function ProductDetail() {
     updateField("size_grid_id", newGridId);
   };
 
-  const handleApplyGridChange = async () => {
-    setGridChangeLoading(true);
-    const newGridId = product.size_grid_id;
-    
-    // Clear old sizes
-    if (hasStyleSizes) {
-      const oldSizes = await base44.entities.StyleSize.filter({ product_id: product.id });
-      if (oldSizes.length > 0) {
-        await Promise.all(oldSizes.map((ss) => base44.entities.StyleSize.delete(ss.id)));
-      }
-    }
-    
-    // Create sizes from new grid
-    if (newGridId) {
-      const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: newGridId });
-      if (gridSizes.length > 0) {
-        await Promise.all(
-          gridSizes.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: gs.active !== false }))
-        );
-        setHasStyleSizes(true);
-        setOriginalSizeGridId(newGridId);
-      }
-    }
-    setGridChangeLoading(false);
-  };
-
   const handleDeleteColor = async () => {
     // Check if this colorway is referenced in any More Variation
     const allVars = await base44.entities.ProductColorAndMore.list("-created_date", 500);
@@ -277,10 +250,10 @@ export default function ProductDetail() {
             {isNew ? `New ${product.type}` : product.name}
           </h1>
         </div>
-        {!isNew && product.size_grid_id !== originalSizeGridId && (
-          <Button onClick={handleApplyGridChange} disabled={gridChangeLoading} className="gap-2">
-            {gridChangeLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            Change Grid
+        {!isNew && (
+          <Button type="submit" form="product-form" disabled={saving} className="gap-2">
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save Changes
           </Button>
         )}
         {!isNew && (
@@ -308,7 +281,7 @@ export default function ProductDetail() {
         )}
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form onSubmit={handleSave} id="product-form" className="space-y-6">
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
           <h3 className="font-semibold text-sm">Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -436,10 +409,12 @@ export default function ProductDetail() {
           )}
         </div>
 
-        <Button type="submit" disabled={saving} className="gap-2">
-          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isNew ? "Create" : "Save Changes"}
-        </Button>
+        {isNew && (
+          <Button type="submit" disabled={saving} className="gap-2">
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Create
+          </Button>
+        )}
       </form>
 
       {!isNew && (
