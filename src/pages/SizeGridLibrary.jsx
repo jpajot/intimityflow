@@ -16,8 +16,8 @@ export default function SizeGridLibrary() {
   const [sizes, setSizes] = useState([]);
   const [gridSizes, setGridSizes] = useState([]); // SizeGridSize records
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [expandedId, setExpandedId] = useState(null);
+  const [gridSearch, setGridSearch] = useState("");
+  const [selectedGrid, setSelectedGrid] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -104,10 +104,13 @@ export default function SizeGridLibrary() {
   };
 
   const filtered = grids.filter((g) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
+    if (!gridSearch) return true;
+    const q = gridSearch.toLowerCase();
     return g.code?.toLowerCase().includes(q) || g.name?.toLowerCase().includes(q);
   });
+
+  const selectedGridObj = grids.find((g) => g.id === selectedGrid);
+  const linkedSizes = selectedGrid ? getLinkedSizes(selectedGrid) : [];
 
   // sizes available to pick for a given grid (not already linked)
   const availableSizes = (gridId) => {
@@ -119,127 +122,136 @@ export default function SizeGridLibrary() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Size Grid Library</h1>
-          <p className="text-muted-foreground mt-1">{grids.length} size grids</p>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" />New Size Grid</Button>
+      <div>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">Size Grid Library</h1>
+        <p className="text-muted-foreground mt-1">Manage your size grids and linked sizes</p>
       </div>
 
-      <div className="relative w-full sm:w-72">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filter grids…" className="pl-10" />
-      </div>
-
-      <div className="space-y-2">
-        {filtered.length === 0 && (
-          <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-            <p className="text-sm text-muted-foreground">No size grids found.</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Grids Panel */}
+        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Grids ({grids.length})</h3>
+            <Button onClick={openNew} size="sm" className="gap-1.5 h-8">
+              <Plus className="w-3.5 h-3.5" /> Add
+            </Button>
           </div>
-        )}
-        {filtered.map((g) => {
-          const isExpanded = expandedId === g.id;
-          const linked = getLinkedSizes(g.id);
-          const sampleSize = sizes.find((s) => s.id === g.sample_size_id);
-          const baseSize = sizes.find((s) => s.id === g.base_size_id);
-
-          return (
-            <div key={g.id} className="bg-card rounded-xl border border-border overflow-hidden">
-              {/* Header row */}
-              <div className="flex items-center gap-3 px-5 py-4">
-                <button onClick={() => setExpandedId(isExpanded ? null : g.id)} className="text-muted-foreground">
-                  {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                </button>
-                <div className="flex items-center gap-2 mr-2">
-                  <Checkbox checked={g.active !== false} onCheckedChange={() => handleToggleGridActive(g)} id={`active-${g.id}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs text-muted-foreground">{g.code}</span>
-                    <span className="font-semibold">{g.name}</span>
-                    {g.active === false && <Badge variant="secondary" className="text-[10px]">Inactive</Badge>}
-                  </div>
-                  <div className="flex gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
-                    {sampleSize && <span>Sample: <span className="font-medium">{sampleSize.size_code}</span></span>}
-                    {baseSize && <span>Base: <span className="font-medium">{baseSize.size_code}</span></span>}
-                    <span>{linked.length} size{linked.length !== 1 ? "s" : ""}</span>
-                  </div>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(g)}><Pencil className="w-3.5 h-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteGrid(g)}><Trash2 className="w-3.5 h-3.5" /></Button>
+          <Input
+            placeholder="Search grids…"
+            value={gridSearch}
+            onChange={(e) => setGridSearch(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {filtered.map((g) => (
+              <div
+                key={g.id}
+                onClick={() => setSelectedGrid(g.id)}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                  selectedGrid === g.id
+                    ? "bg-primary/10 border-primary text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <div className="font-medium text-sm">{g.name || g.code}</div>
+                <div className="text-xs text-muted-foreground mt-1">{g.code}</div>
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(g);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteGrid(g);
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {/* Expanded: linked sizes */}
-              {isExpanded && (
-                <div className="border-t border-border">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border bg-muted/30">
-                          <th className="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground">Active</th>
-                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Code</th>
-                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Name</th>
-                          <th className="px-4 py-2.5"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {linked.map((gs) => {
-                          const size = sizes.find((s) => s.id === gs.size_id);
-                          return (
-                            <tr key={gs.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                              <td className="px-5 py-3">
-                                <Checkbox checked={gs.active !== false} onCheckedChange={() => handleToggleSizeActive(gs)} />
-                              </td>
-                              <td className="px-4 py-3 font-mono text-xs">{size?.size_code || "—"}</td>
-                              <td className="px-4 py-3">{size?.name || "—"}</td>
-                              <td className="px-4 py-3 text-right">
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSize(gs)}><X className="w-3 h-3" /></Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {linked.length === 0 && (
-                          <tr><td colSpan={4} className="text-center py-4 text-xs text-muted-foreground">No sizes linked yet.</td></tr>
-                        )}
-                      </tbody>
-                    </table>
+        {/* Details Panel */}
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
+          <h3 className="font-semibold">
+            Sizes {selectedGridObj ? `— ${selectedGridObj.name || selectedGridObj.code}` : ""}
+          </h3>
+          {!selectedGrid ? (
+            <p className="text-sm text-muted-foreground">Select a grid to manage its sizes</p>
+          ) : (
+            <div className="space-y-4">
+              {linkedSizes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No sizes linked yet</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Code</th>
+                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Name</th>
+                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Active</th>
+                        <th className="px-4 py-2.5"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {linkedSizes.map((gs) => {
+                        const size = sizes.find((s) => s.id === gs.size_id);
+                        return (
+                          <tr key={gs.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-3 font-mono text-xs">{size?.size_code || "—"}</td>
+                            <td className="px-4 py-3">{size?.name || "—"}</td>
+                            <td className="px-4 py-3">
+                              <Checkbox checked={gs.active !== false} onCheckedChange={() => handleToggleSizeActive(gs)} />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSize(gs)}><X className="w-3 h-3" /></Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => { setShowSizePicker(selectedGrid); setSizeSearch(""); }}>
+                <Plus className="w-3.5 h-3.5" /> Add Size
+              </Button>
+              {showSizePicker === selectedGrid && (
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="p-2 border-b border-border">
+                    <Input value={sizeSearch} onChange={(e) => setSizeSearch(e.target.value)} placeholder="Search sizes…" className="h-8 text-xs" autoFocus />
                   </div>
-
-                  {/* Add size picker */}
-                  <div className="px-5 py-3 border-t border-border">
-                    {showSizePicker === g.id ? (
-                      <div className="border border-border rounded-lg overflow-hidden w-72">
-                        <div className="p-2 border-b border-border">
-                          <Input value={sizeSearch} onChange={(e) => setSizeSearch(e.target.value)} placeholder="Search sizes…" className="h-8 text-xs" autoFocus />
-                        </div>
-                        <div className="max-h-44 overflow-y-auto">
-                          {availableSizes(g.id).map((s) => (
-                            <button key={s.id} type="button" onClick={() => handleAddSize(g.id, s.id)}
-                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left text-sm transition-colors">
-                              <span className="font-mono text-xs text-muted-foreground w-10 shrink-0">{s.size_code}</span>
-                              <span>{s.name}</span>
-                            </button>
-                          ))}
-                          {availableSizes(g.id).length === 0 && <p className="text-xs text-muted-foreground text-center py-3">No more sizes available.</p>}
-                        </div>
-                        <div className="p-2 border-t border-border">
-                          <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setShowSizePicker(null); setSizeSearch(""); }}>Cancel</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => { setShowSizePicker(g.id); setSizeSearch(""); }}>
-                        <Plus className="w-3.5 h-3.5" /> Add Size
-                      </Button>
-                    )}
+                  <div className="max-h-44 overflow-y-auto">
+                    {availableSizes(selectedGrid).map((s) => (
+                      <button key={s.id} type="button" onClick={() => handleAddSize(selectedGrid, s.id)}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left text-sm transition-colors">
+                        <span className="font-mono text-xs text-muted-foreground w-10 shrink-0">{s.size_code}</span>
+                        <span>{s.name}</span>
+                      </button>
+                    ))}
+                    {availableSizes(selectedGrid).length === 0 && <p className="text-xs text-muted-foreground text-center py-3">No more sizes available.</p>}
+                  </div>
+                  <div className="p-2 border-t border-border">
+                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setShowSizePicker(null); setSizeSearch(""); }}>Cancel</Button>
                   </div>
                 </div>
               )}
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
 
       {/* Grid Edit/Create Dialog */}
