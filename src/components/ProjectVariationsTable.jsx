@@ -218,9 +218,6 @@ export default function ProjectVariationsTable({ projectId, productType, variati
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <GroupBySelector value={groupBy} onChange={setGroupBy} excludeValues={[]} />
-      </div>
       <div className="space-y-3">
         {groups.map((group) => {
           const itemCount = group.items.length;
