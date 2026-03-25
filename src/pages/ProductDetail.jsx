@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, GripVertical } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import ColorwayForm from "../components/ColorwayForm";
 import ColorwayCard from "../components/ColorwayCard";
 import {
