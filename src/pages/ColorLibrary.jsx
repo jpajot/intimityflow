@@ -27,6 +27,8 @@ export default function ColorLibrary() {
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [techView, setTechView] = useState("table");
+  const [commView, setCommView] = useState("table");
 
   useEffect(() => { loadData(); }, []);
 
