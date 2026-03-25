@@ -35,23 +35,23 @@ export default function ProjectVariationsTable({ projectId, productType, variati
   const getGroupKey = (v) => {
     const color = colorVariants.find((cv) => cv.id === v.product_color_id);
     const product = products.find((p) => p.id === color?.product_id);
-    return product?.id || "unknown";
-  };
-
-  const grouped = {};
-  filteredVariations.forEach((v) => {
-    const key = getGroupKey(v);
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(v);
-  });
-
-  const getGroupKey = (v) => {
-    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
-    const product = products.find((p) => p.id === color?.product_id);
     if (groupBy === "category") return product?.category || "Uncategorized";
     if (groupBy === "sub_category") return product?.sub_category || "Uncategorized";
     if (groupBy === "product") return product?.id || "unknown";
     return "All";
+  };
+
+  const handleEditField = async (variationId, fieldName, newValue, entityType, entityId) => {
+    try {
+      if (entityType === "Product") {
+        await base44.entities.Product.update(entityId, { [fieldName]: newValue });
+      } else if (entityType === "ProductColorAndMore") {
+        await base44.entities.ProductColorAndMore.update(variationId, { [fieldName]: newValue });
+      }
+      onRefresh();
+    } catch (error) {
+      console.error("Edit failed:", error);
+    }
   };
 
   const buildGroups = () => {
@@ -96,6 +96,9 @@ export default function ProjectVariationsTable({ projectId, productType, variati
       id: "category",
       label: "Category",
       width: 120,
+      editable: true,
+      entityType: "Product",
+      entityField: "category",
       sortKey: (v) => {
         const color = colorVariants.find((cv) => cv.id === v.product_color_id);
         const product = products.find((p) => p.id === color?.product_id);
@@ -106,11 +109,24 @@ export default function ProjectVariationsTable({ projectId, productType, variati
         const product = products.find((p) => p.id === color?.product_id);
         return <span className="text-sm text-muted-foreground">{product?.category || "—"}</span>;
       },
+      getValue: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return product?.id || "";
+      },
+      getDisplayValue: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return product?.category || "";
+      },
     },
     {
       id: "sub_category",
       label: "Sub-Category",
       width: 120,
+      editable: true,
+      entityType: "Product",
+      entityField: "sub_category",
       sortKey: (v) => {
         const color = colorVariants.find((cv) => cv.id === v.product_color_id);
         const product = products.find((p) => p.id === color?.product_id);
@@ -120,6 +136,16 @@ export default function ProjectVariationsTable({ projectId, productType, variati
         const color = colorVariants.find((cv) => cv.id === v.product_color_id);
         const product = products.find((p) => p.id === color?.product_id);
         return <span className="text-sm text-muted-foreground">{product?.sub_category || "—"}</span>;
+      },
+      getValue: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return product?.id || "";
+      },
+      getDisplayValue: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return product?.sub_category || "";
       },
     },
     {
@@ -153,8 +179,13 @@ export default function ProjectVariationsTable({ projectId, productType, variati
       id: "pack_code",
       label: "Pack Code",
       width: 100,
+      editable: true,
+      entityType: "ProductColorAndMore",
+      entityField: "pack_code",
       sortKey: (v) => v.pack_code || "",
       render: (v) => <span className="text-sm text-muted-foreground">{v.pack_code || "—"}</span>,
+      getValue: (v) => v.id,
+      getDisplayValue: (v) => v.pack_code || "",
     },
     {
       id: "copy",
@@ -214,6 +245,7 @@ export default function ProjectVariationsTable({ projectId, productType, variati
                   },
                   { getValue: (v) => v.name },
                 ]}
+                onEdit={handleEditField}
               />
             </div>
           );
