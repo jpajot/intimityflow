@@ -92,7 +92,8 @@ export default function Projects() {
           <p className="text-sm text-muted-foreground mt-1">Create your first project to get started</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="p-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
             <div key={project.id} className="group relative bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:border-primary/20 transition-all">
               <Link to={`/projects/${project.id}`} className="absolute inset-0 rounded-xl" />
@@ -119,6 +120,7 @@ export default function Projects() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
 
