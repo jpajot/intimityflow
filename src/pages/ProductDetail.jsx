@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Search } from "lucide-react";
 import ColorwayForm from "../components/ColorwayForm";
 import ColorwayCard from "../components/ColorwayCard";
+import ColorLibraryPickerModal from "../components/ColorLibraryPickerModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +43,7 @@ export default function ProductDetail() {
   const [saving, setSaving] = useState(false);
   const [showNewColor, setShowNewColor] = useState(false);
   const [editingColor, setEditingColor] = useState(null);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
 
   useEffect(() => {
     if (!isNew) loadProduct();
@@ -75,6 +77,13 @@ export default function ProductDetail() {
     const created = await base44.entities.ProductColor.create({ ...data, product_id: product.id });
     setColorVariants((prev) => [...prev, created]);
     setShowNewColor(false);
+  };
+
+  const handleAddFromLibrary = async (colorways) => {
+    const created = await Promise.all(
+      colorways.map(data => base44.entities.ProductColor.create({ ...data, product_id: product.id }))
+    );
+    setColorVariants(prev => [...prev, ...created]);
   };
 
   const handleUpdateColor = async (data) => {
@@ -261,9 +270,14 @@ export default function ProductDetail() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Colorways ({colorVariants.length})</h3>
-            <Button variant="outline" size="sm" onClick={() => { setShowNewColor(true); setEditingColor(null); }} className="gap-2">
-              <Plus className="w-4 h-4" /> Add Colorway
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowLibraryPicker(true)} className="gap-2">
+                <Search className="w-4 h-4" /> From Color Library
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setShowNewColor(true); setEditingColor(null); }} className="gap-2">
+                <Plus className="w-4 h-4" /> Add Colorway
+              </Button>
+            </div>
           </div>
 
           {showNewColor && (
@@ -298,6 +312,12 @@ export default function ProductDetail() {
           )}
         </div>
       )}
+
+      <ColorLibraryPickerModal
+        open={showLibraryPicker}
+        onClose={() => setShowLibraryPicker(false)}
+        onAdd={handleAddFromLibrary}
+      />
     </div>
   );
 }
