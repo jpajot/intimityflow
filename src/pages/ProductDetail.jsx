@@ -305,7 +305,7 @@ export default function ProductDetail() {
           </div>
           <div className="space-y-2">
             <Label className="text-xs">Size Grid</Label>
-            {hasStyleSizes ? (
+            {hasStyleSizes && !isNew ? (
               <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/50 text-sm text-muted-foreground">
                 {sizeGrids.find(sg => sg.id === product.size_grid_id) 
                   ? `${sizeGrids.find(sg => sg.id === product.size_grid_id).code} – ${sizeGrids.find(sg => sg.id === product.size_grid_id).name}`
