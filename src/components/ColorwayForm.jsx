@@ -9,7 +9,7 @@ import { tcxDisplayName } from "../lib/pantone-tcx";
 import ColorLibrarySinglePickerModal from "./ColorLibrarySinglePickerModal";
 
 
-export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
+export default function ColorwayForm({ variant, onSave, onCancel, onDelete, existingColorways = [] }) {
   const [form, setForm] = useState({
     color_name: variant?.color_name || "",
     colorway_code: variant?.colorway_code || "",
@@ -53,6 +53,16 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Uniqueness check: if code is non-empty, no other colorway in this style may share it
+    if (form.colorway_code && form.colorway_code.trim() !== "") {
+      const duplicate = existingColorways.find(
+        (cv) => cv.colorway_code === form.colorway_code.trim() && cv.id !== variant?.id
+      );
+      if (duplicate) {
+        alert("There is already a colorway with this code, please give another colorway code");
+        return;
+      }
+    }
     setSaving(true);
     await onSave(form);
     setSaving(false);

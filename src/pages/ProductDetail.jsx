@@ -299,6 +299,7 @@ export default function ProductDetail() {
         open={showNewColorModal}
         onClose={() => setShowNewColorModal(false)}
         onSave={handleAddColor}
+        existingColorways={colorVariants}
       />
 
       <ColorwayEditModal
@@ -307,6 +308,7 @@ export default function ProductDetail() {
         onClose={() => setEditingColor(null)}
         onSave={handleUpdateColor}
         onDelete={handleDeleteColor}
+        existingColorways={colorVariants}
       />
 
       <ColorLibraryPickerModal
