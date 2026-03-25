@@ -288,11 +288,9 @@ export default function ProductDetail() {
               ))}
             </div>
           ) : (
-            !showNewColor && (
-              <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
-                <p className="text-sm text-muted-foreground">No color variants yet. Add one to get started.</p>
-              </div>
-            )
+            <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+              <p className="text-sm text-muted-foreground">No color variants yet. Add one to get started.</p>
+            </div>
           )}
         </div>
       )}
