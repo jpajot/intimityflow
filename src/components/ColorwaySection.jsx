@@ -90,12 +90,6 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Code</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Hex</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Library Link</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Markets</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground">Vol. ES</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground">Vol. FR</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground">Vol. DE</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground">Vol. IT</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground">Total</th>
                   <th className="px-4 py-2.5"></th>
                 </tr>
               </thead>

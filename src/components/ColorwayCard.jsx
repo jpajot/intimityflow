@@ -36,14 +36,7 @@ export default function ColorwayCard({ variant, onEdit }) {
         {variant.colorway_code && (
           <p className="text-xs text-muted-foreground font-mono mt-0.5">{variant.colorway_code}</p>
         )}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {(variant.markets || []).map((m) => (
-            <span key={m} className="text-xs" title={m}>{MARKET_FLAGS[m]}</span>
-          ))}
-          {totalVolume > 0 && (
-            <span className="text-xs text-muted-foreground ml-auto">{totalVolume.toLocaleString()} u.</span>
-          )}
-        </div>
+
       </div>
     </div>
   );
