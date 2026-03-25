@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, Trash2, X } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, X } from "lucide-react";
+import PaletteColorSection from "../components/PaletteColorSection";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
 export default function ColorPaletteDetail() {
@@ -121,6 +122,23 @@ export default function ColorPaletteDetail() {
     return c ? `${c.code} - ${c.color_name}` : "Unknown";
   };
 
+  const getColorCode = (entry) => {
+    if (entry.color_type === "technical") {
+      const t = techColors.find((c) => c.id === entry.color_id);
+      return t?.code || null;
+    }
+    const c = commColors.find((c) => c.id === entry.color_id);
+    return c?.code || null;
+  };
+
+  const getColorSubType = (entry) => {
+    if (entry.color_type === "commercial") {
+      const c = commColors.find((c) => c.id === entry.color_id);
+      return c?.sub_type || null;
+    }
+    return null;
+  };
+
   const filteredTech = techColors.filter((t) => {
     const key = `technical:${t.id}`;
     if (linkedColorIds.has(key)) return false;
@@ -187,77 +205,16 @@ export default function ColorPaletteDetail() {
         </div>
       )}
 
-      {/* Color swatches */}
-      {paletteColors.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            onClick={() => setGroupByType((v) => !v)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-              groupByType ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            Group by Type
-          </button>
-        </div>
-      )}
-      {paletteColors.length === 0 ? (
-        <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">No colors yet. Add technical or commercial colors to this palette.</p>
-        </div>
-      ) : groupByType ? (
-        ["technical", "commercial"].map((type) => {
-          const entries = paletteColors.filter((e) => e.color_type === type);
-          if (entries.length === 0) return null;
-          return (
-            <div key={type} className="space-y-3">
-              <h3 className="text-sm font-semibold capitalize text-muted-foreground">{type === "technical" ? "Technical Colors" : "Commercial Colors"}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {entries.map((entry) => {
-                  const hex = getColorHex(entry);
-                  const label = getColorLabel(entry);
-                  return (
-                    <div key={entry.id} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-                      <div className="h-16 w-full" style={{ backgroundColor: hex }} />
-                      <div className="p-3 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">{label}</p>
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 mt-1">{entry.color_type}</Badge>
-                        </div>
-                        <button onClick={() => handleRemove(entry.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 mt-0.5">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {paletteColors.map((entry) => {
-            const hex = getColorHex(entry);
-            const label = getColorLabel(entry);
-            return (
-              <div key={entry.id} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-                <div className="h-16 w-full" style={{ backgroundColor: hex }} />
-                <div className="p-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium truncate">{label}</p>
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 mt-1">{entry.color_type}</Badge>
-                  </div>
-                  <button onClick={() => handleRemove(entry.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 mt-0.5">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Color section with view toggle + filter */}
+      <PaletteColorSection
+        paletteColors={paletteColors}
+        getColorHex={getColorHex}
+        getColorLabel={getColorLabel}
+        getColorCode={getColorCode}
+        getColorSubType={getColorSubType}
+        onRemove={handleRemove}
+        groupByType={groupByType}
+      />
 
       {/* Add Color Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); setShowNewTech(false); setShowNewComm(false); }}>
