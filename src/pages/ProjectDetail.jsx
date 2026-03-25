@@ -151,9 +151,7 @@ export default function ProjectDetail() {
     navigate("/projects");
   };
 
-  // List view grouped
-  const grouped = _.groupBy(linkedProducts, groupBy);
-  const sortedKeys = Object.keys(grouped).sort();
+
 
   // Matrix view
   const rowGroups = _.groupBy(linkedProducts, rowCriteria);
