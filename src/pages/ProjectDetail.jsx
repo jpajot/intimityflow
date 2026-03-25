@@ -11,6 +11,7 @@ import { ArrowLeft, Plus, Link2, Loader2, Trash2, LayoutList, Grid3X3, X, Extern
 import ProjectSidebar from "../components/ProjectSidebar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import GroupBySelector from "../components/GroupBySelector";
+import ProjectPlannedVariations from "../components/ProjectPlannedVariations";
 import MatrixCell from "../components/MatrixCell";
 import LinkProductColorModal from "../components/LinkProductColorModal";
 import ColorwayForm from "../components/ColorwayForm";
@@ -45,7 +46,7 @@ export default function ProjectDetail() {
   // For creating a color within a newly picked product
   const [pendingProductId, setPendingProductId] = useState(null);
 
-  const [groupBy, setGroupBy] = useState("category");
+
   const [rowCriteria, setRowCriteria] = useState("category");
   const [colCriteria, setColCriteria] = useState("customer_need");
   const [activeSection, setActiveSection] = useState("products");
@@ -216,8 +217,23 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Color Palettes section */}
-      {activeSection === "palettes" && palettes.length > 0 && (
+      {/* Planned Products section */}
+       {activeSection === "products" && (
+         <div className="space-y-4">
+           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Planned Variations</h2>
+           <ProjectPlannedVariations
+             projectId={id}
+             variations={variations}
+             products={products}
+             colorVariants={colorVariants}
+             assignments={assignments}
+             onRefresh={loadData}
+           />
+         </div>
+       )}
+
+       {/* Color Palettes section */}
+       {activeSection === "palettes" && palettes.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Color Palettes</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
