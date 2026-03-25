@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, ArrowUp, ArrowDown, Settings2, Search } from "lucide-react";
 
-export default function DataTable({ columns, rows, fixedColumns = [], groupOptions = [], getGroupKey = null, filterFields = [] }) {
+export default function DataTable({ columns, rows, fixedColumns = [], groupOptions = [], getGroupKey = null, filterFields = [], onEdit = null }) {
   const [sortBy, setSortBy] = useState(null);
   const [sortDir, setSortDir] = useState("asc");
   const [visibleCols, setVisibleCols] = useState(new Set(columns.map((c) => c.id)));
@@ -20,6 +20,8 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
   const [groupBy2, setGroupBy2] = useState("none");
   const [filterText, setFilterText] = useState("");
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [editingCell, setEditingCell] = useState(null);
+  const [editValue, setEditValue] = useState("");
 
   const handleSort = (colId) => {
     if (sortBy === colId) {
@@ -211,12 +213,12 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
                           <div className="px-4 py-1.5 bg-muted/30 border-b border-border">
                             <span className="text-xs font-medium text-muted-foreground">{sub.label} ({sub.items.length})</span>
                           </div>
-                          <TableContent columns={visibleColumns} fixedCols={fixedCols} scrollableCols={scrollableCols} rows={sub.items} handleSort={handleSort} sortBy={sortBy} sortDir={sortDir} />
-                        </div>
-                      ))
-                    ) : (
-                      <TableContent columns={visibleColumns} fixedCols={fixedCols} scrollableCols={scrollableCols} rows={group.items} handleSort={handleSort} sortBy={sortBy} sortDir={sortDir} />
-                    )}
+                          <TableContent columns={visibleColumns} fixedCols={fixedCols} scrollableCols={scrollableCols} rows={sub.items} handleSort={handleSort} sortBy={sortBy} sortDir={sortDir} onEdit={onEdit} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} />
+                          </div>
+                          ))
+                          ) : (
+                          <TableContent columns={visibleColumns} fixedCols={fixedCols} scrollableCols={scrollableCols} rows={group.items} handleSort={handleSort} sortBy={sortBy} sortDir={sortDir} onEdit={onEdit} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} />
+                          )}
                   </>
                 )}
               </div>
@@ -253,22 +255,10 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
                 {sortedRows.map((row) => (
                   <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     {fixedCols.map((col) => (
-                      <td
-                        key={col.id}
-                        className="px-4 py-3 sticky left-0 bg-inherit z-9"
-                        style={{ width: col.width }}
-                      >
-                        {col.render(row)}
-                      </td>
+                      <EditableCell key={col.id} col={col} row={row} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} />
                     ))}
                     {scrollableCols.map((col) => (
-                      <td
-                        key={col.id}
-                        className="px-4 py-3"
-                        style={{ width: col.width }}
-                      >
-                        {col.render(row)}
-                      </td>
+                      <EditableCell key={col.id} col={col} row={row} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} />
                     ))}
                   </tr>
                 ))}
@@ -304,7 +294,60 @@ function SortHeader({ col, sortBy, sortDir, onSort }) {
   );
 }
 
-function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, sortBy, sortDir }) {
+function EditableCell({ col, row, editingCell, setEditingCell, editValue, setEditValue, onEdit }) {
+  const isEditing = editingCell === `${row.id}-${col.id}`;
+  const cellKey = `${row.id}-${col.id}`;
+
+  if (!col.editable || !onEdit) {
+    return (
+      <td
+        key={col.id}
+        className="px-4 py-3 text-sm"
+        style={{ width: col.width }}
+      >
+        {col.render(row)}
+      </td>
+    );
+  }
+
+  const handleStart = () => {
+    setEditingCell(cellKey);
+    setEditValue(col.getDisplayValue(row));
+  };
+
+  const handleSave = async () => {
+    const entityId = col.getValue(row);
+    await onEdit(row.id, col.entityField, editValue, col.entityType, entityId);
+    setEditingCell(null);
+  };
+
+  return (
+    <td
+      key={col.id}
+      className="px-4 py-3 text-sm"
+      style={{ width: col.width }}
+      onClick={handleStart}
+    >
+      {isEditing ? (
+        <Input
+          autoFocus
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave();
+            if (e.key === "Escape") setEditingCell(null);
+          }}
+          className="h-6 text-xs"
+        />
+      ) : (
+        <div className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">{col.render(row)}</div>
+      )}
+    </td>
+  );
+}
+
+function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, sortBy, sortDir, onEdit, editingCell, setEditingCell, editValue, setEditValue }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -334,22 +377,10 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
           {rows.map((row) => (
             <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
               {fixedCols.map((col) => (
-                <td
-                  key={col.id}
-                  className="px-4 py-3 sticky left-0 bg-inherit z-9"
-                  style={{ width: col.width }}
-                >
-                  {col.render(row)}
-                </td>
+                <EditableCell key={col.id} col={col} row={row} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} />
               ))}
               {scrollableCols.map((col) => (
-                <td
-                  key={col.id}
-                  className="px-4 py-3"
-                  style={{ width: col.width }}
-                >
-                  {col.render(row)}
-                </td>
+                <EditableCell key={col.id} col={col} row={row} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} />
               ))}
             </tr>
           ))}
