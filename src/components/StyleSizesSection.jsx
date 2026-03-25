@@ -68,6 +68,13 @@ export default function StyleSizesSection({ product }) {
   };
 
   const handleDelete = async (ss) => {
+    // Check if this size is referenced in any More Variation
+    const allVars = await base44.entities.ProductColorAndMore.list("-created_date", 500);
+    const isReferenced = allVars.some((v) => (v.size_ids || []).includes(ss.size_id));
+    if (isReferenced) {
+      alert("This size cannot be deleted because it is used in one or more variations. Remove it from all variations first.");
+      return;
+    }
     await base44.entities.StyleSize.delete(ss.id);
     setStyleSizes((prev) => prev.filter((x) => x.id !== ss.id));
   };
