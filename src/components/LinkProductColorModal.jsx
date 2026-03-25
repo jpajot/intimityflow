@@ -67,7 +67,7 @@ export default function LinkProductColorModal({ open, onClose, onLink, alreadyLi
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Link Existing Product-Colors</DialogTitle>
+          <DialogTitle>Link Existing Style-Colors</DialogTitle>
         </DialogHeader>
 
         <div className="relative">
@@ -75,7 +75,7 @@ export default function LinkProductColorModal({ open, onClose, onLink, alreadyLi
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by product or color name…"
+            placeholder="Search by style or color name…"
             className="pl-10"
           />
         </div>
@@ -88,8 +88,8 @@ export default function LinkProductColorModal({ open, onClose, onLink, alreadyLi
           ) : filteredColors.length === 0 ? (
             <div className="text-center py-10 text-sm text-muted-foreground">
               {alreadyLinkedIds.length > 0 && colorVariants.length === alreadyLinkedIds.length
-                ? "All product-colors are already linked"
-                : "No matching product-colors found"}
+                ? "All style-colors are already linked"
+                : "No matching style-colors found"}
             </div>
           ) : (
             filteredColors.map((cv) => {

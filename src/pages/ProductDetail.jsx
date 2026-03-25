@@ -115,7 +115,7 @@ export default function ProductDetail() {
         </Button>
         <div className="flex-1">
           <h1 className="font-display text-2xl font-semibold tracking-tight">
-            {isNew ? "New Product" : product.name}
+            {isNew ? "New Style" : product.name}
           </h1>
         </div>
         {!isNew && (
@@ -127,9 +127,9 @@ export default function ProductDetail() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                <AlertDialogTitle>Delete Style</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete this product and all its color variants.
+                  This will permanently delete this style and all its color variants.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -145,7 +145,7 @@ export default function ProductDetail() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <h3 className="font-semibold text-sm">Product Details</h3>
+          <h3 className="font-semibold text-sm">Style Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">Name</Label>
@@ -213,7 +213,7 @@ export default function ProductDetail() {
 
         <Button type="submit" disabled={saving} className="gap-2">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isNew ? "Create Product" : "Save Changes"}
+          {isNew ? "Create Style" : "Save Changes"}
         </Button>
       </form>
 

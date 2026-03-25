@@ -162,7 +162,7 @@ export default function ProjectDetail() {
             <Link2 className="w-4 h-4" /> Link Colors
           </Button>
           <Button size="sm" onClick={() => setShowNewProductDialog(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> New Product
+            <Plus className="w-4 h-4" /> New Style
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -173,7 +173,7 @@ export default function ProjectDetail() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                <AlertDialogDescription>This will delete the project and all its assignments (products/colors are kept).</AlertDialogDescription>
+                  <AlertDialogDescription>This will delete the project and all its assignments (styles/colors are kept).</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -188,7 +188,7 @@ export default function ProjectDetail() {
       {pendingProductId && (
         <div className="bg-accent/50 border border-primary/20 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Add a color variant to your new product</p>
+            <p className="text-sm font-semibold">Add a color variant to your new style</p>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPendingProductId(null)}>
               <X className="w-4 h-4" />
             </Button>
@@ -223,7 +223,7 @@ export default function ProjectDetail() {
         <TabsContent value="list" className="mt-4 space-y-3">
           {linkedProducts.length === 0 ? (
             <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No products yet. Create a new product or link existing color variants.</p>
+              <p className="text-sm text-muted-foreground">No styles yet. Create a new style or link existing color variants.</p>
             </div>
           ) : (
             sortedKeys.map((key) => {
@@ -232,7 +232,7 @@ export default function ProjectDetail() {
                 <div key={key} className="bg-card rounded-xl border border-border overflow-hidden">
                   <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
                     <span className="font-semibold text-sm">{key || "Unassigned"}</span>
-                    <span className="text-xs text-muted-foreground">{groupProds.length} product{groupProds.length !== 1 ? "s" : ""}</span>
+                    <span className="text-xs text-muted-foreground">{groupProds.length} style{groupProds.length !== 1 ? "s" : ""}</span>
                   </div>
                   <div className="divide-y divide-border">
                     {groupProds.map((p) => {
@@ -294,7 +294,7 @@ export default function ProjectDetail() {
         <TabsContent value="matrix" className="mt-4">
           {linkedProducts.length === 0 ? (
             <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No products yet to display in matrix.</p>
+              <p className="text-sm text-muted-foreground">No styles yet to display in matrix.</p>
             </div>
           ) : (
             <div className="overflow-x-auto pb-4">
@@ -347,7 +347,7 @@ export default function ProjectDetail() {
       <Dialog open={showNewProductDialog} onOpenChange={setShowNewProductDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Product</DialogTitle>
+            <DialogTitle>Create New Style</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateProduct} className="space-y-4">
             <div className="space-y-2">

@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { Package, LayoutList, Plus, FolderOpen } from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "/", label: "Products", icon: Package },
+  { path: "/", label: "Styles", icon: Package },
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/list-view", label: "List View", icon: LayoutList },
 ];
@@ -48,7 +48,7 @@ export default function Layout() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Product</span>
+              <span className="hidden sm:inline">New Style</span>
             </Link>
           </div>
         </div>
