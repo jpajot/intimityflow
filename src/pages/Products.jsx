@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,7 +61,7 @@ export default function Products() {
       label: "Name",
       width: 150,
       sortKey: (p) => p.name || "",
-      render: (p) => <span className="font-medium">{p.name}</span>,
+      render: (p) => <Link to={`/products/${p.id}`} className="font-medium hover:text-primary transition-colors">{p.name}</Link>,
     },
     {
       id: "category",
