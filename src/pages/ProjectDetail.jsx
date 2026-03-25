@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Link2, Loader2, Trash2, LayoutList, Grid3X3, X, ExternalLink } from "lucide-react";
+import ProjectSidebar from "../components/ProjectSidebar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import GroupBySelector from "../components/GroupBySelector";
 import MatrixCell from "../components/MatrixCell";
@@ -47,6 +48,7 @@ export default function ProjectDetail() {
   const [groupBy, setGroupBy] = useState("category");
   const [rowCriteria, setRowCriteria] = useState("category");
   const [colCriteria, setColCriteria] = useState("customer_need");
+  const [activeSection, setActiveSection] = useState("products");
 
   const CATEGORIES = ["Briefs", "Boxers", "Trunks", "Thongs", "Bras", "Lingerie Sets", "Shapewear", "Loungewear"];
   const SUB_CATEGORIES = ["Basic", "Sport", "Seamless", "Lace", "Cotton", "Microfiber", "Thermal", "Premium"];
@@ -173,8 +175,12 @@ export default function ProjectDetail() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="flex h-screen overflow-hidden">
+      <ProjectSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="overflow-y-auto">
+        {/* Header */}
+        <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-start gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate("/projects")}>
           <ArrowLeft className="w-4 h-4" />
@@ -240,7 +246,7 @@ export default function ProjectDetail() {
       )}
 
       {/* Pending: add color to newly created product */}
-      {pendingProductId && (
+      {activeSection === "products" && pendingProductId && (
         <div className="bg-accent/50 border border-primary/20 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">Add a colorway to your new style</p>
@@ -255,7 +261,8 @@ export default function ProjectDetail() {
         </div>
       )}
 
-      {/* Views */}
+      {/* Products/Materials Views */}
+      {activeSection === "products" && (
       <Tabs defaultValue="styles">
         <TabsList>
           <TabsTrigger value="styles">Styles</TabsTrigger>
@@ -296,6 +303,7 @@ export default function ProjectDetail() {
           />
         </TabsContent>
       </Tabs>
+      )}
 
       {/* OLD VIEWS (Hidden but kept for now) */}
       <Tabs defaultValue="list" className="hidden">
