@@ -109,14 +109,33 @@ export default function ProductDetail() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    if (isNew) {
-      const created = await base44.entities.Product.create({ ...product, type: product.type || typeFromQuery });
-      navigate(`/products/${created.id}`, { replace: true });
-    } else {
-      const { id: _, created_date, updated_date, created_by, ...data } = product;
-      await base44.entities.Product.update(product.id, data);
+    try {
+      let productId = product.id;
+      if (isNew) {
+        const created = await base44.entities.Product.create({ ...product, type: product.type || typeFromQuery });
+        productId = created.id;
+      } else {
+        const { id: _, created_date, updated_date, created_by, ...data } = product;
+        await base44.entities.Product.update(product.id, data);
+      }
+      
+      // If a size grid was selected and sizes were just created, populate StyleSize
+      if (product.size_grid_id && !hasStyleSizes) {
+        const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
+        const activeSizes = gridSizes.filter((gs) => gs.active !== false);
+        if (activeSizes.length > 0) {
+          await Promise.all(
+            activeSizes.map((gs) => base44.entities.StyleSize.create({ product_id: productId, size_id: gs.size_id }))
+          );
+        }
+      }
+      
+      if (isNew) {
+        navigate(`/products/${productId}`, { replace: true });
+      }
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const createDefaultVariation = async (productColorId, colorName) => {
