@@ -52,6 +52,7 @@ export default function ProductDetail() {
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [activeTab, setActiveTab] = useState("colorways");
+  const [gridChangeLoading, setGridChangeLoading] = useState(false);
 
   useEffect(() => {
     loadLovData();
@@ -203,19 +204,24 @@ export default function ProductDetail() {
     setColorVariants((prev) => prev.map((cv) => (cv.id === cid ? { ...cv, ...data } : cv)));
   };
 
-  const handleSizeGridChange = async (value) => {
+  const handleSizeGridChange = (value) => {
     const newGridId = value === "none" ? "" : value;
     updateField("size_grid_id", newGridId);
+  };
+
+  const handleApplyGridChange = async () => {
+    setGridChangeLoading(true);
+    const newGridId = product.size_grid_id;
     
-    // Clear old sizes if changing grid
-    if (hasStyleSizes && originalSizeGridId !== newGridId && newGridId) {
+    // Clear old sizes
+    if (hasStyleSizes) {
       const oldSizes = await base44.entities.StyleSize.filter({ product_id: product.id });
       if (oldSizes.length > 0) {
         await Promise.all(oldSizes.map((ss) => base44.entities.StyleSize.delete(ss.id)));
       }
     }
     
-    // Create sizes from new grid immediately
+    // Create sizes from new grid
     if (newGridId) {
       const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: newGridId });
       if (gridSizes.length > 0) {
@@ -225,10 +231,8 @@ export default function ProductDetail() {
         setHasStyleSizes(true);
         setOriginalSizeGridId(newGridId);
       }
-    } else {
-      setHasStyleSizes(false);
-      setOriginalSizeGridId("");
     }
+    setGridChangeLoading(false);
   };
 
   const handleDeleteColor = async () => {
@@ -273,6 +277,12 @@ export default function ProductDetail() {
             {isNew ? `New ${product.type}` : product.name}
           </h1>
         </div>
+        {!isNew && product.size_grid_id !== originalSizeGridId && (
+          <Button onClick={handleApplyGridChange} disabled={gridChangeLoading} className="gap-2">
+            {gridChangeLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            Change Grid
+          </Button>
+        )}
         {!isNew && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
