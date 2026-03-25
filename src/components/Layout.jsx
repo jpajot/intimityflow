@@ -184,9 +184,18 @@ export default function Layout() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="sm:hidden"
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="sm:hidden">
+              <Button variant="ghost" size="icon" className="hidden sm:flex" title="Toggle sidebar">
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
@@ -206,9 +215,7 @@ export default function Layout() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className={`hidden sm:flex flex-col border-r border-border bg-muted/30 transition-all duration-300 overflow-hidden ${
-          sidebarOpen ? "w-64" : "w-0"
-        }`}>
+        <aside className={`hidden sm:flex flex-col border-r border-border bg-muted/30 transition-all duration-300 overflow-hidden ${sidebarOpen ? "w-64" : "w-0"}`}>
           <div className="flex-1 overflow-y-auto p-4">
             {sidebarOpen && <NavContent />}
           </div>
