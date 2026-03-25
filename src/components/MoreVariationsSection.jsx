@@ -92,6 +92,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [uploading, setUploading] = useState(false);
   const [groupBy1, setGroupBy1] = useState("none");
   const [groupBy2, setGroupBy2] = useState("none");
+  const [filterText, setFilterText] = useState("");
 
   useEffect(() => {
     loadAll();
@@ -178,11 +179,24 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
     closeDialog();
   };
 
+  // Filter variations
+  const filteredVariations = variations.filter((v) => {
+    if (!filterText) return true;
+    const lower = filterText.toLowerCase();
+    const cw = colorVariants.find((cv) => cv.id === v.product_color_id);
+    return (
+      v.name?.toLowerCase().includes(lower) ||
+      v.pack_code?.toLowerCase().includes(lower) ||
+      cw?.color_name?.toLowerCase().includes(lower) ||
+      cw?.colorway_code?.toLowerCase().includes(lower)
+    );
+  });
+
   // Build grouped structure
   const buildGroups = () => {
-    if (groupBy1 === "none") return [{ key: "all", label: null, items: variations }];
+    if (groupBy1 === "none") return [{ key: "all", label: null, items: filteredVariations }];
     const map = {};
-    for (const v of variations) {
+    for (const v of filteredVariations) {
       const k1 = getGroupKey(v, groupBy1, colorVariants);
       if (!map[k1]) map[k1] = { key: k1, label: k1, items: [] };
       map[k1].items.push(v);
@@ -207,8 +221,17 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h3 className="font-semibold">More Variations ({variations.length})</h3>
-        <div className="flex items-center gap-2 flex-wrap">
+        <h3 className="font-semibold">More Variations ({filteredVariations.length}/{variations.length})</h3>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap">
+          <div className="relative flex-1 sm:flex-initial">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Filter by name, colorway, or code…"
+              className="pl-8 h-8 text-xs w-full sm:w-48"
+            />
+          </div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Group by</span>
             <Select value={groupBy1} onValueChange={(v) => { setGroupBy1(v); if (v === "none") setGroupBy2("none"); }}>
