@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 
-export default function StyleSizesSection({ product }) {
+export default function StyleSizesSection({ product, onSizesChange }) {
   const [styleSizes, setStyleSizes] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,9 @@ export default function StyleSizesSection({ product }) {
       return;
     }
     await base44.entities.StyleSize.delete(ss.id);
-    setStyleSizes((prev) => prev.filter((x) => x.id !== ss.id));
+    const updated = styleSizes.filter((x) => x.id !== ss.id);
+    setStyleSizes(updated);
+    if (onSizesChange) onSizesChange(updated.length > 0);
   };
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
