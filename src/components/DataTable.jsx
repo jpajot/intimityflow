@@ -330,7 +330,12 @@ function EditableCell({ col, row, editingCell, setEditingCell, editValue, setEdi
     >
       {isEditing ? (
         col.options ? (
-          <Select value={editValue} onValueChange={(val) => { setEditValue(val); }}>
+          <Select value={editValue} onValueChange={async (val) => {
+            setEditValue(val);
+            const entityId = col.getValue(row);
+            await onEdit(row.id, col.entityField, val, col.entityType, entityId);
+            setEditingCell(null);
+          }}>
             <SelectTrigger className="h-6 text-xs">
               <SelectValue />
             </SelectTrigger>
