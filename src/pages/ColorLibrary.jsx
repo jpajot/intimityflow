@@ -7,16 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Loader2, Download, Pencil, Trash2, LayoutGrid, List } from "lucide-react";
+import { Plus, Loader2, Download, Pencil, Trash2 } from "lucide-react";
 import { PANTONE_TCX, colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import DataTable from "@/components/DataTable";
 
 export default function ColorLibrary() {
   const [technicalColors, setTechnicalColors] = useState([]);
   const [commercialColors, setCommercialColors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
-  const [search, setSearch] = useState("");
-  const [view, setView] = useState("grid");
 
   const [showTechDialog, setShowTechDialog] = useState(false);
   const [showCommDialog, setShowCommDialog] = useState(false);
@@ -129,23 +128,110 @@ export default function ColorLibrary() {
     setCommercialColors((prev) => prev.filter((cc) => cc.id !== c.id));
   };
 
-  const filteredTech = technicalColors.filter((c) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return c.code?.toLowerCase().includes(q) || c.name?.toLowerCase().includes(q) || c.hex?.toLowerCase().includes(q);
-  });
-  const filteredComm = commercialColors.filter((c) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    const tech = technicalColors.find(t => t.id === c.main_technical_color_id);
-    return c.code?.toLowerCase().includes(q) || c.color_name?.toLowerCase().includes(q) || c.sub_type?.toLowerCase().includes(q) || tech?.code?.toLowerCase().includes(q) || tech?.name?.toLowerCase().includes(q);
-  });
-
   if (loading) return (
     <div className="flex items-center justify-center py-32">
       <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   );
+
+  const techColumns = [
+    {
+      id: "color",
+      label: "Color",
+      width: 80,
+      render: (c) => <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: colorToHex(c) }} />,
+    },
+    {
+      id: "code",
+      label: "Code",
+      width: 120,
+      sortKey: (c) => c.code || "",
+      render: (c) => <span className="font-mono text-xs">{c.code}</span>,
+    },
+    {
+      id: "name",
+      label: "Name",
+      width: 150,
+      sortKey: (c) => c.name || "",
+      render: (c) => <span className="font-medium">{c.name}</span>,
+    },
+    {
+      id: "hex",
+      label: "Hex",
+      width: 120,
+      sortKey: (c) => c.hex || "",
+      render: (c) => <span className="font-mono text-xs text-muted-foreground">{colorToHex(c)}</span>,
+    },
+    {
+      id: "actions",
+      label: "",
+      width: 80,
+      render: (c) => (
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditTech(c)}><Pencil className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteTech(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
+        </div>
+      ),
+    },
+  ];
+
+  const commColumns = [
+    {
+      id: "color",
+      label: "Color",
+      width: 80,
+      render: (c) => {
+        const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
+        const hex = tech ? colorToHex(tech) : "#cccccc";
+        return <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: hex }} />;
+      },
+    },
+    {
+      id: "code",
+      label: "Code",
+      width: 120,
+      sortKey: (c) => c.code || "",
+      render: (c) => <span className="font-mono text-xs">{c.code}</span>,
+    },
+    {
+      id: "name",
+      label: "Name",
+      width: 150,
+      sortKey: (c) => c.color_name || "",
+      render: (c) => <span className="font-medium">{c.color_name}</span>,
+    },
+    {
+      id: "type",
+      label: "Type",
+      width: 100,
+      sortKey: (c) => c.sub_type || "",
+      render: (c) => <Badge variant="secondary" className="text-[10px]">{c.sub_type}</Badge>,
+    },
+    {
+      id: "technical_color",
+      label: "Technical Color",
+      width: 180,
+      sortKey: (c) => {
+        const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
+        return tech?.code || "";
+      },
+      render: (c) => {
+        const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
+        return <span className="text-xs text-muted-foreground">{tech ? tcxDisplayName(tech) : "—"}</span>;
+      },
+    },
+    {
+      id: "actions",
+      label: "",
+      width: 80,
+      render: (c) => (
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditComm(c)}><Pencil className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteComm(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -155,22 +241,10 @@ export default function ColorLibrary() {
       </div>
 
       <Tabs defaultValue="technical">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <TabsList>
-            <TabsTrigger value="technical">Technical Colors ({technicalColors.length})</TabsTrigger>
-            <TabsTrigger value="commercial">Commercial Colors ({commercialColors.length})</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search colors…" className="pl-10" />
-            </div>
-            <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0">
-              <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-2 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-              <button type="button" onClick={() => setView("list")} className={`px-2.5 py-2 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="List view"><List className="w-4 h-4" /></button>
-            </div>
-          </div>
-        </div>
+        <TabsList>
+          <TabsTrigger value="technical">Technical Colors ({technicalColors.length})</TabsTrigger>
+          <TabsTrigger value="commercial">Commercial Colors ({commercialColors.length})</TabsTrigger>
+        </TabsList>
 
         {/* TECHNICAL COLORS */}
         <TabsContent value="technical" className="mt-4 space-y-4">
@@ -181,128 +255,35 @@ export default function ColorLibrary() {
               Seed Pantone TCX
             </Button>
           </div>
-
-          {view === "grid" ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filteredTech.map((c) => {
-                const hex = colorToHex(c);
-                return (
-                  <div key={c.id} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-                    <div className="h-16 w-full" style={{ backgroundColor: hex }} />
-                    <div className="p-3">
-                      <p className="text-xs font-semibold truncate">{c.code}</p>
-                      <p className="text-xs text-muted-foreground truncate">{c.name}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1 font-mono">{hex}</p>
-                      <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTech(c)}><Pencil className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteTech(c)}><Trash2 className="w-3 h-3" /></Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Color</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Code</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Name</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Hex</th>
-                    <th className="px-4 py-2.5"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTech.map((c) => {
-                    const hex = colorToHex(c);
-                    return (
-                      <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3"><div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: hex }} /></td>
-                        <td className="px-4 py-3 font-mono text-xs">{c.code}</td>
-                        <td className="px-4 py-3 font-medium">{c.name}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{hex}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditTech(c)}><Pencil className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteTech(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            columns={techColumns}
+            rows={technicalColors}
+            fixedColumns={["color"]}
+            filterFields={[
+              { getValue: (c) => c.code },
+              { getValue: (c) => c.name },
+              { getValue: (c) => colorToHex(c) },
+            ]}
+          />
         </TabsContent>
 
         {/* COMMERCIAL COLORS */}
         <TabsContent value="commercial" className="mt-4 space-y-4">
           <Button onClick={openNewComm} className="gap-2"><Plus className="w-4 h-4" />Add Commercial Color</Button>
-
-          {view === "grid" ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filteredComm.map((c) => {
+          <DataTable
+            columns={commColumns}
+            rows={commercialColors}
+            fixedColumns={["color"]}
+            filterFields={[
+              { getValue: (c) => c.code },
+              { getValue: (c) => c.color_name },
+              { getValue: (c) => c.sub_type },
+              { getValue: (c) => {
                 const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
-                const hex = tech ? colorToHex(tech) : "#cccccc";
-                return (
-                  <div key={c.id} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-                    <div className="h-16 w-full" style={{ backgroundColor: hex }} />
-                    <div className="p-3">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{c.sub_type}</Badge>
-                      </div>
-                      <p className="text-xs font-semibold truncate">{c.code}</p>
-                      <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
-                      {tech && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{tcxDisplayName(tech)}</p>}
-                      <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditComm(c)}><Pencil className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteComm(c)}><Trash2 className="w-3 h-3" /></Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Color</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Code</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Name</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Type</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Technical Color</th>
-                    <th className="px-4 py-2.5"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredComm.map((c) => {
-                    const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
-                    const hex = tech ? colorToHex(tech) : "#cccccc";
-                    return (
-                      <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3"><div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: hex }} /></td>
-                        <td className="px-4 py-3 font-mono text-xs">{c.code}</td>
-                        <td className="px-4 py-3 font-medium">{c.color_name}</td>
-                        <td className="px-4 py-3"><Badge variant="secondary" className="text-[10px]">{c.sub_type}</Badge></td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">{tech ? tcxDisplayName(tech) : "—"}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditComm(c)}><Pencil className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteComm(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                return tech?.code || tech?.name || "";
+              }},
+            ]}
+          />
         </TabsContent>
       </Tabs>
 
