@@ -76,11 +76,8 @@ export default function Projects() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">Manage collections and collaborations</p>
-        </div>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-3xl font-semibold tracking-tight">Projects</h1>
         <Button onClick={() => setShowNew(true)} className="gap-2">
           <Plus className="w-4 h-4" /> New Project
         </Button>
