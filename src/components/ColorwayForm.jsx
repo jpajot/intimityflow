@@ -88,13 +88,6 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
           <Label className="text-xs">Colorway Code</Label>
           <Input value={form.colorway_code} onChange={(e) => setForm((f) => ({ ...f, colorway_code: e.target.value }))} placeholder="e.g. COM-001" />
         </div>
-        <div className="space-y-2">
-          <Label className="text-xs">Color</Label>
-          <div className="flex gap-2">
-            <input type="color" value={form.color_hex} onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
-            <Input value={form.color_hex} onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))} className="flex-1" />
-          </div>
-        </div>
       </div>
 
       {/* Color Library Link */}
@@ -110,10 +103,21 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
             </button>
           </div>
         ) : (
-          <Button type="button" variant="outline" size="sm" className="gap-1.5 mt-1" onClick={() => setShowLibPicker(true)}>
-            <Link2 className="w-3.5 h-3.5" /> From Library
-          </Button>
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setShowLibPicker(true)}>
+              <Link2 className="w-3.5 h-3.5" /> From Library
+            </Button>
+          </div>
         )}
+      </div>
+
+      {/* Color Picker */}
+      <div className="space-y-2">
+        <Label className="text-xs">Color</Label>
+        <div className="flex gap-2">
+          <input type="color" value={form.color_hex} onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+          <Input value={form.color_hex} onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))} className="flex-1" />
+        </div>
       </div>
 
       <ColorLibrarySinglePickerModal
