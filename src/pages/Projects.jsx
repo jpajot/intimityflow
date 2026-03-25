@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Loader2, FolderOpen, ChevronRight } from "lucide-react";
+import { Plus, Loader2, FolderOpen, ChevronRight, Pencil } from "lucide-react";
 
 const PROJECT_TYPES = ["Seasonal Collection", "Artist Collaboration", "Capsule", "Limited Edition", "Core Range", "Other"];
 const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
@@ -26,6 +26,7 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ name: "", type: "", season: "", description: "", status: "Planning" });
+  const [editingProject, setEditingProject] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -49,6 +50,16 @@ export default function Projects() {
     setProjects((p) => [created, ...p]);
     setShowNew(false);
     setForm({ name: "", type: "", season: "", description: "", status: "Planning" });
+    setSaving(false);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    const { id, created_date, updated_date, created_by, ...data } = editingProject;
+    await base44.entities.Project.update(id, data);
+    setProjects((prev) => prev.map((p) => p.id === id ? editingProject : p));
+    setEditingProject(null);
     setSaving(false);
   };
 
@@ -86,17 +97,19 @@ export default function Projects() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
-            <Link
-              key={project.id}
-              to={`/projects/${project.id}`}
-              className="group bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:border-primary/20 transition-all"
-            >
+            <div key={project.id} className="group relative bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:border-primary/20 transition-all">
+              <Link to={`/projects/${project.id}`} className="absolute inset-0 rounded-xl" />
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-semibold group-hover:text-primary transition-colors">{project.name}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{project.type}{project.season ? ` · ${project.season}` : ""}</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5" />
+                <button
+                  onClick={(e) => { e.preventDefault(); setEditingProject({ ...project }); }}
+                  className="relative z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
               </div>
               {project.description && (
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{project.description}</p>
@@ -107,16 +120,14 @@ export default function Projects() {
                 </span>
                 <span className="text-xs text-muted-foreground">{getCount(project.id)} color{getCount(project.id) !== 1 ? "s" : ""}</span>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
 
       <Dialog open={showNew} onOpenChange={setShowNew}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Project</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>New Project</DialogTitle></DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
               <Label className="text-xs">Project Name</Label>
@@ -127,18 +138,14 @@ export default function Projects() {
                 <Label className="text-xs">Type</Label>
                 <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    {PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Season</Label>
                 <Select value={form.season} onValueChange={(v) => setForm((f) => ({ ...f, season: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    {SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
@@ -146,9 +153,7 @@ export default function Projects() {
               <Label className="text-xs">Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -157,14 +162,57 @@ export default function Projects() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowNew(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving} className="gap-2">
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Create Project
-              </Button>
+              <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create Project</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Project Dialog */}
+      {editingProject && (
+        <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Project Name</Label>
+                <Input value={editingProject.name} onChange={(e) => setEditingProject((p) => ({ ...p, name: e.target.value }))} required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Type</Label>
+                  <Select value={editingProject.type} onValueChange={(v) => setEditingProject((p) => ({ ...p, type: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Season</Label>
+                  <Select value={editingProject.season} onValueChange={(v) => setEditingProject((p) => ({ ...p, season: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>{SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Status</Label>
+                <Select value={editingProject.status} onValueChange={(v) => setEditingProject((p) => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Description</Label>
+                <Textarea value={editingProject.description || ""} onChange={(e) => setEditingProject((p) => ({ ...p, description: e.target.value }))} rows={2} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingProject(null)}>Cancel</Button>
+                <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
