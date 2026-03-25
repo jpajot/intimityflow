@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
@@ -188,17 +188,10 @@ export default function Layout() {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="sm:hidden"
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <Menu className="w-5 h-5" />
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden sm:flex" title="Toggle sidebar">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
               <div className="p-6 pt-8">
                 <NavContent onNavigate={() => {}} />
