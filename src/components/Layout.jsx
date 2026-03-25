@@ -1,16 +1,32 @@
+import { useState, useRef, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Package, LayoutList, Plus, FolderOpen, Palette, Layers } from "lucide-react";
+import { Package, LayoutList, Plus, FolderOpen, Palette, Layers, ChevronDown } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/list-view", label: "List View", icon: LayoutList },
+];
+
+const COLOR_STUDIO_ITEMS = [
   { path: "/color-library", label: "Color Library", icon: Palette },
   { path: "/color-palettes", label: "Palettes", icon: Layers },
 ];
 
 export default function Layout() {
   const location = useLocation();
+  const [studioOpen, setStudioOpen] = useState(false);
+  const studioRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (studioRef.current && !studioRef.current.contains(e.target)) setStudioOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const isStudioActive = COLOR_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,6 +59,45 @@ export default function Layout() {
                   </Link>
                 );
               })}
+
+              {/* Color Studio dropdown */}
+              <div ref={studioRef} className="relative">
+                <button
+                  onClick={() => setStudioOpen((o) => !o)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isStudioActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Palette className="w-4 h-4" />
+                  Color Studio
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${studioOpen ? "rotate-180" : ""}`} />
+                </button>
+                {studioOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-44 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                    {COLOR_STUDIO_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname.startsWith(item.path);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setStudioOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                            isActive
+                              ? "text-primary font-medium bg-accent"
+                              : "text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </nav>
 
             <Link
@@ -60,6 +115,24 @@ export default function Layout() {
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+          {COLOR_STUDIO_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
