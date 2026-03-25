@@ -125,13 +125,11 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
           <p className="text-sm text-muted-foreground">No color variants yet. Add one to get started.</p>
         </div>
       ) : view === "grid" ? (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {colorVariants.map((cv) => (
-              <ColorwayCard key={cv.id} variant={cv} onEdit={() => onEdit(cv)} />
-            ))}
-          </div>
-        </>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {colorVariants.map((cv) => (
+            <ColorwayCard key={cv.id} variant={cv} onEdit={() => onEdit(cv)} />
+          ))}
+        </div>
       ) : (
         <DataTable
           columns={columns}
