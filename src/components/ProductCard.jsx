@@ -8,7 +8,7 @@ export default function ProductCard({ product, colorVariants = [] }) {
   }, 0);
 
   const allMarkets = [...new Set(colorVariants.flatMap(cv => cv.markets || []))];
-  const firstImage = colorVariants.find(cv => cv.image_url)?.image_url;
+  const firstImage = (product.images && product.images[0]) || colorVariants.find(cv => cv.image_url)?.image_url;
 
   return (
     <Link
