@@ -438,7 +438,7 @@ export default function ProjectDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Link existing modal */
+      {/* Link existing modal */}
       <LinkProductColorModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
