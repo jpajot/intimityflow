@@ -25,10 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const PRODUCT_CATEGORIES = ["Briefs", "Boxers", "Trunks", "Thongs", "Bras", "Lingerie Sets", "Shapewear", "Loungewear"];
-const MATERIAL_CATEGORIES = ["Fabric"];
-const SUB_CATEGORIES = ["Basic", "Sport", "Seamless", "Lace", "Cotton", "Microfiber", "Thermal", "Premium"];
-const CUSTOMER_NEEDS = ["Everyday Comfort", "Active Performance", "Fashion Forward", "Special Occasion", "Maternity", "Plus Size", "Eco-Friendly", "Budget Value"];
+// Categories, sub-categories, and customer needs are now fetched from database
 
 
 export default function ProductDetail() {
@@ -44,6 +41,8 @@ export default function ProductDetail() {
   });
   const [sizeGrids, setSizeGrids] = useState([]);
   const [hasStyleSizes, setHasStyleSizes] = useState(false);
+  const [lovTypes, setLovTypes] = useState({});
+  const [lovValues, setLovValues] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
@@ -54,12 +53,47 @@ export default function ProductDetail() {
   const [activeTab, setActiveTab] = useState("colorways");
 
   useEffect(() => {
+    loadLovData();
     base44.entities.SizeGrid.list("name", 200).then(setSizeGrids);
     if (!isNew) {
       loadProduct();
       base44.entities.StyleSize.filter({ product_id: id }).then((ss) => setHasStyleSizes(ss.length > 0));
     }
   }, [id]);
+
+  const loadLovData = async () => {
+    const [types, values] = await Promise.all([
+      base44.entities.TypeOfLOV.list("code", 500),
+      base44.entities.ListOfValues.list("name", 5000),
+    ]);
+    const typeMap = {};
+    types.forEach((t) => (typeMap[t.code] = t.id));
+    setLovTypes(typeMap);
+    setLovValues(values);
+  };
+
+  const getCategories = () => {
+    const categoryTypeId = lovTypes["Category"];
+    if (!categoryTypeId) return [];
+    return lovValues.filter((v) => {
+      if (v.type_of_lov_id !== categoryTypeId) return false;
+      if (product.type === "Material") return v.depends_on_value_id === lovValues.find((lv) => lv.name === "Material")?.id;
+      if (product.type === "Product") return v.depends_on_value_id === lovValues.find((lv) => lv.name === "Product")?.id;
+      return !v.depends_on_value_id;
+    });
+  };
+
+  const getSubCategories = () => {
+    const subCategoryTypeId = lovTypes["Sub-Category"];
+    if (!subCategoryTypeId) return [];
+    return lovValues.filter((v) => v.type_of_lov_id === subCategoryTypeId);
+  };
+
+  const getCustomerNeeds = () => {
+    const customerNeedTypeId = lovTypes["Customer Need"];
+    if (!customerNeedTypeId) return [];
+    return lovValues.filter((v) => v.type_of_lov_id === customerNeedTypeId);
+  };
 
   const loadProduct = async () => {
     setLoading(true);
@@ -206,7 +240,7 @@ export default function ProductDetail() {
               <Select value={product.category} onValueChange={(v) => updateField("category", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
-                  {(product.type === "Material" ? MATERIAL_CATEGORIES : PRODUCT_CATEGORIES).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -215,7 +249,7 @@ export default function ProductDetail() {
               <Select value={product.sub_category} onValueChange={(v) => updateField("sub_category", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
-                  {SUB_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -225,7 +259,7 @@ export default function ProductDetail() {
                 <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
                   <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent>
-                    {CUSTOMER_NEEDS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {getCustomerNeeds().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

@@ -17,6 +17,7 @@ import ColorPalettes from './pages/ColorPalettes';
 import ColorPaletteDetail from './pages/ColorPaletteDetail';
 import SizeLibrary from './pages/SizeLibrary';
 import SizeGridLibrary from './pages/SizeGridLibrary';
+import ListOfValuesLibrary from './pages/ListOfValuesLibrary';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
         <Route path="/color-palettes/:id" element={<ColorPaletteDetail />} />
         <Route path="/size-library" element={<SizeLibrary />} />
         <Route path="/size-grid-library" element={<SizeGridLibrary />} />
+        <Route path="/list-of-values" element={<ListOfValuesLibrary />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
