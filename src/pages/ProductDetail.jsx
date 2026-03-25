@@ -345,6 +345,15 @@ export default function ProductDetail() {
         existingColorways={colorVariants}
       />
 
+      <ColorwayEditModal
+        open={!!editingColor}
+        variant={editingColor}
+        onClose={() => setEditingColor(null)}
+        onSave={handleUpdateColor}
+        onDelete={handleDeleteColor}
+        existingColorways={colorVariants.filter((cv) => cv.id !== editingColor?.id)}
+      />
+
       <ColorLibraryPickerModal
         open={showLibraryPicker}
         onClose={() => setShowLibraryPicker(false)}
