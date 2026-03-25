@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Copy, Plus, Loader2 } from "lucide-react";
+import { Copy, Loader2 } from "lucide-react";
 import DataTable from "@/components/DataTable";
+import GroupBySelector from "./GroupBySelector";
 
 export default function ProjectVariationsTable({ projectId, productType, variations, products, colorVariants, onRefresh }) {
   const [copying, setCopying] = useState(null);
+  const [groupBy, setGroupBy] = useState("category");
 
   const handleCopyVariation = async (variation) => {
     setCopying(variation.id);
@@ -43,6 +45,22 @@ export default function ProjectVariationsTable({ projectId, productType, variati
     grouped[key].push(v);
   });
 
+  const getGroupKey = (v) => {
+    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+    const product = products.find((p) => p.id === color?.product_id);
+    if (groupBy === "category") return product?.category || "Uncategorized";
+    if (groupBy === "sub_category") return product?.sub_category || "Uncategorized";
+    if (groupBy === "product") return product?.id || "unknown";
+    return "All";
+  };
+
+  const groupOptions = [
+    { value: "none", label: "No grouping" },
+    { value: "category", label: "Category" },
+    { value: "sub_category", label: "Sub-Category" },
+    { value: "product", label: "Product" },
+  ];
+
   const columns = [
     {
       id: "style",
@@ -61,6 +79,36 @@ export default function ProjectVariationsTable({ projectId, productType, variati
             <span className="font-medium text-sm">{product?.name || "—"}</span>
           </div>
         );
+      },
+    },
+    {
+      id: "category",
+      label: "Category",
+      width: 120,
+      sortKey: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return product?.category || "";
+      },
+      render: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return <span className="text-sm text-muted-foreground">{product?.category || "—"}</span>;
+      },
+    },
+    {
+      id: "sub_category",
+      label: "Sub-Category",
+      width: 120,
+      sortKey: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return product?.sub_category || "";
+      },
+      render: (v) => {
+        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+        const product = products.find((p) => p.id === color?.product_id);
+        return <span className="text-sm text-muted-foreground">{product?.sub_category || "—"}</span>;
       },
     },
     {
