@@ -119,13 +119,12 @@ export default function ProductDetail() {
         await base44.entities.Product.update(product.id, data);
       }
       
-      // If a size grid was selected and sizes were just created, populate StyleSize
+      // If a size grid was selected and sizes were just created, populate StyleSize with grid's active status
       if (product.size_grid_id && !hasStyleSizes) {
         const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
-        const activeSizes = gridSizes.filter((gs) => gs.active !== false);
-        if (activeSizes.length > 0) {
+        if (gridSizes.length > 0) {
           await Promise.all(
-            activeSizes.map((gs) => base44.entities.StyleSize.create({ product_id: productId, size_id: gs.size_id }))
+            gridSizes.map((gs) => base44.entities.StyleSize.create({ product_id: productId, size_id: gs.size_id, active: gs.active !== false }))
           );
         }
       }
