@@ -100,13 +100,7 @@ export default function Layout() {
               </div>
             </nav>
 
-            <Link
-              to="/products/new"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Style</span>
-            </Link>
+
           </div>
         </div>
 
