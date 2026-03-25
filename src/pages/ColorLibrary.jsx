@@ -345,7 +345,7 @@ export default function ColorLibrary() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowCommDialog(false)}>Cancel</Button>
               <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save</Button>
             </DialogFooter>
