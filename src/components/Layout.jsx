@@ -89,17 +89,17 @@ export default function Layout() {
                       const Icon = item.icon;
                       const isActive = location.pathname.startsWith(item.path);
                       return (
-                        <a
+                        <Link
                           key={item.path}
-                          href={item.path}
-                          onClick={(e) => { e.preventDefault(); window.history.pushState({}, "", item.path); window.dispatchEvent(new PopStateEvent("popstate")); setStudioOpen(false); }}
+                          to={item.path}
+                          onClick={() => setStudioOpen(false)}
                           className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                             isActive ? "text-primary font-medium bg-accent" : "text-foreground hover:bg-muted"
                           }`}
                         >
                           <Icon className="w-4 h-4" />
                           {item.label}
-                        </a>
+                        </Link>
                       );
                     })}
                   </div>
