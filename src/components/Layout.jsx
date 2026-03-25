@@ -1,8 +1,9 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Package, LayoutList, Grid3X3, Plus } from "lucide-react";
+import { Package, LayoutList, Grid3X3, Plus, FolderOpen } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Products", icon: Package },
+  { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/list-view", label: "List View", icon: LayoutList },
   { path: "/matrix-view", label: "Matrix View", icon: Grid3X3 },
 ];

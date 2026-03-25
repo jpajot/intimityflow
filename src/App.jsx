@@ -10,6 +10,8 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import ListView from './pages/ListView';
 import MatrixView from './pages/MatrixView';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,6 +42,8 @@ const AuthenticatedApp = () => {
       <Route element={<Layout />}>
         <Route path="/" element={<Products />} />
         <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/list-view" element={<ListView />} />
         <Route path="/matrix-view" element={<MatrixView />} />
         <Route path="*" element={<PageNotFound />} />
