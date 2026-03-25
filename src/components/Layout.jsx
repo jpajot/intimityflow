@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Package, LayoutList, Plus, FolderOpen, Palette, Layers, ChevronDown } from "lucide-react";
+import { Package, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Package },
@@ -13,20 +13,29 @@ const COLOR_STUDIO_ITEMS = [
   { path: "/color-palettes", label: "Palettes", icon: Layers },
 ];
 
+const SIZE_STUDIO_ITEMS = [
+  { path: "/size-library", label: "Size Library", icon: Ruler },
+  { path: "/size-grid-library", label: "Size Grids", icon: Layers },
+];
+
 export default function Layout() {
   const location = useLocation();
   const [studioOpen, setStudioOpen] = useState(false);
+  const [sizeStudioOpen, setSizeStudioOpen] = useState(false);
   const studioRef = useRef(null);
+  const sizeStudioRef = useRef(null);
 
   useEffect(() => {
     const handleClick = (e) => {
       if (studioRef.current && !studioRef.current.contains(e.target)) setStudioOpen(false);
+      if (sizeStudioRef.current && !sizeStudioRef.current.contains(e.target)) setSizeStudioOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   const isStudioActive = COLOR_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
+  const isSizeStudioActive = SIZE_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,14 +89,49 @@ export default function Layout() {
                       const Icon = item.icon;
                       const isActive = location.pathname.startsWith(item.path);
                       return (
+                        <a
+                          key={item.path}
+                          href={item.path}
+                          onClick={(e) => { e.preventDefault(); window.history.pushState({}, "", item.path); window.dispatchEvent(new PopStateEvent("popstate")); setStudioOpen(false); }}
+                          className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                            isActive ? "text-primary font-medium bg-accent" : "text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Size Studio dropdown */}
+              <div ref={sizeStudioRef} className="relative">
+                <button
+                  onClick={() => setSizeStudioOpen((o) => !o)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isSizeStudioActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Ruler className="w-4 h-4" />
+                  Size Studio
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sizeStudioOpen ? "rotate-180" : ""}`} />
+                </button>
+                {sizeStudioOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-44 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                    {SIZE_STUDIO_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname.startsWith(item.path);
+                      return (
                         <Link
                           key={item.path}
                           to={item.path}
-                          onClick={() => setStudioOpen(false)}
+                          onClick={() => setSizeStudioOpen(false)}
                           className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-                            isActive
-                              ? "text-primary font-medium bg-accent"
-                              : "text-foreground hover:bg-muted"
+                            isActive ? "text-primary font-medium bg-accent" : "text-foreground hover:bg-muted"
                           }`}
                         >
                           <Icon className="w-4 h-4" />

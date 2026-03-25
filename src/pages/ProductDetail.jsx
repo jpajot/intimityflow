@@ -36,8 +36,9 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState({
     name: "", category: "", sub_category: "", customer_need: "",
-    description: "", images: [],
+    description: "", images: [], size_grid_id: "",
   });
+  const [sizeGrids, setSizeGrids] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
@@ -48,6 +49,7 @@ export default function ProductDetail() {
   const [activeTab, setActiveTab] = useState("colorways");
 
   useEffect(() => {
+    base44.entities.SizeGrid.list("name", 200).then(setSizeGrids);
     if (!isNew) loadProduct();
   }, [id]);
 
@@ -187,6 +189,16 @@ export default function ProductDetail() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Size Grid</Label>
+            <Select value={product.size_grid_id || "none"} onValueChange={(v) => updateField("size_grid_id", v === "none" ? "" : v)}>
+              <SelectTrigger><SelectValue placeholder="Select size grid…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.code} – {sg.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label className="text-xs">Description</Label>
