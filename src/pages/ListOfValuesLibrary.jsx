@@ -269,6 +269,14 @@ export default function ListOfValuesLibrary() {
                   return pv?.name || "";
                 }},
               ]}
+              groupOptions={parentType ? [{ value: "none", label: "None" }, { value: "parent", label: `Group by ${parentType.name || parentType.code}` }] : []}
+              getGroupKey={(v, groupBy) => {
+                if (groupBy === "parent") {
+                  const pv = parentTypeValues.find((p) => p.id === v.depends_on_value_id);
+                  return pv?.name || "No dependency";
+                }
+                return "all";
+              }}
             />
           )}
         </div>
