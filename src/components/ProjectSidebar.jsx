@@ -22,13 +22,13 @@ export default function ProjectSidebar({ activeSection, onSectionChange }) {
         variant="ghost"
         size="icon"
         onClick={() => setExpanded(!expanded)}
-        className="h-12 w-12 mx-auto mt-2 mb-4 shrink-0"
+        className="h-10 w-10 m-1 shrink-0"
         title={expanded ? "Collapse" : "Expand"}
       >
         {expanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </Button>
 
-      <nav className="flex-1 space-y-1 px-2">
+      <nav className="flex-1 space-y-0 px-1">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
