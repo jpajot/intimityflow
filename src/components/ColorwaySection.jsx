@@ -135,8 +135,7 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
                         </button>
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
           </div>
