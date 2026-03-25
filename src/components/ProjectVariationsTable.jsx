@@ -209,6 +209,19 @@ export default function ProjectVariationsTable({ projectId, productType, variati
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground">Group by</span>
+        <select
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value)}
+          className="h-8 px-2 text-xs rounded-md border border-input bg-transparent cursor-pointer"
+        >
+          <option value="none">None</option>
+          <option value="category">Category</option>
+          <option value="sub_category">Sub-Category</option>
+          <option value="product">Product</option>
+        </select>
+      </div>
       <div className="space-y-3">
         {groups.map((group) => {
           const itemCount = group.items.length;
