@@ -20,27 +20,10 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showLibPicker, setShowLibPicker] = useState(false);
 
-  const [technicalColors, setTechnicalColors] = useState([]);
-  const [commercialColors, setCommercialColors] = useState([]);
-  const [loadingLib, setLoadingLib] = useState(false);
-  const [showLibLink, setShowLibLink] = useState(!!(variant?.linked_color_id));
-  const [colorSearch, setColorSearch] = useState("");
-
-  useEffect(() => {
-    if (showLibLink && technicalColors.length === 0) loadLibrary();
-  }, [showLibLink]);
-
-  const loadLibrary = async () => {
-    setLoadingLib(true);
-    const [tech, comm] = await Promise.all([
-      base44.entities.TechnicalColor.list("code", 2000),
-      base44.entities.CommercialColor.list("code", 2000),
-    ]);
-    setTechnicalColors(tech);
-    setCommercialColors(comm);
-    setLoadingLib(false);
-  };
+  // Store enough info to display linked color label without re-fetching
+  const [linkedLabel, setLinkedLabel] = useState(variant?.linked_color_id ? "Linked color" : "");
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
