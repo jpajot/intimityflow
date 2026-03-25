@@ -142,9 +142,16 @@ export default function Products() {
             title="Table view"
           >
             <List className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+            </button>
+            </div>
+            <Link to="/products/new" asChild>
+            <button className="gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors flex items-center">
+              <Plus className="w-4 h-4" />
+              New Style
+            </button>
+            </Link>
+            </div>
+            </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-20">
