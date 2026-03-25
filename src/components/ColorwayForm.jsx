@@ -20,6 +20,7 @@ const MARKET_VOLUME_KEYS = {
 export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState({
     color_name: variant?.color_name || "",
+    colorway_code: variant?.colorway_code || "",
     color_hex: variant?.color_hex || "#000000",
     image_url: variant?.image_url || "",
     markets: variant?.markets || [],
@@ -92,6 +93,7 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
       linked_color_id: id,
       color_hex: autoHex || f.color_hex,
       color_name: f.color_name || autoName,
+      colorway_code: type === "commercial" ? (commercialColors.find(c => c.id === id)?.code || f.colorway_code) : f.colorway_code,
     }));
   };
 
@@ -141,6 +143,10 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
         <div className="space-y-2">
           <Label className="text-xs">Colorway Name</Label>
           <Input value={form.color_name} onChange={(e) => setForm((f) => ({ ...f, color_name: e.target.value }))} placeholder="e.g. Midnight Blue" required />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Colorway Code</Label>
+          <Input value={form.colorway_code} onChange={(e) => setForm((f) => ({ ...f, colorway_code: e.target.value }))} placeholder="e.g. COM-001" />
         </div>
         <div className="space-y-2">
           <Label className="text-xs">Color</Label>

@@ -38,6 +38,9 @@ export default function ColorwayCard({ variant, onClick }) {
           <div className="w-4 h-4 rounded-full border border-border shrink-0" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
           <span className="font-medium text-sm truncate">{variant.color_name}</span>
         </div>
+        {variant.colorway_code && (
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">{variant.colorway_code}</p>
+        )}
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           {(variant.markets || []).map((m) => (
             <span key={m} className="text-xs" title={m}>{MARKET_FLAGS[m]}</span>

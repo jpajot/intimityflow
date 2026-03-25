@@ -82,6 +82,7 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
         if (tc) colorways.push({
           color_name: tc.name,
           color_hex: colorToHex(tc),
+          colorway_code: "",
           linked_color_type: "technical",
           linked_color_id: tc.id,
           markets: [],
@@ -93,6 +94,7 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
           colorways.push({
             color_name: cc.color_name,
             color_hex: tc ? colorToHex(tc) : "#cccccc",
+            colorway_code: cc.code || "",
             linked_color_type: "commercial",
             linked_color_id: cc.id,
             markets: [],

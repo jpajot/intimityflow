@@ -39,7 +39,7 @@ export default function MatrixCell({ products, colorVariants }) {
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[200px]">
                 <p className="font-semibold text-xs">{pc.productName}</p>
-                <p className="text-xs text-muted-foreground">{pc.color_name}</p>
+                <p className="text-xs text-muted-foreground">{pc.color_name}{pc.colorway_code ? ` · ${pc.colorway_code}` : ""}</p>
                 <div className="flex gap-1 mt-1">
                   {(pc.markets || []).map((m) => (
                     <span key={m} className="text-xs">{MARKET_FLAGS[m]}</span>
