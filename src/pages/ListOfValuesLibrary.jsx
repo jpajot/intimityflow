@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 export default function ListOfValuesLibrary() {
   const [typesOfLOV, setTypesOfLOV] = useState([]);
@@ -192,7 +193,7 @@ export default function ListOfValuesLibrary() {
         </div>
 
         {/* Values Panel */}
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">
               Values {selectedTypeObj ? `— ${selectedTypeObj.name || selectedTypeObj.code}` : ""}
@@ -205,21 +206,41 @@ export default function ListOfValuesLibrary() {
           </div>
           {!selectedType ? (
             <p className="text-sm text-muted-foreground">Select a type to manage its values</p>
-          ) : filteredValues.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No values yet</p>
           ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredValues.map((v) => {
-                const parentValue = parentTypeValues.find((pv) => pv.id === v.depends_on_value_id);
-                return (
-                  <div key={v.id} className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                    <div className="font-medium text-sm">{v.name}</div>
-                    {parentValue && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        ↳ {parentType?.name || parentType?.code}: {parentValue.name}
-                      </div>
-                    )}
-                    <div className="flex gap-1 mt-2">
+            <DataTable
+              columns={[
+                {
+                  id: "name",
+                  label: "Name",
+                  width: 200,
+                  sortKey: (v) => v.name || "",
+                  render: (v) => <span className="font-medium">{v.name}</span>,
+                },
+                {
+                  id: "depends_on",
+                  label: "Depends On",
+                  width: 200,
+                  sortKey: (v) => {
+                    const pv = parentTypeValues.find((p) => p.id === v.depends_on_value_id);
+                    return pv?.name || "";
+                  },
+                  render: (v) => {
+                    const pv = parentTypeValues.find((p) => p.id === v.depends_on_value_id);
+                    return pv ? (
+                      <span className="text-xs text-muted-foreground">
+                        {parentType?.name || parentType?.code}: {pv.name}
+                      </span>
+                    ) : (
+                      "—"
+                    );
+                  },
+                },
+                {
+                  id: "actions",
+                  label: "",
+                  width: 80,
+                  render: (v) => (
+                    <div className="flex gap-1 justify-end">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -237,10 +258,18 @@ export default function ListOfValuesLibrary() {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  ),
+                },
+              ]}
+              rows={filteredValues}
+              filterFields={[
+                { getValue: (v) => v.name },
+                { getValue: (v) => {
+                  const pv = parentTypeValues.find((p) => p.id === v.depends_on_value_id);
+                  return pv?.name || "";
+                }},
+              ]}
+            />
           )}
         </div>
       </div>
