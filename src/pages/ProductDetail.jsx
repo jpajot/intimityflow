@@ -124,8 +124,16 @@ export default function ProductDetail() {
   };
 
   const handleDeleteColor = async () => {
+    // Check if this colorway is referenced in any More Variation
+    const allVars = await base44.entities.ProductColorAndMore.list("-created_date", 500);
+    const isReferenced = allVars.some((v) => v.product_color_id === editingColor.id);
+    if (isReferenced) {
+      alert("This colorway cannot be deleted because it has linked variations. Delete those variations first.");
+      return;
+    }
     await base44.entities.ProductColor.delete(editingColor.id);
     setColorVariants((prev) => prev.filter((cv) => cv.id !== editingColor.id));
+    setEditingColor(null);
   };
 
   const handleDeleteProduct = async () => {
