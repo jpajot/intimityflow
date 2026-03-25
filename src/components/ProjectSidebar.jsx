@@ -22,13 +22,13 @@ export default function ProjectSidebar({ activeSection, onSectionChange }) {
         variant="ghost"
         size="icon"
         onClick={() => setExpanded(!expanded)}
-        className="h-10 w-10 m-1 shrink-0"
+        className="h-12 w-12 mx-auto mt-2 mb-4 shrink-0"
         title={expanded ? "Collapse" : "Expand"}
       >
         {expanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </Button>
 
-      <nav className="flex-1 space-y-0 px-1">
+      <nav className="flex-1 space-y-1 px-2">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -37,7 +37,7 @@ export default function ProjectSidebar({ activeSection, onSectionChange }) {
               key={item.id}
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "w-full flex items-center gap-2 px-1.5 py-1.5 rounded-lg text-sm font-medium transition-all",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
