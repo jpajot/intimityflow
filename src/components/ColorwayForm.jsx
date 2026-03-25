@@ -34,52 +34,21 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete }) {
     setUploading(false);
   };
 
-  const handleLinkColor = (type, id) => {
-    let autoHex = "";
-    let autoName = "";
-    if (type === "technical") {
-      const tech = technicalColors.find((t) => t.id === id);
-      if (tech) { autoHex = colorToHex(tech); autoName = tech.name; }
-    } else if (type === "commercial") {
-      const comm = commercialColors.find((c) => c.id === id);
-      if (comm) {
-        autoName = comm.color_name;
-        const tech = technicalColors.find((t) => t.id === comm.main_technical_color_id);
-        if (tech) autoHex = colorToHex(tech);
-      }
-    }
+  const handleLinkColor = (type, id, hex, name, code) => {
     setForm((f) => ({
       ...f,
       linked_color_type: type,
       linked_color_id: id,
-      color_hex: autoHex || f.color_hex,
-      color_name: f.color_name || autoName,
-      colorway_code: type === "commercial" ? (commercialColors.find(c => c.id === id)?.code || f.colorway_code) : f.colorway_code,
+      color_hex: hex || f.color_hex,
+      color_name: f.color_name || name,
+      colorway_code: type === "commercial" ? (code || f.colorway_code) : f.colorway_code,
     }));
+    setLinkedLabel(type === "commercial" ? `${code} - ${name}` : name);
   };
 
   const handleUnlink = () => {
     setForm((f) => ({ ...f, linked_color_type: "", linked_color_id: "" }));
-  };
-
-  const filteredTech = technicalColors.filter(
-    (c) => !colorSearch || c.code?.toLowerCase().includes(colorSearch.toLowerCase()) || c.name?.toLowerCase().includes(colorSearch.toLowerCase())
-  );
-  const filteredComm = commercialColors.filter(
-    (c) => !colorSearch || c.code?.toLowerCase().includes(colorSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(colorSearch.toLowerCase())
-  );
-
-  const linkedLabel = () => {
-    if (!form.linked_color_id) return null;
-    if (form.linked_color_type === "technical") {
-      const t = technicalColors.find((c) => c.id === form.linked_color_id);
-      return t ? tcxDisplayName(t) : form.linked_color_id;
-    }
-    if (form.linked_color_type === "commercial") {
-      const c = commercialColors.find((c) => c.id === form.linked_color_id);
-      return c ? `${c.code} - ${c.color_name}` : form.linked_color_id;
-    }
-    return null;
+    setLinkedLabel("");
   };
 
   const handleSubmit = async (e) => {
