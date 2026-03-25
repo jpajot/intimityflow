@@ -316,7 +316,7 @@ export default function ProjectDetail() {
                                 <div key={cv.id} className="group/color relative">
                                   <div
                                     className="w-8 h-8 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/30"
-                                    title={cv.color_name}
+                                    title={cv.colorway_code ? `${cv.color_name} · ${cv.colorway_code}` : cv.color_name}
                                   >
                                     {cv.image_url ? (
                                       <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />

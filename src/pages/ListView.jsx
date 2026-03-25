@@ -147,7 +147,7 @@ export default function ListView() {
                                         key={cv.id}
                                         className="w-6 h-6 rounded-full border border-border"
                                         style={{ backgroundColor: cv.color_hex || "#ccc" }}
-                                        title={cv.color_name}
+                                        title={cv.colorway_code ? `${cv.color_name} · ${cv.colorway_code}` : cv.color_name}
                                       />
                                     ))}
                                     {colors.length > 6 && (
