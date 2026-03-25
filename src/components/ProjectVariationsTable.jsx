@@ -45,6 +45,17 @@ export default function ProjectVariationsTable({ projectId, productType, variati
     grouped[key].push(v);
   });
 
+  const buildGroups = () => {
+    if (groupBy === "none") return [{ key: "all", label: null, items: filteredVariations }];
+    const map = {};
+    for (const v of filteredVariations) {
+      const k = getGroupKey(v);
+      if (!map[k]) map[k] = { key: k, label: k, items: [] };
+      map[k].items.push(v);
+    }
+    return Object.values(map);
+  };
+
   const getGroupKey = (v) => {
     const color = colorVariants.find((cv) => cv.id === v.product_color_id);
     const product = products.find((p) => p.id === color?.product_id);
@@ -172,33 +183,42 @@ export default function ProjectVariationsTable({ projectId, productType, variati
     );
   }
 
+  const groups = buildGroups();
+
   return (
-    <div className="space-y-3">
-      {Object.entries(grouped).map(([productId, vars]) => {
-        const product = products.find((p) => p.id === productId);
-        return (
-          <div key={productId} className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {product?.name || "Unknown"} ({vars.length})
-              </span>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <GroupBySelector value={groupBy} onChange={setGroupBy} excludeValues={[]} />
+      </div>
+      <div className="space-y-3">
+        {groups.map((group) => {
+          const itemCount = group.items.length;
+          return (
+            <div key={group.key} className="bg-card rounded-xl border border-border overflow-hidden">
+              {group.label && (
+                <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {group.label} ({itemCount})
+                  </span>
+                </div>
+              )}
+              <DataTable
+                columns={columns}
+                rows={group.items}
+                fixedColumns={["style"]}
+                filterFields={[
+                  { getValue: (v) => {
+                      const color = colorVariants.find((cv) => cv.id === v.product_color_id);
+                      return color?.color_name || "";
+                    }
+                  },
+                  { getValue: (v) => v.name },
+                ]}
+              />
             </div>
-            <DataTable
-              columns={columns}
-              rows={vars}
-              fixedColumns={["style"]}
-              filterFields={[
-                { getValue: (v) => {
-                    const color = colorVariants.find((cv) => cv.id === v.product_color_id);
-                    return color?.color_name || "";
-                  }
-                },
-                { getValue: (v) => v.name },
-              ]}
-            />
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
