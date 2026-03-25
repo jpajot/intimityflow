@@ -297,6 +297,20 @@ export default function ProductDetail() {
         </div>
       )}
 
+      <ColorwayEditModal
+        open={showNewColorModal}
+        onClose={() => setShowNewColorModal(false)}
+        onSave={handleAddColor}
+      />
+
+      <ColorwayEditModal
+        variant={editingColor}
+        open={!!editingColor}
+        onClose={() => setEditingColor(null)}
+        onSave={handleUpdateColor}
+        onDelete={handleDeleteColor}
+      />
+
       <ColorLibraryPickerModal
         open={showLibraryPicker}
         onClose={() => setShowLibraryPicker(false)}
