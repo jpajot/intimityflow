@@ -218,15 +218,17 @@ export default function ProductDetail() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Customer Need</Label>
-              <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>
-                  {CUSTOMER_NEEDS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {product.type === "Product" && (
+              <div className="space-y-2">
+                <Label className="text-xs">Customer Need</Label>
+                <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>
+                    {CUSTOMER_NEEDS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label className="text-xs">Size Grid</Label>
