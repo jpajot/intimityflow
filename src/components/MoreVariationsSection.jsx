@@ -284,6 +284,21 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
         </Button>
       </div>
 
+      {variations.length === 0 ? (
+        <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+          <p className="text-sm text-muted-foreground">No variations yet. Add one to get started.</p>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={variations}
+          fixedColumns={["sequence", "colorway"]}
+          groupOptions={GROUP_OPTIONS}
+          getGroupKey={(v, groupBy) => getGroupKey(v, groupBy, colorVariants)}
+          filterFields={createVariationFilterFields(colorVariants)}
+        />
+      )}
+
       {/* Bulk Add Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(o) => !o && setShowAddDialog(false)}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -392,6 +407,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
