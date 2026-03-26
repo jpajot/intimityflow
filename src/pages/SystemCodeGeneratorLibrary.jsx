@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Hash, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const EMPTY_FORM = {
   entity_name: "",
@@ -14,6 +15,9 @@ const EMPTY_FORM = {
   description: "",
 };
 
+// All entity names available in the SDK
+const ALL_ENTITIES = Object.keys(base44.entities).sort();
+
 export default function SystemCodeGeneratorLibrary() {
   const [generators, setGenerators] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +26,7 @@ export default function SystemCodeGeneratorLibrary() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [typeOptions, setTypeOptions] = useState([]); // enum values for the "type" field of selected entity
 
   useEffect(() => {
     load();
@@ -34,9 +39,28 @@ export default function SystemCodeGeneratorLibrary() {
     setLoading(false);
   };
 
+  const loadTypeOptions = async (entityName) => {
+    if (!entityName || !base44.entities[entityName]) {
+      setTypeOptions([]);
+      return;
+    }
+    try {
+      const schema = await base44.entities[entityName].schema();
+      const typeField = schema?.properties?.type;
+      if (typeField?.enum) {
+        setTypeOptions(typeField.enum);
+      } else {
+        setTypeOptions([]);
+      }
+    } catch {
+      setTypeOptions([]);
+    }
+  };
+
   const openAdd = () => {
     setEditing(null);
     setForm(EMPTY_FORM);
+    setTypeOptions([]);
     setDialog("add");
   };
 
@@ -49,6 +73,7 @@ export default function SystemCodeGeneratorLibrary() {
       padding: gen.padding ?? 5,
       description: gen.description || "",
     });
+    loadTypeOptions(gen.entity_name);
     setDialog("edit");
   };
 
@@ -158,25 +183,47 @@ export default function SystemCodeGeneratorLibrary() {
             <DialogTitle>{dialog === "edit" ? "Edit Generator" : "New Code Generator"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label className="text-xs">Entity Name</Label>
-                <Input
-                  value={form.entity_name}
-                  onChange={(e) => setForm((f) => ({ ...f, entity_name: e.target.value }))}
-                  placeholder="e.g. Product"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Entity Type</Label>
+            <div className="space-y-2">
+              <Label className="text-xs">Entity Name</Label>
+              <Select
+                value={form.entity_name}
+                onValueChange={(v) => {
+                  setForm((f) => ({ ...f, entity_name: v, entity_type: "" }));
+                  loadTypeOptions(v);
+                }}
+                required
+              >
+                <SelectTrigger><SelectValue placeholder="Select entity…" /></SelectTrigger>
+                <SelectContent>
+                  {ALL_ENTITIES.map((e) => (
+                    <SelectItem key={e} value={e}>{e}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Entity Type</Label>
+              {typeOptions.length > 0 ? (
+                <Select
+                  value={form.entity_type}
+                  onValueChange={(v) => setForm((f) => ({ ...f, entity_type: v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
+                  <SelectContent>
+                    {typeOptions.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
                 <Input
                   value={form.entity_type}
                   onChange={(e) => setForm((f) => ({ ...f, entity_type: e.target.value }))}
-                  placeholder="e.g. Style"
-                  required
+                  placeholder={form.entity_name ? "No 'type' field — enter manually" : "Select an entity first"}
+                  disabled={!form.entity_name}
                 />
-              </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
