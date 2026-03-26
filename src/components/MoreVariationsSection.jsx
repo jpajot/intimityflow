@@ -316,7 +316,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
             {/* Name */}
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Variation Name</Label>
-              <Input value={addName} onChange={(e) => setAddName(e.target.value)} required placeholder="e.g. Standard" />
+              <Input value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="e.g. Standard" />
             </div>
 
             {/* Sizes */}
