@@ -15,8 +15,15 @@ const EMPTY_FORM = {
   description: "",
 };
 
-// All entity names available in the SDK
-const ALL_ENTITIES = Object.keys(base44.entities).sort();
+// Load all entity schemas via Vite's static glob import
+const entityModules = import.meta.glob('../entities/*.json', { eager: true });
+const ENTITY_SCHEMAS = Object.fromEntries(
+  Object.entries(entityModules).map(([path, mod]) => {
+    const name = path.replace('../entities/', '').replace('.json', '');
+    return [name, mod.default || mod];
+  })
+);
+const ALL_ENTITIES = Object.keys(ENTITY_SCHEMAS).sort();
 
 export default function SystemCodeGeneratorLibrary() {
   const [generators, setGenerators] = useState([]);
@@ -39,22 +46,10 @@ export default function SystemCodeGeneratorLibrary() {
     setLoading(false);
   };
 
-  const loadTypeOptions = async (entityName) => {
-    if (!entityName || !base44.entities[entityName]) {
-      setTypeOptions([]);
-      return;
-    }
-    try {
-      const schema = await base44.entities[entityName].schema();
-      const typeField = schema?.properties?.type;
-      if (typeField?.enum) {
-        setTypeOptions(typeField.enum);
-      } else {
-        setTypeOptions([]);
-      }
-    } catch {
-      setTypeOptions([]);
-    }
+  const loadTypeOptions = (entityName) => {
+    const schema = ENTITY_SCHEMAS[entityName];
+    const typeEnum = schema?.properties?.type?.enum;
+    setTypeOptions(typeEnum || []);
   };
 
   const openAdd = () => {
