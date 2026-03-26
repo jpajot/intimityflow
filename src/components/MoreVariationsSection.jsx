@@ -255,24 +255,12 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold">More Variations ({variations.length})</h3>
-      {variations.length === 0 ? (
-        <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">No variations yet. Add one to get started.</p>
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={variations}
-          fixedColumns={["sequence", "colorway"]}
-          groupOptions={GROUP_OPTIONS}
-          getGroupKey={(v, groupBy) => getGroupKey(v, groupBy, colorVariants)}
-          filterFields={createVariationFilterFields(colorVariants)}
-        />
-      )}
-      <Button variant="outline" size="sm" onClick={openAdd} className="gap-1.5 h-8 text-xs">
-        <Plus className="w-3.5 h-3.5" /> Add Variations
-      </Button>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">More Variations ({variations.length})</h3>
+        <Button variant="outline" size="sm" onClick={openAdd} className="gap-1.5 h-8 text-xs">
+          <Plus className="w-3.5 h-3.5" /> Add Variations
+        </Button>
+      </div>
 
       {/* Bulk Add Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(o) => !o && setShowAddDialog(false)}>
