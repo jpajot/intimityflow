@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, LayoutGrid, List } from "lucide-react";
-import DataTable from "@/components/DataTable";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, ExternalLink } from "lucide-react";
 
 export default function ColorPalettes() {
   const [palettes, setPalettes] = useState([]);
@@ -17,10 +16,12 @@ export default function ColorPalettes() {
   const [commColors, setCommColors] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [selectedPaletteId, setSelectedPaletteId] = useState(null);
+  const [paletteSearch, setPaletteSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
+  const [editingPalette, setEditingPalette] = useState(null);
   const [form, setForm] = useState({ name: "", project_id: "" });
   const [saving, setSaving] = useState(false);
-  const [view, setView] = useState("table");
 
   useEffect(() => { loadData(); }, []);
 
@@ -55,20 +56,58 @@ export default function ColorPalettes() {
     setSaving(false);
   };
 
-  const getSwatches = (paletteId) => {
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    await base44.entities.ColorPalette.update(editingPalette.id, form);
+    setPalettes((prev) => prev.map((p) => p.id === editingPalette.id ? { ...p, ...form } : p));
+    setEditingPalette(null);
+    setShowDialog(false);
+    setSaving(false);
+  };
+
+  const openNew = () => {
+    setEditingPalette(null);
+    setForm({ name: "", project_id: "" });
+    setShowDialog(true);
+  };
+
+  const openEdit = (palette) => {
+    setEditingPalette(palette);
+    setForm({ name: palette.name, project_id: palette.project_id || "" });
+    setShowDialog(true);
+  };
+
+  const handleDelete = async (palette) => {
+    await base44.entities.ColorPalette.delete(palette.id);
+    setPalettes((prev) => prev.filter((p) => p.id !== palette.id));
+    if (selectedPaletteId === palette.id) setSelectedPaletteId(null);
+  };
+
+  const getSwatchData = (paletteId) => {
     const entries = paletteColors.filter((pc) => pc.palette_id === paletteId);
     return entries.map((e) => {
       if (e.color_type === "technical") {
         const t = techColors.find((c) => c.id === e.color_id);
-        return t ? (t.hex || "#ccc") : "#ccc";
+        return { hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "" };
       } else {
         const c = commColors.find((c) => c.id === e.color_id);
-        if (!c) return "#ccc";
+        if (!c) return { hex: "#ccc", name: "", code: "" };
         const t = techColors.find((t) => t.id === c.main_technical_color_id);
-        return t ? (t.hex || "#ccc") : "#ccc";
+        return { hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "" };
       }
     });
   };
+
+  const filtered = palettes.filter((p) => {
+    if (!paletteSearch) return true;
+    const q = paletteSearch.toLowerCase();
+    return p.name?.toLowerCase().includes(q);
+  });
+
+  const selectedPalette = palettes.find((p) => p.id === selectedPaletteId);
+  const selectedSwatches = selectedPaletteId ? getSwatchData(selectedPaletteId) : [];
+  const selectedProject = selectedPalette ? projects.find((p) => p.id === selectedPalette.project_id) : null;
 
   if (loading) return (
     <div className="flex items-center justify-center py-32">
@@ -76,167 +115,155 @@ export default function ColorPalettes() {
     </div>
   );
 
-  const columns = [
-    {
-      id: "swatches",
-      label: "Colors",
-      width: 100,
-      render: (palette) => {
-        const swatches = getSwatches(palette.id);
-        return (
-          <div className="flex gap-0.5">
-            {swatches.length === 0 ? (
-              <div className="w-8 h-8 rounded-md bg-muted border border-border" />
-            ) : (
-              swatches.slice(0, 6).map((hex, i) => (
-                <div key={i} className="w-5 h-8 first:rounded-l-md last:rounded-r-md" style={{ backgroundColor: hex }} />
-              ))
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "name",
-      label: "Name",
-      width: 150,
-      sortKey: (p) => p.name || "",
-      render: (palette) => (
-        <Link to={`/color-palettes/${palette.id}`} className="font-medium hover:text-primary transition-colors">{palette.name}</Link>
-      ),
-    },
-    {
-      id: "project",
-      label: "Project",
-      width: 150,
-      sortKey: (p) => {
-        const project = projects.find((pr) => pr.id === p.project_id);
-        return project?.name || "";
-      },
-      render: (palette) => {
-        const project = projects.find((p) => p.id === palette.project_id);
-        return project ? (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <FolderOpen className="w-3 h-3" />{project.name}
-          </span>
-        ) : "—";
-      },
-    },
-    {
-      id: "count",
-      label: "Count",
-      width: 100,
-      sortKey: (p) => paletteColors.filter((pc) => pc.palette_id === p.id).length,
-      render: (palette) => {
-        const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
-        return <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>;
-      },
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Color Palettes</h1>
-          <p className="text-muted-foreground mt-1">Organize colors into project palettes</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center border border-border rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setView("table")}
-              className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-              title="Table view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("gallery")}
-              className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-              title="Gallery view"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
+      <div>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">Color Palettes</h1>
+        <p className="text-muted-foreground mt-1">Organize colors into project palettes</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Palettes Panel */}
+        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Palettes ({palettes.length})</h3>
+            <Button onClick={openNew} size="sm" className="gap-1.5 h-8">
+              <Plus className="w-3.5 h-3.5" /> Add
+            </Button>
           </div>
-          <Button onClick={() => setShowDialog(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> New Palette
-          </Button>
+          <Input
+            placeholder="Search palettes…"
+            value={paletteSearch}
+            onChange={(e) => setPaletteSearch(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            {filtered.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No palettes yet</p>
+            )}
+            {filtered.map((p) => {
+              const swatches = getSwatchData(p.id);
+              const project = projects.find((pr) => pr.id === p.project_id);
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedPaletteId(p.id)}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedPaletteId === p.id
+                      ? "bg-primary/10 border-primary"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {/* Color strip */}
+                  <div className="h-6 rounded-md overflow-hidden flex mb-2">
+                    {swatches.length === 0 ? (
+                      <div className="w-full bg-muted" />
+                    ) : (
+                      swatches.slice(0, 10).map((s, i) => (
+                        <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
+                      ))
+                    )}
+                  </div>
+                  <div className={`font-medium text-sm ${selectedPaletteId === p.id ? "text-primary" : ""}`}>{p.name}</div>
+                  {project && (
+                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <FolderOpen className="w-3 h-3" />{project.name}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">{swatches.length} color{swatches.length !== 1 ? "s" : ""}</div>
+                  <div className="flex gap-1 mt-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Detail Panel */}
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
+          {!selectedPalette ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Palette className="w-10 h-10 text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground">Select a palette to see its colors</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold">{selectedPalette.name}</h3>
+                  {selectedProject && (
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <FolderOpen className="w-3 h-3" />{selectedProject.name}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  to={`/color-palettes/${selectedPalette.id}`}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Open palette
+                </Link>
+              </div>
+
+              {/* Full color strip */}
+              {selectedSwatches.length > 0 && (
+                <div className="h-12 rounded-lg overflow-hidden flex border border-border">
+                  {selectedSwatches.map((s, i) => (
+                    <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
+                  ))}
+                </div>
+              )}
+
+              {/* Color cards grid */}
+              {selectedSwatches.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No colors in this palette yet.</p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {selectedSwatches.map((s, i) => (
+                    <div key={i} className="rounded-lg border border-border overflow-hidden">
+                      <div className="aspect-square" style={{ backgroundColor: s.hex }} />
+                      <div className="p-2 space-y-0.5">
+                        <p className="text-xs font-medium truncate">{s.name || "—"}</p>
+                        {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
+                        <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {palettes.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
-            <Palette className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="font-semibold">No palettes yet</h3>
-          <p className="text-sm text-muted-foreground mt-1">Create a palette and link it to a project</p>
-        </div>
-      ) : view === "table" ? (
-        <DataTable
-          columns={columns}
-          rows={palettes}
-          fixedColumns={["swatches"]}
-          filterFields={[
-            { getValue: (p) => p.name },
-            { getValue: (p) => {
-              const project = projects.find((pr) => pr.id === p.project_id);
-              return project?.name || "";
-            }},
-          ]}
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {palettes.map((palette) => {
-            const swatches = getSwatches(palette.id);
-            const project = projects.find((p) => p.id === palette.project_id);
-            return (
-              <Link
-                key={palette.id}
-                to={`/color-palettes/${palette.id}`}
-                className="rounded-xl border border-border bg-card hover:shadow-md transition-shadow overflow-hidden"
-              >
-                <div className="h-24 flex">
-                  {swatches.length === 0 ? (
-                    <div className="w-full bg-muted" />
-                  ) : (
-                    swatches.map((hex, i) => (
-                      <div
-                        key={i}
-                        className="flex-1"
-                        style={{ backgroundColor: hex }}
-                      />
-                    ))
-                  )}
-                </div>
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold text-sm">{palette.name}</h3>
-                  {project && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <FolderOpen className="w-3 h-3" />{project.name}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {paletteColors.filter((pc) => pc.palette_id === palette.id).length} color{paletteColors.filter((pc) => pc.palette_id === palette.id).length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      <Dialog open={showDialog} onOpenChange={(o) => { if (!o) { setShowDialog(false); setEditingPalette(null); } }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>New Color Palette</DialogTitle></DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>{editingPalette ? "Edit Palette" : "New Color Palette"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={editingPalette ? handleUpdate : handleCreate} className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs">Project</Label>
-              <Select value={form.project_id} onValueChange={handleProjectChange}>
+              <Select value={form.project_id || "none"} onValueChange={(v) => handleProjectChange(v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="Select a project…" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -246,9 +273,9 @@ export default function ColorPalettes() {
               <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Spring Collection Palette" required />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => { setShowDialog(false); setEditingPalette(null); }}>Cancel</Button>
               <Button type="submit" disabled={saving} className="gap-2">
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />} Create
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}{editingPalette ? "Save" : "Create"}
               </Button>
             </DialogFooter>
           </form>
