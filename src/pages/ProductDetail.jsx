@@ -43,6 +43,7 @@ export default function ProductDetail() {
   const [hasStyleSizes, setHasStyleSizes] = useState(false);
   const [lovTypes, setLovTypes] = useState({});
   const [lovValues, setLovValues] = useState([]);
+  const [productTypeOptions, setProductTypeOptions] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
@@ -76,6 +77,17 @@ export default function ProductDetail() {
     types.forEach((t) => (typeMap[t.code] = t.id));
     setLovTypes(typeMap);
     setLovValues(values);
+
+    // Load product type options from EntityTypes LOV filtered by Product entity
+    const entityTypesLov = types.find((t) => t.code === "EntityTypes");
+    const entitiesLov = types.find((t) => t.code === "Entities");
+    if (entityTypesLov && entitiesLov) {
+      const productEntityValue = values.find((v) => v.type_of_lov_id === entitiesLov.id && v.name === "Product");
+      if (productEntityValue) {
+        const typeOpts = values.filter((v) => v.type_of_lov_id === entityTypesLov.id && v.depends_on_value_id === productEntityValue.id);
+        setProductTypeOptions(typeOpts.map((v) => v.name));
+      }
+    }
   };
 
   const getCategories = () => {

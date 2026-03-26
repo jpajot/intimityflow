@@ -20,6 +20,8 @@ const EMPTY_FORM = {
 export default function SystemCodeGeneratorLibrary() {
   const [generators, setGenerators] = useState([]);
   const [entityNames, setEntityNames] = useState([]);
+  const [entityLovValues, setEntityLovValues] = useState([]); // all Entities LOV values
+  const [entityTypesLovId, setEntityTypesLovId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(null); // null | "add" | "edit"
   const [editing, setEditing] = useState(null);
@@ -34,10 +36,17 @@ export default function SystemCodeGeneratorLibrary() {
   }, []);
 
   const loadEntityNames = async () => {
-    const lovTypes = await base44.entities.TypeOfLOV.filter({ code: "Entities" });
-    if (lovTypes.length > 0) {
-      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+    const [entitiesLov, entityTypesLov] = await Promise.all([
+      base44.entities.TypeOfLOV.filter({ code: "Entities" }),
+      base44.entities.TypeOfLOV.filter({ code: "EntityTypes" }),
+    ]);
+    if (entitiesLov.length > 0) {
+      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: entitiesLov[0].id });
       setEntityNames(values.map((v) => v.name).sort());
+      setEntityLovValues(values);
+    }
+    if (entityTypesLov.length > 0) {
+      setEntityTypesLovId(entityTypesLov[0].id);
     }
   };
 
@@ -49,14 +58,14 @@ export default function SystemCodeGeneratorLibrary() {
   };
 
   const loadTypeOptions = async (entityName) => {
-    // Look for a "<EntityName> Types" LOV
-    const lovTypes = await base44.entities.TypeOfLOV.filter({ code: entityName + "Types" });
-    if (lovTypes.length > 0) {
-      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
-      setTypeOptions(values.map((v) => v.name));
-    } else {
-      setTypeOptions([]);
-    }
+    if (!entityTypesLovId) { setTypeOptions([]); return; }
+    const entityValue = entityLovValues.find((v) => v.name === entityName);
+    if (!entityValue) { setTypeOptions([]); return; }
+    const types = await base44.entities.ListOfValues.filter({
+      type_of_lov_id: entityTypesLovId,
+      depends_on_value_id: entityValue.id,
+    });
+    setTypeOptions(types.map((t) => t.name));
   };
 
   const openAdd = () => {

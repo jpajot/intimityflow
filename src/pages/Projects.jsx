@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2, FolderOpen, ChevronRight, Pencil } from "lucide-react";
 
-const PROJECT_TYPES = ["Seasonal Collection", "Artist Collaboration", "Capsule", "Limited Edition", "Core Range", "Other"];
 const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
 const STATUSES = ["Planning", "Active", "Archived"];
 
@@ -23,6 +22,7 @@ const STATUS_COLORS = {
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [projectTypes, setProjectTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ name: "", type: "", season: "", description: "", status: "Planning" });
@@ -31,7 +31,24 @@ export default function Projects() {
 
   useEffect(() => {
     loadData();
+    loadProjectTypes();
   }, []);
+
+  const loadProjectTypes = async () => {
+    const lovTypes = await base44.entities.TypeOfLOV.filter({ code: "EntityTypes" });
+    if (lovTypes.length > 0) {
+      // Find the Project entity LOV ID from Entities LOV
+      const entitiesLov = await base44.entities.TypeOfLOV.filter({ code: "Entities" });
+      if (entitiesLov.length > 0) {
+        const entityValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: entitiesLov[0].id });
+        const projectEntityValue = entityValues.find((v) => v.name === "Project");
+        if (projectEntityValue) {
+          const types = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id, depends_on_value_id: projectEntityValue.id });
+          setProjectTypes(types.map((t) => t.name));
+        }
+      }
+    }
+  };
 
   const loadData = async () => {
     const [projs, asns] = await Promise.all([
@@ -137,7 +154,7 @@ export default function Projects() {
                 <Label className="text-xs">Type</Label>
                 <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  <SelectContent>{projectTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -182,7 +199,7 @@ export default function Projects() {
                   <Label className="text-xs">Type</Label>
                   <Select value={editingProject.type} onValueChange={(v) => setEditingProject((p) => ({ ...p, type: v }))}>
                     <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                    <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    <SelectContent>{projectTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
