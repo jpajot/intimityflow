@@ -132,19 +132,16 @@ export default function ProjectPlannedVariations({
     {
       id: "colorway",
       label: "Colorway",
-      width: 120,
-      sortKey: (v) => {
-        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
-        return color?.color_name || "";
-      },
-      render: (v) => {
-        const color = colorVariants.find((cv) => cv.id === v.product_color_id);
-        return (
-          <span className="text-sm text-muted-foreground">
-            {color?.color_name || "—"}
-          </span>
-        );
-      },
+      width: 140,
+      sortKey: (v) => v.name || "",
+      render: (v) => (
+        <div className="flex items-center gap-2">
+          {v.color_hex && (
+            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: v.color_hex }} />
+          )}
+          <span className="text-sm text-muted-foreground">{v.name || "—"}</span>
+        </div>
+      ),
     },
     {
       id: "name",
