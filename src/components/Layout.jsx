@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronLeft, ChevronRight, X, Hash } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Shirt },
@@ -23,6 +23,7 @@ const SIZE_STUDIO_ITEMS = [
 
 const CONFIG_ITEMS = [
   { path: "/list-of-values", label: "List of Values", icon: ListCollapse },
+  { path: "/code-generators", label: "Code Generators", icon: Hash },
 ];
 
 export default function Layout() {
