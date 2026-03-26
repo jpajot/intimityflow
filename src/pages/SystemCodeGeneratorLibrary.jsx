@@ -15,22 +15,11 @@ const EMPTY_FORM = {
   description: "",
 };
 
-// Entity type enums (from schema)
-const ENTITY_TYPE_ENUMS = {
-  Product: ["Product", "Material"],
-  CommercialColor: ["Solid", "Combined"],
-  Project: ["Seasonal Collection", "Artist Collaboration", "Capsule", "Limited Edition", "Core Range", "Other"],
-};
 
-const ALL_ENTITIES = [
-  "ColorPalette", "ColorPaletteColor", "CommercialColor", "ListOfValues",
-  "Product", "ProductColor", "ProductColorAndMore", "Project", "ProjectAssignment",
-  "Size", "SizeGrid", "SizeGridSize", "SizeLanguage", "StyleSize",
-  "SystemCodeGenerator", "TechnicalColor", "TypeOfLOV",
-].sort();
 
 export default function SystemCodeGeneratorLibrary() {
   const [generators, setGenerators] = useState([]);
+  const [entityNames, setEntityNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(null); // null | "add" | "edit"
   const [editing, setEditing] = useState(null);
@@ -41,7 +30,16 @@ export default function SystemCodeGeneratorLibrary() {
 
   useEffect(() => {
     load();
+    loadEntityNames();
   }, []);
+
+  const loadEntityNames = async () => {
+    const lovTypes = await base44.entities.TypeOfLOV.filter({ code: "Entities" });
+    if (lovTypes.length > 0) {
+      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+      setEntityNames(values.map((v) => v.name).sort());
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -50,8 +48,15 @@ export default function SystemCodeGeneratorLibrary() {
     setLoading(false);
   };
 
-  const loadTypeOptions = (entityName) => {
-    setTypeOptions(ENTITY_TYPE_ENUMS[entityName] || []);
+  const loadTypeOptions = async (entityName) => {
+    // Look for a "<EntityName> Types" LOV
+    const lovTypes = await base44.entities.TypeOfLOV.filter({ code: entityName + "Types" });
+    if (lovTypes.length > 0) {
+      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+      setTypeOptions(values.map((v) => v.name));
+    } else {
+      setTypeOptions([]);
+    }
   };
 
   const openAdd = () => {
@@ -192,7 +197,7 @@ export default function SystemCodeGeneratorLibrary() {
               >
                 <SelectTrigger><SelectValue placeholder="Select entity…" /></SelectTrigger>
                 <SelectContent>
-                  {ALL_ENTITIES.map((e) => (
+                  {entityNames.map((e) => (
                     <SelectItem key={e} value={e}>{e}</SelectItem>
                   ))}
                 </SelectContent>
