@@ -285,6 +285,7 @@ export default function ColorLibrary() {
                   <div className="p-3 space-y-1">
                     <p className="text-xs font-mono font-medium truncate">{c.code}</p>
                     <p className="text-xs text-muted-foreground truncate">{c.name}</p>
+                    <p className="text-xs font-mono text-muted-foreground truncate">{colorToHex(c)}</p>
                   </div>
                   <div className="px-3 pb-3 flex gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6 flex-1" onClick={() => openEditTech(c)}><Pencil className="w-3 h-3" /></Button>
