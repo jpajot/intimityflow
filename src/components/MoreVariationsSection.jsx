@@ -57,6 +57,11 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addColorwayIds, setAddColorwayIds] = useState([]);
+  const [addPackCodes, setAddPackCodes] = useState([]);
+  const [addName, setAddName] = useState("");
+  const [addSizeIds, setAddSizeIds] = useState([]);
 
   useEffect(() => {
     loadAll();
@@ -79,12 +84,44 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   // Active style sizes (active !== false)
   const activeSizes = styleSizes.filter((ss) => ss.active !== false);
 
-  const openNew = () => {
-    const f = emptyForm();
-    f.product_color_id = colorVariants[0]?.id || "";
-    f.size_ids = activeSizes.map((ss) => ss.size_id);
-    setForm(f);
-    setEditing({});
+  const openAdd = () => {
+    setAddColorwayIds([]);
+    setAddPackCodes([]);
+    setAddName("");
+    setAddSizeIds(activeSizes.map((ss) => ss.size_id));
+    setShowAddDialog(true);
+  };
+
+  const toggleAddColorway = (id) => setAddColorwayIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggleAddPackCode = (pc) => setAddPackCodes((prev) => prev.includes(pc) ? prev.filter((x) => x !== pc) : [...prev, pc]);
+  const toggleAddSize = (sizeId) => setAddSizeIds((prev) => prev.includes(sizeId) ? prev.filter((x) => x !== sizeId) : [...prev, sizeId]);
+
+  const handleBulkCreate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    const combinations = [];
+    for (const cwId of addColorwayIds) {
+      for (const pc of addPackCodes) {
+        combinations.push({ cwId, pc });
+      }
+    }
+    const cw = colorVariants.find((cv) => cv.id === addColorwayIds[0]);
+    let seq = parseInt((variations.reduce((max, v) => Math.max(max, parseInt(v.sequence || "0", 10)), 0)).toString(), 10);
+    const created = [];
+    for (const { cwId, pc } of combinations) {
+      seq += 1;
+      const item = await base44.entities.ProductColorAndMore.create({
+        product_color_id: cwId,
+        name: addName,
+        pack_code: pc,
+        size_ids: addSizeIds,
+        sequence: String(seq).padStart(4, "0"),
+      });
+      created.push(item);
+    }
+    setVariations((prev) => [...created, ...prev]);
+    setSaving(false);
+    setShowAddDialog(false);
   };
 
   const openEdit = (v) => {
@@ -227,9 +264,103 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
           filterFields={createVariationFilterFields(colorVariants)}
         />
       )}
-      <Button variant="outline" size="sm" onClick={openNew} className="gap-1.5 h-8 text-xs">
-        <Plus className="w-3.5 h-3.5" /> Add Variation
+      <Button variant="outline" size="sm" onClick={openAdd} className="gap-1.5 h-8 text-xs">
+        <Plus className="w-3.5 h-3.5" /> Add Variations
       </Button>
+
+      {/* Bulk Add Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(o) => !o && setShowAddDialog(false)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Variations</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleBulkCreate} className="space-y-4">
+            {/* Colorways */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Colorways</Label>
+              <div className="border border-border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                {colorVariants.map((cv) => (
+                  <div key={cv.id} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={addColorwayIds.includes(cv.id)}
+                      onCheckedChange={() => toggleAddColorway(cv.id)}
+                      id={`add-cw-${cv.id}`}
+                    />
+                    <label htmlFor={`add-cw-${cv.id}`} className="flex items-center gap-2 text-sm cursor-pointer">
+                      {cv.color_hex && <div className="w-3 h-3 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex }} />}
+                      {cv.color_name}{cv.colorway_code ? ` (${cv.colorway_code})` : ""}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pack Codes */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Pack Codes</Label>
+              <div className="flex flex-wrap gap-2">
+                {PACK_CODES.map((pc) => (
+                  <label key={pc} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm transition-colors ${
+                    addPackCodes.includes(pc) ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                  }`}>
+                    <Checkbox
+                      checked={addPackCodes.includes(pc)}
+                      onCheckedChange={() => toggleAddPackCode(pc)}
+                    />
+                    {pc}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Variation Name</Label>
+              <Input value={addName} onChange={(e) => setAddName(e.target.value)} required placeholder="e.g. Standard" />
+            </div>
+
+            {/* Sizes */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Sizes</Label>
+              {activeSizes.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No active sizes on this style.</p>
+              ) : (
+                <div className="border border-border rounded-lg p-3 space-y-2">
+                  {activeSizes.map((ss) => {
+                    const sz = sizes.find((s) => s.id === ss.size_id);
+                    return (
+                      <div key={ss.size_id} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={addSizeIds.includes(ss.size_id)}
+                          onCheckedChange={() => toggleAddSize(ss.size_id)}
+                          id={`add-sz-${ss.size_id}`}
+                        />
+                        <label htmlFor={`add-sz-${ss.size_id}`} className="text-sm cursor-pointer">
+                          {sz?.size_code || "?"} {sz?.name ? `— ${sz.name}` : ""}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {addColorwayIds.length > 0 && addPackCodes.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {addColorwayIds.length} colorway{addColorwayIds.length > 1 ? "s" : ""} × {addPackCodes.length} pack code{addPackCodes.length > 1 ? "s" : ""} = <strong>{addColorwayIds.length * addPackCodes.length} variations</strong>
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 pt-1">
+              <Button type="submit" disabled={saving || addColorwayIds.length === 0 || addPackCodes.length === 0} className="gap-2">
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Create Variations
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
