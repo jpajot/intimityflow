@@ -12,6 +12,7 @@ const EMPTY_FORM = {
   entity_type: "",
   prefix: "",
   padding: 5,
+  excluded_codes: "",
   description: "",
 };
 
@@ -82,6 +83,7 @@ export default function SystemCodeGeneratorLibrary() {
       entity_type: gen.entity_type,
       prefix: gen.prefix,
       padding: gen.padding ?? 5,
+      excluded_codes: gen.excluded_codes || "",
       description: gen.description || "",
     });
     loadTypeOptions(gen.entity_name);
@@ -266,6 +268,15 @@ export default function SystemCodeGeneratorLibrary() {
               </p>
             )}
 
+            <div className="space-y-2">
+              <Label className="text-xs">Excluded Codes (optional)</Label>
+              <Input
+                value={form.excluded_codes}
+                onChange={(e) => setForm((f) => ({ ...f, excluded_codes: e.target.value }))}
+                placeholder="e.g. STY00010,STY00013"
+              />
+              <p className="text-xs text-muted-foreground">Comma-separated codes to skip during generation.</p>
+            </div>
             <div className="space-y-2">
               <Label className="text-xs">Description (optional)</Label>
               <Input
