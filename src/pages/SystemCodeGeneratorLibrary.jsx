@@ -15,15 +15,19 @@ const EMPTY_FORM = {
   description: "",
 };
 
-// Load all entity schemas via Vite's static glob import
-const entityModules = import.meta.glob('/src/entities/*.json', { eager: true });
-const ENTITY_SCHEMAS = Object.fromEntries(
-  Object.entries(entityModules).map(([path, mod]) => {
-    const name = path.split('/').pop().replace('.json', '');
-    return [name, mod.default || mod];
-  })
-);
-const ALL_ENTITIES = Object.keys(ENTITY_SCHEMAS).sort();
+// Entity type enums (from schema)
+const ENTITY_TYPE_ENUMS = {
+  Product: ["Product", "Material"],
+  CommercialColor: ["Solid", "Combined"],
+  Project: ["Seasonal Collection", "Artist Collaboration", "Capsule", "Limited Edition", "Core Range", "Other"],
+};
+
+const ALL_ENTITIES = [
+  "ColorPalette", "ColorPaletteColor", "CommercialColor", "ListOfValues",
+  "Product", "ProductColor", "ProductColorAndMore", "Project", "ProjectAssignment",
+  "Size", "SizeGrid", "SizeGridSize", "SizeLanguage", "StyleSize",
+  "SystemCodeGenerator", "TechnicalColor", "TypeOfLOV",
+].sort();
 
 export default function SystemCodeGeneratorLibrary() {
   const [generators, setGenerators] = useState([]);
@@ -47,9 +51,7 @@ export default function SystemCodeGeneratorLibrary() {
   };
 
   const loadTypeOptions = (entityName) => {
-    const schema = ENTITY_SCHEMAS[entityName];
-    const typeEnum = schema?.properties?.type?.enum;
-    setTypeOptions(typeEnum || []);
+    setTypeOptions(ENTITY_TYPE_ENUMS[entityName] || []);
   };
 
   const openAdd = () => {
