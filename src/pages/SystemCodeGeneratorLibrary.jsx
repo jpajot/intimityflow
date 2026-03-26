@@ -16,10 +16,10 @@ const EMPTY_FORM = {
 };
 
 // Load all entity schemas via Vite's static glob import
-const entityModules = import.meta.glob('../entities/*.json', { eager: true });
+const entityModules = import.meta.glob('/src/entities/*.json', { eager: true });
 const ENTITY_SCHEMAS = Object.fromEntries(
   Object.entries(entityModules).map(([path, mod]) => {
-    const name = path.replace('../entities/', '').replace('.json', '');
+    const name = path.split('/').pop().replace('.json', '');
     return [name, mod.default || mod];
   })
 );
