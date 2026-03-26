@@ -16,12 +16,20 @@ export default function ProjectPlannedVariations({
   const [copying, setCopying] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [packCodes, setPackCodes] = useState([]);
+  const [variants, setVariants] = useState([]);
 
   useState(() => {
     base44.entities.TypeOfLOV.filter({ code: "Pack" }).then((lovTypes) => {
       if (lovTypes.length > 0) {
         base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id }).then((lovValues) => {
           setPackCodes(lovValues.map((v) => v.name));
+        });
+      }
+    });
+    base44.entities.TypeOfLOV.filter({ code: "Variant" }).then((lovTypes) => {
+      if (lovTypes.length > 0) {
+        base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id }).then((lovValues) => {
+          setVariants(lovValues.map((v) => v.name));
         });
       }
     });
@@ -197,6 +205,21 @@ export default function ProjectPlannedVariations({
       entityType: "ProductColorAndMore",
       getValue: (v) => v.id,
       getDisplayValue: (v) => v.pack_code || "",
+    },
+    {
+      id: "variant",
+      label: "Variant",
+      width: 90,
+      sortKey: (v) => v.variant || "",
+      render: (v) => (
+        <span className="text-sm text-muted-foreground">{v.variant || "—"}</span>
+      ),
+      editable: true,
+      options: variants,
+      entityField: "variant",
+      entityType: "ProductColorAndMore",
+      getValue: (v) => v.id,
+      getDisplayValue: (v) => v.variant || "",
     },
     {
       id: "actions",

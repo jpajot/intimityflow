@@ -45,14 +45,16 @@ const emptyForm = () => ({
   image_url: "",
   size_ids: [],
   pack_code: "",
+  variant: "",
   sequence: "",
-});
+  });
 
 export default function MoreVariationsSection({ productId, colorVariants }) {
   const [variations, setVariations] = useState([]);
   const [styleSizes, setStyleSizes] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [packCodes, setPackCodes] = useState([]);
+  const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm());
@@ -61,6 +63,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addColorwayIds, setAddColorwayIds] = useState([]);
   const [addPackCodes, setAddPackCodes] = useState([]);
+  const [addVariants, setAddVariants] = useState([]);
   const [addName, setAddName] = useState("");
   const [addSizeIds, setAddSizeIds] = useState([]);
 
@@ -70,15 +73,20 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
   const loadAll = async () => {
     setLoading(true);
-    const [allVars, ss, sz, lovTypes] = await Promise.all([
+    const [allVars, ss, sz, lovTypes, variantLovTypes] = await Promise.all([
       base44.entities.ProductColorAndMore.list("-created_date", 500),
       base44.entities.StyleSize.filter({ product_id: productId }),
       base44.entities.Size.list("size_code", 500),
       base44.entities.TypeOfLOV.filter({ code: "Pack" }),
+      base44.entities.TypeOfLOV.filter({ code: "Variant" }),
     ]);
     if (lovTypes.length > 0) {
       const lovValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
       setPackCodes(lovValues.map((v) => v.name));
+    }
+    if (variantLovTypes.length > 0) {
+      const variantValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: variantLovTypes[0].id });
+      setVariants(variantValues.map((v) => v.name));
     }
     const colorIds = colorVariants.map((cv) => cv.id);
     setVariations(allVars.filter((v) => colorIds.includes(v.product_color_id)));
@@ -93,6 +101,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const openAdd = () => {
     setAddColorwayIds([]);
     setAddPackCodes([]);
+    setAddVariants([]);
     setAddName("");
     setAddSizeIds(activeSizes.map((ss) => ss.size_id));
     setShowAddDialog(true);
@@ -100,26 +109,31 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
   const toggleAddColorway = (id) => setAddColorwayIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   const toggleAddPackCode = (pc) => setAddPackCodes((prev) => prev.includes(pc) ? prev.filter((x) => x !== pc) : [...prev, pc]);
+  const toggleAddVariant = (v) => setAddVariants((prev) => prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]);
   const toggleAddSize = (sizeId) => setAddSizeIds((prev) => prev.includes(sizeId) ? prev.filter((x) => x !== sizeId) : [...prev, sizeId]);
 
   const handleBulkCreate = async (e) => {
     e.preventDefault();
     setSaving(true);
     const combinations = [];
+    const effectiveVariants = addVariants.length > 0 ? addVariants : [""];
     for (const cwId of addColorwayIds) {
       for (const pc of addPackCodes) {
-        combinations.push({ cwId, pc });
+        for (const vt of effectiveVariants) {
+          combinations.push({ cwId, pc, vt });
+        }
       }
     }
     const cw = colorVariants.find((cv) => cv.id === addColorwayIds[0]);
     let seq = parseInt((variations.reduce((max, v) => Math.max(max, parseInt(v.sequence || "0", 10)), 0)).toString(), 10);
     const created = [];
-    for (const { cwId, pc } of combinations) {
+    for (const { cwId, pc, vt } of combinations) {
       seq += 1;
       const item = await base44.entities.ProductColorAndMore.create({
         product_color_id: cwId,
         name: addName,
         pack_code: pc,
+        variant: vt || undefined,
         size_ids: addSizeIds,
         sequence: String(seq).padStart(4, "0"),
       });
@@ -139,6 +153,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
       image_url: v.image_url || "",
       size_ids: v.size_ids || [],
       pack_code: v.pack_code || "",
+      variant: v.variant || "",
       sequence: v.sequence || "",
     });
     setEditing(v);
@@ -229,6 +244,13 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
       render: (v) => <span className="text-xs text-muted-foreground">{v.pack_code || "—"}</span>,
     },
     {
+      id: "variant",
+      label: "Variant",
+      width: 90,
+      sortKey: (v) => v.variant || "",
+      render: (v) => <span className="text-xs text-muted-foreground">{v.variant || "—"}</span>,
+    },
+    {
       id: "sizes",
       label: "Sizes",
       width: 150,
@@ -307,7 +329,25 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
               </div>
             </div>
 
-
+            {/* Variants */}
+            {variants.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Variants (optional)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map((vt) => (
+                    <label key={vt} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm transition-colors ${
+                      addVariants.includes(vt) ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                    }`}>
+                      <Checkbox
+                        checked={addVariants.includes(vt)}
+                        onCheckedChange={() => toggleAddVariant(vt)}
+                      />
+                      {vt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Sizes */}
             <div className="space-y-2">
@@ -337,7 +377,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
             {addColorwayIds.length > 0 && addPackCodes.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {addColorwayIds.length} colorway{addColorwayIds.length > 1 ? "s" : ""} × {addPackCodes.length} pack code{addPackCodes.length > 1 ? "s" : ""} = <strong>{addColorwayIds.length * addPackCodes.length} variations</strong>
+                {addColorwayIds.length} colorway{addColorwayIds.length > 1 ? "s" : ""} × {addPackCodes.length} pack code{addPackCodes.length > 1 ? "s" : ""}{addVariants.length > 0 ? ` × ${addVariants.length} variant${addVariants.length > 1 ? "s" : ""}` : ""} = <strong>{addColorwayIds.length * addPackCodes.length * (addVariants.length || 1)} variations</strong>
               </p>
             )}
 
@@ -397,6 +437,18 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
                   {packCodes.map((pc) => <SelectItem key={pc} value={pc}>{pc}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Variant */}
+            <div className="space-y-2">
+              <Label className="text-xs">Variant</Label>
+              <Select value={form.variant || "none"} onValueChange={(v) => setForm((f) => ({ ...f, variant: v === "none" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Select variant…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {variants.map((vt) => <SelectItem key={vt} value={vt}>{vt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
