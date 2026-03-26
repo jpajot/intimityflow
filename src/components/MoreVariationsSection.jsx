@@ -9,7 +9,7 @@ import { Plus, Pencil, Loader2, X, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "./DataTable";
 
-const PACK_CODES = ["E1", "E2", "96", "97"];
+
 
 const GROUP_OPTIONS = [
   { value: "none", label: "None" },
@@ -52,6 +52,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [variations, setVariations] = useState([]);
   const [styleSizes, setStyleSizes] = useState([]);
   const [sizes, setSizes] = useState([]);
+  const [packCodes, setPackCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm());
@@ -69,11 +70,16 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
   const loadAll = async () => {
     setLoading(true);
-    const [allVars, ss, sz] = await Promise.all([
+    const [allVars, ss, sz, lovTypes] = await Promise.all([
       base44.entities.ProductColorAndMore.list("-created_date", 500),
       base44.entities.StyleSize.filter({ product_id: productId }),
       base44.entities.Size.list("size_code", 500),
+      base44.entities.TypeOfLOV.filter({ code: "Pack" }),
     ]);
+    if (lovTypes.length > 0) {
+      const lovValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+      setPackCodes(lovValues.map((v) => v.name));
+    }
     const colorIds = colorVariants.map((cv) => cv.id);
     setVariations(allVars.filter((v) => colorIds.includes(v.product_color_id)));
     setStyleSizes(ss);
@@ -299,7 +305,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Pack Codes</Label>
               <div className="flex flex-wrap gap-2">
-                {PACK_CODES.map((pc) => (
+                {packCodes.map((pc) => (
                   <label key={pc} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm transition-colors ${
                     addPackCodes.includes(pc) ? "border-primary bg-accent" : "border-border hover:bg-muted"
                   }`}>
@@ -402,7 +408,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
                 <SelectTrigger><SelectValue placeholder="Select pack code…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {PACK_CODES.map((pc) => <SelectItem key={pc} value={pc}>{pc}</SelectItem>)}
+                  {packCodes.map((pc) => <SelectItem key={pc} value={pc}>{pc}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

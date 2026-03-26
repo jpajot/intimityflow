@@ -15,6 +15,17 @@ export default function ProjectPlannedVariations({
 }) {
   const [copying, setCopying] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [packCodes, setPackCodes] = useState([]);
+
+  useState(() => {
+    base44.entities.TypeOfLOV.filter({ code: "Pack" }).then((lovTypes) => {
+      if (lovTypes.length > 0) {
+        base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id }).then((lovValues) => {
+          setPackCodes(lovValues.map((v) => v.name));
+        });
+      }
+    });
+  }, []);
 
   const linkedColorIds = assignments.map((a) => a.product_color_id);
   const linkedVariations = variations.filter((v) =>
@@ -181,7 +192,7 @@ export default function ProjectPlannedVariations({
         <span className="text-sm text-muted-foreground">{v.pack_code || "—"}</span>
       ),
       editable: true,
-      options: ["E1", "E2", "96", "97"],
+      options: packCodes,
       entityField: "pack_code",
       entityType: "ProductColorAndMore",
       getValue: (v) => v.id,
