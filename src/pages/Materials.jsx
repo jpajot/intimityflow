@@ -182,11 +182,6 @@ export default function Materials() {
           rows={filtered}
           fixedColumns={["image"]}
           hideColumnToggle
-          filterFields={[
-            { getValue: (p) => p.name },
-            { getValue: (p) => p.category },
-            { getValue: (p) => p.sub_category },
-          ]}
         />
       )}
     </div>
