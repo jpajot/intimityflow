@@ -1,0 +1,26 @@
+{
+  "name": "ListViewConfig",
+  "type": "object",
+  "properties": {
+    "page_key": {
+      "type": "string",
+      "description": "Identifier for the page + type, e.g. 'styles' or 'materials'"
+    },
+    "name": {
+      "type": "string",
+      "description": "View name, e.g. 'Sales View'"
+    },
+    "column_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered list of visible column IDs"
+    }
+  },
+  "required": [
+    "page_key",
+    "name",
+    "column_ids"
+  ]
+}

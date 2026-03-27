@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,10 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, ArrowUp, ArrowDown, Settings2, Search } from "lucide-react";
 
-export default function DataTable({ columns, rows, fixedColumns = [], groupOptions = [], getGroupKey = null, filterFields = [], onEdit = null }) {
+export default function DataTable({ columns, rows, fixedColumns = [], groupOptions = [], getGroupKey = null, filterFields = [], onEdit = null, hideColumnToggle = false }) {
   const [sortBy, setSortBy] = useState(null);
   const [sortDir, setSortDir] = useState("asc");
   const [visibleCols, setVisibleCols] = useState(new Set(columns.map((c) => c.id)));
+
+  useEffect(() => {
+    setVisibleCols(new Set(columns.map((c) => c.id)));
+  }, [columns]);
   const [groupBy1, setGroupBy1] = useState("none");
   const [groupBy2, setGroupBy2] = useState("none");
   const [filterText, setFilterText] = useState("");
@@ -159,6 +163,7 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
             </>
           )}
         </div>
+        {!hideColumnToggle && (
         <div className="flex items-center justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -182,6 +187,7 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        )}
       </div>
 
       {sortedRows.length === 0 && !getGroupKey ? (

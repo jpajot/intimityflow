@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import ProductCard from "../components/ProductCard";
+import ViewSelector from "../components/ViewSelector";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Package, Loader2, LayoutGrid, List, Plus } from "lucide-react";
@@ -14,7 +15,8 @@ export default function Materials() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [view, setView] = useState("gallery");
+  const [view, setView] = useState(() => localStorage.getItem("materials_view") || "gallery");
+  const [activeColumns, setActiveColumns] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -39,7 +41,7 @@ export default function Materials() {
 
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
 
-  const columns = [
+  const allColumns = [
     {
       id: "image",
       label: "Image",
@@ -89,6 +91,7 @@ export default function Materials() {
       },
     },
   ];
+  const columns = activeColumns || allColumns;
 
   if (loading) {
     return (
@@ -125,10 +128,17 @@ export default function Materials() {
             ))}
           </SelectContent>
         </Select>
+        {view === "table" && (
+          <ViewSelector
+            pageKey="materials"
+            allColumns={allColumns}
+            onColumnsChange={setActiveColumns}
+          />
+        )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button
             type="button"
-            onClick={() => setView("gallery")}
+            onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }}
             className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
             title="Gallery view"
           >
@@ -136,7 +146,7 @@ export default function Materials() {
           </button>
           <button
             type="button"
-            onClick={() => setView("table")}
+            onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }}
             className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
             title="Table view"
           >
@@ -171,6 +181,7 @@ export default function Materials() {
           columns={columns}
           rows={filtered}
           fixedColumns={["image"]}
+          hideColumnToggle
           filterFields={[
             { getValue: (p) => p.name },
             { getValue: (p) => p.category },

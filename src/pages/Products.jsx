@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import ViewSelector from "../components/ViewSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +15,8 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [view, setView] = useState("gallery");
+  const [view, setView] = useState(() => localStorage.getItem("products_view") || "gallery");
+  const [activeColumns, setActiveColumns] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -39,7 +41,7 @@ export default function Products() {
 
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
 
-  const columns = [
+  const allColumns = [
     {
       id: "image",
       label: "Image",
@@ -79,6 +81,13 @@ export default function Products() {
       render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category}</span>,
     },
     {
+      id: "customer_need",
+      label: "Customer Need",
+      width: 130,
+      sortKey: (p) => p.customer_need || "",
+      render: (p) => <span className="text-xs text-muted-foreground">{p.customer_need}</span>,
+    },
+    {
       id: "colors",
       label: "Colors",
       width: 100,
@@ -89,6 +98,7 @@ export default function Products() {
       },
     },
   ];
+  const columns = activeColumns || allColumns;
 
   if (loading) {
     return (
@@ -125,11 +135,18 @@ export default function Products() {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {view === "table" && (
+            <ViewSelector
+              pageKey="styles"
+              allColumns={allColumns}
+              onColumnsChange={setActiveColumns}
+            />
+          )}
           <div className="flex items-center border border-border rounded-lg overflow-hidden">
             <button
               type="button"
-              onClick={() => setView("gallery")}
+              onClick={() => { setView("gallery"); localStorage.setItem("products_view", "gallery"); }}
               className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
               title="Gallery view"
             >
@@ -137,7 +154,7 @@ export default function Products() {
             </button>
             <button
               type="button"
-              onClick={() => setView("table")}
+              onClick={() => { setView("table"); localStorage.setItem("products_view", "table"); }}
               className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
               title="Table view"
             >
@@ -176,6 +193,7 @@ export default function Products() {
           columns={columns}
           rows={filtered}
           fixedColumns={["image"]}
+          hideColumnToggle
           filterFields={[
             { getValue: (p) => p.name },
             { getValue: (p) => p.category },
