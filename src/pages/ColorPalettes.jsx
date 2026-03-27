@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Search } from "lucide-react";
 
 export default function ColorPalettes() {
   const [palettes, setPalettes] = useState([]);
@@ -22,6 +22,8 @@ export default function ColorPalettes() {
   const [editingPalette, setEditingPalette] = useState(null);
   const [form, setForm] = useState({ name: "", project_id: "" });
   const [saving, setSaving] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [colorSearch, setColorSearch] = useState("");
 
   useEffect(() => { loadData(); }, []);
 
@@ -84,19 +86,43 @@ export default function ColorPalettes() {
     if (selectedPaletteId === palette.id) setSelectedPaletteId(null);
   };
 
+  const handleAddColor = async (colorType, colorId) => {
+    const created = await base44.entities.ColorPaletteColor.create({
+      palette_id: selectedPaletteId,
+      color_type: colorType,
+      color_id: colorId,
+    });
+    setPaletteColors((prev) => [...prev, created]);
+    setColorSearch("");
+    setShowColorPicker(false);
+  };
+
+  const handleRemoveColor = async (paletteColorEntry) => {
+    await base44.entities.ColorPaletteColor.delete(paletteColorEntry.id);
+    setPaletteColors((prev) => prev.filter((pc) => pc.id !== paletteColorEntry.id));
+  };
+
   const getSwatchData = (paletteId) => {
     const entries = paletteColors.filter((pc) => pc.palette_id === paletteId);
     return entries.map((e) => {
       if (e.color_type === "technical") {
         const t = techColors.find((c) => c.id === e.color_id);
-        return { hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "" };
+        return { id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "" };
       } else {
         const c = commColors.find((c) => c.id === e.color_id);
-        if (!c) return { hex: "#ccc", name: "", code: "" };
+        if (!c) return { id: e.id, hex: "#ccc", name: "", code: "" };
         const t = techColors.find((t) => t.id === c.main_technical_color_id);
-        return { hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "" };
+        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "" };
       }
     });
+  };
+
+  const getAvailableColors = () => {
+    const linkedIds = new Set(paletteColors.filter((pc) => pc.palette_id === selectedPaletteId).map((pc) => pc.color_id));
+    const q = colorSearch.toLowerCase();
+    const techFiltered = techColors.filter((t) => !linkedIds.has(t.id) && (!q || t.code?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q)));
+    const commFiltered = commColors.filter((c) => !linkedIds.has(c.id) && (!q || c.code?.toLowerCase().includes(q) || c.color_name?.toLowerCase().includes(q)));
+    return { techFiltered, commFiltered };
   };
 
   const filtered = palettes.filter((p) => {
@@ -213,13 +239,43 @@ export default function ColorPalettes() {
                     </p>
                   )}
                 </div>
-                <Link
-                  to={`/color-palettes/${selectedPalette.id}`}
-                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> Open palette
-                </Link>
+                <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => { setShowColorPicker(true); setColorSearch(""); }}>
+                  <Plus className="w-3.5 h-3.5" /> Add Color
+                </Button>
               </div>
+
+              {/* Color Picker */}
+              {showColorPicker && (() => {
+                const { techFiltered, commFiltered } = getAvailableColors();
+                const all = [
+                  ...techFiltered.map((t) => ({ id: t.id, type: "technical", hex: t.hex || "#ccc", label: `${t.code} – ${t.name}` })),
+                  ...commFiltered.map((c) => {
+                    const t = techColors.find((t) => t.id === c.main_technical_color_id);
+                    return { id: c.id, type: "commercial", hex: t?.hex || "#ccc", label: `${c.code} – ${c.color_name}` };
+                  }),
+                ];
+                return (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="p-2 border-b border-border">
+                      <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {all.map((item) => (
+                        <button key={`${item.type}-${item.id}`} type="button"
+                          onClick={() => handleAddColor(item.type, item.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                          <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                          <span className="text-xs">{item.label}</span>
+                        </button>
+                      ))}
+                      {all.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
+                    </div>
+                    <div className="p-2 border-t border-border">
+                      <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Full color strip */}
               {selectedSwatches.length > 0 && (
@@ -236,8 +292,15 @@ export default function ColorPalettes() {
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                   {selectedSwatches.map((s, i) => (
-                    <div key={i} className="rounded-lg border border-border overflow-hidden">
+                    <div key={i} className="rounded-lg border border-border overflow-hidden group/color relative">
                       <div className="aspect-square" style={{ backgroundColor: s.hex }} />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveColor({ id: s.id })}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
                       <div className="p-2 space-y-0.5">
                         <p className="text-xs font-medium truncate">{s.name || "—"}</p>
                         {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
