@@ -14,20 +14,29 @@ const STORAGE_KEY = (pageKey) => `list_active_view_${pageKey}`;
 const DEFAULT_FILTERS = { operator: "and", filters: [] };
 
 function emptyFilter() {
-  return { field: "", values: [] };
+  return { operator: "and", field: "", values: [] };
 }
 
 function applyFilters(rows, filtersConfig) {
   if (!filtersConfig || !filtersConfig.filters || filtersConfig.filters.length === 0) return rows;
-  const { operator, filters } = filtersConfig;
-  const activeFilters = filters.filter((f) => f.field && f.values.length > 0);
-  if (activeFilters.length === 0) return rows;
+  const active = filtersConfig.filters.filter((f) => f.field && f.values.length > 0);
+  if (active.length === 0) return rows;
   return rows.filter((row) => {
-    const results = activeFilters.map((f) => f.values.includes(f.getValue ? f.getValue(row) : row[f.field]));
-    if (operator === "or") return results.some(Boolean);
-    if (operator === "nor") return results.every((r) => !r);
-    return results.every(Boolean); // and
+    let result = matchFilter(active[0], row);
+    for (let i = 1; i < active.length; i++) {
+      const op = active[i].operator || "and";
+      const match = matchFilter(active[i], row);
+      if (op === "or") result = result || match;
+      else if (op === "not") result = result && !match;
+      else result = result && match; // and
+    }
+    return result;
   });
+}
+
+function matchFilter(f, row) {
+  const val = f.getValue ? f.getValue(row) : row[f.field];
+  return f.values.includes(val);
 }
 
 export default function ViewSelector({ pageKey, allColumns, onColumnsChange, filterableFields = [], rows = [], onFilteredRowsChange }) {
@@ -280,19 +289,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
 
                 {/* FILTERS TAB */}
                 <TabsContent value="filters" className="mt-3 space-y-3">
-                  {formFilters.filters.length > 1 && (
-                    <div className="flex items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">Combine filters with:</Label>
-                      <Select value={formFilters.operator} onValueChange={(v) => setFormFilters((f) => ({ ...f, operator: v }))}>
-                        <SelectTrigger className="h-7 text-xs w-20"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="and">AND</SelectItem>
-                          <SelectItem value="or">OR</SelectItem>
-                          <SelectItem value="nor">NOR</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+
 
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {formFilters.filters.length === 0 && (
@@ -303,9 +300,18 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                       return (
                         <div key={idx} className="border border-border rounded-lg p-3 space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
-                              {idx === 0 ? "WHERE" : <span className="uppercase font-bold text-primary">{formFilters.operator}</span>}
-                            </span>
+                            {idx === 0 ? (
+                              <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">WHERE</span>
+                            ) : (
+                              <Select value={fi.operator || "and"} onValueChange={(v) => updateFilter(idx, { operator: v })}>
+                                <SelectTrigger className="h-7 text-xs w-16 shrink-0"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="and">AND</SelectItem>
+                                  <SelectItem value="or">OR</SelectItem>
+                                  <SelectItem value="not">NOT</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
                             <Select value={fi.field || "none"} onValueChange={(v) => updateFilter(idx, { field: v === "none" ? "" : v, values: [] })}>
                               <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select field…" /></SelectTrigger>
                               <SelectContent>
