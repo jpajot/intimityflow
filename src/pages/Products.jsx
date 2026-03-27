@@ -17,6 +17,7 @@ export default function Products() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [view, setView] = useState(() => localStorage.getItem("products_view") || "gallery");
   const [activeColumns, setActiveColumns] = useState(null);
+  const [filteredRows, setFilteredRows] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -98,7 +99,15 @@ export default function Products() {
       },
     },
   ];
+
+  const filterableFields = [
+    { id: "category", label: "Category", getValue: (p) => p.category },
+    { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
+    { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
+  ];
+
   const columns = activeColumns || allColumns;
+  const tableRows = filteredRows !== null ? filteredRows : filtered;
 
   if (loading) {
     return (
@@ -141,6 +150,9 @@ export default function Products() {
               pageKey="styles"
               allColumns={allColumns}
               onColumnsChange={setActiveColumns}
+              filterableFields={filterableFields}
+              rows={filtered}
+              onFilteredRowsChange={setFilteredRows}
             />
           )}
           <div className="flex items-center border border-border rounded-lg overflow-hidden">
@@ -191,7 +203,7 @@ export default function Products() {
       ) : (
         <DataTable
           columns={columns}
-          rows={filtered}
+          rows={tableRows}
           fixedColumns={["image"]}
           hideColumnToggle
         />

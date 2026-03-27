@@ -16,6 +16,10 @@
         "type": "string"
       },
       "description": "Ordered list of visible column IDs"
+    },
+    "filters_config": {
+      "type": "object",
+      "description": "Filter configuration: { operator: 'and'|'or'|'nor', filters: [{field, values}] }"
     }
   },
   "required": [
