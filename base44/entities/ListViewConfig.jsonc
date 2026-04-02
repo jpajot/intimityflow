@@ -20,6 +20,13 @@
     "filters_config": {
       "type": "object",
       "description": "Filter configuration: { operator: 'and'|'or'|'nor', filters: [{field, values}] }"
+    },
+    "allowed_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of user roles that can see this view. Empty = visible to all."
     }
   },
   "required": [

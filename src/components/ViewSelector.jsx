@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, LayoutList, X } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, LayoutList, X, ShieldCheck } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
@@ -49,6 +49,8 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
   const [formName, setFormName] = useState("");
   const [formColumnIds, setFormColumnIds] = useState([]);
   const [formFilters, setFormFilters] = useState(DEFAULT_FILTERS);
+  const [formRoles, setFormRoles] = useState([]);
+  const [roleInput, setRoleInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dialogTab, setDialogTab] = useState("columns");
@@ -103,6 +105,8 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
     setFormName("");
     setFormColumnIds(allColumns.map((c) => c.id));
     setFormFilters(DEFAULT_FILTERS);
+    setFormRoles([]);
+    setRoleInput("");
     setEditingView(null);
     setDialogTab("columns");
     setMode("new");
@@ -114,6 +118,8 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
     const notInView = allColumns.map((c) => c.id).filter((id) => !inView.includes(id));
     setFormColumnIds([...inView, ...notInView]);
     setFormFilters(view.filters_config || DEFAULT_FILTERS);
+    setFormRoles(view.allowed_roles || []);
+    setRoleInput("");
     setEditingView(view);
     setDialogTab("columns");
     setMode("edit");
@@ -157,6 +163,14 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
     });
   };
 
+  const addRole = () => {
+    const r = roleInput.trim();
+    if (r && !formRoles.includes(r)) setFormRoles((prev) => [...prev, r]);
+    setRoleInput("");
+  };
+
+  const removeRole = (r) => setFormRoles((prev) => prev.filter((x) => x !== r));
+
   const handleSave = async () => {
     if (!formName.trim()) return;
     setSaving(true);
@@ -165,6 +179,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
       name: formName.trim(),
       column_ids: formColumnIds,
       filters_config: formFilters,
+      allowed_roles: formRoles,
     };
     if (editingView) {
       await base44.entities.ListViewConfig.update(editingView.id, data);
@@ -230,15 +245,18 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                     <span className="text-xs text-muted-foreground">All columns</span>
                   </div>
                   {views.map((v) => (
-                    <div key={v.id} className="flex items-center gap-2 p-2.5 rounded-lg border border-border">
-                      <span className="flex-1 text-sm font-medium">{v.name}</span>
-                      <span className="text-xs text-muted-foreground">{v.column_ids?.length} cols</span>
-                      {v.filters_config?.filters?.filter(f => f.field && f.values?.length).length > 0 && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5">{v.filters_config.filters.filter(f => f.field && f.values?.length).length} filter{v.filters_config.filters.filter(f => f.field && f.values?.length).length > 1 ? "s" : ""}</Badge>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(v)}><Pencil className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(v)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                    </div>
+                   <div key={v.id} className="flex items-center gap-2 p-2.5 rounded-lg border border-border">
+                     <span className="flex-1 text-sm font-medium">{v.name}</span>
+                     <span className="text-xs text-muted-foreground">{v.column_ids?.length} cols</span>
+                     {v.filters_config?.filters?.filter(f => f.field && f.values?.length).length > 0 && (
+                       <Badge variant="secondary" className="text-[10px] px-1.5">{v.filters_config.filters.filter(f => f.field && f.values?.length).length} filter{v.filters_config.filters.filter(f => f.field && f.values?.length).length > 1 ? "s" : ""}</Badge>
+                     )}
+                     {v.allowed_roles?.length > 0 && (
+                       <Badge variant="outline" className="text-[10px] px-1.5 gap-0.5"><ShieldCheck className="w-2.5 h-2.5 mr-0.5" />{v.allowed_roles.join(", ")}</Badge>
+                     )}
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(v)}><Pencil className="w-3.5 h-3.5" /></Button>
+                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(v)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                   </div>
                   ))}
                   {views.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No custom views yet</p>}
                 </>
@@ -263,6 +281,12 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                     Filters
                     {formFilters.filters.filter(f => f.field && f.values.length > 0).length > 0 && (
                       <Badge className="ml-1.5 px-1.5 py-0 text-[10px] h-4">{formFilters.filters.filter(f => f.field && f.values.length > 0).length}</Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="roles" className="flex-1 text-xs">
+                    Roles
+                    {formRoles.length > 0 && (
+                      <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-[10px] h-4">{formRoles.length}</Badge>
                     )}
                   </TabsTrigger>
                 </TabsList>
@@ -346,6 +370,38 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                   <Button variant="outline" size="sm" onClick={addFilter} className="gap-1.5 text-xs w-full">
                     <Plus className="w-3.5 h-3.5" /> Add Filter
                   </Button>
+                </TabsContent>
+
+                {/* ROLES TAB */}
+                <TabsContent value="roles" className="mt-3 space-y-3">
+                  <p className="text-xs text-muted-foreground">Restrict this view to specific user roles. Leave empty to allow all roles.</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={roleInput}
+                      onChange={(e) => setRoleInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addRole(); } }}
+                      placeholder="e.g. admin, manager…"
+                      className="h-8 text-xs flex-1"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={addRole} className="h-8 text-xs gap-1">
+                      <Plus className="w-3.5 h-3.5" /> Add
+                    </Button>
+                  </div>
+                  {formRoles.length === 0 ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground border border-dashed border-border rounded-lg p-3">
+                      <ShieldCheck className="w-4 h-4" /> Visible to all roles
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {formRoles.map((r) => (
+                        <div key={r} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full border border-primary/20">
+                          <ShieldCheck className="w-3 h-3" />
+                          {r}
+                          <button type="button" onClick={() => removeRole(r)} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
 

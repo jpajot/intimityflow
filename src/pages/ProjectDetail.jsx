@@ -290,67 +290,7 @@ export default function ProjectDetail() {
               <p className="text-sm text-muted-foreground">No styles yet. Create a new style or link existing color variants.</p>
             </div>
           ) : (
-            [].map((key) => {
-              const groupProds = grouped[key];
-              return (
-                <div key={key} className="bg-card rounded-xl border border-border overflow-hidden">
-                  <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
-                    <span className="font-semibold text-sm">{key || "Unassigned"}</span>
-                    <span className="text-xs text-muted-foreground">{groupProds.length} style{groupProds.length !== 1 ? "s" : ""}</span>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {groupProds.map((p) => {
-                      const pColors = linkedColors.filter((cv) => cv.product_id === p.id);
-                      const vol = pColors.reduce((s, cv) =>
-                        s + (cv.volume_spain || 0) + (cv.volume_france || 0) + (cv.volume_germany || 0) + (cv.volume_italy || 0), 0);
-                      const markets = [...new Set(pColors.flatMap((cv) => cv.markets || []))];
-                      return (
-                        <div key={p.id} className="px-5 py-3 flex items-center gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <Link to={`/products/${p.id}`} className="font-medium text-sm hover:text-primary transition-colors">
-                                {p.name}
-                              </Link>
-                              <Link to={`/products/${p.id}`} className="text-muted-foreground hover:text-primary">
-                                <ExternalLink className="w-3 h-3" />
-                              </Link>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{p.sub_category} · {p.customer_need}</p>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <div className="flex gap-1">
-                              {pColors.map((cv) => (
-                                <div key={cv.id} className="group/color relative">
-                                  <div
-                                    className="w-8 h-8 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/30"
-                                    title={cv.colorway_code ? `${cv.color_name} · ${cv.colorway_code}` : cv.color_name}
-                                  >
-                                    {cv.image_url ? (
-                                      <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <div className="w-full h-full" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() => handleUnlink(cv.id)}
-                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground items-center justify-center text-[10px] hidden group-hover/color:flex"
-                                    title="Unlink from project"
-                                  >×</button>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex gap-0.5">
-                              {markets.map((m) => <span key={m} className="text-sm">{MARKET_FLAGS[m]}</span>)}
-                            </div>
-                            <span className="text-xs text-muted-foreground tabular-nums w-20 text-right">{vol.toLocaleString()} u.</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })
+            []
           )}
         </TabsContent>
 
