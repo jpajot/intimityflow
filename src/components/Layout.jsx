@@ -69,7 +69,7 @@ export default function Layout() {
 
   const GroupButton = ({ icon: Icon, label, open, onToggle, isActive }) => (
     <button
-      onClick={onToggle}
+      onClick={() => { if (!expanded) setExpanded(true); onToggle(); }}
       title={!expanded ? label : undefined}
       className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
         expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"
