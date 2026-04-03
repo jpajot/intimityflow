@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Download, Pencil, Trash2, LayoutGrid, List } from "lucide-react";
+import { Plus, Loader2, Download, Pencil, Trash2, LayoutGrid, List, Search } from "lucide-react";
 import { PANTONE_TCX, colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import DataTable from "@/components/DataTable";
 
@@ -268,12 +268,14 @@ export default function ColorLibrary({ hideTitle = false }) {
         <TabsContent value="technical" className="mt-4 space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
-              {/* Placeholder for search - can be added if needed */}
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                value={techSearch}
+                onChange={(e) => setTechSearch(e.target.value)}
+                placeholder="Search colors…"
+                className="pl-8 h-9 text-xs"
+              />
             </div>
-            <Button variant="outline" onClick={handleSeedPantone} disabled={seeding} className="gap-2 shrink-0">
-              {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Seed Pantone TCX
-            </Button>
             <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0">
               <button
                 type="button"
@@ -297,17 +299,23 @@ export default function ColorLibrary({ hideTitle = false }) {
           {techView === "table" ? (
             <DataTable
               columns={techColumns}
-              rows={technicalColors}
+              rows={technicalColors.filter((c) =>
+                !techSearch ||
+                c.code?.toLowerCase().includes(techSearch.toLowerCase()) ||
+                c.name?.toLowerCase().includes(techSearch.toLowerCase()) ||
+                colorToHex(c).toLowerCase().includes(techSearch.toLowerCase())
+              )}
               fixedColumns={["color"]}
-              filterFields={[
-                { getValue: (c) => c.code },
-                { getValue: (c) => c.name },
-                { getValue: (c) => colorToHex(c) },
-              ]}
+              hideColumnToggle
             />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {technicalColors.map((c) => (
+              {technicalColors.filter((c) =>
+                !techSearch ||
+                c.code?.toLowerCase().includes(techSearch.toLowerCase()) ||
+                c.name?.toLowerCase().includes(techSearch.toLowerCase()) ||
+                colorToHex(c).toLowerCase().includes(techSearch.toLowerCase())
+              ).map((c) => (
                 <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
                   <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: colorToHex(c) }} />
                   <div className="p-3 space-y-1">
@@ -327,9 +335,17 @@ export default function ColorLibrary({ hideTitle = false }) {
 
         {/* COMMERCIAL COLORS */}
         <TabsContent value="commercial" className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <Button onClick={openNewComm} className="gap-2"><Plus className="w-4 h-4" />Add Commercial Color</Button>
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                value={commSearch}
+                onChange={(e) => setCommSearch(e.target.value)}
+                placeholder="Search colors…"
+                className="pl-8 h-9 text-xs"
+              />
+            </div>
+            <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0">
               <button
                 type="button"
                 onClick={() => setCommView("gallery")}
@@ -347,10 +363,16 @@ export default function ColorLibrary({ hideTitle = false }) {
                 <List className="w-4 h-4" />
               </button>
             </div>
+            <Button onClick={openNewComm} className="gap-2 shrink-0"><Plus className="w-4 h-4" />Add Commercial Color</Button>
           </div>
           {commView === "gallery" ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {commercialColors.map((c) => {
+              {commercialColors.filter((c) =>
+                !commSearch ||
+                c.code?.toLowerCase().includes(commSearch.toLowerCase()) ||
+                c.color_name?.toLowerCase().includes(commSearch.toLowerCase()) ||
+                c.sub_type?.toLowerCase().includes(commSearch.toLowerCase())
+              ).map((c) => {
                 const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
                 const hex = tech ? colorToHex(tech) : "#ccc";
                 return (
@@ -372,17 +394,14 @@ export default function ColorLibrary({ hideTitle = false }) {
           ) : (
             <DataTable
               columns={commColumns}
-              rows={commercialColors}
+              rows={commercialColors.filter((c) =>
+                !commSearch ||
+                c.code?.toLowerCase().includes(commSearch.toLowerCase()) ||
+                c.color_name?.toLowerCase().includes(commSearch.toLowerCase()) ||
+                c.sub_type?.toLowerCase().includes(commSearch.toLowerCase())
+              )}
               fixedColumns={["color"]}
-              filterFields={[
-                { getValue: (c) => c.code },
-                { getValue: (c) => c.color_name },
-                { getValue: (c) => c.sub_type },
-                { getValue: (c) => {
-                  const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
-                  return tech?.code || tech?.name || "";
-                }},
-              ]}
+              hideColumnToggle
             />
           )}
         </TabsContent>
