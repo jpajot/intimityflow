@@ -70,7 +70,7 @@ export default function SharePointFilePicker({ open, onClose, onSelect }) {
             <button
               key={file.id}
               type="button"
-              onClick={() => { onSelect(file); onClose(); }}
+              onClick={() => { onSelect({ ...file, downloadUrl: file.downloadUrl || `${file.webUrl}?download=1` }); onClose(); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-left"
             >
               <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">

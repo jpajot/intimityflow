@@ -18,34 +18,16 @@ Deno.serve(async (req) => {
 
     // Resolve the file URL: download from SharePoint if needed, otherwise use stored file_url
     let fileUrl = doc.file_url;
-    if (is_sharepoint && doc.file_url) {
-      // Download from SharePoint by extracting the file ID from the web URL and using Graph API
+    if (is_sharepoint && doc.file_url && doc.file_url.includes('@microsoft.graph.downloadUrl')) {
+      // If it's a SharePoint download URL, download and re-upload to get a stable base44 URL
       try {
         const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
-        
-        // Parse SharePoint web URL to extract drive and item IDs
-        // Format: /sites/{site}/Shared Documents/{file} or similar
-        const urlMatch = doc.file_url.match(/\/sites\/([^\/]+)/);
-        if (urlMatch) {
-          // Get the file details from Graph API
-          const graphRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children?$filter=name eq '${encodeURIComponent(doc.original_filename)}'`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-          const graphData = await graphRes.json();
-          
-          if (graphData.value && graphData.value.length > 0) {
-            const fileId = graphData.value[0].id;
-            // Download the file content
-            const downloadRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`, {
-              headers: { Authorization: `Bearer ${accessToken}` }
-            });
-            if (downloadRes.ok) {
-              const blob = await downloadRes.blob();
-              const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
-              fileUrl = uploadResult.file_url;
-              await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
-            }
-          }
+        const spRes = await fetch(doc.file_url, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (spRes.ok) {
+          const blob = await spRes.blob();
+          const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+          fileUrl = uploadResult.file_url;
+          await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
         }
       } catch (spErr) {
         console.warn('SharePoint download failed, using stored URL:', spErr.message);

@@ -82,8 +82,8 @@ export default function ProjectDocuments() {
       let file_url = "";
       let filename = "";
       if (sharepointFile) {
-        // Let backend handle SharePoint download
-        file_url = sharepointFile.webUrl;
+        // Use the direct download URL from SharePoint
+        file_url = sharepointFile.downloadUrl || sharepointFile.webUrl;
         filename = sharepointFile.name;
       } else {
         const result = await base44.integrations.Core.UploadFile({ file });
