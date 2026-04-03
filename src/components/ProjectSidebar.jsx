@@ -12,7 +12,7 @@ const MENU_ITEMS = [
 ];
 
 const NAV_ITEMS = [
-  { id: "documents", label: "Documents", icon: Upload, path: (id) => `/projects/${id}/documents` },
+  { id: "documents", label: "Documents to Parse", icon: Upload, path: (id) => `/projects/${id}/documents-to-parse` },
 ];
 
 export default function ProjectSidebar({ activeSection, onSectionChange }) {

@@ -11,6 +11,7 @@ import { ArrowLeft, Upload, FileText, Loader2, AlertCircle, Cloud, Search, Chevr
 
 import DataTable from "../components/DataTable";
 import ViewSelector from "../components/ViewSelector";
+import ProjectSidebar from "../components/ProjectSidebar";
 
 const STATUS_COLORS = {
   uploaded: "secondary",
@@ -183,7 +184,7 @@ export default function ProjectDocuments() {
         <div className="flex items-center justify-end gap-1">
           <button
             type="button"
-            onClick={() => navigate(`/projects/${id}/documents/${d.id}`)}
+            onClick={() => navigate(`/projects/${id}/documents-to-parse/${d.id}`)}
             className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="w-4 h-4" />
@@ -208,17 +209,15 @@ export default function ProjectDocuments() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${id}`)}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <div>
-          <p className="text-xs text-muted-foreground">{project?.name}</p>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Documents</h1>
-        </div>
-      </div>
+    <div className="flex h-full">
+      <ProjectSidebar activeSection="documents" onSectionChange={() => {}} />
+      <div className="flex-1 overflow-auto">
+        <div className="space-y-6 p-6">
+          {/* Page header */}
+          <div>
+            <p className="text-xs text-muted-foreground">{project?.name}</p>
+            <h1 className="font-display text-2xl font-semibold tracking-tight">Documents to Parse</h1>
+          </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-2">
@@ -237,23 +236,23 @@ export default function ProjectDocuments() {
         <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
           <Upload className="w-4 h-4" /> Upload &amp; Parse
         </Button>
-      </div>
+        </div>
 
-      {/* Table */}
-      {filteredDocs.length === 0 ? (
+        {/* Table */}
+        {filteredDocs.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
           <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
         </div>
-      ) : (
+        ) : (
         <DataTable columns={visibleColumns || columns} rows={filteredDocs} hideColumnToggle />
-      )}
+        )}
 
-      {/* Upload dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={o => { if (!o) { setFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload &amp; Parse Document</DialogTitle>
+          {/* Upload dialog */}
+          <Dialog open={showUploadDialog} onOpenChange={o => { if (!o) { setFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Upload &amp; Parse Document</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -293,8 +292,8 @@ export default function ProjectDocuments() {
           </div>
         </DialogContent>
       </Dialog>
-
-
+        </div>
+      </div>
     </div>
   );
 }
