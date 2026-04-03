@@ -206,7 +206,7 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
                               <p className="text-sm font-medium">{c.color_name}</p>
                               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{c.sub_type}</Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground">{c.code}{tc ? ` · ${tc.name}` : ""}</p>
+                            <p className="text-xs text-muted-foreground">{c.code}{tc ? ` · ${tc.code} – ${tc.name}` : ""}</p>
                             {palNames.length > 0 && (
                               <div className="flex gap-1 mt-1 flex-wrap">
                                 {palNames.map(n => <Badge key={n} variant="outline" className="text-[10px] px-1.5 py-0">{n}</Badge>)}
