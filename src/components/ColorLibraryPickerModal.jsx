@@ -96,6 +96,7 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
             color_name: cc.color_name,
             color_hex: tc ? colorToHex(tc) : "#cccccc",
             colorway_code: cc.code || "",
+            linked_tech_color_id: cc.main_technical_color_id || "",
             linked_color_type: "commercial",
             linked_color_id: cc.id,
             markets: [],
