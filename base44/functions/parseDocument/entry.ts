@@ -61,36 +61,7 @@ Deno.serve(async (req) => {
       throw new Error('No data extracted');
     }
 
-    // Extract images from PPTX if applicable
-    const imageUrls = [];
-    if (doc.file_url?.toLowerCase().endsWith('.pptx')) {
-      const pptxData = await fetch(doc.file_url).then(r => r.arrayBuffer());
-      const zip = await JSZip.loadAsync(pptxData);
-      
-      // Extract all images from ppt/media folder
-      const mediaFiles = Object.keys(zip.files).filter(f => f.startsWith('ppt/media/'));
-      for (const mediaFile of mediaFiles) {
-        const blob = await zip.file(mediaFile).async('blob');
-        const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
-        imageUrls.push(uploadRes.file_url);
-      }
-    }
-
-    const contentSlides = extracted.slides.map(slide => ({
-      ...slide,
-      table: {
-        ...slide.table,
-        rows: (slide.table?.rows || []).map(row => {
-          const imgIdx = row["Image Index"];
-          return {
-            ...row,
-            image_url: imgIdx !== null && imgIdx !== undefined && imageUrls[imgIdx] ? imageUrls[imgIdx] : null
-          };
-        })
-      }
-    })).filter(s => s.table?.rows?.length);
-
-    const collectionName = contentSlides[0]?.title || 'Collection';
+    const contentSlides = extracted.slides.filter(s => s.table?.rows?.length);
 
     await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
       status: 'staged',
