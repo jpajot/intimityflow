@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Upload, FileText, Loader2, AlertCircle, Cloud, Search, ChevronRight, Trash2 } from "lucide-react";
+import { Upload, FileText, Loader2, AlertCircle, Cloud, Search, ChevronRight, Trash2 } from "lucide-react";
 
 import DataTable from "../components/DataTable";
 import ViewSelector from "../components/ViewSelector";
@@ -43,7 +43,6 @@ export default function ProjectDocuments() {
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState("");
   const [file, setFile] = useState(null);
-
 
   const [visibleColumns, setVisibleColumns] = useState(null);
 
@@ -211,13 +210,14 @@ export default function ProjectDocuments() {
   return (
     <div className="flex h-full">
       <ProjectSidebar activeSection="documents" onSectionChange={() => {}} />
-      <div className="flex-1 overflow-auto">
-        <div className="space-y-6 p-6">
-          {/* Page header */}
-          <div>
-            <p className="text-xs text-muted-foreground">{project?.name}</p>
-            <h1 className="font-display text-2xl font-semibold tracking-tight">Documents to Parse</h1>
-          </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="overflow-y-auto">
+          <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            {/* Page header */}
+            <div>
+              <p className="text-xs text-muted-foreground">{project?.name}</p>
+              <h1 className="font-display text-2xl font-semibold tracking-tight">Documents to Parse</h1>
+            </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-2">
@@ -292,6 +292,7 @@ export default function ProjectDocuments() {
           </div>
         </DialogContent>
       </Dialog>
+          </div>
         </div>
       </div>
     </div>
