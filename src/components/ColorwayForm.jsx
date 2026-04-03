@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Loader2, ChevronDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import { colorToHex } from "../lib/pantone-tcx";
 
 function InlineColorPicker({ label, value, options, getHex, getLabel, onSelect, onClear, placeholder }) {
   const [search, setSearch] = useState("");
@@ -14,7 +14,7 @@ function InlineColorPicker({ label, value, options, getHex, getLabel, onSelect, 
     const q = search.toLowerCase();
     if (!q) return options.slice(0, 60);
     return options.filter((o) => getLabel(o).toLowerCase().includes(q)).slice(0, 60);
-  }, [options, search]);
+  }, [options, search, getLabel]);
 
   const selected = value ? options.find((o) => o.id === value) : null;
 
