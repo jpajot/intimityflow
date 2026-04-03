@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { document_id, is_sharepoint } = body;
+    const { document_id } = body;
     if (!document_id) return Response.json({ error: 'document_id required' }, { status: 400 });
 
     await base44.asServiceRole.entities.UploadedDocument.update(document_id, { status: 'processing' });
@@ -16,28 +16,7 @@ Deno.serve(async (req) => {
     if (!docs.length) return Response.json({ error: 'Document not found' }, { status: 404 });
     const doc = docs[0];
 
-    // Resolve the file URL: download from SharePoint if needed
-    let fileUrl = doc.file_url;
-    if (is_sharepoint && doc.file_url) {
-      try {
-        const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
-        const spRes = await fetch(doc.file_url, { 
-          headers: { Authorization: `Bearer ${accessToken}` },
-          redirect: 'follow'
-        });
-        if (!spRes.ok) throw new Error(`SharePoint ${spRes.status}`);
-        const buffer = await spRes.arrayBuffer();
-        const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }) });
-        fileUrl = uploadResult.file_url;
-        await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
-      } catch (spErr) {
-        await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
-          status: 'error',
-          error_message: `SharePoint download failed: ${spErr.message}`
-        });
-        return Response.json({ error: spErr.message }, { status: 500 });
-      }
-    }
+    const fileUrl = doc.file_url;
 
     const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are a data extraction assistant. Analyze this PowerPoint presentation file and extract all product/style information from slides that contain a data table.

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Upload, FileText, Loader2, AlertCircle, Cloud, Search, ChevronRight, Trash2 } from "lucide-react";
-import SharePointFilePicker from "../components/SharePointFilePicker";
+
 import DataTable from "../components/DataTable";
 import ViewSelector from "../components/ViewSelector";
 
@@ -42,8 +42,8 @@ export default function ProjectDocuments() {
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState("");
   const [file, setFile] = useState(null);
-  const [sharepointFile, setSharepointFile] = useState(null);
-  const [showSharePoint, setShowSharePoint] = useState(false);
+
+
   const [visibleColumns, setVisibleColumns] = useState(null);
 
   useEffect(() => { loadData(); }, [id]);
@@ -64,11 +64,7 @@ export default function ProjectDocuments() {
     setLoading(false);
   };
 
-  const handleSharePointSelect = (spFile) => {
-    setSharepointFile(spFile);
-    setFile(null);
-    setShowSharePoint(false);
-  };
+
 
   const handleDelete = async (docId) => {
     await base44.entities.UploadedDocument.delete(docId);
@@ -76,20 +72,12 @@ export default function ProjectDocuments() {
   };
 
   const handleUpload = async () => {
-    if ((!file && !sharepointFile) || !selectedType) return;
+    if (!file || !selectedType) return;
     setUploading(true);
     try {
-      let file_url = "";
-      let filename = "";
-      if (sharepointFile) {
-        // Use the direct download URL from SharePoint
-        file_url = sharepointFile.downloadUrl || sharepointFile.webUrl;
-        filename = sharepointFile.name;
-      } else {
-        const result = await base44.integrations.Core.UploadFile({ file });
-        file_url = result.file_url;
-        filename = file.name;
-      }
+      const result = await base44.integrations.Core.UploadFile({ file });
+      const file_url = result.file_url;
+      const filename = file.name;
       const doc = await base44.entities.UploadedDocument.create({
         project_id: id,
         document_type: selectedType,
@@ -100,15 +88,11 @@ export default function ProjectDocuments() {
       });
       setDocuments(prev => [doc, ...prev]);
       setFile(null);
-      setSharepointFile(null);
       setSelectedType("");
       setShowUploadDialog(false);
 
-      const parsePayload = { document_id: doc.id };
-      if (sharepointFile) parsePayload.is_sharepoint = true;
-      
       try {
-        await base44.functions.invoke("parseDocument", parsePayload);
+        await base44.functions.invoke("parseDocument", { document_id: doc.id });
         const updated = await base44.entities.UploadedDocument.filter({ id: doc.id });
         if (updated.length) setDocuments(prev => prev.map(d => d.id === doc.id ? updated[0] : d));
       } catch (parseErr) {
@@ -249,9 +233,7 @@ export default function ProjectDocuments() {
         </div>
         {documents.length > 0 && <ViewSelector pageKey="documents" allColumns={columns} onColumnsChange={setVisibleColumns} />}
         <div className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => setShowSharePoint(true)} className="gap-1.5 h-9">
-          <Cloud className="w-4 h-4" /> SharePoint
-        </Button>
+
         <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
           <Upload className="w-4 h-4" /> Upload &amp; Parse
         </Button>
@@ -268,7 +250,7 @@ export default function ProjectDocuments() {
       )}
 
       {/* Upload dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={o => { if (!o) { setFile(null); setSharepointFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>
+      <Dialog open={showUploadDialog} onOpenChange={o => { if (!o) { setFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Upload &amp; Parse Document</DialogTitle>
@@ -298,16 +280,14 @@ export default function ProjectDocuments() {
               <div className="flex gap-2">
                 <label className={`flex-1 flex items-center gap-2 px-3 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
                   <Upload className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{file ? file.name : sharepointFile ? sharepointFile.name : "Choose .pptx…"}</span>
-                  <input type="file" accept=".pptx,.ppt" className="hidden" onChange={e => { setFile(e.target.files?.[0] || null); setSharepointFile(null); }} />
+                  <span className="truncate">{file ? file.name : "Choose .pptx…"}</span>
+                  <input type="file" accept=".pptx,.ppt" className="hidden" onChange={e => { setFile(e.target.files?.[0] || null); }} />
                 </label>
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowSharePoint(true)} disabled={uploading} className="gap-1.5 shrink-0 h-9">
-                  <Cloud className="w-4 h-4" /> SharePoint
-                </Button>
+
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button onClick={handleUpload} disabled={(!file && !sharepointFile) || !selectedType || uploading} className="gap-2 flex-1">
+              <Button onClick={handleUpload} disabled={!file || !selectedType || uploading} className="gap-2 flex-1">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {uploading ? "Uploading & Parsing…" : "Upload & Parse"}
               </Button>
@@ -317,12 +297,7 @@ export default function ProjectDocuments() {
         </DialogContent>
       </Dialog>
 
-      {/* SharePoint picker */}
-      <SharePointFilePicker
-        open={showSharePoint}
-        onClose={() => setShowSharePoint(false)}
-        onSelect={spFile => { handleSharePointSelect(spFile); if (!showUploadDialog) setShowUploadDialog(true); }}
-      />
+
     </div>
   );
 }
