@@ -154,7 +154,12 @@ export default function Products() {
     { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
   ];
 
-  const columns = activeColumns || allColumns;
+  const columns = (activeColumns || allColumns).map(col => {
+    if (col.id === 'category') return { ...col, options: categories };
+    if (col.id === 'sub_category') return { ...col, options: subCategories };
+    if (col.id === 'customer_need') return { ...col, options: customerNeeds };
+    return col;
+  });
   const tableRows = filteredRows !== null ? filteredRows : filtered;
 
   if (loading) {
