@@ -50,6 +50,7 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState("");
+  const [draggingFrom, setDraggingFrom] = useState(null);
   // Internal grouping state
   const [groupCols, setGroupCols] = useState([]); // up to 3 col IDs
   const [contextMenu, setContextMenu] = useState(null); // { x, y, colId, colLabel }
@@ -311,18 +312,45 @@ function SortHeader({ col, sortBy, sortDir, onSort }) {
   ) : col.label;
 }
 
-function EditableCell({ col, row, editingCell, setEditingCell, editValue, setEditValue, onEdit }) {
+function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, editValue, setEditValue, onEdit, draggingFrom, setDraggingFrom }) {
   const isEditing = editingCell === `${row.id}-${col.id}`;
+  const cellKey = `${row.id}-${col.id}`;
+  const isDragging = draggingFrom?.colId === col.id;
+  
   if (!col.editable || !onEdit) {
     return <td className="px-4 py-3 text-sm" style={{ width: col.width }}>{col.render(row)}</td>;
   }
-  const handleStart = () => { setEditingCell(`${row.id}-${col.id}`); setEditValue(col.getDisplayValue(row)); };
+  
+  const handleStart = () => { setEditingCell(cellKey); setEditValue(col.getDisplayValue(row)); };
   const handleSave = async () => { await onEdit(row.id, col.entityField, editValue, col.entityType, col.getValue(row)); setEditingCell(null); };
+  
+  const handleDragStart = () => {
+    setDraggingFrom({ colId: col.id, value: editValue || col.getDisplayValue(row), rowIdx });
+  };
+  
+  const handleDragEnter = () => {
+    if (draggingFrom?.colId === col.id && draggingFrom.rowIdx !== rowIdx) {
+      onEdit(row.id, col.entityField, draggingFrom.value, col.entityType, draggingFrom.value);
+    }
+  };
+  
+  const handleDragEnd = () => {
+    setDraggingFrom(null);
+  };
+  
   return (
-    <td className="px-4 py-3 text-sm" style={{ width: col.width }} onClick={handleStart}>
+    <td 
+      className={`px-4 py-3 text-sm relative ${isDragging ? 'bg-primary/20' : ''}`} 
+      style={{ width: col.width }} 
+      onClick={handleStart}
+      onDragStart={handleDragStart}
+      onDragEnter={handleDragEnter}
+      onDragEnd={handleDragEnd}
+      onDragOver={(e) => e.preventDefault()}
+    >
       {isEditing ? (
         col.options ? (
-          <Select value={editValue} onValueChange={async (val) => { setEditValue(val); await onEdit(row.id, col.entityField, val, col.entityType, col.getValue(row)); setEditingCell(null); }}>
+          <Select value={editValue} onValueChange={async (val) => { setEditValue(val); await onEdit(row.id, col.entityField, val, col.entityType, val); setEditingCell(null); }}>
             <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{col.options.map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
           </Select>
@@ -330,13 +358,15 @@ function EditableCell({ col, row, editingCell, setEditingCell, editValue, setEdi
           <Input autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={handleSave} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditingCell(null); }} className="h-6 text-xs" />
         )
       ) : (
-        <div className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">{col.render(row)}</div>
+        <div className="cursor-move hover:bg-muted/50 px-2 py-1 rounded" draggable>{col.render(row)}</div>
       )}
     </td>
   );
 }
 
 function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, sortBy, sortDir, onEdit, editingCell, setEditingCell, editValue, setEditValue, headerProps }) {
+  const [draggingFrom, setDraggingFrom] = useState(null);
+  
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -355,10 +385,10 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {rows.map((row, rowIdx) => (
             <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-              {fixedCols.map((col) => <EditableCell key={col.id} col={col} row={row} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} />)}
-              {scrollableCols.map((col) => <EditableCell key={col.id} col={col} row={row} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} />)}
+              {fixedCols.map((col) => <EditableCell key={col.id} col={col} row={row} rowIdx={rowIdx} allRows={rows} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} draggingFrom={draggingFrom} setDraggingFrom={setDraggingFrom} />)}
+              {scrollableCols.map((col) => <EditableCell key={col.id} col={col} row={row} rowIdx={rowIdx} allRows={rows} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} draggingFrom={draggingFrom} setDraggingFrom={setDraggingFrom} />)}
             </tr>
           ))}
           {rows.length === 0 && (

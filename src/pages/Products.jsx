@@ -72,6 +72,12 @@ export default function Products() {
       label: "Category",
       width: 120,
       sortKey: (p) => p.category || "",
+      editable: true,
+      entityField: "category",
+      entityType: "Product",
+      options: categories,
+      getValue: (p) => p.category || "",
+      getDisplayValue: (p) => p.category || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.category}</span>,
     },
     {
@@ -79,6 +85,11 @@ export default function Products() {
       label: "Sub-Category",
       width: 120,
       sortKey: (p) => p.sub_category || "",
+      editable: true,
+      entityField: "sub_category",
+      entityType: "Product",
+      getValue: (p) => p.sub_category || "",
+      getDisplayValue: (p) => p.sub_category || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category}</span>,
     },
     {
@@ -86,26 +97,37 @@ export default function Products() {
       label: "Customer Need",
       width: 130,
       sortKey: (p) => p.customer_need || "",
+      editable: true,
+      entityField: "customer_need",
+      entityType: "Product",
+      getValue: (p) => p.customer_need || "",
+      getDisplayValue: (p) => p.customer_need || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.customer_need}</span>,
     },
     {
       id: "colorway_images",
-      label: "Colorway Images",
-      width: 130,
+      label: "Colorways",
+      width: 200,
       render: (product) => {
-        const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 5);
+        const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 4);
         if (!cvs.length) return "—";
         return (
-          <div className="flex gap-1">
-            {cvs.map((cv) =>
-              cv.image_url ? (
-                <div key={cv.id} className="w-7 h-7 rounded-md overflow-hidden border border-border shrink-0">
-                  <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
+          <div className="flex flex-col gap-1">
+            {cvs.map((cv) => (
+              <div key={cv.id} className="flex items-center gap-2">
+                {cv.image_url ? (
+                  <div className="w-6 h-6 rounded-sm overflow-hidden border border-border shrink-0">
+                    <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                )}
+                <div className="flex flex-col text-xs leading-tight">
+                  <span className="font-medium">{cv.color_name}</span>
+                  <span className="text-muted-foreground">{cv.colorway_code}</span>
                 </div>
-              ) : (
-                <div key={cv.id} className="w-7 h-7 rounded-md border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-              )
-            )}
+              </div>
+            ))}
           </div>
         );
       },
@@ -228,6 +250,13 @@ export default function Products() {
           rows={tableRows}
           fixedColumns={["image"]}
           hideColumnToggle
+          onEdit={async (rowId, field, value) => {
+            const product = tableRows.find(p => p.id === rowId);
+            if (product) {
+              await base44.entities.Product.update(rowId, { [field]: value });
+              setProducts(prev => prev.map(p => p.id === rowId ? { ...p, [field]: value } : p));
+            }
+          }}
         />
       )}
     </div>
