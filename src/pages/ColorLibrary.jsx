@@ -299,7 +299,6 @@ export default function ColorLibrary({ hideTitle = false }) {
                 </button>
                 </div>
                 {technicalColors.length > 0 && <ViewSelector pageKey="technical_colors" allColumns={techColumns} onColumnsChange={setVisibleTechColumns} />}
-                <div className="flex-1" />
                 <Button onClick={openNewTech} className="gap-2 shrink-0"><Plus className="w-4 h-4" />Add Technical Color</Button>
           </div>
           {techView === "table" ? (
@@ -370,7 +369,6 @@ export default function ColorLibrary({ hideTitle = false }) {
                 </button>
                 </div>
                 {commercialColors.length > 0 && <ViewSelector pageKey="commercial_colors" allColumns={commColumns} onColumnsChange={setVisibleCommColumns} />}
-                <div className="flex-1" />
                 <Button onClick={openNewComm} className="gap-2 shrink-0"><Plus className="w-4 h-4" />Add Commercial Color</Button>
           </div>
           {commView === "gallery" ? (
