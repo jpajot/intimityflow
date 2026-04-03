@@ -18,8 +18,8 @@ Deno.serve(async (req) => {
 
     // Resolve the file URL: download from SharePoint if needed, otherwise use stored file_url
     let fileUrl = doc.file_url;
-    if (is_sharepoint && doc.file_url && doc.file_url.includes('@microsoft.graph.downloadUrl')) {
-      // If it's a SharePoint download URL, download and re-upload to get a stable base44 URL
+    if (is_sharepoint && doc.file_url) {
+      // Always re-download from SharePoint to ensure we have the actual file, not just a URL
       try {
         const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
         const spRes = await fetch(doc.file_url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -28,9 +28,15 @@ Deno.serve(async (req) => {
           const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
           fileUrl = uploadResult.file_url;
           await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
+        } else {
+          throw new Error(`SharePoint returned ${spRes.status}: ${spRes.statusText}`);
         }
       } catch (spErr) {
-        console.warn('SharePoint download failed, using stored URL:', spErr.message);
+        await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
+          status: 'error',
+          error_message: `Failed to download from SharePoint: ${spErr.message}`
+        });
+        return Response.json({ error: spErr.message }, { status: 500 });
       }
     }
 
