@@ -16,25 +16,24 @@ Deno.serve(async (req) => {
     if (!docs.length) return Response.json({ error: 'Document not found' }, { status: 404 });
     const doc = docs[0];
 
-    // Resolve the file URL: download from SharePoint if needed, otherwise use stored file_url
+    // Resolve the file URL: download from SharePoint if needed
     let fileUrl = doc.file_url;
     if (is_sharepoint && doc.file_url) {
-      // Always re-download from SharePoint to ensure we have the actual file, not just a URL
       try {
         const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
-        const spRes = await fetch(doc.file_url, { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (spRes.ok) {
-          const blob = await spRes.blob();
-          const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
-          fileUrl = uploadResult.file_url;
-          await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
-        } else {
-          throw new Error(`SharePoint returned ${spRes.status}: ${spRes.statusText}`);
-        }
+        const spRes = await fetch(doc.file_url, { 
+          headers: { Authorization: `Bearer ${accessToken}` },
+          redirect: 'follow'
+        });
+        if (!spRes.ok) throw new Error(`SharePoint ${spRes.status}`);
+        const buffer = await spRes.arrayBuffer();
+        const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }) });
+        fileUrl = uploadResult.file_url;
+        await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
       } catch (spErr) {
         await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
           status: 'error',
-          error_message: `Failed to download from SharePoint: ${spErr.message}`
+          error_message: `SharePoint download failed: ${spErr.message}`
         });
         return Response.json({ error: spErr.message }, { status: 500 });
       }
