@@ -288,12 +288,6 @@ export default function Translations() {
         <DataTable
           columns={visibleColumns}
           rows={pickerRecord || pickerEntityType ? contextTranslations : translations}
-          filterFields={[
-            { getValue: (t) => t.parent_entity_type },
-            { getValue: (t) => t.field_name },
-            { getValue: (t) => t.language_code },
-            { getValue: (t) => t.translated_text },
-          ]}
           hideColumnToggle
         />
       </div>
