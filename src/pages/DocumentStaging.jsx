@@ -167,6 +167,7 @@ export default function DocumentStaging() {
             category: "",
             sub_category: "",
             customer_need: "",
+            images: row.image_url ? [row.image_url] : [],
           });
           createdProductIds.push(product.id);
 
