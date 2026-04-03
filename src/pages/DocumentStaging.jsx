@@ -334,6 +334,14 @@ export default function DocumentStaging() {
   const createStyleFromRow = async (row) => {
     const styleName = row["Style Description"];
     if (!styleName) return;
+
+    const codes = row["Style Technical Color Codes"] || [];
+    const unmatchedCodes = codes.filter(code => !techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim()));
+    if (unmatchedCodes.length > 0) {
+      setResult({ success: false, error: `Cannot create: unmatched TCX code(s): ${unmatchedCodes.join(", ")}` });
+      return;
+    }
+
     try {
       const product = await base44.entities.Product.create({
         type: "Product",
