@@ -11,9 +11,9 @@ Deno.serve(async (req) => {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
 
-    // Search for PPTX files across all drives the user has access to
+    // Search for PPTX files using Graph API search
     const res = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/search(q='${encodeURIComponent(query)}')?$select=id,name,webUrl,size,lastModifiedDateTime,@microsoft.graph.downloadUrl&$filter=endswith(name,'.pptx')&$top=50`,
+      `https://graph.microsoft.com/v1.0/me/drive/search(q='${encodeURIComponent(query)}')?$select=id,name,webUrl,size,lastModifiedDateTime&$top=50`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
@@ -23,14 +23,16 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    const files = (data.value || []).map(f => ({
-      id: f.id,
-      name: f.name,
-      webUrl: f.webUrl,
-      size: f.size,
-      lastModified: f.lastModifiedDateTime,
-      downloadUrl: f['@microsoft.graph.downloadUrl'],
-    }));
+    const files = (data.value || [])
+      .filter(f => f.name?.toLowerCase().endsWith('.pptx'))
+      .map(f => ({
+        id: f.id,
+        name: f.name,
+        webUrl: f.webUrl,
+        size: f.size,
+        lastModified: f.lastModifiedDateTime,
+        downloadUrl: f['@microsoft.graph.downloadUrl'] || `${f.webUrl}?download=1`,
+      }));
 
     return Response.json({ files });
   } catch (error) {
