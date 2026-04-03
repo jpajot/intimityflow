@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Upload, FileText, Loader2, AlertCircle, Cloud, Search, ChevronRight } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Loader2, AlertCircle, Cloud, Search, ChevronRight, Trash2 } from "lucide-react";
 import SharePointFilePicker from "../components/SharePointFilePicker";
 import DataTable from "../components/DataTable";
 import ViewSelector from "../components/ViewSelector";
@@ -68,6 +68,11 @@ export default function ProjectDocuments() {
     setSharepointFile(spFile);
     setFile(null);
     setShowSharePoint(false);
+  };
+
+  const handleDelete = async (docId) => {
+    await base44.entities.UploadedDocument.delete(docId);
+    setDocuments(prev => prev.filter(d => d.id !== docId));
   };
 
   const handleUpload = async () => {
@@ -176,15 +181,25 @@ export default function ProjectDocuments() {
     {
       id: "actions",
       label: "",
-      width: 44,
+      width: 80,
       render: (d) => (
-        <button
-          type="button"
-          onClick={() => navigate(`/projects/${id}/documents/${d.id}`)}
-          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => navigate(`/projects/${id}/documents/${d.id}`)}
+            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDelete(d.id)}
+            className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+            title="Delete document"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
