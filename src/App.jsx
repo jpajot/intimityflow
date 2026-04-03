@@ -21,6 +21,8 @@ import ListOfValuesLibrary from './pages/ListOfValuesLibrary';
 import SystemCodeGeneratorLibrary from './pages/SystemCodeGeneratorLibrary';
 import Translations from './pages/Translations';
 import Config from './pages/Config';
+import ProjectDocuments from './pages/ProjectDocuments';
+import DocumentStaging from './pages/DocumentStaging';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -54,6 +56,8 @@ const AuthenticatedApp = () => {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/projects/:id/documents" element={<ProjectDocuments />} />
+        <Route path="/projects/:id/documents/:docId" element={<DocumentStaging />} />
         <Route path="/list-view" element={<ListView />} />
         <Route path="/color-library" element={<ColorLibrary />} />
         <Route path="/color-palettes" element={<ColorPalettes />} />
