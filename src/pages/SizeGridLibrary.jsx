@@ -7,12 +7,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Loader2, Search, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import SizeLibrary from "./SizeLibrary";
 import { Badge } from "@/components/ui/badge";
 import DataTable from "@/components/DataTable";
 
 const emptyForm = { code: "", name: "", active: true, sample_size_id: "", base_size_id: "" };
 
 export default function SizeGridLibrary() {
+  const [mainTab, setMainTab] = useState("grids");
   const [grids, setGrids] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [gridSizes, setGridSizes] = useState([]); // SizeGridSize records
@@ -124,10 +127,16 @@ export default function SizeGridLibrary() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Size Grid Library</h1>
-        <p className="text-muted-foreground mt-1">Manage your size grids and linked sizes</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">Size Studio</h1>
       </div>
 
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList>
+          <TabsTrigger value="grids">Size Grids</TabsTrigger>
+          <TabsTrigger value="library">Size Library</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="grids" className="mt-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Grids Panel */}
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
@@ -281,6 +290,12 @@ export default function SizeGridLibrary() {
           )}
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="library" className="mt-4">
+          <SizeLibrary hideTitle />
+        </TabsContent>
+      </Tabs>
 
       {/* Grid Edit/Create Dialog */}
       <Dialog open={showDialog} onOpenChange={(o) => !o && setShowDialog(false)}>

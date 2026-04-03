@@ -18,7 +18,7 @@ const LANG_FIELDS = [
 const emptyForm = { size_code: "", name: "" };
 const emptyLang = { en_description: "", fr_description: "", de_description: "", sp_description: "", it_description: "" };
 
-export default function SizeLibrary() {
+export default function SizeLibrary({ hideTitle = false }) {
   const [sizes, setSizes] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -189,10 +189,12 @@ export default function SizeLibrary() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Size Library</h1>
-          <p className="text-muted-foreground mt-1">{sizes.length} sizes</p>
-        </div>
+        {!hideTitle && (
+          <div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Size Library</h1>
+            <p className="text-muted-foreground mt-1">{sizes.length} sizes</p>
+          </div>
+        )}
         <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" />Add Size</Button>
       </div>
 

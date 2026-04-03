@@ -14,13 +14,9 @@ const NAV_ITEMS = [
 
 
 
-const SIZE_STUDIO_ITEMS = [
-  { path: "/size-library", label: "Size Library", icon: Ruler },
-  { path: "/size-grid-library", label: "Size Grids", icon: Layers },
-];
+const SIZE_STUDIO_ITEMS = [];
 
 const CONFIG_ITEMS = [
-  { path: "/color-library", label: "Color Library", icon: Palette },
   { path: "/list-of-values", label: "List of Values", icon: ListCollapse },
   { path: "/code-generators", label: "Code Generators", icon: Hash },
 ];
