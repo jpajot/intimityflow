@@ -92,10 +92,10 @@ export default function ProductDetail() {
 
   const getCategories = () => {
     const categoryTypeId = lovTypes["Category"];
-    if (!categoryTypeId) return [];
-    const entityTypesLov = Object.entries(lovTypes).find(([k]) => k === "EntityTypes")?.[1];
+    const entityTypesTypeId = lovTypes["EntityTypes"];
+    if (!categoryTypeId || !entityTypesTypeId) return [];
     const targetEntityValue = lovValues.find(
-      (v) => v.type_of_lov_id === entityTypesLov && v.name === product.type
+      (v) => v.type_of_lov_id === entityTypesTypeId && v.name === product.type
     );
     return lovValues.filter((v) => 
       v.type_of_lov_id === categoryTypeId && 
