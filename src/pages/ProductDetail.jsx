@@ -99,13 +99,13 @@ export default function ProductDetail() {
   const getSubCategories = () => {
     const subCategoryTypeId = lovTypes["Sub-Category"];
     if (!subCategoryTypeId) return [];
-    return lovValues.filter((v) => v.type_of_lov_id === subCategoryTypeId);
+    return lovValues.filter((v) => v.type_of_lov_id === subCategoryTypeId).map(v => v.name);
   };
 
   const getCustomerNeeds = () => {
     const customerNeedTypeId = lovTypes["Customer Need"];
     if (!customerNeedTypeId) return [];
-    return lovValues.filter((v) => v.type_of_lov_id === customerNeedTypeId);
+    return lovValues.filter((v) => v.type_of_lov_id === customerNeedTypeId).map(v => v.name);
   };
 
   const loadProduct = async () => {
