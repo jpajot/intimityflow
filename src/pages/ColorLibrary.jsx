@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Download, Pencil, Trash2, LayoutGrid, List, Search } from "lucide-react";
 import { PANTONE_TCX, colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import DataTable from "@/components/DataTable";
+import ViewSelector from "@/components/ViewSelector";
 
 export default function ColorLibrary({ hideTitle = false }) {
   const [technicalColors, setTechnicalColors] = useState([]);
@@ -30,6 +31,8 @@ export default function ColorLibrary({ hideTitle = false }) {
   const [saving, setSaving] = useState(false);
   const [techView, setTechView] = useState("table");
   const [commView, setCommView] = useState("table");
+  const [visibleTechColumns, setVisibleTechColumns] = useState(null);
+  const [visibleCommColumns, setVisibleCommColumns] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -295,11 +298,12 @@ export default function ColorLibrary({ hideTitle = false }) {
                 <List className="w-4 h-4" />
               </button>
             </div>
+            {technicalColors.length > 0 && <ViewSelector pageKey="technical_colors" allColumns={techColumns} onColumnsChange={setVisibleTechColumns} />}
             <Button onClick={openNewTech} className="gap-2 shrink-0"><Plus className="w-4 h-4" />Add Technical Color</Button>
           </div>
           {techView === "table" ? (
-            <DataTable
-              columns={techColumns}
+           <DataTable
+             columns={visibleTechColumns || techColumns}
               rows={technicalColors.filter((c) =>
                 !techSearch ||
                 c.code?.toLowerCase().includes(techSearch.toLowerCase()) ||
@@ -364,6 +368,7 @@ export default function ColorLibrary({ hideTitle = false }) {
                 <List className="w-4 h-4" />
               </button>
             </div>
+            {commercialColors.length > 0 && <ViewSelector pageKey="commercial_colors" allColumns={commColumns} onColumnsChange={setVisibleCommColumns} />}
             <Button onClick={openNewComm} className="gap-2 shrink-0"><Plus className="w-4 h-4" />Add Commercial Color</Button>
           </div>
           {commView === "gallery" ? (
@@ -393,8 +398,8 @@ export default function ColorLibrary({ hideTitle = false }) {
               })}
             </div>
           ) : (
-            <DataTable
-              columns={commColumns}
+           <DataTable
+             columns={visibleCommColumns || commColumns}
               rows={commercialColors.filter((c) =>
                 !commSearch ||
                 c.code?.toLowerCase().includes(commSearch.toLowerCase()) ||
