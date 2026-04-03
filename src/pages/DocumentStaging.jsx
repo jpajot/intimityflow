@@ -242,7 +242,7 @@ export default function DocumentStaging() {
     {
       id: "edit",
       label: "",
-      width: 60,
+      width: 50,
       render: (r) => (
         <button
           type="button"
@@ -250,6 +250,20 @@ export default function DocumentStaging() {
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           ✏️
+        </button>
+      ),
+    },
+    {
+      id: "create",
+      label: "",
+      width: 50,
+      render: (r) => (
+        <button
+          type="button"
+          onClick={() => createStyleFromRow(r)}
+          className="text-xs text-primary hover:underline font-medium"
+        >
+          Create
         </button>
       ),
     },
@@ -316,6 +330,37 @@ export default function DocumentStaging() {
   const unmatchedCount = allCodes.filter(code => !techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim())).length;
   const totalStyles = (data?.slides || []).reduce((sum, s) => sum + (s.table?.rows?.length || 0), 0);
   const isProcessed = doc.status === "processed";
+
+  const createStyleFromRow = async (row) => {
+    const styleName = row["Style Description"];
+    if (!styleName) return;
+    try {
+      const product = await base44.entities.Product.create({
+        type: "Product",
+        name: styleName,
+        category: "",
+        sub_category: "",
+        customer_need: "",
+        images: row.image_url ? [row.image_url] : [],
+      });
+
+      for (const code of (row["Style Technical Color Codes"] || [])) {
+        const tc = techColors.find((t) => t.code?.toLowerCase().trim() === code?.toLowerCase().trim());
+        await base44.entities.ProductColor.create({
+          product_id: product.id,
+          color_name: tc?.name || code,
+          colorway_code: code,
+          color_hex: tc?.hex || "",
+          linked_tech_color_id: tc?.id || "",
+          linked_color_type: "",
+          linked_color_id: "",
+        });
+      }
+      setResult({ success: true, count: 1 });
+    } catch (err) {
+      setResult({ success: false, error: err.message });
+    }
+  };
 
   // Render edit panel for selected row
   const renderEditPanel = () => {
