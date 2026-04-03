@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const CONFIG_ITEMS = [
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(() => {
     const saved = localStorage.getItem("sidebarExpanded");
     return saved ? JSON.parse(saved) : true;
@@ -67,9 +69,13 @@ export default function Layout() {
     );
   };
 
-  const GroupButton = ({ icon: Icon, label, open, onToggle, isActive }) => (
+  const GroupButton = ({ icon: Icon, label, open, onToggle, isActive, navPath }) => (
     <button
-      onClick={() => { if (!expanded) setExpanded(true); onToggle(); }}
+      onClick={() => {
+        if (!expanded) setExpanded(true);
+        if (navPath) navigate(navPath);
+        onToggle();
+      }}
       title={!expanded ? label : undefined}
       className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
         expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"
@@ -97,7 +103,7 @@ export default function Layout() {
 
       {/* Color Studio */}
       <div className="space-y-0.5">
-        <GroupButton icon={Palette} label="Color Studio" open={studioOpen} onToggle={() => setStudioOpen((o) => !o)} isActive={isStudioActive} />
+        <GroupButton icon={Palette} label="Color Studio" open={studioOpen} onToggle={() => setStudioOpen((o) => !o)} isActive={isStudioActive} navPath="/color-palettes" />
         {studioOpen && expanded && (
           <div className="pl-3 space-y-0.5">
             {COLOR_STUDIO_ITEMS.map((item) => (

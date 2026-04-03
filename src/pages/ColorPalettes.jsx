@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Search } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ColorPalettes() {
   const [palettes, setPalettes] = useState([]);
@@ -27,6 +28,10 @@ export default function ColorPalettes() {
   const [colorTab, setColorTab] = useState("technical");
   const [selectedColorIds, setSelectedColorIds] = useState(new Set());
   const [addingColors, setAddingColors] = useState(false);
+  const [showCreateColor, setShowCreateColor] = useState(false);
+  const [createColorType, setCreateColorType] = useState("technical");
+  const [createColorForm, setCreateColorForm] = useState({ code: "", name: "", hex: "", sub_type: "Solid" });
+  const [creatingColor, setCreatingColor] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -94,6 +99,8 @@ export default function ColorPalettes() {
     setColorSearch("");
     setColorTab("technical");
     setShowColorPicker(true);
+    setShowCreateColor(false);
+    setCreateColorForm({ code: "", name: "", hex: "", sub_type: "Solid" });
   };
 
   const toggleColorSelection = (key) => {
@@ -102,6 +109,33 @@ export default function ColorPalettes() {
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
+  };
+
+  const handleCreateNewColor = async () => {
+    setCreatingColor(true);
+    let newEntry;
+    if (createColorType === "technical") {
+      newEntry = await base44.entities.TechnicalColor.create({
+        code: createColorForm.code,
+        name: createColorForm.name,
+        hex: createColorForm.hex || undefined,
+      });
+      setTechColors((prev) => [...prev, newEntry]);
+    } else {
+      newEntry = await base44.entities.CommercialColor.create({
+        code: createColorForm.code,
+        color_name: createColorForm.name,
+        sub_type: createColorForm.sub_type,
+      });
+      setCommColors((prev) => [...prev, newEntry]);
+    }
+    // Auto-link to palette
+    const colorType = createColorType === "technical" ? "technical" : "commercial";
+    const created = await base44.entities.ColorPaletteColor.create({ palette_id: selectedPaletteId, color_type: colorType, color_id: newEntry.id });
+    setPaletteColors((prev) => [...prev, created]);
+    setCreatingColor(false);
+    setShowCreateColor(false);
+    setCreateColorForm({ code: "", name: "", hex: "", sub_type: "Solid" });
   };
 
   const handleAddSelectedColors = async () => {
@@ -307,7 +341,45 @@ export default function ColorPalettes() {
                       })}
                       {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
                     </div>
+                    {showCreateColor && (
+                      <div className="p-3 border-t border-border space-y-2 bg-muted/30">
+                        <p className="text-xs font-semibold">Create New Color</p>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setCreateColorType("technical")}
+                            className={`flex-1 py-1 rounded text-xs font-medium border transition-colors ${ createColorType === "technical" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted" }`}>
+                            Technical
+                          </button>
+                          <button type="button" onClick={() => setCreateColorType("commercial")}
+                            className={`flex-1 py-1 rounded text-xs font-medium border transition-colors ${ createColorType === "commercial" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted" }`}>
+                            Commercial
+                          </button>
+                        </div>
+                        <input className="w-full h-7 px-2 rounded border border-input text-xs bg-background" placeholder="Code (e.g. 11-0601 TCX)" value={createColorForm.code} onChange={(e) => setCreateColorForm((f) => ({ ...f, code: e.target.value }))} />
+                        <input className="w-full h-7 px-2 rounded border border-input text-xs bg-background" placeholder="Name" value={createColorForm.name} onChange={(e) => setCreateColorForm((f) => ({ ...f, name: e.target.value }))} />
+                        {createColorType === "technical" && (
+                          <div className="flex gap-2 items-center">
+                            <input className="w-full h-7 px-2 rounded border border-input text-xs bg-background" placeholder="Hex (e.g. #F4F5F0)" value={createColorForm.hex} onChange={(e) => setCreateColorForm((f) => ({ ...f, hex: e.target.value }))} />
+                            {createColorForm.hex && <div className="w-7 h-7 rounded border border-border shrink-0" style={{ backgroundColor: createColorForm.hex }} />}
+                          </div>
+                        )}
+                        {createColorType === "commercial" && (
+                          <select className="w-full h-7 px-2 rounded border border-input text-xs bg-background" value={createColorForm.sub_type} onChange={(e) => setCreateColorForm((f) => ({ ...f, sub_type: e.target.value }))}>
+                            <option value="Solid">Solid</option>
+                            <option value="Combined">Combined</option>
+                          </select>
+                        )}
+                        <div className="flex gap-2">
+                          <Button size="sm" className="flex-1 text-xs" disabled={!createColorForm.code || !createColorForm.name || creatingColor} onClick={handleCreateNewColor}>
+                            {creatingColor && <Loader2 className="w-3 h-3 animate-spin" />} Create & Add
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-xs" onClick={() => setShowCreateColor(false)}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
                     <div className="p-2 border-t border-border flex gap-2">
+                      <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setShowCreateColor((v) => !v)}>
+                        <Plus className="w-3 h-3" /> New
+                      </Button>
                       <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors}
                         onClick={handleAddSelectedColors}>
                         {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
