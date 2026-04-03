@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Check, AlertCircle, ChevronDown, ChevronRight, RefreshCw, X } from "lucide-react";
+import { Search, ArrowLeft, Loader2, Check, AlertCircle, ChevronDown, ChevronRight, RefreshCw, X } from "lucide-react";
+import DataTable from "../components/DataTable";
+import ViewSelector from "../components/ViewSelector";
 
 function TcxBadge({ code, techColors }) {
   const tc = techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim());
@@ -109,6 +111,8 @@ export default function DocumentStaging() {
   const [processing, setProcessing] = useState(false);
   const [reparsing, setReparsing] = useState(false);
   const [result, setResult] = useState(null);
+  const [search, setSearch] = useState("");
+  const [visibleColumns, setVisibleColumns] = useState(null);
 
   useEffect(() => { loadData(); }, [docId]);
 
@@ -147,6 +151,108 @@ export default function DocumentStaging() {
     }
     setReparsing(false);
   };
+
+  // Flatten all rows with slide info for table display
+  const allRows = useMemo(() => {
+    const rows = [];
+    (data?.slides || []).forEach((slide, slideIdx) => {
+      (slide.table?.rows || []).forEach((row, rowIdx) => {
+        rows.push({
+          id: `${slideIdx}-${rowIdx}`,
+          slideNumber: slide.slideNumber,
+          slideIdx,
+          rowIdx,
+          ...row,
+        });
+      });
+    });
+    return rows;
+  }, [data]);
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return allRows;
+    const q = search.toLowerCase();
+    return allRows.filter((row) =>
+      row["Style Description"]?.toLowerCase().includes(q) ||
+      (row["Style Technical Color Codes"] || []).some((code) => code.toLowerCase().includes(q))
+    );
+  }, [allRows, search]);
+
+  const columns = [
+    {
+      id: "slide",
+      label: "Slide",
+      width: 70,
+      sortKey: (r) => r.slideNumber || 0,
+      render: (r) => <span className="font-mono text-sm">{r.slideNumber}</span>,
+    },
+    {
+      id: "style_name",
+      label: "Style Name",
+      width: 180,
+      sortKey: (r) => r["Style Description"] || "",
+      render: (r) => <span className="font-medium">{r["Style Description"] || "—"}</span>,
+    },
+    {
+      id: "image",
+      label: "Image",
+      width: 80,
+      render: (r) =>
+        r.image_url ? (
+          <div className="w-10 h-10 rounded-md overflow-hidden border border-border">
+            <img src={r.image_url} alt={r["Style Description"]} className="w-full h-full object-contain" />
+          </div>
+        ) : (
+          <div className="w-10 h-10 rounded-md border border-border bg-muted" />
+        ),
+    },
+    {
+      id: "colors",
+      label: "Technical Colors",
+      width: 280,
+      render: (r) => {
+        const codes = r["Style Technical Color Codes"] || [];
+        return (
+          <div className="flex flex-wrap gap-1">
+            {codes.map((code, i) => {
+              const tc = techColors.find((t) => t.code?.toLowerCase().trim() === code?.toLowerCase().trim());
+              return (
+                <div key={i} className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: tc?.hex || "#eee" }} title={code} />
+                  <span className={`text-xs font-mono ${tc ? "text-foreground" : "text-amber-600"}`}>{code}</span>
+                  {!tc && <span className="text-xs text-amber-600">⚠</span>}
+                </div>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => {
+                const updated = [...codes, ""];
+                handleRowChange(r.slideIdx, r.rowIdx, { ...r, "Style Technical Color Codes": updated });
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              +
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      id: "edit",
+      label: "",
+      width: 60,
+      render: (r) => (
+        <button
+          type="button"
+          onClick={() => alert("Edit: " + r["Style Description"])}
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          ✏️
+        </button>
+      ),
+    },
+  ];
 
   const handleProcess = async () => {
     setProcessing(true);
@@ -226,6 +332,7 @@ export default function DocumentStaging() {
         </Button>
       </div>
 
+      {/* Stats Bar */}
       {data && (
         <div className="flex items-center gap-4 bg-card border border-border rounded-xl p-4 flex-wrap">
           <div className="text-center">
@@ -259,6 +366,31 @@ export default function DocumentStaging() {
         </div>
       )}
 
+      {/* Toolbar */}
+      {data && (
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search styles…"
+              className="pl-8 h-9 text-xs"
+            />
+          </div>
+          {filteredRows.length > 0 && <ViewSelector pageKey="document_staging" allColumns={columns} onColumnsChange={setVisibleColumns} />}
+          <div className="flex-1" />
+          <Button variant="outline" size="sm" onClick={handleReparse} disabled={reparsing || isProcessed} className="gap-1.5 shrink-0">
+            {reparsing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Re-parse
+          </Button>
+          <Button onClick={handleProcess} disabled={processing || isProcessed || !data} className="gap-2 shrink-0">
+            {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {isProcessed ? "Already Processed" : "Create Styles"}
+          </Button>
+        </div>
+      )}
+
       {!data && (
         <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
           <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
@@ -275,41 +407,28 @@ export default function DocumentStaging() {
         </div>
       )}
 
-      {(data?.slides || []).map((slide, slideIdx) => (
-        <div key={slideIdx} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">Slide {slide.slideNumber}</Badge>
-            <h2 className="font-semibold text-base">{slide.title}</h2>
-            <span className="text-xs text-muted-foreground">({slide.table?.rows?.length || 0} style{(slide.table?.rows?.length || 0) !== 1 ? "s" : ""})</span>
-          </div>
-          <div className="space-y-2">
-            {(slide.table?.rows || []).map((row, rowIdx) => (
-              <StyleRow key={rowIdx} row={row} techColors={techColors} onChange={updated => handleRowChange(slideIdx, rowIdx, updated)} />
-            ))}
-          </div>
+      {data && filteredRows.length === 0 ? (
+        <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+          <p className="text-sm text-muted-foreground">{allRows.length === 0 ? "No styles found." : "No results match your search."}</p>
         </div>
-      ))}
+      ) : data ? (
+        <DataTable columns={visibleColumns || columns} rows={filteredRows} hideColumnToggle />
+      ) : null}
 
-      {data && (
-        <div className="sticky bottom-4 flex items-center gap-3 bg-background/95 backdrop-blur-sm border border-border rounded-xl p-4 shadow-lg">
-          {result?.success && (
-            <p className="text-sm text-green-700 flex items-center gap-1.5">
-              <Check className="w-4 h-4" /> {result.count} style{result.count !== 1 ? "s" : ""} created.
-            </p>
+      {/* Results message */}
+      {result && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background border border-border rounded-lg p-4 shadow-lg">
+          {result.success ? (
+            <>
+              <Check className="w-4 h-4 text-green-600" />
+              <p className="text-sm text-green-700">{result.count} style{result.count !== 1 ? "s" : ""} created.</p>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="w-4 h-4 text-destructive" />
+              <p className="text-sm text-destructive">{result.error}</p>
+            </>
           )}
-          {result?.error && (
-            <p className="text-sm text-destructive flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" /> {result.error}
-            </p>
-          )}
-          {unmatchedCount > 0 && !isProcessed && !result && (
-            <p className="text-xs text-amber-600">{unmatchedCount} TCX code{unmatchedCount !== 1 ? "s" : ""} not in library.</p>
-          )}
-          <div className="flex-1" />
-          <Button onClick={handleProcess} disabled={processing || isProcessed || !data} className="gap-2 shrink-0">
-            {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            {isProcessed ? "Already Processed" : "Create Styles & Colorways"}
-          </Button>
         </div>
       )}
     </div>
