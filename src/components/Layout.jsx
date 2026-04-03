@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash } from "lucide-react";
+import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Shirt },
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
 const SIZE_STUDIO_ITEMS = [];
 
 const CONFIG_ITEMS = [
+  { path: "/translations", label: "Translations", icon: Languages },
   { path: "/list-of-values", label: "List of Values", icon: ListCollapse },
   { path: "/code-generators", label: "Code Generators", icon: Hash },
 ];

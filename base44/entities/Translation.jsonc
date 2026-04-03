@@ -1,0 +1,33 @@
+{
+  "name": "Translation",
+  "type": "object",
+  "properties": {
+    "parent_entity_type": {
+      "type": "string",
+      "description": "Entity type being translated e.g. Product, TechnicalColor, Size"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "ID of the record being translated"
+    },
+    "field_name": {
+      "type": "string",
+      "description": "Field name being translated e.g. name, description"
+    },
+    "language_code": {
+      "type": "string",
+      "description": "ISO language code e.g. en, de, fr - references Language LOV"
+    },
+    "translated_text": {
+      "type": "string",
+      "description": "The translated content"
+    }
+  },
+  "required": [
+    "parent_entity_type",
+    "parent_id",
+    "field_name",
+    "language_code",
+    "translated_text"
+  ]
+}

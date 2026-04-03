@@ -19,6 +19,7 @@ import SizeLibrary from './pages/SizeLibrary';
 import SizeGridLibrary from './pages/SizeGridLibrary';
 import ListOfValuesLibrary from './pages/ListOfValuesLibrary';
 import SystemCodeGeneratorLibrary from './pages/SystemCodeGeneratorLibrary';
+import Translations from './pages/Translations';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
         <Route path="/size-grid-library" element={<SizeGridLibrary />} />
         <Route path="/list-of-values" element={<ListOfValuesLibrary />} />
         <Route path="/code-generators" element={<SystemCodeGeneratorLibrary />} />
+        <Route path="/translations" element={<Translations />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
