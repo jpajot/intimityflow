@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       prompt: `Extract product data from document. For each table row/style, extract:
 - "Style Description": product/style name
 - "Style Technical Color Codes": array of Pantone TCX codes (e.g., "19-1664 TCX")
-- "Image Index": if there's an image/photo for this style, note its position (e.g., "0" for first image on slide, "1" for second, etc., or null if no image)`,
+- "image_url": if there's an associated image/photo for this style, include its URL or reference; otherwise null`,
       file_urls: [doc.file_url],
       response_json_schema: {
         type: "object",
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
                         properties: {
                           "Style Description": { type: "string" },
                           "Style Technical Color Codes": { type: "array", items: { type: "string" } },
-                          "Image Index": { type: ["integer", "null"] }
+                          "image_url": { type: ["string", "null"] }
                         }
                       }
                     }
