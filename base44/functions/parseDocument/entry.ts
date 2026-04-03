@@ -19,10 +19,11 @@ Deno.serve(async (req) => {
     // Resolve the file URL: download from SharePoint if needed, otherwise use stored file_url
     let fileUrl = doc.file_url;
     if (is_sharepoint && doc.file_url) {
-      // Download from SharePoint using the web URL and re-upload to get a stable base44 URL
+      // Download from SharePoint using the download=1 parameter to get the actual file
       try {
         const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
-        const spRes = await fetch(`${doc.file_url}?$format=binary`, { headers: { Authorization: `Bearer ${accessToken}` } });
+        const downloadUrl = `${doc.file_url}?download=1`;
+        const spRes = await fetch(downloadUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
         if (spRes.ok) {
           const blob = await spRes.blob();
           const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
