@@ -111,6 +111,7 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
       ...f,
       linked_tech_color_id: tech.id,
       color_hex: colorToHex(tech) || f.color_hex,
+      color_name: tech.name || f.color_name,
     }));
   };
 
