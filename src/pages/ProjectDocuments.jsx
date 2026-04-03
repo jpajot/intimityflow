@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ArrowLeft, Upload, FileText, Loader2, AlertCircle, Cloud, Search, ChevronRight } from "lucide-react";
 import SharePointFilePicker from "../components/SharePointFilePicker";
 import DataTable from "../components/DataTable";
+import ViewSelector from "../components/ViewSelector";
 
 const STATUS_COLORS = {
   uploaded: "secondary",
@@ -217,6 +218,7 @@ export default function ProjectDocuments() {
             className="pl-8 h-9"
           />
         </div>
+        {documents.length > 0 && <ViewSelector pageKey="documents" allColumns={columns} />}
         <div className="flex-1" />
         <Button variant="outline" size="sm" onClick={() => setShowSharePoint(true)} className="gap-1.5 h-9">
           <Cloud className="w-4 h-4" /> SharePoint
