@@ -294,32 +294,58 @@ export default function ProductDetail() {
         )}
       </div>
 
-      <form onSubmit={handleSave} id="product-form" className="space-y-6">
+            {product.type === "Product" && (
+              <div className="space-y-2">
+                <Label className="text-xs">Customer Need</Label>
+                <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>
+                    {getCustomerNeeds().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Description</Label>
+            <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
+          </div>
+        </div>
+
+        {/* Style Images */}
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <h3 className="font-semibold text-sm">Details</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Name</Label>
-              <Input value={product.name} onChange={(e) => updateField("name", e.target.value)} required />
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-sm">Images</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">First image will be the main/cover image</p>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Category</Label>
-              <Select value={product.category} onValueChange={(v) => updateField("category", v)}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>
-                  {getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Sub-Category</Label>
-              <Select value={product.sub_category} onValueChange={(v) => updateField("sub_category", v)}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>
-                  {getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
+              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {uploadingImage ? "Uploading..." : "Add Image"}
+              <input type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (!files.length) return;
+                setUploadingImage(true);
+                const urls = await Promise.all(files.map(async (file) => {
+                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                  return file_url;
+                }));
+                updateField("images", [...(product.images || []), ...urls]);
+                setUploadingImage(false);
+                e.target.value = "";
+              }} />
+            </label>
+          </div>
+          {(product.images || []).length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {(product.images || []).map((url, idx) => (
+                <div key={url} className="relative group/img aspect-square rounded-lg overflow-hidden border border-border">
+                  <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover" />
+                  {idx === 0 && (
+                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded">
+                      Main
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => updateField("images", (product.images || []).filter((_, i) => i !== idx))}
@@ -356,7 +382,6 @@ export default function ProductDetail() {
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Create
           </Button>
-        )}
       </form>
 
       {!isNew && (
