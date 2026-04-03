@@ -1,59 +1,35 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Link2, Loader2, Trash2, LayoutList, Grid3X3, X, ExternalLink } from "lucide-react";
-import ProjectSidebar from "../components/ProjectSidebar";
+import { ArrowLeft, Plus, Loader2, Trash2, FileText, Upload } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import GroupBySelector from "../components/GroupBySelector";
-import ProjectPlannedVariations from "../components/ProjectPlannedVariations";
-import MatrixCell from "../components/MatrixCell";
-import LinkProductColorModal from "../components/LinkProductColorModal";
-import ColorwayForm from "../components/ColorwayForm";
-import ProjectVariationsTable from "../components/ProjectVariationsTable";
-import _ from "lodash";
-
-const MARKET_FLAGS = { Spain: "🇪🇸", France: "🇫🇷", Germany: "🇩🇪", Italy: "🇮🇹" };
+import DataTable from "../components/DataTable";
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [project, setProject] = useState(null);
-  const [assignments, setAssignments] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [colorVariants, setColorVariants] = useState([]);
-  const [variations, setVariations] = useState([]);
   const [palettes, setPalettes] = useState([]);
   const [paletteColors, setPaletteColors] = useState([]);
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [showNewProductDialog, setShowNewProductDialog] = useState(false);
-  const [newProductName, setNewProductName] = useState("");
-  const [newProductCategory, setNewProductCategory] = useState("");
-  const [newProductSubCat, setNewProductSubCat] = useState("");
-  const [newProductNeed, setNewProductNeed] = useState("");
-  const [creatingProduct, setCreatingProduct] = useState(false);
-
-  // For creating a color within a newly picked product
-  const [pendingProductId, setPendingProductId] = useState(null);
-
-
-  const [rowCriteria, setRowCriteria] = useState("category");
-  const [colCriteria, setColCriteria] = useState("customer_need");
-  const [activeSection, setActiveSection] = useState("products");
-
-  const CATEGORIES = ["Briefs", "Boxers", "Trunks", "Thongs", "Bras", "Lingerie Sets", "Shapewear", "Loungewear"];
-  const SUB_CATEGORIES = ["Basic", "Sport", "Seamless", "Lace", "Cotton", "Microfiber", "Thermal", "Premium"];
-  const CUSTOMER_NEEDS = ["Everyday Comfort", "Active Performance", "Fashion Forward", "Special Occasion", "Maternity", "Plus Size", "Eco-Friendly", "Budget Value"];
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedType, setSelectedType] = useState("");
+  const [file, setFile] = useState(null);
+  const [docSearch, setDocSearch] = useState("");
 
   useEffect(() => {
     loadData();
@@ -61,26 +37,26 @@ export default function ProjectDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [proj, asns, prods, colors, vars, pals, palCols, tc, cc] = await Promise.all([
+    const [proj, pals, palCols, tc, cc, docs, lovTypes] = await Promise.all([
       base44.entities.Project.filter({ id }),
-      base44.entities.ProjectAssignment.filter({ project_id: id }),
-      base44.entities.Product.list("-created_date", 500),
-      base44.entities.ProductColor.list("-created_date", 2000),
-      base44.entities.ProductColorAndMore.list("-created_date", 5000),
       base44.entities.ColorPalette.filter({ project_id: id }),
       base44.entities.ColorPaletteColor.list("-created_date", 2000),
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.CommercialColor.list("code", 2000),
+      base44.entities.UploadedDocument.filter({ project_id: id }),
+      base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
     ]);
     setProject(proj[0] || null);
-    setAssignments(asns);
-    setProducts(prods);
-    setColorVariants(colors);
-    setVariations(vars);
     setPalettes(pals);
     setPaletteColors(palCols);
     setTechColors(tc);
     setCommColors(cc);
+    setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
+    
+    if (lovTypes.length > 0) {
+      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+      setDocTypes(values.map(v => v.name));
+    }
     setLoading(false);
   };
 
@@ -98,70 +74,55 @@ export default function ProjectDetail() {
       });
   };
 
-  // Derived: only product-colors in this project
-  const linkedColorIds = assignments.map((a) => a.product_color_id);
-  const linkedColors = colorVariants.filter((cv) => linkedColorIds.includes(cv.id));
-  const linkedProductIds = [...new Set(linkedColors.map((cv) => cv.product_id))];
-  const linkedProducts = products.filter((p) => linkedProductIds.includes(p.id));
+  const handleUpload = async () => {
+    if (!file || !selectedType) return;
+    setUploading(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      const file_url = result.file_url;
+      const filename = file.name;
+      const doc = await base44.entities.UploadedDocument.create({
+        project_id: id,
+        document_type: selectedType,
+        file_url,
+        original_filename: filename,
+        upload_date: new Date().toISOString(),
+        status: "uploaded",
+      });
+      setDocuments((prev) => [doc, ...prev]);
+      setFile(null);
+      setSelectedType("");
+      setShowUploadDialog(false);
 
-  const handleLink = async (selected) => {
-    const created = await Promise.all(
-      selected.map((s) =>
-        base44.entities.ProjectAssignment.create({ project_id: id, product_color_id: s.product_color_id, product_id: s.product_id })
-      )
-    );
-    setAssignments((prev) => [...prev, ...created]);
+      try {
+        await base44.functions.invoke("parseDocument", { document_id: doc.id });
+        const updated = await base44.entities.UploadedDocument.filter({ id: doc.id });
+        if (updated.length) setDocuments((prev) => prev.map((d) => d.id === doc.id ? updated[0] : d));
+      } catch (parseErr) {
+        await base44.entities.UploadedDocument.update(doc.id, {
+          status: "error",
+          error_message: parseErr.message || "Failed to parse document"
+        });
+        setDocuments((prev) => prev.map((d) => d.id === doc.id ? {
+          ...d,
+          status: "error",
+          error_message: parseErr.message || "Failed to parse document"
+        } : d));
+      }
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleUnlink = async (productColorId) => {
-    const asn = assignments.find((a) => a.product_color_id === productColorId);
-    if (!asn) return;
-    await base44.entities.ProjectAssignment.delete(asn.id);
-    setAssignments((prev) => prev.filter((a) => a.id !== asn.id));
-  };
-
-  const handleCreateProduct = async (e) => {
-    e.preventDefault();
-    setCreatingProduct(true);
-    const prod = await base44.entities.Product.create({
-      name: newProductName,
-      category: newProductCategory,
-      sub_category: newProductSubCat,
-      customer_need: newProductNeed,
-      status: "Draft",
-    });
-    setProducts((prev) => [...prev, prod]);
-    setPendingProductId(prod.id);
-    setShowNewProductDialog(false);
-    setNewProductName(""); setNewProductCategory(""); setNewProductSubCat(""); setNewProductNeed("");
-    setCreatingProduct(false);
-  };
-
-  const handleAddColorToProject = async (colorData) => {
-    const newColor = await base44.entities.ProductColor.create({ ...colorData, product_id: pendingProductId });
-    setColorVariants((prev) => [...prev, newColor]);
-    const asn = await base44.entities.ProjectAssignment.create({ project_id: id, product_color_id: newColor.id, product_id: pendingProductId });
-    setAssignments((prev) => [...prev, asn]);
-    setPendingProductId(null);
+  const handleDeleteDoc = async (docId) => {
+    await base44.entities.UploadedDocument.delete(docId);
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
   };
 
   const handleDeleteProject = async () => {
-    await Promise.all(assignments.map((a) => base44.entities.ProjectAssignment.delete(a.id)));
     await base44.entities.Project.delete(id);
     navigate("/projects");
   };
-
-
-
-  // Matrix view
-  const rowGroups = _.groupBy(linkedProducts, rowCriteria);
-  const colGroups = _.groupBy(linkedProducts, colCriteria);
-  const rowKeys = Object.keys(rowGroups).sort();
-  const colKeys = Object.keys(colGroups).sort();
-  const getProductsAt = (rk, ck) =>
-    linkedProducts.filter((p) => p[rowCriteria] === rk && p[colCriteria] === ck);
-
-
 
   if (loading) {
     return (
@@ -175,224 +136,196 @@ export default function ProjectDetail() {
     return <div className="text-center py-20 text-muted-foreground">Project not found</div>;
   }
 
+  const filteredDocs = docSearch.trim()
+    ? documents.filter((d) =>
+        d.original_filename?.toLowerCase().includes(docSearch.toLowerCase()) ||
+        d.document_type?.toLowerCase().includes(docSearch.toLowerCase()) ||
+        d.collection_name?.toLowerCase().includes(docSearch.toLowerCase())
+      )
+    : documents;
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      <ProjectSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="overflow-y-auto">
-        {/* Header */}
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="overflow-y-auto">
         <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/projects")}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="font-display text-2xl font-semibold tracking-tight">{project.name}</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">{project.type}</span>
-            {project.season && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground font-medium">{project.season}</span>}
-          </div>
-          {project.description && <p className="text-sm text-muted-foreground mt-1">{project.description}</p>}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                  <AlertDialogDescription>This will delete the project and all its assignments (styles/colors are kept).</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
-
-      {/* Planned Products section */}
-       {activeSection === "products" && (
-         <div className="space-y-4">
-           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Planned Variations</h2>
-           <ProjectPlannedVariations
-             projectId={id}
-             variations={variations}
-             products={products}
-             colorVariants={colorVariants}
-             assignments={assignments}
-             onRefresh={loadData}
-           />
-         </div>
-       )}
-
-       {/* Color Palettes section */}
-       {activeSection === "palettes" && palettes.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Color Palettes</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {palettes.map((palette) => {
-              const hexes = getPaletteHexes(palette.id);
-              const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
-              return (
-                <Link key={palette.id} to={`/color-palettes/${palette.id}`}
-                  className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
-                  <div className="h-12 flex">
-                    {hexes.length === 0 ? (
-                      <div className="flex-1 bg-muted" />
-                    ) : (
-                      hexes.slice(0, 10).map((hex, i) => (
-                        <div key={i} className="flex-1" style={{ backgroundColor: hex }} />
-                      ))
-                    )}
-                  </div>
-                  <div className="px-4 py-2.5 flex items-center justify-between">
-                    <span className="font-medium text-sm">{palette.name}</span>
-                    <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Pending: add color to newly created product */}
-      {activeSection === "products" && pendingProductId && (
-        <div className="bg-accent/50 border border-primary/20 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Add a colorway to your new style</p>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPendingProductId(null)}>
-              <X className="w-4 h-4" />
+          {/* Header */}
+          <div className="flex items-start gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/projects")}>
+              <ArrowLeft className="w-4 h-4" />
             </Button>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="font-display text-3xl font-semibold tracking-tight">{project.name}</h1>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">{project.type}</span>
+                {project.season && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground font-medium">{project.season}</span>}
+              </div>
+              {project.description && <p className="text-sm text-muted-foreground mt-1">{project.description}</p>}
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <span className="px-2 py-1 bg-muted rounded">Status: {project.status || "Planning"}</span>
+              </div>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                  <AlertDialogDescription>This will delete the project. This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-          <ColorwayForm
-            onSave={handleAddColorToProject}
-            onCancel={() => setPendingProductId(null)}
-          />
-        </div>
-      )}
 
+          {/* Tabs */}
+          <Tabs defaultValue="palettes">
+            <TabsList>
+              <TabsTrigger value="palettes">Color Palettes ({palettes.length})</TabsTrigger>
+              <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
+            </TabsList>
 
+            {/* PALETTES TAB */}
+            <TabsContent value="palettes" className="mt-4 space-y-4">
+              {palettes.length === 0 ? (
+                <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+                  <p className="text-sm text-muted-foreground">No color palettes yet.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {palettes.map((palette) => {
+                    const hexes = getPaletteHexes(palette.id);
+                    const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
+                    return (
+                      <button
+                        key={palette.id}
+                        onClick={() => navigate(`/color-palettes/${palette.id}`)}
+                        className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all text-left"
+                      >
+                        <div className="h-12 flex">
+                          {hexes.length === 0 ? (
+                            <div className="flex-1 bg-muted" />
+                          ) : (
+                            hexes.slice(0, 10).map((hex, i) => (
+                              <div key={i} className="flex-1" style={{ backgroundColor: hex }} />
+                            ))
+                          )}
+                        </div>
+                        <div className="px-4 py-2.5 flex items-center justify-between">
+                          <span className="font-medium text-sm">{palette.name}</span>
+                          <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
 
-      {/* OLD VIEWS (Hidden but kept for now) */}
-      <Tabs defaultValue="list" className="hidden">
+            {/* DOCUMENTS TAB */}
+            <TabsContent value="documents" className="mt-4 space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 max-w-sm">
+                  <Upload className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    value={docSearch}
+                    onChange={(e) => setDocSearch(e.target.value)}
+                    placeholder="Search documents…"
+                    className="pl-8 h-9"
+                  />
+                </div>
+                <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
+                  <Upload className="w-4 h-4" /> Upload &amp; Parse
+                </Button>
+              </div>
 
-
-        {/* LIST VIEW */}
-        <TabsContent value="list" className="mt-4 space-y-3">
-          {linkedProducts.length === 0 ? (
-            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No styles yet. Create a new style or link existing color variants.</p>
-            </div>
-          ) : (
-            []
-          )}
-        </TabsContent>
-
-        {/* MATRIX VIEW (Hidden) */}
-        <TabsContent value="matrix" className="mt-4 hidden">
-          {linkedProducts.length === 0 ? (
-            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No styles yet to display in matrix.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto pb-4">
-              <table className="w-full border-separate" style={{ borderSpacing: "6px" }}>
-                <thead>
-                  <tr>
-                    <th className="sticky left-0 z-10 bg-background min-w-[140px]">
-                      <div className="px-3 py-2 text-xs text-muted-foreground text-right">
-                        <span className="block font-semibold">{rowCriteria.replace("_", " ")}</span>
-                        <span className="text-[10px]">↓ rows · columns →</span>
-                        <span className="block font-semibold">{colCriteria.replace("_", " ")}</span>
+              {filteredDocs.length === 0 ? (
+                <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+                  <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredDocs.map((doc) => (
+                    <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                      <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{doc.original_filename || "Document"}</p>
+                        <p className="text-xs text-muted-foreground">{doc.document_type} • {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ""}</p>
+                        {doc.collection_name && <p className="text-xs text-primary mt-0.5">{doc.collection_name}</p>}
                       </div>
-                    </th>
-                    {colKeys.map((ck) => (
-                      <th key={ck} className="min-w-[160px]">
-                        <div className="px-3 py-2 bg-muted rounded-lg text-xs font-semibold text-center">{ck || "—"}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rowKeys.map((rk) => (
-                    <tr key={rk}>
-                      <td className="sticky left-0 z-10 bg-background">
-                        <div className="px-3 py-2 bg-muted rounded-lg text-xs font-semibold">{rk || "—"}</div>
-                      </td>
-                      {colKeys.map((ck) => (
-                        <td key={ck} className="align-top">
-                          <MatrixCell products={getProductsAt(rk, ck)} colorVariants={linkedColors} />
-                        </td>
-                      ))}
-                    </tr>
+                      <Badge variant={doc.status === "processed" ? "default" : doc.status === "error" ? "destructive" : "secondary"} className="text-xs shrink-0">
+                        {doc.status === "processed" ? "Processed" : doc.status === "error" ? "Error" : doc.status === "processing" ? "Parsing…" : "Staged"}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        onClick={() => navigate(`/projects/${id}/documents-to-parse/${doc.id}`)}
+                        title="View details"
+                      >
+                        →
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteDoc(doc.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-    </div>
 
-      {/* Link existing modal */}
-      <LinkProductColorModal
-        open={showLinkModal}
-        onClose={() => setShowLinkModal(false)}
-        onLink={handleLink}
-        alreadyLinkedIds={linkedColorIds}
-      />
-
-      {/* Create new product dialog */}
-      <Dialog open={showNewProductDialog} onOpenChange={setShowNewProductDialog}>
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={(o) => { if (!o) { setFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Style</DialogTitle>
+            <DialogTitle>Upload &amp; Parse Document</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateProduct} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-medium">Product Name</label>
-              <Input value={newProductName} onChange={(e) => setNewProductName(e.target.value)} required />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <label className="text-xs font-medium">Category</label>
-                <Select value={newProductCategory} onValueChange={setNewProductCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium">Sub-Category</label>
-                <Select value={newProductSubCat} onValueChange={setNewProductSubCat}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>{SUB_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium">Customer Need</label>
-              <Select value={newProductNeed} onValueChange={setNewProductNeed}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent>{CUSTOMER_NEEDS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Document Type</Label>
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {docTypes.length === 0
+                    ? <SelectItem value="__none" disabled>No types configured</SelectItem>
+                    : docTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)
+                  }
+                </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setShowNewProductDialog(false)}>Cancel</Button>
-              <Button type="submit" disabled={creatingProduct} className="gap-2">
-                {creatingProduct && <Loader2 className="w-4 h-4 animate-spin" />}
-                Next: Add Color
-              </Button>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Document File (PDF or PPTX)</Label>
+              <label className={`flex items-center gap-2 px-3 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                <Upload className="w-4 h-4 shrink-0" />
+                <span className="truncate">{file ? file.name : "Choose .pdf or .pptx…"}</span>
+                <input type="file" accept=".pdf,.pptx,.ppt" className="hidden" onChange={(e) => { setFile(e.target.files?.[0] || null); }} />
+              </label>
             </div>
-          </form>
+            <div className="flex gap-2 pt-1">
+              <Button onClick={handleUpload} disabled={!file || !selectedType || uploading} className="gap-2 flex-1">
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploading ? "Uploading & Parsing…" : "Upload & Parse"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowUploadDialog(false)} disabled={uploading}>Cancel</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
