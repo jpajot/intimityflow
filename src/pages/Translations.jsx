@@ -244,40 +244,44 @@ export default function Translations() {
         </Button>
       </div>
 
-      {/* Picker */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filter by context</p>
-        <div className="flex flex-wrap gap-3 items-end">
-          {/* Step 1: Entity Type */}
-          <div className="space-y-1.5 min-w-[180px]">
-            <Label className="text-xs">Entity</Label>
-            <Select
-              value={pickerEntityType || "all"}
-              onValueChange={(v) => {
-                setPickerEntityType(v === "all" ? "" : v);
-                setPickerRecord(null);
-                setPickerRecordSearch("");
-                setPickerField("");
-              }}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="All entities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All entities</SelectItem>
-                {TRANSLATABLE_ENTITIES.map((e) => (
-                  <SelectItem key={e.type} value={e.type}>{e.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* List view */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Entity filter */}
+          <Select
+            value={pickerEntityType || "all"}
+            onValueChange={(v) => {
+              setPickerEntityType(v === "all" ? "" : v);
+              setPickerRecord(null);
+              setPickerRecordSearch("");
+              setPickerField("");
+            }}
+          >
+            <SelectTrigger className="h-8 text-xs w-44">
+              <SelectValue placeholder="All entities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All entities</SelectItem>
+              {TRANSLATABLE_ENTITIES.map((e) => (
+                <SelectItem key={e.type} value={e.type}>{e.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          {/* Step 2: Record search */}
-          {pickerEntityType && (
+          <ViewSelector
+            pageKey="translations"
+            allColumns={allColumns}
+            onColumnsChange={setVisibleColumns}
+            filterableFields={filterableFields}
+            rows={contextTranslations}
+            onFilteredRowsChange={setFilteredRows}
+          />
+        </div>
+
+        {/* Record + field pickers (compact, shown when entity is selected) */}
+        {pickerEntityType && (
+          <div className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1.5 min-w-[220px] relative">
-              <Label className="text-xs flex items-center gap-1">
-                <ChevronRight className="w-3 h-3" /> Record
-              </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
                 <Input
@@ -292,23 +296,17 @@ export default function Translations() {
                   onFocus={() => setShowRecordDropdown(true)}
                 />
               </div>
-              {showRecordDropdown && pickerEntityType && (
+              {showRecordDropdown && (
                 <div className="absolute z-20 top-full left-0 w-72 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
                   <div className="max-h-52 overflow-y-auto">
                     {loadingRecords ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                      </div>
+                      <div className="flex items-center justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
                     ) : filteredEntityRecords.length === 0 ? (
                       <p className="text-xs text-muted-foreground text-center py-4">No records found</p>
                     ) : (
                       filteredEntityRecords.map((rec) => (
-                        <button
-                          key={rec.id}
-                          type="button"
-                          onClick={() => selectRecord(rec)}
-                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left transition-colors"
-                        >
+                        <button key={rec.id} type="button" onClick={() => selectRecord(rec)}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left transition-colors">
                           <span className="text-xs font-medium flex-1">{rec[entityDef.displayField]}</span>
                           {entityDef.displayField !== entityDef.searchField && (
                             <span className="text-[10px] text-muted-foreground font-mono">{rec[entityDef.searchField]}</span>
@@ -318,101 +316,35 @@ export default function Translations() {
                     )}
                   </div>
                   <div className="border-t border-border p-1.5">
-                    <button
-                      type="button"
-                      onClick={() => { setPickerRecord(null); setPickerRecordSearch(""); setShowRecordDropdown(false); }}
-                      className="w-full text-xs text-muted-foreground hover:text-foreground py-1 text-center transition-colors"
-                    >
-                      Clear record filter
-                    </button>
+                    <button type="button" onClick={() => { setPickerRecord(null); setPickerRecordSearch(""); setShowRecordDropdown(false); }}
+                      className="w-full text-xs text-muted-foreground hover:text-foreground py-1 text-center transition-colors">Clear record filter</button>
                   </div>
                 </div>
               )}
             </div>
-          )}
 
-          {/* Step 3: Field */}
-          {pickerRecord && entityDef && (
-            <div className="space-y-1.5 min-w-[160px]">
-              <Label className="text-xs flex items-center gap-1">
-                <ChevronRight className="w-3 h-3" /> Field
-              </Label>
-              <Select
-                value={pickerField || "all"}
-                onValueChange={(v) => setPickerField(v === "all" ? "" : v)}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All fields" />
-                </SelectTrigger>
+            {pickerRecord && entityDef && (
+              <Select value={pickerField || "all"} onValueChange={(v) => setPickerField(v === "all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All fields" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All fields</SelectItem>
-                  {entityDef.fields.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
+                  {entityDef.fields.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
-          )}
+            )}
 
-          {(pickerEntityType || pickerRecord || pickerField) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs self-end text-muted-foreground"
-              onClick={() => {
-                setPickerEntityType("");
-                setPickerRecord(null);
-                setPickerRecordSearch("");
-                setPickerField("");
-              }}
-            >
-              Clear all
-            </Button>
-          )}
-        </div>
+            {(pickerRecord || pickerField) && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground"
+                onClick={() => { setPickerRecord(null); setPickerRecordSearch(""); setPickerField(""); }}>
+                Clear
+              </Button>
+            )}
 
-        {/* Active context summary */}
-        {(pickerEntityType || pickerRecord) && (
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            {pickerEntityType && (
-              <Badge variant="outline" className="text-xs gap-1">
-                <Languages className="w-3 h-3" />
-                {entityDef?.label}
-              </Badge>
-            )}
-            {pickerRecord && (
-              <>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                <Badge variant="secondary" className="text-xs">
-                  {pickerRecord[entityDef?.displayField] || pickerRecord[entityDef?.searchField]}
-                </Badge>
-              </>
-            )}
-            {pickerField && (
-              <>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                <Badge className="text-xs">{pickerField}</Badge>
-              </>
-            )}
             <span className="text-xs text-muted-foreground ml-auto">
               {contextTranslations.length} result{contextTranslations.length !== 1 ? "s" : ""}
             </span>
           </div>
         )}
-      </div>
-
-      {/* List view */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <ViewSelector
-            pageKey="translations"
-            allColumns={allColumns}
-            onColumnsChange={setVisibleColumns}
-            filterableFields={filterableFields}
-            rows={contextTranslations}
-            onFilteredRowsChange={setFilteredRows}
-          />
-        </div>
 
         <DataTable
           columns={visibleColumns}
