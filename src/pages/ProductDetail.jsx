@@ -93,12 +93,14 @@ export default function ProductDetail() {
   const getCategories = () => {
     const categoryTypeId = lovTypes["Category"];
     if (!categoryTypeId) return [];
-    return lovValues.filter((v) => {
-      if (v.type_of_lov_id !== categoryTypeId) return false;
-      if (product.type === "Material") return v.depends_on_value_id === lovValues.find((lv) => lv.name === "Material")?.id;
-      if (product.type === "Product") return v.depends_on_value_id === lovValues.find((lv) => lv.name === "Product")?.id;
-      return !v.depends_on_value_id;
-    });
+    const entityTypesLov = Object.entries(lovTypes).find(([k]) => k === "EntityTypes")?.[1];
+    const targetEntityValue = lovValues.find(
+      (v) => v.type_of_lov_id === entityTypesLov && v.name === product.type
+    );
+    return lovValues.filter((v) => 
+      v.type_of_lov_id === categoryTypeId && 
+      v.depends_on_value_id === targetEntityValue?.id
+    );
   };
 
   const getSubCategories = () => {
