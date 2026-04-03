@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import JSZip from 'npm:jszip@3.10.1';
 
 Deno.serve(async (req) => {
   let base44;
@@ -20,7 +21,7 @@ Deno.serve(async (req) => {
       prompt: `Extract product data from document. For each table row/style, extract:
 - "Style Description": product/style name
 - "Style Technical Color Codes": array of Pantone TCX codes (e.g., "19-1664 TCX")
-- "Image Index": if there's an image associated with this style, note its position (e.g., "slide 1 image 2", or null)`,
+- "Image Index": if there's an image/photo for this style, note its position (e.g., "0" for first image on slide, "1" for second, etc., or null if no image)`,
       file_urls: [doc.file_url],
       response_json_schema: {
         type: "object",
@@ -33,10 +34,6 @@ Deno.serve(async (req) => {
               properties: {
                 slideNumber: { type: "number" },
                 title: { type: "string" },
-                images: {
-                  type: "array",
-                  items: { type: "string" }
-                },
                 table: {
                   type: "object",
                   properties: {
@@ -47,7 +44,7 @@ Deno.serve(async (req) => {
                         properties: {
                           "Style Description": { type: "string" },
                           "Style Technical Color Codes": { type: "array", items: { type: "string" } },
-                          "Image Index": { type: ["string", "null"] }
+                          "Image Index": { type: ["integer", "null"] }
                         }
                       }
                     }
@@ -64,21 +61,32 @@ Deno.serve(async (req) => {
       throw new Error('No data extracted');
     }
 
-    // Extract and upload images from PPTX
-    const imageMap = {}; // Maps "slide X image Y" -> uploaded URL
+    // Extract images from PPTX if applicable
+    const imageUrls = [];
     if (doc.file_url?.toLowerCase().endsWith('.pptx')) {
-      const pptxBuffer = await fetch(doc.file_url).then(r => r.arrayBuffer());
-      const imageMap = await extractPptxImages(pptxBuffer, base44);
+      const pptxData = await fetch(doc.file_url).then(r => r.arrayBuffer());
+      const zip = await JSZip.loadAsync(pptxData);
+      
+      // Extract all images from ppt/media folder
+      const mediaFiles = Object.keys(zip.files).filter(f => f.startsWith('ppt/media/'));
+      for (const mediaFile of mediaFiles) {
+        const blob = await zip.file(mediaFile).async('blob');
+        const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+        imageUrls.push(uploadRes.file_url);
+      }
     }
 
     const contentSlides = extracted.slides.map(slide => ({
       ...slide,
       table: {
         ...slide.table,
-        rows: (slide.table?.rows || []).map(row => ({
-          ...row,
-          image_url: row["Image Index"] ? imageMap[row["Image Index"]] : null
-        }))
+        rows: (slide.table?.rows || []).map(row => {
+          const imgIdx = row["Image Index"];
+          return {
+            ...row,
+            image_url: imgIdx !== null && imgIdx !== undefined && imageUrls[imgIdx] ? imageUrls[imgIdx] : null
+          };
+        })
       }
     })).filter(s => s.table?.rows?.length);
 
@@ -96,15 +104,3 @@ Deno.serve(async (req) => {
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
-
-async function extractPptxImages(pptxBuffer, base44) {
-  const imageMap = {};
-  try {
-    // For now, return empty map - image extraction requires unzip library
-    // Can be enhanced later with 'npm:unzipper' for full PPTX image extraction
-    return imageMap;
-  } catch (e) {
-    console.error('Image extraction failed:', e.message);
-    return imageMap;
-  }
-}
