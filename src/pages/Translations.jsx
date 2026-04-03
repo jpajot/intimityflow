@@ -241,7 +241,7 @@ export default function Translations() {
 
       {/* List view */}
       <div className="space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           {/* Entity filter */}
           <Select
             value={pickerEntityType || "all"}
@@ -324,18 +324,19 @@ export default function Translations() {
             </Button>
           )}
 
-          <ViewSelector
-            pageKey="translations"
-            allColumns={allColumns}
-            onColumnsChange={setVisibleColumns}
-            filterableFields={filterableFields}
-            rows={contextTranslations}
-            onFilteredRowsChange={setFilteredRows}
-          />
-
-          <Button onClick={openNew} className="gap-2 ml-auto shrink-0">
-            <Plus className="w-4 h-4" /> Add Translation
-          </Button>
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <ViewSelector
+              pageKey="translations"
+              allColumns={allColumns}
+              onColumnsChange={setVisibleColumns}
+              filterableFields={filterableFields}
+              rows={contextTranslations}
+              onFilteredRowsChange={setFilteredRows}
+            />
+            <Button onClick={openNew} className="gap-2 shrink-0">
+              <Plus className="w-4 h-4" /> Add Translation
+            </Button>
+          </div>
         </div>
 
         <DataTable
