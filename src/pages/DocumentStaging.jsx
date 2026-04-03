@@ -45,6 +45,14 @@ function StyleRow({ row, techColors, onChange }) {
 
       {expanded && (
         <div className="px-4 pb-4 pt-3 bg-muted/20 border-t border-border space-y-4">
+          {row.image_url && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Style Image</Label>
+              <div className="w-32 h-32 rounded-lg overflow-hidden border border-border bg-muted">
+                <img src={row.image_url} alt={row["Style Description"]} className="w-full h-full object-cover" />
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label className="text-xs">Style Name</Label>
             <Input
