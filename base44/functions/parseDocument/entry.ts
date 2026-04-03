@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
     }
 
     const contentSlides = extracted.slides.filter(s => s.table?.rows?.length);
+    const collectionName = contentSlides[0]?.title || 'Collection';
 
     await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
       status: 'staged',
