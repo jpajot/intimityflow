@@ -32,6 +32,17 @@
     "linked_color_id": {
       "type": "string",
       "description": "ID of the linked CommercialColor"
+    },
+    "creation_project_id": {
+      "type": "string",
+      "description": "ID of the Project where this colorway was created"
+    },
+    "project_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of Projects this colorway is linked to"
     }
   },
   "required": [
