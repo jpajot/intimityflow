@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Upload, FileText, Loader2, ChevronRight, AlertCircle } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Loader2, ChevronRight, AlertCircle, Cloud } from "lucide-react";
+import SharePointFilePicker from "../components/SharePointFilePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
@@ -33,6 +34,8 @@ export default function ProjectDocuments() {
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState("");
   const [file, setFile] = useState(null);
+  const [showSharePoint, setShowSharePoint] = useState(false);
+  const [sharepointFile, setSharepointFile] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -55,25 +58,47 @@ export default function ProjectDocuments() {
     setLoading(false);
   };
 
+  const handleSharePointSelect = (spFile) => {
+    setSharepointFile(spFile);
+    setFile(null);
+  };
+
   const handleUpload = async () => {
-    if (!file || !selectedType) return;
+    if ((!file && !sharepointFile) || !selectedType) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      let file_url = "";
+      let filename = "";
+
+      if (sharepointFile) {
+        // For SharePoint files, we'll store the download URL and let parseDocument handle the download
+        file_url = sharepointFile.downloadUrl || sharepointFile.webUrl;
+        filename = sharepointFile.name;
+      } else {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        file_url = result.file_url;
+        filename = file.name;
+      }
+
       const doc = await base44.entities.UploadedDocument.create({
         project_id: id,
         document_type: selectedType,
         file_url,
-        original_filename: file.name,
+        original_filename: filename,
         upload_date: new Date().toISOString(),
         status: "uploaded",
       });
       setDocuments(prev => [doc, ...prev]);
       setFile(null);
+      setSharepointFile(null);
       setSelectedType("");
 
       // Trigger parsing
-      await base44.functions.invoke("parseDocument", { document_id: doc.id });
+      const parsePayload = { document_id: doc.id };
+      if (sharepointFile?.downloadUrl) {
+        parsePayload.sharepoint_download_url = sharepointFile.downloadUrl;
+      }
+      await base44.functions.invoke("parseDocument", parsePayload);
 
       // Refresh document status
       const updated = await base44.entities.UploadedDocument.filter({ id: doc.id });
@@ -124,14 +149,19 @@ export default function ProjectDocuments() {
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">PPTX File</Label>
-            <label className={`flex items-center gap-2 px-4 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className="flex gap-2">
+              <label className={`flex-1 flex items-center gap-2 px-4 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
               <Upload className="w-4 h-4 shrink-0" />
-              <span className="truncate">{file ? file.name : "Choose .pptx file…"}</span>
-              <input type="file" accept=".pptx,.ppt" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+              <span className="truncate">{file ? file.name : sharepointFile ? sharepointFile.name : "Choose .pptx file…"}</span>
+              <input type="file" accept=".pptx,.ppt" className="hidden" onChange={e => { setFile(e.target.files?.[0] || null); setSharepointFile(null); }} />
             </label>
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowSharePoint(true)} disabled={uploading} className="gap-1.5 shrink-0 h-9">
+              <Cloud className="w-4 h-4" /> SharePoint
+            </Button>
+            </div>
           </div>
         </div>
-        <Button onClick={handleUpload} disabled={!file || !selectedType || uploading} className="gap-2">
+        <Button onClick={handleUpload} disabled={(!file && !sharepointFile) || !selectedType || uploading} className="gap-2">
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
           {uploading ? "Uploading & Parsing…" : "Upload & Parse"}
         </Button>
@@ -140,7 +170,13 @@ export default function ProjectDocuments() {
             Add document types via <Link to="/list-of-values" className="underline text-primary">List of Values</Link> → create a type with code <code className="bg-muted px-1 rounded">DocumentType</code>.
           </p>
         )}
-      </div>
+        </div>
+
+        <SharePointFilePicker
+        open={showSharePoint}
+        onClose={() => setShowSharePoint(false)}
+        onSelect={handleSharePointSelect}
+        />
 
       {/* Document list */}
       <div className="space-y-3">
