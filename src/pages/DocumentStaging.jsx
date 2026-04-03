@@ -113,6 +113,7 @@ export default function DocumentStaging() {
   const [result, setResult] = useState(null);
   const [search, setSearch] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(null);
+  const [editingRow, setEditingRow] = useState(null);
 
   useEffect(() => { loadData(); }, [docId]);
 
@@ -245,7 +246,7 @@ export default function DocumentStaging() {
       render: (r) => (
         <button
           type="button"
-          onClick={() => alert("Edit: " + r["Style Description"])}
+          onClick={() => setEditingRow(editingRow === r.id ? null : r.id)}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           ✏️
@@ -316,8 +317,82 @@ export default function DocumentStaging() {
   const totalStyles = (data?.slides || []).reduce((sum, s) => sum + (s.table?.rows?.length || 0), 0);
   const isProcessed = doc.status === "processed";
 
+  // Render edit panel for selected row
+  const renderEditPanel = () => {
+    if (!editingRow) return null;
+    const row = allRows.find((r) => r.id === editingRow);
+    if (!row) return null;
+    const codes = row["Style Technical Color Codes"] || [];
+
+    return (
+      <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Editing: {row["Style Description"]}</h3>
+          <button type="button" onClick={() => setEditingRow(null)} className="text-muted-foreground hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {row.image_url && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Style Image</Label>
+            <div className="w-32 h-32 rounded-lg overflow-hidden border border-border bg-muted">
+              <img src={row.image_url} alt={row["Style Description"]} className="w-full h-full object-contain" />
+            </div>
+          </div>
+        )}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Style Name</Label>
+          <Input
+            value={row["Style Description"] || ""}
+            onChange={(e) => handleRowChange(row.slideIdx, row.rowIdx, { ...row, "Style Description": e.target.value })}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Pantone TCX Codes</Label>
+          <div className="space-y-2">
+            {codes.map((code, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  value={code}
+                  onChange={(e) => {
+                    const updated = codes.map((c, ci) => ci === i ? e.target.value : c);
+                    handleRowChange(row.slideIdx, row.rowIdx, { ...row, "Style Technical Color Codes": updated });
+                  }}
+                  className="h-7 text-xs font-mono flex-1"
+                  placeholder="e.g. 19-1862 TCX"
+                />
+                <TcxBadge code={code} techColors={techColors} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = codes.filter((_, ci) => ci !== i);
+                    handleRowChange(row.slideIdx, row.rowIdx, { ...row, "Style Technical Color Codes": updated });
+                  }}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline"
+              onClick={() => {
+                const updated = [...codes, ""];
+                handleRowChange(row.slideIdx, row.rowIdx, { ...row, "Style Technical Color Codes": updated });
+              }}
+            >
+              + Add color code
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${id}/documents`)}>
           <ArrowLeft className="w-4 h-4" />
@@ -407,13 +482,18 @@ export default function DocumentStaging() {
         </div>
       )}
 
-      {data && filteredRows.length === 0 ? (
-        <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">{allRows.length === 0 ? "No styles found." : "No results match your search."}</p>
-        </div>
-      ) : data ? (
-        <DataTable columns={visibleColumns || columns} rows={filteredRows} hideColumnToggle />
-      ) : null}
+      {data && (
+        <>
+          {renderEditPanel()}
+          {filteredRows.length === 0 ? (
+            <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+              <p className="text-sm text-muted-foreground">{allRows.length === 0 ? "No styles found." : "No results match your search."}</p>
+            </div>
+          ) : (
+            <DataTable columns={visibleColumns || columns} rows={filteredRows} hideColumnToggle />
+          )}
+        </>
+      )}
 
       {/* Results message */}
       {result && (
