@@ -218,7 +218,7 @@ export default function ColorPalettes() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Color Palettes</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">Color Studio</h1>
         <p className="text-muted-foreground mt-1">Organize colors into project palettes</p>
       </div>
 
