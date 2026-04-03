@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Search } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X } from "lucide-react";
+import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
 export default function ColorPalettes() {
   const [palettes, setPalettes] = useState([]);
@@ -28,10 +28,12 @@ export default function ColorPalettes() {
   const [colorTab, setColorTab] = useState("technical");
   const [selectedColorIds, setSelectedColorIds] = useState(new Set());
   const [addingColors, setAddingColors] = useState(false);
-  const [showCreateColor, setShowCreateColor] = useState(false);
-  const [createColorType, setCreateColorType] = useState("technical");
-  const [createColorForm, setCreateColorForm] = useState({ code: "", name: "", hex: "", sub_type: "Solid" });
-  const [creatingColor, setCreatingColor] = useState(false);
+  const [showTechDialog, setShowTechDialog] = useState(false);
+  const [showCommDialog, setShowCommDialog] = useState(false);
+  const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
+  const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
+  const [techSearch, setTechSearch] = useState("");
+  const [linkedTechSearch, setLinkedTechSearch] = useState("");
 
   useEffect(() => { loadData(); }, []);
 
@@ -99,8 +101,30 @@ export default function ColorPalettes() {
     setColorSearch("");
     setColorTab("technical");
     setShowColorPicker(true);
-    setShowCreateColor(false);
-    setCreateColorForm({ code: "", name: "", hex: "", sub_type: "Solid" });
+  };
+
+  const openNewTech = () => {
+    setTechForm({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
+    setShowTechDialog(true);
+  };
+
+  const openNewComm = () => {
+    setCommForm({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
+    setTechSearch("");
+    setLinkedTechSearch("");
+    setShowCommDialog(true);
+  };
+
+  const handleTechSelectForComm = (techId) => {
+    const tech = techColors.find((t) => t.id === techId);
+    setCommForm((f) => ({
+      ...f,
+      main_technical_color_id: techId,
+      color_name: f.color_name || tech?.name || "",
+      linked_technical_color_ids: f.linked_technical_color_ids.includes(techId)
+        ? f.linked_technical_color_ids
+        : [...f.linked_technical_color_ids, techId],
+    }));
   };
 
   const toggleColorSelection = (key) => {
@@ -111,31 +135,27 @@ export default function ColorPalettes() {
     });
   };
 
-  const handleCreateNewColor = async () => {
-    setCreatingColor(true);
-    let newEntry;
-    if (createColorType === "technical") {
-      newEntry = await base44.entities.TechnicalColor.create({
-        code: createColorForm.code,
-        name: createColorForm.name,
-        hex: createColorForm.hex || undefined,
-      });
-      setTechColors((prev) => [...prev, newEntry]);
-    } else {
-      newEntry = await base44.entities.CommercialColor.create({
-        code: createColorForm.code,
-        color_name: createColorForm.name,
-        sub_type: createColorForm.sub_type,
-      });
-      setCommColors((prev) => [...prev, newEntry]);
-    }
-    // Auto-link to palette
-    const colorType = createColorType === "technical" ? "technical" : "commercial";
-    const created = await base44.entities.ColorPaletteColor.create({ palette_id: selectedPaletteId, color_type: colorType, color_id: newEntry.id });
-    setPaletteColors((prev) => [...prev, created]);
-    setCreatingColor(false);
-    setShowCreateColor(false);
-    setCreateColorForm({ code: "", name: "", hex: "", sub_type: "Solid" });
+  const saveTech = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    const data = { ...techForm, rgb_r: Number(techForm.rgb_r) || 0, rgb_g: Number(techForm.rgb_g) || 0, rgb_b: Number(techForm.rgb_b) || 0 };
+    const created = await base44.entities.TechnicalColor.create(data);
+    setTechColors((prev) => [...prev, created]);
+    const linked = await base44.entities.ColorPaletteColor.create({ palette_id: selectedPaletteId, color_type: "technical", color_id: created.id });
+    setPaletteColors((prev) => [...prev, linked]);
+    setShowTechDialog(false);
+    setSaving(false);
+  };
+
+  const saveComm = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    const created = await base44.entities.CommercialColor.create(commForm);
+    setCommColors((prev) => [...prev, created]);
+    const linked = await base44.entities.ColorPaletteColor.create({ palette_id: selectedPaletteId, color_type: "commercial", color_id: created.id });
+    setPaletteColors((prev) => [...prev, linked]);
+    setShowCommDialog(false);
+    setSaving(false);
   };
 
   const handleAddSelectedColors = async () => {
@@ -341,43 +361,9 @@ export default function ColorPalettes() {
                       })}
                       {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
                     </div>
-                    {showCreateColor && (
-                      <div className="p-3 border-t border-border space-y-2 bg-muted/30">
-                        <p className="text-xs font-semibold">Create New Color</p>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={() => setCreateColorType("technical")}
-                            className={`flex-1 py-1 rounded text-xs font-medium border transition-colors ${ createColorType === "technical" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted" }`}>
-                            Technical
-                          </button>
-                          <button type="button" onClick={() => setCreateColorType("commercial")}
-                            className={`flex-1 py-1 rounded text-xs font-medium border transition-colors ${ createColorType === "commercial" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted" }`}>
-                            Commercial
-                          </button>
-                        </div>
-                        <input className="w-full h-7 px-2 rounded border border-input text-xs bg-background" placeholder="Code (e.g. 11-0601 TCX)" value={createColorForm.code} onChange={(e) => setCreateColorForm((f) => ({ ...f, code: e.target.value }))} />
-                        <input className="w-full h-7 px-2 rounded border border-input text-xs bg-background" placeholder="Name" value={createColorForm.name} onChange={(e) => setCreateColorForm((f) => ({ ...f, name: e.target.value }))} />
-                        {createColorType === "technical" && (
-                          <div className="flex gap-2 items-center">
-                            <input className="w-full h-7 px-2 rounded border border-input text-xs bg-background" placeholder="Hex (e.g. #F4F5F0)" value={createColorForm.hex} onChange={(e) => setCreateColorForm((f) => ({ ...f, hex: e.target.value }))} />
-                            {createColorForm.hex && <div className="w-7 h-7 rounded border border-border shrink-0" style={{ backgroundColor: createColorForm.hex }} />}
-                          </div>
-                        )}
-                        {createColorType === "commercial" && (
-                          <select className="w-full h-7 px-2 rounded border border-input text-xs bg-background" value={createColorForm.sub_type} onChange={(e) => setCreateColorForm((f) => ({ ...f, sub_type: e.target.value }))}>
-                            <option value="Solid">Solid</option>
-                            <option value="Combined">Combined</option>
-                          </select>
-                        )}
-                        <div className="flex gap-2">
-                          <Button size="sm" className="flex-1 text-xs" disabled={!createColorForm.code || !createColorForm.name || creatingColor} onClick={handleCreateNewColor}>
-                            {creatingColor && <Loader2 className="w-3 h-3 animate-spin" />} Create & Add
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-xs" onClick={() => setShowCreateColor(false)}>Cancel</Button>
-                        </div>
-                      </div>
-                    )}
+
                     <div className="p-2 border-t border-border flex gap-2">
-                      <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setShowCreateColor((v) => !v)}>
+                      <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? openNewTech() : openNewComm()}>
                         <Plus className="w-3 h-3" /> New
                       </Button>
                       <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors}
@@ -454,6 +440,135 @@ export default function ColorPalettes() {
               <Button type="submit" disabled={saving} className="gap-2">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}{editingPalette ? "Save" : "Create"}
               </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Technical Color Dialog */}
+      <Dialog open={showTechDialog} onOpenChange={setShowTechDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>New Technical Color</DialogTitle></DialogHeader>
+          <form onSubmit={saveTech} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label className="text-xs">Pantone Code</Label><Input value={techForm.code} onChange={(e) => setTechForm((f) => ({ ...f, code: e.target.value }))} placeholder="e.g. 19-4150 TCX" required /></div>
+              <div className="space-y-1.5"><Label className="text-xs">Color Name</Label><Input value={techForm.name} onChange={(e) => setTechForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Classic Blue" required /></div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">HEX Value</Label>
+              <div className="flex gap-2">
+                <input type="color" value={techForm.hex || "#cccccc"} onChange={(e) => setTechForm((f) => ({ ...f, hex: e.target.value }))} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                <Input value={techForm.hex} onChange={(e) => setTechForm((f) => ({ ...f, hex: e.target.value }))} placeholder="#000000" className="flex-1" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">RGB (optional)</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Input type="number" min={0} max={255} value={techForm.rgb_r} onChange={(e) => setTechForm((f) => ({ ...f, rgb_r: e.target.value }))} placeholder="R" />
+                <Input type="number" min={0} max={255} value={techForm.rgb_g} onChange={(e) => setTechForm((f) => ({ ...f, rgb_g: e.target.value }))} placeholder="G" />
+                <Input type="number" min={0} max={255} value={techForm.rgb_b} onChange={(e) => setTechForm((f) => ({ ...f, rgb_b: e.target.value }))} placeholder="B" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowTechDialog(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create & Add</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Commercial Color Dialog */}
+      <Dialog open={showCommDialog} onOpenChange={setShowCommDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>New Commercial Color</DialogTitle></DialogHeader>
+          <form onSubmit={saveComm} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Sub-type</Label>
+                <Select value={commForm.sub_type} onValueChange={(v) => setCommForm((f) => ({ ...f, sub_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Solid">Solid</SelectItem><SelectItem value="Combined">Combined</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label className="text-xs">Commercial Code</Label><Input value={commForm.code} onChange={(e) => setCommForm((f) => ({ ...f, code: e.target.value }))} required /></div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Main Technical Color</Label>
+              {commForm.main_technical_color_id ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
+                  {(() => { const t = techColors.find(t => t.id === commForm.main_technical_color_id); return t ? (<><div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} /><span className="text-xs flex-1">{tcxDisplayName(t)}</span></>) : null; })()}
+                  <button type="button" onClick={() => { setCommForm(f => ({ ...f, main_technical_color_id: "" })); setTechSearch(""); }} className="text-xs text-muted-foreground hover:text-foreground ml-auto">✕</button>
+                </div>
+              ) : (
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="p-2 border-b border-border">
+                    <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search by code or name…" className="h-8 text-xs" />
+                  </div>
+                  <div className="max-h-44 overflow-y-auto">
+                    {techColors
+                      .filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase()))
+                      .map((t) => (
+                        <button key={t.id} type="button" onClick={() => handleTechSelectForComm(t.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                          <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
+                          <span className="text-xs">{tcxDisplayName(t)}</span>
+                        </button>
+                      ))}
+                    {techColors.filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase())).length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">No colors found</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Color Name</Label>
+              <Input value={commForm.color_name} onChange={(e) => setCommForm((f) => ({ ...f, color_name: e.target.value }))} placeholder="Inherits from technical color, editable" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Linked Technical Colors</Label>
+              {commForm.linked_technical_color_ids.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {commForm.linked_technical_color_ids.map((id) => {
+                    const t = techColors.find((c) => c.id === id);
+                    if (!t) return null;
+                    const isMain = id === commForm.main_technical_color_id;
+                    return (
+                      <div key={id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted border border-border text-xs">
+                        <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                        <span>{tcxDisplayName(t)}</span>
+                        {isMain && <span className="text-[10px] text-primary font-medium">(main)</span>}
+                        <button type="button" onClick={() => setCommForm((f) => ({ ...f, linked_technical_color_ids: f.linked_technical_color_ids.filter((i) => i !== id) }))} className="text-muted-foreground hover:text-destructive ml-0.5">×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="p-2 border-b border-border">
+                  <Input value={linkedTechSearch} onChange={(e) => setLinkedTechSearch(e.target.value)} placeholder="Search to add more technical colors…" className="h-8 text-xs" />
+                </div>
+                <div className="max-h-36 overflow-y-auto">
+                  {techColors
+                    .filter((t) => !commForm.linked_technical_color_ids.includes(t.id))
+                    .filter((t) => !linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))
+                    .map((t) => (
+                      <button key={t.id} type="button"
+                        onClick={() => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, t.id] })); setLinkedTechSearch(""); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                        <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
+                        <span className="text-xs">{tcxDisplayName(t)}</span>
+                      </button>
+                    ))}
+                  {techColors.filter((t) => !commForm.linked_technical_color_ids.includes(t.id) && (!linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-3">No more colors to add</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowCommDialog(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create & Add</Button>
             </DialogFooter>
           </form>
         </DialogContent>
