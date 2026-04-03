@@ -199,6 +199,16 @@ export default function ColorLibrary({ hideTitle = false }) {
       render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.cmyk || "—"}</span>,
     },
     {
+      id: "commercial",
+      label: "Commercial Colors",
+      width: 180,
+      render: (c) => {
+        const relatedComm = commercialColors.filter(cc => cc.main_technical_color_id === c.id || (cc.linked_technical_color_ids && cc.linked_technical_color_ids.includes(c.id)));
+        if (relatedComm.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+        return <div className="flex flex-wrap gap-1">{relatedComm.map(cc => <Badge key={cc.id} variant="secondary" className="text-[10px]">{cc.code}</Badge>)}</div>;
+      },
+    },
+    {
       id: "actions",
       label: "",
       width: 80,
@@ -339,14 +349,21 @@ export default function ColorLibrary({ hideTitle = false }) {
               ).map((c) => (
                 <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
                   <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: colorToHex(c) }} />
-                  <div className="p-3 space-y-1">
-                    <p className="text-xs font-mono font-medium truncate">{c.code}</p>
-                    <p className="text-xs text-muted-foreground truncate">{c.name}</p>
-                    <p className="text-xs font-mono text-muted-foreground truncate">{colorToHex(c)}</p>
-                  </div>
-                  <div className="px-3 pb-3 flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-1" onClick={() => openEditTech(c)}><Pencil className="w-3 h-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-1 text-destructive" onClick={() => deleteTech(c)}><Trash2 className="w-3 h-3" /></Button>
+                  <div className="p-3 space-y-2">
+                    <div>
+                      <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.name}</p>
+                      <p className="text-xs font-mono text-muted-foreground truncate">{colorToHex(c)}</p>
+                    </div>
+                    {(() => {
+                      const relatedComm = commercialColors.filter(cc => cc.main_technical_color_id === c.id || (cc.linked_technical_color_ids && cc.linked_technical_color_ids.includes(c.id)));
+                      return relatedComm.length > 0 ? (
+                        <div className="pt-1.5 border-t border-border space-y-1">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase">Commercial</p>
+                          <div className="flex flex-wrap gap-1">{relatedComm.map(cc => <span key={cc.id} className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{cc.code}</span>)}</div>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               ))}
