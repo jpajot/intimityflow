@@ -477,39 +477,31 @@ export default function ColorLibrary({ hideTitle = false }) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Main Technical Color</Label>
-              {commForm.main_technical_color_id ? (
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
-                  {(() => { const t = technicalColors.find(t => t.id === commForm.main_technical_color_id); return t ? (<><div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} /><span className="text-xs flex-1">{tcxDisplayName(t)}</span></>) : null; })()}
-                  <button type="button" onClick={() => { setCommForm(f => ({ ...f, main_technical_color_id: "" })); setTechSearch(""); }} className="text-xs text-muted-foreground hover:text-foreground ml-auto">✕</button>
-                </div>
-              ) : (
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <div className="p-2 border-b border-border">
-                    <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search by code or name…" className="h-8 text-xs" />
-                  </div>
-                  <div className="max-h-44 overflow-y-auto">
-                    {technicalColors
-                      .filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase()))
-                      .map((t) => (
-                        <button key={t.id} type="button" onClick={() => handleTechSelectForComm(t.id)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
-                          <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
-                          <span className="text-xs">{tcxDisplayName(t)}</span>
-                        </button>
-                      ))}
-                    {technicalColors.filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase())).length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-4">No colors found</p>
-                    )}
-                  </div>
-                </div>
-              )}
+              <Select value={commForm.main_technical_color_id || ""} onValueChange={(v) => handleTechSelectForComm(v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  {commForm.main_technical_color_id ? (() => { const t = technicalColors.find(t => t.id === commForm.main_technical_color_id); return t ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                      <span>{tcxDisplayName(t)}</span>
+                    </div>
+                  ) : null; })() : <SelectValue placeholder="Search by code or name…" />}
+                </SelectTrigger>
+                <SelectContent className="max-h-48">
+                  {technicalColors.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                        <span className="text-xs">{tcxDisplayName(t)}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Color Name</Label>
               <Input value={commForm.color_name} onChange={(e) => setCommForm((f) => ({ ...f, color_name: e.target.value }))} placeholder="Inherits from technical color, editable" required />
             </div>
-
-            {/* Linked Technical Colors multiselect */}
             <div className="space-y-1.5">
               <Label className="text-xs">Linked Technical Colors</Label>
               {commForm.linked_technical_color_ids.length > 0 && (
@@ -529,29 +521,22 @@ export default function ColorLibrary({ hideTitle = false }) {
                   })}
                 </div>
               )}
-              <div className="border border-border rounded-lg overflow-hidden">
-                <div className="p-2 border-b border-border">
-                  <Input value={linkedTechSearch} onChange={(e) => setLinkedTechSearch(e.target.value)} placeholder="Search to add more technical colors…" className="h-8 text-xs" />
-                </div>
-                <div className="max-h-36 overflow-y-auto">
+              <Select onValueChange={(v) => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, v] })); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Add more colors…" /></SelectTrigger>
+                <SelectContent className="max-h-48">
                   {technicalColors
                     .filter((t) => !commForm.linked_technical_color_ids.includes(t.id))
-                    .filter((t) => !linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))
                     .map((t) => (
-                      <button key={t.id} type="button"
-                        onClick={() => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, t.id] })); setLinkedTechSearch(""); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
-                        <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
-                        <span className="text-xs">{tcxDisplayName(t)}</span>
-                      </button>
+                      <SelectItem key={t.id} value={t.id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                          <span className="text-xs">{tcxDisplayName(t)}</span>
+                        </div>
+                      </SelectItem>
                     ))}
-                  {technicalColors.filter((t) => !commForm.linked_technical_color_ids.includes(t.id) && (!linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))).length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-3">No more colors to add</p>
-                  )}
-                </div>
-              </div>
+                </SelectContent>
+              </Select>
             </div>
-
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowCommDialog(false)}>Cancel</Button>
               <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save</Button>
@@ -559,6 +544,6 @@ export default function ColorLibrary({ hideTitle = false }) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+      </div>
+      );
+      }
