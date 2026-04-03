@@ -242,7 +242,15 @@ export default function Translations() {
       {/* List view */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          {/* Entity filter */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={pickerRecordSearch}
+              onChange={(e) => { setPickerRecordSearch(e.target.value); setPickerRecord(null); }}
+              placeholder="Search translations..."
+              className="pl-10"
+            />
+          </div>
           <Select
             value={pickerEntityType || "all"}
             onValueChange={(v) => {
@@ -252,7 +260,7 @@ export default function Translations() {
               setPickerField("");
             }}
           >
-            <SelectTrigger className="h-8 text-xs w-44">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All entities" />
             </SelectTrigger>
             <SelectContent>
@@ -262,69 +270,7 @@ export default function Translations() {
               ))}
             </SelectContent>
           </Select>
-
-          {/* Record search (inline, shown when entity selected) */}
-          {pickerEntityType && (
-            <div className="relative min-w-[200px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-              <Input
-                className="h-8 text-xs pl-7"
-                placeholder={`Search ${entityDef?.label}…`}
-                value={pickerRecordSearch}
-                onChange={(e) => {
-                  setPickerRecordSearch(e.target.value);
-                  setPickerRecord(null);
-                  setShowRecordDropdown(true);
-                }}
-                onFocus={() => setShowRecordDropdown(true)}
-              />
-              {showRecordDropdown && (
-                <div className="absolute z-20 top-full left-0 w-72 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
-                  <div className="max-h-52 overflow-y-auto">
-                    {loadingRecords ? (
-                      <div className="flex items-center justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
-                    ) : filteredEntityRecords.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">No records found</p>
-                    ) : (
-                      filteredEntityRecords.map((rec) => (
-                        <button key={rec.id} type="button" onClick={() => selectRecord(rec)}
-                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left transition-colors">
-                          <span className="text-xs font-medium flex-1">{rec[entityDef.displayField]}</span>
-                          {entityDef.displayField !== entityDef.searchField && (
-                            <span className="text-[10px] text-muted-foreground font-mono">{rec[entityDef.searchField]}</span>
-                          )}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                  <div className="border-t border-border p-1.5">
-                    <button type="button" onClick={() => { setPickerRecord(null); setPickerRecordSearch(""); setShowRecordDropdown(false); }}
-                      className="w-full text-xs text-muted-foreground hover:text-foreground py-1 text-center transition-colors">Clear record filter</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Field select (shown when record selected) */}
-          {pickerRecord && entityDef && (
-            <Select value={pickerField || "all"} onValueChange={(v) => setPickerField(v === "all" ? "" : v)}>
-              <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All fields" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All fields</SelectItem>
-                {entityDef.fields.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-
-          {(pickerRecord || pickerField) && (
-            <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground"
-              onClick={() => { setPickerRecord(null); setPickerRecordSearch(""); setPickerField(""); }}>
-              Clear
-            </Button>
-          )}
-
-          <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="flex items-center gap-2">
             <ViewSelector
               pageKey="translations"
               allColumns={allColumns}
@@ -348,6 +294,7 @@ export default function Translations() {
             { getValue: (t) => t.language_code },
             { getValue: (t) => t.translated_text },
           ]}
+          hideColumnToggle
         />
       </div>
 
