@@ -114,6 +114,7 @@ export default function DocumentStaging() {
   const [search, setSearch] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(null);
   const [editingRow, setEditingRow] = useState(null);
+  const [createdRowIds, setCreatedRowIds] = useState(new Set());
 
   useEffect(() => { loadData(); }, [docId]);
 
@@ -257,15 +258,23 @@ export default function DocumentStaging() {
       id: "create",
       label: "",
       width: 50,
-      render: (r) => (
-        <button
-          type="button"
-          onClick={() => createStyleFromRow(r)}
-          className="text-xs text-primary hover:underline font-medium"
-        >
-          Create
-        </button>
-      ),
+      render: (r) => {
+        const isCreated = createdRowIds.has(r.id);
+        return isCreated ? (
+          <div className="flex items-center gap-1 text-green-600">
+            <Check className="w-4 h-4" />
+            <span className="text-xs font-medium">Created</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => createStyleFromRow(r)}
+            className="text-xs text-primary hover:underline font-medium"
+          >
+            Create
+          </button>
+        );
+      },
     },
   ];
 
@@ -366,6 +375,7 @@ export default function DocumentStaging() {
           linked_color_id: "",
         });
       }
+      setCreatedRowIds(prev => new Set([...prev, row.id]));
       setResult({ success: true, count: 1 });
     } catch (err) {
       setResult({ success: false, error: err.message });
