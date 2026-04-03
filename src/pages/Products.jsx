@@ -41,6 +41,8 @@ export default function Products() {
   });
 
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+  const subCategories = [...new Set(products.map((p) => p.sub_category).filter(Boolean))];
+  const customerNeeds = [...new Set(products.map((p) => p.customer_need).filter(Boolean))];
 
   const allColumns = [
     {
@@ -88,6 +90,7 @@ export default function Products() {
       editable: true,
       entityField: "sub_category",
       entityType: "Product",
+      options: subCategories,
       getValue: (p) => p.sub_category || "",
       getDisplayValue: (p) => p.sub_category || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category}</span>,
@@ -100,6 +103,7 @@ export default function Products() {
       editable: true,
       entityField: "customer_need",
       entityType: "Product",
+      options: customerNeeds,
       getValue: (p) => p.customer_need || "",
       getDisplayValue: (p) => p.customer_need || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.customer_need}</span>,
