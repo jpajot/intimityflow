@@ -83,8 +83,9 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
           color_name: tc.name,
           color_hex: colorToHex(tc),
           colorway_code: "",
-          linked_color_type: "technical",
-          linked_color_id: tc.id,
+          linked_tech_color_id: tc.id,
+          linked_color_type: "",
+          linked_color_id: "",
           markets: [],
         });
       } else {
