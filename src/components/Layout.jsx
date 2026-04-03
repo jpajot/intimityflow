@@ -100,16 +100,7 @@ export default function Layout() {
       <NavItem item={{ path: "/color-palettes", label: "Color Studio", icon: Palette }} onNavigate={onNavigate} isActive={isStudioActive} />
 
       {/* Size Studio */}
-      <div className="space-y-0.5">
-        <GroupButton icon={Ruler} label="Size Studio" open={sizeStudioOpen} onToggle={() => setSizeStudioOpen((o) => !o)} isActive={isSizeStudioActive} />
-        {sizeStudioOpen && expanded && (
-          <div className="pl-3 space-y-0.5">
-            {SIZE_STUDIO_ITEMS.map((item) => (
-              <NavItem key={item.path} item={item} onNavigate={onNavigate} isActive={location.pathname.startsWith(item.path)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <NavItem item={{ path: "/size-grid-library", label: "Size Studio", icon: Ruler }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/size-grid-library")} />
 
       {/* Config */}
       <div className="space-y-0.5">
