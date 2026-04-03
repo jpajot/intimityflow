@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Link } from "react-router-dom";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import ColorLibrary from "./ColorLibrary";
 
 export default function ColorPalettes() {
+  const [mainTab, setMainTab] = useState("palettes");
   const [palettes, setPalettes] = useState([]);
   const [projects, setProjects] = useState([]);
   const [paletteColors, setPaletteColors] = useState([]);
@@ -219,202 +221,201 @@ export default function ColorPalettes() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Color Studio</h1>
-        <p className="text-muted-foreground mt-1">Organize colors into project palettes</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Palettes Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Palettes ({palettes.length})</h3>
-            <Button onClick={openNew} size="sm" className="gap-1.5 h-8">
-              <Plus className="w-3.5 h-3.5" /> Add
-            </Button>
-          </div>
-          <Input
-            placeholder="Search palettes…"
-            value={paletteSearch}
-            onChange={(e) => setPaletteSearch(e.target.value)}
-            className="h-8 text-xs"
-          />
-          <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {filtered.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No palettes yet</p>
-            )}
-            {filtered.map((p) => {
-              const swatches = getSwatchData(p.id);
-              const project = projects.find((pr) => pr.id === p.project_id);
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => setSelectedPaletteId(p.id)}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedPaletteId === p.id
-                      ? "bg-primary/10 border-primary"
-                      : "border-border hover:bg-muted"
-                  }`}
-                >
-                  {/* Color strip */}
-                  <div className="h-6 rounded-md overflow-hidden flex mb-2">
-                    {swatches.length === 0 ? (
-                      <div className="w-full bg-muted" />
-                    ) : (
-                      swatches.slice(0, 10).map((s, i) => (
-                        <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
-                      ))
-                    )}
-                  </div>
-                  <div className={`font-medium text-sm ${selectedPaletteId === p.id ? "text-primary" : ""}`}>{p.name}</div>
-                  {project && (
-                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                      <FolderOpen className="w-3 h-3" />{project.name}
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground mt-1">{swatches.length} color{swatches.length !== 1 ? "s" : ""}</div>
-                  <div className="flex gap-1 mt-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={(e) => { e.stopPropagation(); openEdit(p); }}
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList>
+          <TabsTrigger value="palettes">Palettes</TabsTrigger>
+          <TabsTrigger value="library">Color Library</TabsTrigger>
+        </TabsList>
 
-        {/* Detail Panel */}
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
-          {!selectedPalette ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <Palette className="w-10 h-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">Select a palette to see its colors</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{selectedPalette.name}</h3>
-                  {selectedProject && (
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                      <FolderOpen className="w-3 h-3" />{selectedProject.name}
-                    </p>
-                  )}
-                </div>
-                <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
-                  <Plus className="w-3.5 h-3.5" /> Add Color
+        <TabsContent value="palettes" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Palettes Panel */}
+            <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Palettes ({palettes.length})</h3>
+                <Button onClick={openNew} size="sm" className="gap-1.5 h-8">
+                  <Plus className="w-3.5 h-3.5" /> Add
                 </Button>
               </div>
-
-              {/* Color Picker */}
-              {showColorPicker && (() => {
-                const { techFiltered, commFiltered } = getAvailableColors();
-                const items = colorTab === "technical"
-                  ? techFiltered.map((t) => ({ key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code }))
-                  : commFiltered.map((c) => {
-                      const t = techColors.find((t) => t.id === c.main_technical_color_id);
-                      return { key: `commercial:${c.id}`, hex: t?.hex || "#ccc", label: c.color_name, sub: c.code };
-                    });
-                return (
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    {/* Tabs */}
-                    <div className="flex border-b border-border">
-                      <button type="button" onClick={() => setColorTab("technical")}
-                        className={`flex-1 py-2 text-xs font-medium transition-colors ${ colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground" }`}>
-                        Technical ({techFiltered.length})
-                      </button>
-                      <button type="button" onClick={() => setColorTab("commercial")}
-                        className={`flex-1 py-2 text-xs font-medium transition-colors ${ colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground" }`}>
-                        Commercial ({commFiltered.length})
-                      </button>
-                    </div>
-                    <div className="p-2 border-b border-border">
-                      <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
-                    </div>
-                    <div className="max-h-52 overflow-y-auto">
-                      {items.map((item) => {
-                        const selected = selectedColorIds.has(item.key);
-                        return (
-                          <button key={item.key} type="button"
-                            onClick={() => toggleColorSelection(item.key)}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${ selected ? "bg-primary/10" : "hover:bg-muted" }`}>
-                            <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs font-medium block truncate">{item.label}</span>
-                              <span className="text-[10px] text-muted-foreground font-mono">{item.sub}</span>
-                            </div>
-                            {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
-                          </button>
-                        );
-                      })}
-                      {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
-                    </div>
-
-                    <div className="p-2 border-t border-border flex gap-2">
-                      <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? openNewTech() : openNewComm()}>
-                        <Plus className="w-3 h-3" /> New
-                      </Button>
-                      <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors}
-                        onClick={handleAddSelectedColors}>
-                        {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
-                        Add {selectedColorIds.size > 0 ? `(${selectedColorIds.size})` : ""}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Full color strip */}
-              {selectedSwatches.length > 0 && (
-                <div className="h-12 rounded-lg overflow-hidden flex border border-border">
-                  {selectedSwatches.map((s, i) => (
-                    <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
-                  ))}
-                </div>
-              )}
-
-              {/* Color cards grid */}
-              {selectedSwatches.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No colors in this palette yet.</p>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {selectedSwatches.map((s, i) => (
-                    <div key={i} className="rounded-lg border border-border overflow-hidden group/color relative">
-                      <div className="aspect-square" style={{ backgroundColor: s.hex }} />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveColor({ id: s.id })}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                      <div className="p-2 space-y-0.5">
-                        <p className="text-xs font-medium truncate">{s.name || "—"}</p>
-                        {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
-                        <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
+              <Input
+                placeholder="Search palettes…"
+                value={paletteSearch}
+                onChange={(e) => setPaletteSearch(e.target.value)}
+                className="h-8 text-xs"
+              />
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {filtered.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No palettes yet</p>
+                )}
+                {filtered.map((p) => {
+                  const swatches = getSwatchData(p.id);
+                  const project = projects.find((pr) => pr.id === p.project_id);
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedPaletteId(p.id)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedPaletteId === p.id
+                          ? "bg-primary/10 border-primary"
+                          : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      <div className="h-6 rounded-md overflow-hidden flex mb-2">
+                        {swatches.length === 0 ? (
+                          <div className="w-full bg-muted" />
+                        ) : (
+                          swatches.slice(0, 10).map((s, i) => (
+                            <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
+                          ))
+                        )}
+                      </div>
+                      <div className={`font-medium text-sm ${selectedPaletteId === p.id ? "text-primary" : ""}`}>{p.name}</div>
+                      {project && (
+                        <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <FolderOpen className="w-3 h-3" />{project.name}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground mt-1">{swatches.length} color{swatches.length !== 1 ? "s" : ""}</div>
+                      <div className="flex gap-1 mt-2">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(p); }}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(p); }}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+                  );
+                })}
+              </div>
+            </div>
 
+            {/* Detail Panel */}
+            <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
+              {!selectedPalette ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Palette className="w-10 h-10 text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">Select a palette to see its colors</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold">{selectedPalette.name}</h3>
+                      {selectedProject && (
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <FolderOpen className="w-3 h-3" />{selectedProject.name}
+                        </p>
+                      )}
+                    </div>
+                    <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
+                      <Plus className="w-3.5 h-3.5" /> Add Color
+                    </Button>
+                  </div>
+
+                  {/* Color Picker */}
+                  {showColorPicker && (() => {
+                    const { techFiltered, commFiltered } = getAvailableColors();
+                    const items = colorTab === "technical"
+                      ? techFiltered.map((t) => ({ key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code }))
+                      : commFiltered.map((c) => {
+                          const t = techColors.find((t) => t.id === c.main_technical_color_id);
+                          return { key: `commercial:${c.id}`, hex: t?.hex || "#ccc", label: c.color_name, sub: c.code };
+                        });
+                    return (
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <div className="flex border-b border-border">
+                          <button type="button" onClick={() => setColorTab("technical")}
+                            className={`flex-1 py-2 text-xs font-medium transition-colors ${ colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground" }`}>
+                            Technical ({techFiltered.length})
+                          </button>
+                          <button type="button" onClick={() => setColorTab("commercial")}
+                            className={`flex-1 py-2 text-xs font-medium transition-colors ${ colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground" }`}>
+                            Commercial ({commFiltered.length})
+                          </button>
+                        </div>
+                        <div className="p-2 border-b border-border">
+                          <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
+                        </div>
+                        <div className="max-h-52 overflow-y-auto">
+                          {items.map((item) => {
+                            const selected = selectedColorIds.has(item.key);
+                            return (
+                              <button key={item.key} type="button"
+                                onClick={() => toggleColorSelection(item.key)}
+                                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${ selected ? "bg-primary/10" : "hover:bg-muted" }`}>
+                                <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-xs font-medium block truncate">{item.label}</span>
+                                  <span className="text-[10px] text-muted-foreground font-mono">{item.sub}</span>
+                                </div>
+                                {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
+                              </button>
+                            );
+                          })}
+                          {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
+                        </div>
+                        <div className="p-2 border-t border-border flex gap-2">
+                          <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? openNewTech() : openNewComm()}>
+                            <Plus className="w-3 h-3" /> New
+                          </Button>
+                          <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors} onClick={handleAddSelectedColors}>
+                            {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
+                            Add {selectedColorIds.size > 0 ? `(${selectedColorIds.size})` : ""}
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Full color strip */}
+                  {selectedSwatches.length > 0 && (
+                    <div className="h-12 rounded-lg overflow-hidden flex border border-border">
+                      {selectedSwatches.map((s, i) => (
+                        <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Color cards grid */}
+                  {selectedSwatches.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No colors in this palette yet.</p>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {selectedSwatches.map((s, i) => (
+                        <div key={i} className="rounded-lg border border-border overflow-hidden group/color relative">
+                          <div className="aspect-square" style={{ backgroundColor: s.hex }} />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveColor({ id: s.id })}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                          <div className="p-2 space-y-0.5">
+                            <p className="text-xs font-medium truncate">{s.name || "—"}</p>
+                            {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
+                            <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="library" className="mt-4">
+          <ColorLibrary />
+        </TabsContent>
+      </Tabs>
+
+      {/* Palette Dialog */}
       <Dialog open={showDialog} onOpenChange={(o) => { if (!o) { setShowDialog(false); setEditingPalette(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
