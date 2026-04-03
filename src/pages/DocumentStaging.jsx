@@ -131,8 +131,12 @@ export default function DocumentStaging() {
 
   const handleReparse = async () => {
     setReparsing(true);
-    await base44.functions.invoke("parseDocument", { document_id: docId });
-    await loadData();
+    try {
+      await base44.functions.invoke("parseDocument", { document_id: docId });
+      await loadData();
+    } catch (err) {
+      setResult({ success: false, error: err.message || "Failed to parse document" });
+    }
     setReparsing(false);
   };
 
