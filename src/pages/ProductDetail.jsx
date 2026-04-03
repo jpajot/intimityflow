@@ -101,9 +101,7 @@ export default function ProductDetail() {
     if (!subCategoryTypeId || !product.category) return [];
     const categoryValue = lovValues.find((v) => v.type_of_lov_id === lovTypes["Category"] && v.name === product.category);
     if (!categoryValue) return [];
-    return lovValues
-      .filter((v) => v.type_of_lov_id === subCategoryTypeId && v.depends_on_value_id === categoryValue.id)
-      .map(v => v.name);
+    return lovValues.filter((v) => v.type_of_lov_id === subCategoryTypeId && v.depends_on_value_id === categoryValue.id);
   };
 
   const getCustomerNeeds = () => {
@@ -322,77 +320,6 @@ export default function ProductDetail() {
                 </SelectContent>
               </Select>
             </div>
-            {product.type === "Product" && (
-              <div className="space-y-2">
-                <Label className="text-xs">Customer Need</Label>
-                <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                  <SelectContent>
-                    {getCustomerNeeds().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">Size Grid</Label>
-            {hasStyleSizes && !isNew ? (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/50 text-sm text-muted-foreground">
-                {sizeGrids.find(sg => sg.id === product.size_grid_id) 
-                  ? `${sizeGrids.find(sg => sg.id === product.size_grid_id).code} – ${sizeGrids.find(sg => sg.id === product.size_grid_id).name}`
-                  : "None"}
-                <span className="ml-auto text-xs">(remove all sizes first to change)</span>
-              </div>
-            ) : (
-              <Select value={product.size_grid_id || "none"} onValueChange={handleSizeGridChange}>
-                <SelectTrigger><SelectValue placeholder="Select size grid…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.code} – {sg.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">Description</Label>
-            <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
-          </div>
-        </div>
-
-        {/* Style Images */}
-        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-sm">Images</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">First image will be used as the main cover image</p>
-            </div>
-            <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
-              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {uploadingImage ? "Uploading..." : "Add Image"}
-              <input type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
-                const files = Array.from(e.target.files || []);
-                if (!files.length) return;
-                setUploadingImage(true);
-                const urls = await Promise.all(files.map(async (file) => {
-                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                  return file_url;
-                }));
-                updateField("images", [...(product.images || []), ...urls]);
-                setUploadingImage(false);
-                e.target.value = "";
-              }} />
-            </label>
-          </div>
-          {(product.images || []).length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {(product.images || []).map((url, idx) => (
-                <div key={url} className="relative group/img aspect-square rounded-lg overflow-hidden border border-border">
-                  <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover" />
-                  {idx === 0 && (
-                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded">
-                      Main
-                    </div>
-                  )}
                   <button
                     type="button"
                     onClick={() => updateField("images", (product.images || []).filter((_, i) => i !== idx))}
