@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -316,6 +316,7 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
   const isEditing = editingCell === `${row.id}-${col.id}`;
   const cellKey = `${row.id}-${col.id}`;
   const isDragging = draggingFrom?.colId === col.id;
+  const dragHandleRef = React.useRef(null);
   
   if (!col.editable || !onEdit) {
     return <td className="px-4 py-3 text-sm" style={{ width: col.width }}>{col.render(row)}</td>;
@@ -324,8 +325,9 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
   const handleStart = () => { setEditingCell(cellKey); setEditValue(col.getDisplayValue(row)); };
   const handleSave = async () => { await onEdit(row.id, col.entityField, editValue, col.entityType, col.getValue(row)); setEditingCell(null); };
   
-  const handleDragStart = () => {
-    setDraggingFrom({ colId: col.id, value: editValue || col.getDisplayValue(row), rowIdx });
+  const handleDragStart = (e) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    setDraggingFrom({ colId: col.id, value: col.getDisplayValue(row), rowIdx });
   };
   
   const handleDragEnter = () => {
@@ -343,9 +345,7 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
       className={`px-4 py-3 text-sm relative ${isDragging ? 'bg-primary/20' : ''}`} 
       style={{ width: col.width }} 
       onClick={handleStart}
-      onDragStart={handleDragStart}
       onDragEnter={handleDragEnter}
-      onDragEnd={handleDragEnd}
       onDragOver={(e) => e.preventDefault()}
     >
       {isEditing ? (
@@ -358,7 +358,19 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
           <Input autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={handleSave} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditingCell(null); }} className="h-6 text-xs" />
         )
       ) : (
-        <div className="cursor-move hover:bg-muted/50 px-2 py-1 rounded" draggable>{col.render(row)}</div>
+        <div className="group hover:bg-muted/50 px-2 py-1 rounded flex items-center justify-between cursor-text">
+          <span>{col.render(row)}</span>
+          <div 
+            ref={dragHandleRef}
+            draggable
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move ml-1 text-muted-foreground hover:text-foreground"
+            title="Drag to fill"
+          >
+            ⋮
+          </div>
+        </div>
       )}
     </td>
   );
