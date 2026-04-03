@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid, List } from "lucide-react";
+import { Plus, LayoutGrid, List, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import ViewSelector from "./ViewSelector";
 import { base44 } from "@/api/base44Client";
 import DataTable from "./DataTable";
 import ColorwayCard from "./ColorwayCard";
@@ -8,12 +10,29 @@ import ColorwayCard from "./ColorwayCard";
 export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAddFromLibrary }) {
   const [view, setView] = useState("grid");
   const [techColors, setTechColors] = useState([]);
+  const [search, setSearch] = useState("");
+  const [activeColumns, setActiveColumns] = useState(null);
 
   useEffect(() => {
     base44.entities.TechnicalColor.list("code", 2000).then(setTechColors);
   }, []);
 
   const getTechColor = (id) => techColors.find((t) => t.id === id);
+
+  const filteredVariants = useMemo(() => {
+    if (!search.trim()) return colorVariants;
+    const q = search.toLowerCase();
+    return colorVariants.filter((cv) => {
+      const tc = getTechColor(cv.linked_tech_color_id);
+      return (
+        cv.color_name?.toLowerCase().includes(q) ||
+        cv.colorway_code?.toLowerCase().includes(q) ||
+        cv.color_hex?.toLowerCase().includes(q) ||
+        tc?.code?.toLowerCase().includes(q) ||
+        tc?.name?.toLowerCase().includes(q)
+      );
+    });
+  }, [colorVariants, search, techColors]);
 
   const columns = [
     {
@@ -89,63 +108,45 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
     },
   ];
 
+  const visibleColumns = activeColumns || columns;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Colorways ({colorVariants.length})</h3>
-        <div className="flex items-center gap-2">
-          {colorVariants.length > 0 && (
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setView("grid")}
-                className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-                title="Gallery view"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-                title="Table view"
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          <Button variant="outline" size="sm" onClick={onAddFromLibrary} className="gap-1.5 h-8 text-xs">
-            From Library
-          </Button>
-          <Button variant="outline" size="sm" onClick={onAddNew} className="gap-1.5 h-8 text-xs">
-            <Plus className="w-3.5 h-3.5" /> Add
-          </Button>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
         </div>
+        {colorVariants.length > 0 && (
+          <>
+            {view === "list" && (
+              <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} />
+            )}
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
+              <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
+            </div>
+          </>
+        )}
+        <Button variant="outline" size="sm" onClick={onAddFromLibrary} className="gap-1.5 h-8 text-xs">From Library</Button>
+        <Button variant="outline" size="sm" onClick={onAddNew} className="gap-1.5 h-8 text-xs"><Plus className="w-3.5 h-3.5" /> Add</Button>
       </div>
 
-      {colorVariants.length === 0 ? (
+      {filteredVariants.length === 0 ? (
         <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">No color variants yet. Add one to get started.</p>
+          <p className="text-sm text-muted-foreground">{colorVariants.length === 0 ? "No color variants yet. Add one to get started." : "No results match your search."}</p>
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {colorVariants.map((cv) => (
+          {filteredVariants.map((cv) => (
             <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} onEdit={() => onEdit(cv)} />
           ))}
         </div>
       ) : (
         <DataTable
-          columns={columns}
-          rows={colorVariants}
-          fixedColumns={["color"]}
-          filterFields={[
-            { getValue: (cv) => cv.color_name },
-            { getValue: (cv) => cv.colorway_code },
-            { getValue: (cv) => cv.color_hex },
-            { getValue: (cv) => cv.linked_color_type },
-            { getValue: (cv) => getTechColor(cv.linked_tech_color_id)?.code },
-            { getValue: (cv) => getTechColor(cv.linked_tech_color_id)?.name },
-          ]}
+          columns={visibleColumns}
+          rows={filteredVariants}
+          hideColumnToggle
         />
       )}
     </div>

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Loader2, X, Upload } from "lucide-react";
+import { Plus, Pencil, Loader2, X, Upload, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "./DataTable";
 
@@ -60,6 +60,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addColorwayIds, setAddColorwayIds] = useState([]);
   const [addPackCodes, setAddPackCodes] = useState([]);
@@ -201,6 +202,21 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
     closeDialog();
   };
 
+  const filteredVariations = useMemo(() => {
+    if (!search.trim()) return variations;
+    const q = search.toLowerCase();
+    return variations.filter((v) => {
+      const cw = colorVariants.find((cv) => cv.id === v.product_color_id);
+      return (
+        v.name?.toLowerCase().includes(q) ||
+        v.pack_code?.toLowerCase().includes(q) ||
+        v.variant?.toLowerCase().includes(q) ||
+        cw?.color_name?.toLowerCase().includes(q) ||
+        cw?.colorway_code?.toLowerCase().includes(q)
+      );
+    });
+  }, [variations, search, colorVariants]);
+
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
 
   const columns = [
@@ -277,8 +293,11 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">More Variations ({variations.length})</h3>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-8 h-8 text-xs" />
+        </div>
         <Button variant="outline" size="sm" onClick={openAdd} className="gap-1.5 h-8 text-xs">
           <Plus className="w-3.5 h-3.5" /> Add Variations
         </Button>
@@ -291,11 +310,11 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
       ) : (
         <DataTable
           columns={columns}
-          rows={variations}
+          rows={filteredVariations}
           fixedColumns={["sequence", "colorway"]}
           groupOptions={GROUP_OPTIONS}
           getGroupKey={(v, groupBy) => getGroupKey(v, groupBy, colorVariants)}
-          filterFields={createVariationFilterFields(colorVariants)}
+          hideColumnToggle
         />
       )}
 
