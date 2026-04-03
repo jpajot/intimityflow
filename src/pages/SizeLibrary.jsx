@@ -7,75 +7,40 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
-const LANG_FIELDS = [
-  { key: "en_description", label: "EN" },
-  { key: "fr_description", label: "FR" },
-  { key: "de_description", label: "DE" },
-  { key: "sp_description", label: "SP" },
-  { key: "it_description", label: "IT" },
-];
-
 const emptyForm = { size_code: "", name: "" };
-const emptyLang = { en_description: "", fr_description: "", de_description: "", sp_description: "", it_description: "" };
 
 export default function SizeLibrary({ hideTitle = false }) {
   const [sizes, setSizes] = useState([]);
-  const [languages, setLanguages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
-  const [langForm, setLangForm] = useState(emptyLang);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const [s, l] = await Promise.all([
-      base44.entities.Size.list("size_code", 500),
-      base44.entities.SizeLanguage.list("-created_date", 500),
-    ]);
+    const s = await base44.entities.Size.list("size_code", 500);
     setSizes(s);
-    setLanguages(l);
     setLoading(false);
   };
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setLangForm(emptyLang); setShowDialog(true); };
+  const openNew = () => { setEditing(null); setForm(emptyForm); setShowDialog(true); };
   const openEdit = (s) => {
     setEditing(s);
     setForm({ size_code: s.size_code, name: s.name });
-    const lang = languages.find((l) => l.size_id === s.id) || {};
-    setLangForm({
-      en_description: lang.en_description || "",
-      fr_description: lang.fr_description || "",
-      de_description: lang.de_description || "",
-      sp_description: lang.sp_description || "",
-      it_description: lang.it_description || "",
-    });
     setShowDialog(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    let sizeId;
     if (editing) {
       await base44.entities.Size.update(editing.id, form);
       setSizes((prev) => prev.map((s) => s.id === editing.id ? { ...s, ...form } : s));
-      sizeId = editing.id;
     } else {
       const created = await base44.entities.Size.create(form);
       setSizes((prev) => [...prev, created]);
-      sizeId = created.id;
-    }
-    // Upsert SizeLanguage
-    const existingLang = languages.find((l) => l.size_id === sizeId);
-    if (existingLang) {
-      await base44.entities.SizeLanguage.update(existingLang.id, langForm);
-      setLanguages((prev) => prev.map((l) => l.id === existingLang.id ? { ...l, ...langForm } : l));
-    } else {
-      const created = await base44.entities.SizeLanguage.create({ ...langForm, size_id: sizeId });
-      setLanguages((prev) => [...prev, created]);
     }
     setSaving(false);
     setShowDialog(false);
@@ -84,11 +49,6 @@ export default function SizeLibrary({ hideTitle = false }) {
   const handleDelete = async (s) => {
     await base44.entities.Size.delete(s.id);
     setSizes((prev) => prev.filter((x) => x.id !== s.id));
-    const lang = languages.find((l) => l.size_id === s.id);
-    if (lang) {
-      await base44.entities.SizeLanguage.delete(lang.id);
-      setLanguages((prev) => prev.filter((l) => l.id !== lang.id));
-    }
   };
 
   if (loading) return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
@@ -104,74 +64,9 @@ export default function SizeLibrary({ hideTitle = false }) {
     {
       id: "name",
       label: "Name",
-      width: 120,
+      width: 200,
       sortKey: (s) => s.name || "",
       render: (s) => <span className="font-medium">{s.name}</span>,
-    },
-    {
-      id: "en_description",
-      label: "EN",
-      width: 120,
-      sortKey: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return lang?.en_description || "";
-      },
-      render: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return <span className="text-xs text-muted-foreground">{lang?.en_description || "—"}</span>;
-      },
-    },
-    {
-      id: "fr_description",
-      label: "FR",
-      width: 120,
-      sortKey: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return lang?.fr_description || "";
-      },
-      render: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return <span className="text-xs text-muted-foreground">{lang?.fr_description || "—"}</span>;
-      },
-    },
-    {
-      id: "de_description",
-      label: "DE",
-      width: 120,
-      sortKey: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return lang?.de_description || "";
-      },
-      render: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return <span className="text-xs text-muted-foreground">{lang?.de_description || "—"}</span>;
-      },
-    },
-    {
-      id: "sp_description",
-      label: "SP",
-      width: 120,
-      sortKey: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return lang?.sp_description || "";
-      },
-      render: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return <span className="text-xs text-muted-foreground">{lang?.sp_description || "—"}</span>;
-      },
-    },
-    {
-      id: "it_description",
-      label: "IT",
-      width: 120,
-      sortKey: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return lang?.it_description || "";
-      },
-      render: (s) => {
-        const lang = languages.find((l) => l.size_id === s.id);
-        return <span className="text-xs text-muted-foreground">{lang?.it_description || "—"}</span>;
-      },
     },
     {
       id: "actions",
@@ -209,7 +104,7 @@ export default function SizeLibrary({ hideTitle = false }) {
       />
 
       <Dialog open={showDialog} onOpenChange={(o) => !o && setShowDialog(false)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{editing ? "Edit Size" : "New Size"}</DialogTitle></DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -221,15 +116,6 @@ export default function SizeLibrary({ hideTitle = false }) {
                 <Label className="text-xs">Name</Label>
                 <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Extra Small" required />
               </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Localized Descriptions</p>
-              {LANG_FIELDS.map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-3">
-                  <span className="text-xs font-semibold w-6 text-muted-foreground shrink-0">{label}</span>
-                  <Input value={langForm[key]} onChange={(e) => setLangForm((f) => ({ ...f, [key]: e.target.value }))} placeholder={`${label} description…`} className="flex-1" />
-                </div>
-              ))}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
