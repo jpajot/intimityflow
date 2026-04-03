@@ -16,22 +16,7 @@ Deno.serve(async (req) => {
     if (!docs.length) return Response.json({ error: 'Document not found' }, { status: 404 });
     const doc = docs[0];
 
-    // Download PPTX file as binary
-    const fileResponse = await fetch(doc.file_url);
-    if (!fileResponse.ok) throw new Error(`Failed to download file: ${fileResponse.statusText}`);
-    const arrayBuffer = await fileResponse.arrayBuffer();
-    
-    // Convert to base64 safely using chunking
-    const bytes = new Uint8Array(arrayBuffer);
-    let base64Data = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      base64Data += String.fromCharCode(...chunk);
-    }
-    base64Data = btoa(base64Data);
-
-    // Use InvokeLLM with base64-encoded PPTX as data URL
+    // Use InvokeLLM with the direct file URL
     const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are a data extraction assistant. Analyze this PowerPoint presentation file and extract all product/style information from slides that contain a data table.
 
@@ -59,7 +44,7 @@ Return ONLY valid JSON matching this exact schema:
     }
   ]
 }`,
-      file_urls: [`data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`],
+      file_urls: [doc.file_url],
       model: 'gemini_3_flash',
       response_json_schema: {
         type: "object",
@@ -120,6 +105,10 @@ Return ONLY valid JSON matching this exact schema:
 
     return Response.json({ success: true, data: staged });
   } catch (error) {
+    await base44.asServiceRole.entities.UploadedDocument.update(body.document_id, {
+      status: 'error',
+      error_message: error.message
+    });
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
