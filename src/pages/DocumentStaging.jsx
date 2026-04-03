@@ -49,7 +49,7 @@ function StyleRow({ row, techColors, onChange }) {
             <div className="space-y-1.5">
               <Label className="text-xs">Style Image</Label>
               <div className="w-32 h-32 rounded-lg overflow-hidden border border-border bg-muted">
-                <img src={row.image_url} alt={row["Style Description"]} className="w-full h-full object-cover" />
+                <img src={row.image_url} alt={row["Style Description"]} className="w-full h-full object-contain" />
               </div>
             </div>
           )}
