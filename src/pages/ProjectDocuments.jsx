@@ -44,6 +44,7 @@ export default function ProjectDocuments() {
   const [file, setFile] = useState(null);
   const [sharepointFile, setSharepointFile] = useState(null);
   const [showSharePoint, setShowSharePoint] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState(null);
 
   useEffect(() => { loadData(); }, [id]);
 
@@ -218,7 +219,7 @@ export default function ProjectDocuments() {
             className="pl-8 h-9"
           />
         </div>
-        {documents.length > 0 && <ViewSelector pageKey="documents" allColumns={columns} />}
+        {documents.length > 0 && <ViewSelector pageKey="documents" allColumns={columns} onColumnsChange={setVisibleColumns} />}
         <div className="flex-1" />
         <Button variant="outline" size="sm" onClick={() => setShowSharePoint(true)} className="gap-1.5 h-9">
           <Cloud className="w-4 h-4" /> SharePoint
@@ -235,7 +236,7 @@ export default function ProjectDocuments() {
           <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
         </div>
       ) : (
-        <DataTable columns={columns} rows={filteredDocs} hideColumnToggle />
+        <DataTable columns={visibleColumns || columns} rows={filteredDocs} hideColumnToggle />
       )}
 
       {/* Upload dialog */}
