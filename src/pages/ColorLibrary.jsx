@@ -11,7 +11,7 @@ import { Plus, Loader2, Download, Pencil, Trash2, LayoutGrid, List } from "lucid
 import { PANTONE_TCX, colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import DataTable from "@/components/DataTable";
 
-export default function ColorLibrary() {
+export default function ColorLibrary({ hideTitle = false }) {
   const [technicalColors, setTechnicalColors] = useState([]);
   const [commercialColors, setCommercialColors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -237,10 +237,12 @@ export default function ColorLibrary() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Color Library</h1>
-        <p className="text-muted-foreground mt-1">Manage technical and commercial colors</p>
-      </div>
+      {!hideTitle && (
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Color Library</h1>
+          <p className="text-muted-foreground mt-1">Manage technical and commercial colors</p>
+        </div>
+      )}
 
       <Tabs defaultValue="technical">
         <TabsList>

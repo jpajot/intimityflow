@@ -411,7 +411,7 @@ export default function ColorPalettes() {
         </TabsContent>
 
         <TabsContent value="library" className="mt-4">
-          <ColorLibrary />
+          <ColorLibrary hideTitle />
         </TabsContent>
       </Tabs>
 
