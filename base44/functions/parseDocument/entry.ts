@@ -16,16 +16,19 @@ Deno.serve(async (req) => {
     if (!docs.length) return Response.json({ error: 'Document not found' }, { status: 404 });
     const doc = docs[0];
 
-    // Use InvokeLLM with the direct file URL
+    const isPDF = doc.file_url.toLowerCase().endsWith('.pdf');
+    const fileType = isPDF ? 'PDF' : 'PowerPoint PPTX';
+
     const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `You are a data extraction assistant. Analyze this PowerPoint presentation file and extract all product/style information from slides that contain a data table.
+      prompt: `You are a data extraction assistant. Analyze this ${fileType} document and extract all product/style information from tables or structured data.
 
-For each slide that has a table with product data:
-- Extract the slide number and title
-- Extract all table rows, mapping them to: "Style Description" (the style/product name) and "Style Technical Color Codes" (array of Pantone TCX codes like "19-1664 TCX")
-- Skip slides that are cover pages, mood boards, or don't contain product tables
+For each table or section:
+- Extract the "Style Description" (the style/product name)
+- Extract "Style Technical Color Codes" (array of Pantone TCX codes like "19-1664 TCX")
 
-Return ONLY valid JSON matching this exact schema:
+${isPDF ? 'The document is a PDF with tables.' : 'The document is a PowerPoint presentation with slides containing tables.'}
+
+Return ONLY valid JSON:
 {
   "fileName": "string",
   "slides": [
@@ -45,7 +48,6 @@ Return ONLY valid JSON matching this exact schema:
   ]
 }`,
       file_urls: [doc.file_url],
-      model: 'gemini_3_flash',
       response_json_schema: {
         type: "object",
         properties: {
@@ -89,7 +91,7 @@ Return ONLY valid JSON matching this exact schema:
     }
 
     const contentSlides = (extracted.slides || []).filter(s => s.table && s.table.rows && s.table.rows.length > 0);
-    const collectionName = contentSlides[0]?.title || extracted.fileName?.replace('.pptx', '') || '';
+    const collectionName = contentSlides[0]?.title || extracted.fileName?.replace(/\.(pdf|pptx)$/i, '') || '';
 
     const staged = {
       fileName: extracted.fileName,
@@ -105,10 +107,12 @@ Return ONLY valid JSON matching this exact schema:
 
     return Response.json({ success: true, data: staged });
   } catch (error) {
-    await base44.asServiceRole.entities.UploadedDocument.update(body.document_id, {
-      status: 'error',
-      error_message: error.message
-    });
+    if (body?.document_id) {
+      await base44.asServiceRole.entities.UploadedDocument.update(body.document_id, {
+        status: 'error',
+        error_message: error.message
+      });
+    }
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

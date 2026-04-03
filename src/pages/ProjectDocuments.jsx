@@ -276,15 +276,12 @@ export default function ProjectDocuments() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">PPTX File</Label>
-              <div className="flex gap-2">
-                <label className={`flex-1 flex items-center gap-2 px-3 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
-                  <Upload className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{file ? file.name : "Choose .pptx…"}</span>
-                  <input type="file" accept=".pptx,.ppt" className="hidden" onChange={e => { setFile(e.target.files?.[0] || null); }} />
-                </label>
-
-              </div>
+              <Label className="text-xs">Document File (PDF or PPTX)</Label>
+              <label className={`flex items-center gap-2 px-3 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                <Upload className="w-4 h-4 shrink-0" />
+                <span className="truncate">{file ? file.name : "Choose .pdf or .pptx…"}</span>
+                <input type="file" accept=".pdf,.pptx,.ppt" className="hidden" onChange={e => { setFile(e.target.files?.[0] || null); }} />
+              </label>
             </div>
             <div className="flex gap-2 pt-1">
               <Button onClick={handleUpload} disabled={!file || !selectedType || uploading} className="gap-2 flex-1">
