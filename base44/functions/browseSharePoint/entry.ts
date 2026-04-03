@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
         webUrl: f.webUrl,
         size: f.size,
         lastModified: f.lastModifiedDateTime,
-        downloadUrl: f['@microsoft.graph.downloadUrl'],
+        downloadUrl: `https://graph.microsoft.com/v1.0/me/drive/items/${f.id}/content`,
       }));
 
     return Response.json({ files });
