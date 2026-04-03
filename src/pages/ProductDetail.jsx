@@ -63,10 +63,6 @@ export default function ProductDetail() {
     }
   }, [id]);
 
-  const refreshLovData = async () => {
-    await loadLovData();
-  };
-
   const checkStyleSizes = async () => {
     const ss = await base44.entities.StyleSize.filter({ product_id: id });
     setHasStyleSizes(ss.length > 0);
@@ -261,9 +257,6 @@ export default function ProductDetail() {
             {isNew ? `New ${product.type}` : product.name}
           </h1>
         </div>
-        <Button variant="outline" size="sm" onClick={refreshLovData}>
-          Refresh
-        </Button>
         {!isNew && (
           <Button type="submit" form="product-form" disabled={saving} className="gap-2">
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
