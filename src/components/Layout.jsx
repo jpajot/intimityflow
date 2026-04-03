@@ -13,7 +13,6 @@ const NAV_ITEMS = [
 ];
 
 const COLOR_STUDIO_ITEMS = [
-  { path: "/color-library", label: "Color Library", icon: Palette },
   { path: "/color-palettes", label: "Palettes", icon: Layers },
 ];
 
@@ -23,6 +22,7 @@ const SIZE_STUDIO_ITEMS = [
 ];
 
 const CONFIG_ITEMS = [
+  { path: "/color-library", label: "Color Library", icon: Palette },
   { path: "/list-of-values", label: "List of Values", icon: ListCollapse },
   { path: "/code-generators", label: "Code Generators", icon: Hash },
 ];
