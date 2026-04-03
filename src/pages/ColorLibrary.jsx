@@ -140,6 +140,21 @@ export default function ColorLibrary({ hideTitle = false }) {
     </div>
   );
 
+  const hexToRgb = (hex) => {
+    if (!hex || hex.length !== 7) return "";
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return isNaN(r) || isNaN(g) || isNaN(b) ? "" : `${r},${g},${b}`;
+  };
+
+  const rgbToHex = (rgb) => {
+    if (!rgb) return "";
+    const parts = rgb.split(",").map(p => parseInt(p.trim()));
+    if (parts.length !== 3 || parts.some(isNaN)) return "";
+    return "#" + parts.map(p => Math.max(0, Math.min(255, p)).toString(16).padStart(2, "0")).join("").toUpperCase();
+  };
+
   const techColumns = [
     {
       id: "color",
@@ -425,13 +440,13 @@ export default function ColorLibrary({ hideTitle = false }) {
             <div className="space-y-1.5">
               <Label className="text-xs">HEX Value</Label>
               <div className="flex gap-2">
-                <input type="color" value={techForm.hex || "#cccccc"} onChange={(e) => setTechForm((f) => ({ ...f, hex: e.target.value }))} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
-                <Input value={techForm.hex} onChange={(e) => setTechForm((f) => ({ ...f, hex: e.target.value }))} placeholder="#000000" className="flex-1" />
+                <input type="color" value={techForm.hex || "#cccccc"} onChange={(e) => { const hex = e.target.value; const rgb = hexToRgb(hex); setTechForm((f) => ({ ...f, hex, rgb })); }} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                <Input value={techForm.hex} onChange={(e) => { const hex = e.target.value; const rgb = hexToRgb(hex); setTechForm((f) => ({ ...f, hex, rgb })); }} placeholder="#000000" className="flex-1" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">RGB (optional)</Label>
-              <Input value={techForm.rgb} onChange={(e) => setTechForm((f) => ({ ...f, rgb: e.target.value }))} placeholder="e.g. 244,245,240" />
+              <Input value={techForm.rgb} onChange={(e) => { const rgb = e.target.value; const hex = rgbToHex(rgb); setTechForm((f) => ({ ...f, rgb, ...(hex && { hex }) })); }} placeholder="e.g. 244,245,240" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">CMYK (optional)</Label>
