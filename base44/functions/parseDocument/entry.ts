@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { document_id, sharepoint_download_url, original_filename } = body;
+    const { document_id, is_sharepoint } = body;
     if (!document_id) return Response.json({ error: 'document_id required' }, { status: 400 });
 
     await base44.asServiceRole.entities.UploadedDocument.update(document_id, { status: 'processing' });
@@ -16,18 +16,22 @@ Deno.serve(async (req) => {
     if (!docs.length) return Response.json({ error: 'Document not found' }, { status: 404 });
     const doc = docs[0];
 
-    // Resolve the file URL: use SharePoint download URL if provided, otherwise use the stored file_url
+    // Resolve the file URL: download from SharePoint if needed, otherwise use stored file_url
     let fileUrl = doc.file_url;
-    if (sharepoint_download_url) {
-      // Download from SharePoint and re-upload to get a stable base44 URL
-      const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
-      const spRes = await fetch(sharepoint_download_url, { headers: { Authorization: `Bearer ${accessToken}` } });
-      if (!spRes.ok) throw new Error(`Failed to download from SharePoint: ${spRes.status}`);
-      const blob = await spRes.blob();
-      const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
-      fileUrl = uploadResult.file_url;
-      // Also update the document record with the file url
-      await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
+    if (is_sharepoint && doc.file_url) {
+      // Download from SharePoint using the web URL and re-upload to get a stable base44 URL
+      try {
+        const { accessToken } = await base44.asServiceRole.connectors.getConnection("share_point");
+        const spRes = await fetch(`${doc.file_url}?$format=binary`, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (spRes.ok) {
+          const blob = await spRes.blob();
+          const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+          fileUrl = uploadResult.file_url;
+          await base44.asServiceRole.entities.UploadedDocument.update(document_id, { file_url: fileUrl });
+        }
+      } catch (spErr) {
+        console.warn('SharePoint download failed, using stored URL:', spErr.message);
+      }
     }
 
     const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({

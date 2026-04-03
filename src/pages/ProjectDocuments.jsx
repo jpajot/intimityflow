@@ -82,7 +82,8 @@ export default function ProjectDocuments() {
       let file_url = "";
       let filename = "";
       if (sharepointFile) {
-        file_url = sharepointFile.downloadUrl || sharepointFile.webUrl;
+        // Let backend handle SharePoint download
+        file_url = sharepointFile.webUrl;
         filename = sharepointFile.name;
       } else {
         const result = await base44.integrations.Core.UploadFile({ file });
@@ -104,7 +105,7 @@ export default function ProjectDocuments() {
       setShowUploadDialog(false);
 
       const parsePayload = { document_id: doc.id };
-      if (sharepointFile?.downloadUrl) parsePayload.sharepoint_download_url = sharepointFile.downloadUrl;
+      if (sharepointFile) parsePayload.is_sharepoint = true;
       await base44.functions.invoke("parseDocument", parsePayload);
 
       const updated = await base44.entities.UploadedDocument.filter({ id: doc.id });
