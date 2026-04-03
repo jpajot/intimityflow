@@ -1,13 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Loader2, Link2, Unlink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Upload, X, Loader2, ChevronDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { tcxDisplayName } from "../lib/pantone-tcx";
-import ColorLibrarySinglePickerModal from "./ColorLibrarySinglePickerModal";
+import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
+function InlineColorPicker({ label, value, options, getHex, getLabel, onSelect, onClear, placeholder }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    if (!q) return options.slice(0, 60);
+    return options.filter((o) => getLabel(o).toLowerCase().includes(q)).slice(0, 60);
+  }, [options, search]);
+
+  const selected = value ? options.find((o) => o.id === value) : null;
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      {selected ? (
+        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
+          <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: getHex(selected) }} />
+          <span className="text-sm flex-1">{getLabel(selected)}</span>
+          <button type="button" onClick={onClear} className="text-muted-foreground hover:text-destructive">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2 h-9 rounded-md border border-input bg-transparent text-sm text-muted-foreground hover:bg-muted transition-colors text-left"
+          >
+            <span className="flex-1">{placeholder}</span>
+            <ChevronDown className="w-4 h-4 opacity-50" />
+          </button>
+          {open && (
+            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+              <div className="p-2 border-b border-border">
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search…"
+                  className="h-7 text-xs"
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {filtered.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No results</p>
+                )}
+                {filtered.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => { onSelect(o); setOpen(false); setSearch(""); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors"
+                  >
+                    <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: getHex(o) }} />
+                    <span className="text-xs">{getLabel(o)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ColorwayForm({ variant, onSave, onCancel, onDelete, existingColorways = [] }) {
   const [form, setForm] = useState({
@@ -15,15 +81,21 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
     colorway_code: variant?.colorway_code || "",
     color_hex: variant?.color_hex || "#000000",
     image_url: variant?.image_url || "",
+    linked_tech_color_id: variant?.linked_tech_color_id || "",
     linked_color_type: variant?.linked_color_type || "",
     linked_color_id: variant?.linked_color_id || "",
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showLibPicker, setShowLibPicker] = useState(false);
+  const [techColors, setTechColors] = useState([]);
+  const [commColors, setCommColors] = useState([]);
 
-  // Store enough info to display linked color label without re-fetching
-  const [linkedLabel, setLinkedLabel] = useState(variant?.linked_color_id ? "Linked color" : "");
+  useEffect(() => {
+    Promise.all([
+      base44.entities.TechnicalColor.list("code", 2000),
+      base44.entities.CommercialColor.list("code", 2000),
+    ]).then(([tc, cc]) => { setTechColors(tc); setCommColors(cc); });
+  }, []);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -34,26 +106,28 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
     setUploading(false);
   };
 
-  const handleLinkColor = (type, id, hex, name, code) => {
+  const handleSelectTech = (tech) => {
     setForm((f) => ({
       ...f,
-      linked_color_type: type,
-      linked_color_id: id,
-      color_hex: hex || f.color_hex,
-      color_name: f.color_name || name,
-      colorway_code: type === "commercial" ? (code || f.colorway_code) : f.colorway_code,
+      linked_tech_color_id: tech.id,
+      color_hex: colorToHex(tech) || f.color_hex,
     }));
-    setLinkedLabel(type === "commercial" ? `${code} - ${name}` : name);
   };
 
-  const handleUnlink = () => {
-    setForm((f) => ({ ...f, linked_color_type: "", linked_color_id: "" }));
-    setLinkedLabel("");
+  const handleSelectComm = (comm) => {
+    const mainTech = techColors.find((t) => t.id === comm.main_technical_color_id);
+    setForm((f) => ({
+      ...f,
+      linked_color_type: "commercial",
+      linked_color_id: comm.id,
+      color_name: f.color_name || comm.color_name || "",
+      colorway_code: comm.code || f.colorway_code,
+      color_hex: mainTech ? colorToHex(mainTech) : f.color_hex,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Uniqueness check: if code is non-empty, no other colorway in this style may share it
     if (form.colorway_code && form.colorway_code.trim() !== "") {
       const duplicate = existingColorways.find(
         (cv) => cv.colorway_code === form.colorway_code.trim() && cv.id !== variant?.id
@@ -68,6 +142,14 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
     setSaving(false);
   };
 
+  const getTechHex = (t) => colorToHex(t) || "#ccc";
+  const getTechLabel = (t) => `${t.code} – ${t.name}`;
+  const getCommHex = (c) => {
+    const t = techColors.find((t) => t.id === c.main_technical_color_id);
+    return t ? colorToHex(t) : "#ccc";
+  };
+  const getCommLabel = (c) => `${c.code} – ${c.color_name}`;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5 bg-card rounded-xl border border-border p-5">
       <div className="flex items-start justify-between">
@@ -80,39 +162,39 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label className="text-xs">Colorway Name</Label>
           <Input value={form.color_name} onChange={(e) => setForm((f) => ({ ...f, color_name: e.target.value }))} placeholder="e.g. Midnight Blue" required />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label className="text-xs">Colorway Code</Label>
           <Input value={form.colorway_code} onChange={(e) => setForm((f) => ({ ...f, colorway_code: e.target.value }))} placeholder="e.g. COM-001" />
         </div>
       </div>
 
-      {/* Color Library Link */}
-      <div className="space-y-2">
-        <Label className="text-xs">Link to Color Library</Label>
-        {form.linked_color_id ? (
-          <div className="flex items-center gap-2 px-3 py-2 bg-accent rounded-lg border border-primary/20">
-            <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: form.color_hex }} />
-            <span className="text-xs font-medium flex-1">{linkedLabel}</span>
-            <Badge variant="secondary" className="text-[10px]">{form.linked_color_type}</Badge>
-            <button type="button" onClick={handleUnlink} className="text-destructive hover:text-destructive/80 ml-1">
-              <Unlink className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setShowLibPicker(true)}>
-              <Link2 className="w-3.5 h-3.5" /> From Library
-            </Button>
-          </div>
-        )}
-      </div>
+      <InlineColorPicker
+        label="Link to Technical Color"
+        value={form.linked_tech_color_id}
+        options={techColors}
+        getHex={getTechHex}
+        getLabel={getTechLabel}
+        onSelect={handleSelectTech}
+        onClear={() => setForm((f) => ({ ...f, linked_tech_color_id: "" }))}
+        placeholder="Search technical colors…"
+      />
 
-      {/* Color Picker */}
-      <div className="space-y-2">
+      <InlineColorPicker
+        label="Link to Commercial Color"
+        value={form.linked_color_id}
+        options={commColors}
+        getHex={getCommHex}
+        getLabel={getCommLabel}
+        onSelect={handleSelectComm}
+        onClear={() => setForm((f) => ({ ...f, linked_color_type: "", linked_color_id: "" }))}
+        placeholder="Search commercial colors…"
+      />
+
+      <div className="space-y-1.5">
         <Label className="text-xs">Color</Label>
         <div className="flex gap-2">
           <input type="color" value={form.color_hex} onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
@@ -120,15 +202,8 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
         </div>
       </div>
 
-      <ColorLibrarySinglePickerModal
-        open={showLibPicker}
-        onClose={() => setShowLibPicker(false)}
-        onSelect={handleLinkColor}
-      />
-
-      {/* Image */}
-      <div className="space-y-2">
-        <Label className="text-xs">Product Image</Label>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Colorway Image</Label>
         <div className="flex items-center gap-4">
           {form.image_url && (
             <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
@@ -146,7 +221,6 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
           </label>
         </div>
       </div>
-
 
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving} className="gap-2">

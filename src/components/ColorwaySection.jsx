@@ -9,12 +9,17 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
 
   const columns = [
     {
-      id: "color",
-      label: "Color",
+      id: "image",
+      label: "Image",
       width: 80,
-      render: (cv) => (
-        <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-      ),
+      render: (cv) =>
+        cv.image_url ? (
+          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+            <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+        ),
     },
     {
       id: "name",
@@ -35,39 +40,30 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
       label: "Hex",
       width: 120,
       sortKey: (cv) => cv.color_hex || "",
-      render: (cv) => (
+      render: (cv) =>
         cv.color_hex ? (
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: cv.color_hex }} />
             <span className="font-mono text-xs text-muted-foreground">{cv.color_hex}</span>
           </div>
-        ) : "—"
-      ),
-    },
-    {
-      id: "image",
-      label: "Image",
-      width: 100,
-      render: (cv) => (
-        cv.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
-            <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
-          </div>
-        ) : "—"
-      ),
+        ) : "—",
     },
     {
       id: "library",
       label: "Library",
       width: 100,
       sortKey: (cv) => cv.linked_color_type || "",
-      render: (cv) => (
-        cv.linked_color_id ? (
-          <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
-            {cv.linked_color_type === "technical" ? "TCX" : "COM"}
-          </span>
-        ) : "—"
-      ),
+      render: (cv) => {
+        const hasTech = !!cv.linked_tech_color_id;
+        const hasComm = !!cv.linked_color_id;
+        if (!hasTech && !hasComm) return "—";
+        return (
+          <div className="flex gap-1">
+            {hasTech && <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">TCX</span>}
+            {hasComm && <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">COM</span>}
+          </div>
+        );
+      },
     },
     {
       id: "actions",

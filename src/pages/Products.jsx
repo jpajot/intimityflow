@@ -89,6 +89,28 @@ export default function Products() {
       render: (p) => <span className="text-xs text-muted-foreground">{p.customer_need}</span>,
     },
     {
+      id: "colorway_images",
+      label: "Colorway Images",
+      width: 130,
+      render: (product) => {
+        const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 5);
+        if (!cvs.length) return "—";
+        return (
+          <div className="flex gap-1">
+            {cvs.map((cv) =>
+              cv.image_url ? (
+                <div key={cv.id} className="w-7 h-7 rounded-md overflow-hidden border border-border shrink-0">
+                  <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div key={cv.id} className="w-7 h-7 rounded-md border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+              )
+            )}
+          </div>
+        );
+      },
+    },
+    {
       id: "colors",
       label: "Colors",
       width: 100,

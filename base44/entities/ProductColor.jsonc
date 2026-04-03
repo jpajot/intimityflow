@@ -1,0 +1,41 @@
+{
+  "name": "ProductColor",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string"
+    },
+    "color_name": {
+      "type": "string"
+    },
+    "colorway_code": {
+      "type": "string",
+      "description": "Colorway code"
+    },
+    "color_hex": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "linked_tech_color_id": {
+      "type": "string",
+      "description": "ID of the linked TechnicalColor"
+    },
+    "linked_color_type": {
+      "type": "string",
+      "enum": [
+        "commercial"
+      ],
+      "description": "Type of library color linked (commercial only)"
+    },
+    "linked_color_id": {
+      "type": "string",
+      "description": "ID of the linked CommercialColor"
+    }
+  },
+  "required": [
+    "product_id",
+    "color_name"
+  ]
+}
