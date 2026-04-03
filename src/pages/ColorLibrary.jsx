@@ -22,7 +22,7 @@ export default function ColorLibrary({ hideTitle = false }) {
   const [editingTech, setEditingTech] = useState(null);
   const [editingComm, setEditingComm] = useState(null);
 
-  const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
+  const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb: "", cmyk: "" });
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
@@ -55,19 +55,19 @@ export default function ColorLibrary({ hideTitle = false }) {
 
   const openNewTech = () => {
     setEditingTech(null);
-    setTechForm({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
+    setTechForm({ code: "", name: "", hex: "", rgb: "", cmyk: "" });
     setShowTechDialog(true);
   };
   const openEditTech = (c) => {
     setEditingTech(c);
-    setTechForm({ code: c.code, name: c.name, hex: c.hex || "", rgb_r: c.rgb_r || "", rgb_g: c.rgb_g || "", rgb_b: c.rgb_b || "" });
+    setTechForm({ code: c.code, name: c.name, hex: c.hex || "", rgb: c.rgb || "", cmyk: c.cmyk || "" });
     setShowTechDialog(true);
   };
 
   const saveTech = async (e) => {
     e.preventDefault();
     setSaving(true);
-    const data = { ...techForm, rgb_r: Number(techForm.rgb_r) || 0, rgb_g: Number(techForm.rgb_g) || 0, rgb_b: Number(techForm.rgb_b) || 0 };
+    const data = { ...techForm };
     if (editingTech) {
       const updated = await base44.entities.TechnicalColor.update(editingTech.id, data);
       setTechnicalColors((prev) => prev.map((c) => (c.id === editingTech.id ? { ...c, ...data } : c)));
@@ -391,11 +391,11 @@ export default function ColorLibrary({ hideTitle = false }) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">RGB (optional)</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <Input type="number" min={0} max={255} value={techForm.rgb_r} onChange={(e) => setTechForm((f) => ({ ...f, rgb_r: e.target.value }))} placeholder="R" />
-                <Input type="number" min={0} max={255} value={techForm.rgb_g} onChange={(e) => setTechForm((f) => ({ ...f, rgb_g: e.target.value }))} placeholder="G" />
-                <Input type="number" min={0} max={255} value={techForm.rgb_b} onChange={(e) => setTechForm((f) => ({ ...f, rgb_b: e.target.value }))} placeholder="B" />
-              </div>
+              <Input value={techForm.rgb} onChange={(e) => setTechForm((f) => ({ ...f, rgb: e.target.value }))} placeholder="e.g. 244,245,240" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">CMYK (optional)</Label>
+              <Input value={techForm.cmyk} onChange={(e) => setTechForm((f) => ({ ...f, cmyk: e.target.value }))} placeholder="e.g. 0,1,3,4" />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowTechDialog(false)}>Cancel</Button>
