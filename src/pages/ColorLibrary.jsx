@@ -165,6 +165,20 @@ export default function ColorLibrary({ hideTitle = false }) {
       render: (c) => <span className="font-mono text-xs text-muted-foreground">{colorToHex(c)}</span>,
     },
     {
+      id: "rgb",
+      label: "RGB",
+      width: 140,
+      sortKey: (c) => c.rgb || "",
+      render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.rgb || "—"}</span>,
+    },
+    {
+      id: "cmyk",
+      label: "CMYK",
+      width: 140,
+      sortKey: (c) => c.cmyk || "",
+      render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.cmyk || "—"}</span>,
+    },
+    {
       id: "actions",
       label: "",
       width: 80,
@@ -252,15 +266,15 @@ export default function ColorLibrary({ hideTitle = false }) {
 
         {/* TECHNICAL COLORS */}
         <TabsContent value="technical" className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2">
-              <Button onClick={openNewTech} className="gap-2"><Plus className="w-4 h-4" />Add Technical Color</Button>
-              <Button variant="outline" onClick={handleSeedPantone} disabled={seeding} className="gap-2">
-                {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                Seed Pantone TCX
-              </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              {/* Placeholder for search - can be added if needed */}
             </div>
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <Button variant="outline" onClick={handleSeedPantone} disabled={seeding} className="gap-2 shrink-0">
+              {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Seed Pantone TCX
+            </Button>
+            <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0">
               <button
                 type="button"
                 onClick={() => setTechView("gallery")}
@@ -278,8 +292,20 @@ export default function ColorLibrary({ hideTitle = false }) {
                 <List className="w-4 h-4" />
               </button>
             </div>
+            <Button onClick={openNewTech} className="gap-2 shrink-0"><Plus className="w-4 h-4" />Add Technical Color</Button>
           </div>
-          {techView === "gallery" ? (
+          {techView === "table" ? (
+            <DataTable
+              columns={techColumns}
+              rows={technicalColors}
+              fixedColumns={["color"]}
+              filterFields={[
+                { getValue: (c) => c.code },
+                { getValue: (c) => c.name },
+                { getValue: (c) => colorToHex(c) },
+              ]}
+            />
+          ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
               {technicalColors.map((c) => (
                 <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
@@ -296,17 +322,6 @@ export default function ColorLibrary({ hideTitle = false }) {
                 </div>
               ))}
             </div>
-          ) : (
-            <DataTable
-              columns={techColumns}
-              rows={technicalColors}
-              fixedColumns={["color"]}
-              filterFields={[
-                { getValue: (c) => c.code },
-                { getValue: (c) => c.name },
-                { getValue: (c) => colorToHex(c) },
-              ]}
-            />
           )}
         </TabsContent>
 
