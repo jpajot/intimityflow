@@ -98,14 +98,22 @@ export default function ProductDetail() {
 
   const getSubCategories = () => {
     const subCategoryTypeId = lovTypes["Sub-Category"];
-    if (!subCategoryTypeId) return [];
-    return lovValues.filter((v) => v.type_of_lov_id === subCategoryTypeId).map(v => v.name);
+    if (!subCategoryTypeId || !product.category) return [];
+    const categoryValue = lovValues.find((v) => v.type_of_lov_id === lovTypes["Category"] && v.name === product.category);
+    if (!categoryValue) return [];
+    return lovValues
+      .filter((v) => v.type_of_lov_id === subCategoryTypeId && v.depends_on_value_id === categoryValue.id)
+      .map(v => v.name);
   };
 
   const getCustomerNeeds = () => {
     const customerNeedTypeId = lovTypes["Customer Need"];
-    if (!customerNeedTypeId) return [];
-    return lovValues.filter((v) => v.type_of_lov_id === customerNeedTypeId).map(v => v.name);
+    if (!customerNeedTypeId || !product.sub_category) return [];
+    const subCategoryValue = lovValues.find((v) => v.type_of_lov_id === lovTypes["Sub-Category"] && v.name === product.sub_category);
+    if (!subCategoryValue) return [];
+    return lovValues
+      .filter((v) => v.type_of_lov_id === customerNeedTypeId && v.depends_on_value_id === subCategoryValue.id)
+      .map(v => v.name);
   };
 
   const loadProduct = async () => {
