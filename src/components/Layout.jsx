@@ -102,17 +102,7 @@ export default function Layout() {
       {/* Size Studio */}
       <NavItem item={{ path: "/size-grid-library", label: "Size Studio", icon: Ruler }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/size-grid-library")} />
 
-      {/* Config */}
-      <div className="space-y-0.5">
-        <GroupButton icon={ListCollapse} label="Config" open={configOpen} onToggle={() => setConfigOpen((o) => !o)} isActive={isConfigActive} />
-        {configOpen && expanded && (
-          <div className="pl-3 space-y-0.5">
-            {CONFIG_ITEMS.map((item) => (
-              <NavItem key={item.path} item={item} onNavigate={onNavigate} isActive={location.pathname.startsWith(item.path)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <NavItem item={{ path: "/config", label: "Config", icon: ListCollapse }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/config") || isConfigActive} />
     </nav>
   );
 
