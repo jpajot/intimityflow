@@ -27,6 +27,7 @@ export default function ColorLibrary({ hideTitle = false }) {
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [commSearch, setCommSearch] = useState("");
+  const [mainTechSearch, setMainTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [techView, setTechView] = useState("table");
@@ -91,14 +92,14 @@ export default function ColorLibrary({ hideTitle = false }) {
   const openNewComm = () => {
     setEditingComm(null);
     setCommForm({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
-    setTechSearch("");
+    setMainTechSearch("");
     setLinkedTechSearch("");
     setShowCommDialog(true);
   };
   const openEditComm = (c) => {
     setEditingComm(c);
     setCommForm({ sub_type: c.sub_type, code: c.code, main_technical_color_id: c.main_technical_color_id || "", linked_technical_color_ids: c.linked_technical_color_ids || (c.main_technical_color_id ? [c.main_technical_color_id] : []), color_name: c.color_name });
-    setTechSearch("");
+    setMainTechSearch("");
     setLinkedTechSearch("");
     setShowCommDialog(true);
   };
@@ -477,7 +478,7 @@ export default function ColorLibrary({ hideTitle = false }) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Main Technical Color</Label>
-              <Select value={commForm.main_technical_color_id || ""} onValueChange={(v) => handleTechSelectForComm(v)}>
+              <Select value={commForm.main_technical_color_id || ""} onValueChange={(v) => { handleTechSelectForComm(v); setMainTechSearch(""); }}>
                 <SelectTrigger className="h-8 text-xs">
                   {commForm.main_technical_color_id ? (() => { const t = technicalColors.find(t => t.id === commForm.main_technical_color_id); return t ? (
                     <div className="flex items-center gap-2">
@@ -486,15 +487,25 @@ export default function ColorLibrary({ hideTitle = false }) {
                     </div>
                   ) : null; })() : <SelectValue placeholder="Search by code or name…" />}
                 </SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {technicalColors.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
-                        <span className="text-xs">{tcxDisplayName(t)}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                <SelectContent className="max-h-60 p-0">
+                  <div className="p-2 border-b border-border sticky top-0 bg-popover">
+                    <Input value={mainTechSearch} onChange={(e) => setMainTechSearch(e.target.value)} placeholder="Filter colors…" className="h-7 text-xs" />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {technicalColors
+                      .filter(t => !mainTechSearch || t.code?.toLowerCase().includes(mainTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(mainTechSearch.toLowerCase()))
+                      .map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                            <span className="text-xs">{tcxDisplayName(t)}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    {technicalColors.filter(t => !mainTechSearch || t.code?.toLowerCase().includes(mainTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(mainTechSearch.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-2 text-xs text-muted-foreground text-center">No colors found</div>
+                    )}
+                  </div>
                 </SelectContent>
               </Select>
             </div>
@@ -521,19 +532,28 @@ export default function ColorLibrary({ hideTitle = false }) {
                   })}
                 </div>
               )}
-              <Select onValueChange={(v) => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, v] })); }}>
+              <Select onValueChange={(v) => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, v] })); setLinkedTechSearch(""); }}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Add more colors…" /></SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {technicalColors
-                    .filter((t) => !commForm.linked_technical_color_ids.includes(t.id))
-                    .map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
-                          <span className="text-xs">{tcxDisplayName(t)}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                <SelectContent className="max-h-60 p-0">
+                  <div className="p-2 border-b border-border sticky top-0 bg-popover">
+                    <Input value={linkedTechSearch} onChange={(e) => setLinkedTechSearch(e.target.value)} placeholder="Filter colors…" className="h-7 text-xs" />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {technicalColors
+                      .filter((t) => !commForm.linked_technical_color_ids.includes(t.id))
+                      .filter((t) => !linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))
+                      .map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
+                            <span className="text-xs">{tcxDisplayName(t)}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    {technicalColors.filter((t) => !commForm.linked_technical_color_ids.includes(t.id) && (!linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))).length === 0 && (
+                      <div className="px-3 py-2 text-xs text-muted-foreground text-center">No more colors to add</div>
+                    )}
+                  </div>
                 </SelectContent>
               </Select>
             </div>
@@ -544,6 +564,6 @@ export default function ColorLibrary({ hideTitle = false }) {
           </form>
         </DialogContent>
       </Dialog>
-      </div>
-      );
-      }
+    </div>
+  );
+}
