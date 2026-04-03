@@ -18,9 +18,7 @@ Deno.serve(async (req) => {
 
     const fileUrl = doc.file_url;
 
-    const extracted = await base44.asServiceRole.integrations.Core.ExtractDataFromUploadedFile({
-      file_url: fileUrl,
-      json_schema: {
+    const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are a data extraction assistant. Analyze this PowerPoint presentation file and extract all product/style information from slides that contain a data table.
 
 For each slide that has a table with product data:
@@ -48,7 +46,8 @@ Return the result as JSON matching this schema exactly:
   ]
 }`,
       file_urls: [fileUrl],
-
+      model: 'gemini_3_flash',
+      response_json_schema: {
         type: "object",
         properties: {
           fileName: { type: "string" },
@@ -82,23 +81,22 @@ Return the result as JSON matching this schema exactly:
       }
     });
 
-    if (!extracted || extracted.status !== 'success' || !extracted.output) {
+    if (!extracted || !extracted.slides) {
       await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
         status: 'error',
         error_message: 'LLM extraction returned no data'
       });
-      return Response.json({ error: 'Data extraction failed' }, { status: 500 });
+      return Response.json({ error: 'LLM extraction returned no data' }, { status: 500 });
     }
 
-    const extractedData = extracted.output;
     // Filter to only slides with a table (skip Front Page, Spec, etc.)
-    const contentSlides = (extractedData.slides || []).filter(s => s.table && s.table.rows && s.table.rows.length > 0);
+    const contentSlides = (extracted.slides || []).filter(s => s.table && s.table.rows && s.table.rows.length > 0);
 
     // Collection name = title of first content slide
-    const collectionName = contentSlides[0]?.title || extractedData.fileName?.replace('.pptx', '') || '';
+    const collectionName = contentSlides[0]?.title || extracted.fileName?.replace('.pptx', '') || '';
 
     const staged = {
-      fileName: extractedData.fileName,
+      fileName: extracted.fileName,
       collection: collectionName,
       slides: contentSlides
     };
