@@ -12,9 +12,7 @@ const NAV_ITEMS = [
   { path: "/list-view", label: "List View", icon: LayoutList },
 ];
 
-const COLOR_STUDIO_ITEMS = [
-  { path: "/color-palettes", label: "Palettes", icon: Layers },
-];
+
 
 const SIZE_STUDIO_ITEMS = [
   { path: "/size-library", label: "Size Library", icon: Ruler },
@@ -45,7 +43,7 @@ export default function Layout() {
     });
   };
 
-  const isStudioActive = COLOR_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
+  const isStudioActive = location.pathname.startsWith("/color-palettes");
   const isSizeStudioActive = SIZE_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
   const isConfigActive = CONFIG_ITEMS.some((i) => location.pathname.startsWith(i.path));
 
@@ -102,16 +100,7 @@ export default function Layout() {
       <div className="my-2 border-t border-border" />
 
       {/* Color Studio */}
-      <div className="space-y-0.5">
-        <GroupButton icon={Palette} label="Color Studio" open={studioOpen} onToggle={() => setStudioOpen((o) => !o)} isActive={isStudioActive} navPath="/color-palettes" />
-        {studioOpen && expanded && (
-          <div className="pl-3 space-y-0.5">
-            {COLOR_STUDIO_ITEMS.map((item) => (
-              <NavItem key={item.path} item={item} onNavigate={onNavigate} isActive={location.pathname.startsWith(item.path)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <NavItem item={{ path: "/color-palettes", label: "Color Studio", icon: Palette }} onNavigate={onNavigate} isActive={isStudioActive} />
 
       {/* Size Studio */}
       <div className="space-y-0.5">
