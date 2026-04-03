@@ -106,10 +106,22 @@ export default function ProjectDocuments() {
 
       const parsePayload = { document_id: doc.id };
       if (sharepointFile) parsePayload.is_sharepoint = true;
-      await base44.functions.invoke("parseDocument", parsePayload);
-
-      const updated = await base44.entities.UploadedDocument.filter({ id: doc.id });
-      if (updated.length) setDocuments(prev => prev.map(d => d.id === doc.id ? updated[0] : d));
+      
+      try {
+        await base44.functions.invoke("parseDocument", parsePayload);
+        const updated = await base44.entities.UploadedDocument.filter({ id: doc.id });
+        if (updated.length) setDocuments(prev => prev.map(d => d.id === doc.id ? updated[0] : d));
+      } catch (parseErr) {
+        await base44.entities.UploadedDocument.update(doc.id, {
+          status: "error",
+          error_message: parseErr.message || "Failed to parse document"
+        });
+        setDocuments(prev => prev.map(d => d.id === doc.id ? {
+          ...d,
+          status: "error",
+          error_message: parseErr.message || "Failed to parse document"
+        } : d));
+      }
     } finally {
       setUploading(false);
     }
