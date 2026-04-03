@@ -21,7 +21,6 @@ const STATUS_COLORS = {
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
-  const [assignments, setAssignments] = useState([]);
   const [projectTypes, setProjectTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -51,12 +50,8 @@ export default function Projects() {
   };
 
   const loadData = async () => {
-    const [projs, asns] = await Promise.all([
-      base44.entities.Project.list("-created_date", 200),
-      base44.entities.ProjectAssignment.list("-created_date", 2000),
-    ]);
+    const projs = await base44.entities.Project.list("-created_date", 200);
     setProjects(projs);
-    setAssignments(asns);
     setLoading(false);
   };
 
@@ -80,8 +75,7 @@ export default function Projects() {
     setSaving(false);
   };
 
-  const getCount = (projectId) =>
-    assignments.filter((a) => a.project_id === projectId).length;
+
 
   if (loading) {
     return (
@@ -133,7 +127,6 @@ export default function Projects() {
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[project.status] || STATUS_COLORS.Planning}`}>
                   {project.status}
                 </span>
-                <span className="text-xs text-muted-foreground">{getCount(project.id)} color{getCount(project.id) !== 1 ? "s" : ""}</span>
               </div>
             </div>
           ))}
