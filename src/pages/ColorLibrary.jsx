@@ -25,6 +25,7 @@ export default function ColorLibrary({ hideTitle = false }) {
   const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb: "", cmyk: "" });
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
+  const [commSearch, setCommSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [techView, setTechView] = useState("table");
