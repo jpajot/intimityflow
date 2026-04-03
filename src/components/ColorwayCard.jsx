@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 
-export default function ColorwayCard({ variant, onEdit }) {
+export default function ColorwayCard({ variant, techColor, onEdit }) {
 
   return (
     <div
@@ -35,6 +35,9 @@ export default function ColorwayCard({ variant, onEdit }) {
         </div>
         {variant.colorway_code && (
           <p className="text-xs text-muted-foreground font-mono mt-0.5">{variant.colorway_code}</p>
+        )}
+        {techColor && (
+          <p className="text-xs text-muted-foreground font-mono">{techColor.code}</p>
         )}
 
       </div>

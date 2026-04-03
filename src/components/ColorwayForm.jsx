@@ -149,7 +149,10 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
     const t = techColors.find((t) => t.id === c.main_technical_color_id);
     return t ? colorToHex(t) : "#ccc";
   };
-  const getCommLabel = (c) => `${c.code} – ${c.color_name}`;
+  const getCommLabel = (c) => {
+    const tc = techColors.find((t) => t.id === c.main_technical_color_id);
+    return tc ? `${c.code} – ${c.color_name} (${tc.code})` : `${c.code} – ${c.color_name}`;
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 bg-card rounded-xl border border-border p-5">

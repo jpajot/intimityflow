@@ -61,7 +61,8 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
   const filteredComm = commColors.filter(c => {
     if (tab === "technical") return false;
     const palNames = getPaletteNamesForColor("commercial", c.id);
-    return matchesSearch(c.code) || matchesSearch(c.color_name) || palNames.some(n => matchesSearch(n));
+    const tc = techColors.find(t => t.id === c.main_technical_color_id);
+    return matchesSearch(c.code) || matchesSearch(c.color_name) || palNames.some(n => matchesSearch(n)) || matchesSearch(tc?.code) || matchesSearch(tc?.name);
   });
 
   const toggle = (key) => {

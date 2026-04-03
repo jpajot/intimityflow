@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, LayoutGrid, List } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import DataTable from "./DataTable";
 import ColorwayCard from "./ColorwayCard";
 
 export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAddFromLibrary }) {
   const [view, setView] = useState("grid");
+  const [techColors, setTechColors] = useState([]);
+
+  useEffect(() => {
+    base44.entities.TechnicalColor.list("code", 2000).then(setTechColors);
+  }, []);
+
+  const getTechColor = (id) => techColors.find((t) => t.id === id);
 
   const columns = [
     {
@@ -49,18 +57,17 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
         ) : "—",
     },
     {
-      id: "library",
-      label: "Library",
-      width: 100,
-      sortKey: (cv) => cv.linked_color_type || "",
+      id: "tech_color",
+      label: "Technical Color",
+      width: 160,
+      sortKey: (cv) => getTechColor(cv.linked_tech_color_id)?.code || "",
       render: (cv) => {
-        const hasTech = !!cv.linked_tech_color_id;
-        const hasComm = !!cv.linked_color_id;
-        if (!hasTech && !hasComm) return "—";
+        const tc = getTechColor(cv.linked_tech_color_id);
+        if (!tc) return "—";
         return (
-          <div className="flex gap-1">
-            {hasTech && <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">TCX</span>}
-            {hasComm && <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">COM</span>}
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+            <span className="text-xs font-mono text-muted-foreground">{tc.code}</span>
           </div>
         );
       },
@@ -123,7 +130,7 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {colorVariants.map((cv) => (
-            <ColorwayCard key={cv.id} variant={cv} onEdit={() => onEdit(cv)} />
+            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} onEdit={() => onEdit(cv)} />
           ))}
         </div>
       ) : (
@@ -136,6 +143,8 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
             { getValue: (cv) => cv.colorway_code },
             { getValue: (cv) => cv.color_hex },
             { getValue: (cv) => cv.linked_color_type },
+            { getValue: (cv) => getTechColor(cv.linked_tech_color_id)?.code },
+            { getValue: (cv) => getTechColor(cv.linked_tech_color_id)?.name },
           ]}
         />
       )}
