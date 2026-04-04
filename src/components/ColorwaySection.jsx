@@ -10,11 +10,13 @@ import ColorwayCard from "./ColorwayCard";
 export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAddFromLibrary }) {
   const [view, setView] = useState("grid");
   const [techColors, setTechColors] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState("");
   const [activeColumns, setActiveColumns] = useState(null);
 
   useEffect(() => {
     base44.entities.TechnicalColor.list("code", 2000).then(setTechColors);
+    base44.entities.Project.list("name", 500).then(setProjects);
   }, []);
 
   const getTechColor = (id) => techColors.find((t) => t.id === id);
@@ -89,6 +91,25 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
             <span className="text-xs font-mono text-muted-foreground">{tc.code}</span>
           </div>
         );
+      },
+    },
+    {
+      id: "creation_project",
+      label: "Creation Project",
+      width: 150,
+      sortKey: (cv) => projects.find((p) => p.id === cv.creation_project_id)?.name || "",
+      render: (cv) => {
+        const proj = projects.find((p) => p.id === cv.creation_project_id);
+        return proj ? <span className="text-xs text-muted-foreground">{proj.name}</span> : "—";
+      },
+    },
+    {
+      id: "linked_projects",
+      label: "Linked Projects",
+      width: 200,
+      render: (cv) => {
+        const linked = (cv.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean);
+        return linked.length > 0 ? <span className="text-xs text-muted-foreground">{linked.join(", ")}</span> : "—";
       },
     },
     {

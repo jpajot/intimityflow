@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, Loader2, ChevronDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { colorToHex } from "../lib/pantone-tcx";
@@ -84,17 +85,21 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
     linked_tech_color_id: variant?.linked_tech_color_id || "",
     linked_color_type: variant?.linked_color_type || "",
     linked_color_id: variant?.linked_color_id || "",
+    creation_project_id: variant?.creation_project_id || "",
+    project_ids: variant?.project_ids || [],
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   useEffect(() => {
     Promise.all([
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.CommercialColor.list("code", 2000),
-    ]).then(([tc, cc]) => { setTechColors(tc); setCommColors(cc); });
+      base44.entities.Project.list("name", 500),
+    ]).then(([tc, cc, projs]) => { setTechColors(tc); setCommColors(cc); setProjects(projs); });
   }, []);
 
   const handleImageUpload = async (e) => {
@@ -197,6 +202,42 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
         onClear={() => setForm((f) => ({ ...f, linked_color_type: "", linked_color_id: "" }))}
         placeholder="Search commercial colors…"
       />
+
+      {/* Creation Project */}
+      <div className="space-y-1.5">
+        <Label className="text-xs">Creation Project</Label>
+        <Select value={form.creation_project_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, creation_project_id: v === "none" ? "" : v }))}>
+          <SelectTrigger><SelectValue placeholder="Select project…" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Linked Projects (multi-select) */}
+      <div className="space-y-1.5">
+        <Label className="text-xs">Linked Projects</Label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {(form.project_ids || []).map((pid) => {
+            const proj = projects.find((p) => p.id === pid);
+            return proj ? (
+              <span key={pid} className="flex items-center gap-1 px-2 py-1 bg-accent text-accent-foreground rounded-full text-xs">
+                {proj.name}
+                <button type="button" onClick={() => setForm((f) => ({ ...f, project_ids: f.project_ids.filter((x) => x !== pid) }))}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
+        </div>
+        <Select value="" onValueChange={(v) => { if (v && !(form.project_ids || []).includes(v)) setForm((f) => ({ ...f, project_ids: [...(f.project_ids || []), v] })); }}>
+          <SelectTrigger><SelectValue placeholder="Add project…" /></SelectTrigger>
+          <SelectContent>
+            {projects.filter((p) => !(form.project_ids || []).includes(p.id)).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-1.5">
         <Label className="text-xs">Color</Label>
