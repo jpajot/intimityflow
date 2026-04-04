@@ -433,9 +433,16 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         <GalleryView
           pageKey="variations_list"
           allFields={[
-            { id: "style_name", label: "Style", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
-            { id: "colorway", label: "Colorway", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
-            { id: "var_name", label: "Variation", getValue: (v) => v.name || `#${v.sequence}`, render: (v) => v.name || `#${v.sequence}` },
+            { id: "sequence", label: "Sequence", getValue: (v) => v.sequence || "—", render: (v) => v.sequence || "—" },
+            { id: "name", label: "Name", getValue: (v) => v.name || "—", render: (v) => v.name || "—" },
+            { id: "description", label: "Description", getValue: (v) => v.description || "—", render: (v) => v.description || "—" },
+            { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code || "—", render: (v) => v.pack_code || "—" },
+            { id: "variant", label: "Variant", getValue: (v) => v.variant || "—", render: (v) => v.variant || "—" },
+            { id: "color_hex", label: "Color Hex", getValue: (v) => v.color_hex || "—", render: (v) => v.color_hex || "—" },
+            { id: "style_name", label: "Style Name", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
+            { id: "colorway_name", label: "Colorway Name", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
+            { id: "style_category", label: "Style Category", getValue: (v) => getProduct(v)?.category || "—", render: (v) => getProduct(v)?.category || "—" },
+            { id: "style_sub_category", label: "Style Sub-Category", getValue: (v) => getProduct(v)?.sub_category || "—", render: (v) => getProduct(v)?.sub_category || "—" },
           ]}
           filterableFields={filterableFields}
           rows={filtered}
