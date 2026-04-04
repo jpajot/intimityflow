@@ -75,6 +75,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dialogTab, setDialogTab] = useState("columns");
+  const [columnSearch, setColumnSearch] = useState("");
 
   useEffect(() => {
     if (entityNames.length === 0) return;
@@ -350,13 +351,22 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
 
                 {/* COLUMNS TAB */}
                 <TabsContent value="columns" className="mt-3">
-                  <div className="border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
+                  <div className="mb-2">
+                    <Input
+                      value={columnSearch}
+                      onChange={(e) => setColumnSearch(e.target.value)}
+                      placeholder="Search columns…"
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
                     {(() => {
-                      // Show checked columns first (in their order), then unchecked ones
                       const checked = formColumnIds.map((id) => mergedColumns.find((c) => c.id === id)).filter(Boolean);
                       const unchecked = mergedColumns.filter((c) => !formColumnIds.includes(c.id));
                       const allOrdered = [...checked, ...unchecked];
-                      return allOrdered.map((col) => {
+                      const q = columnSearch.toLowerCase();
+                      const filtered = q ? allOrdered.filter((c) => c.label.toLowerCase().includes(q)) : allOrdered;
+                      return filtered.map((col) => {
                         const isChecked = formColumnIds.includes(col.id);
                         const idx = formColumnIds.indexOf(col.id);
                         return (
