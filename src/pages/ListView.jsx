@@ -35,7 +35,7 @@ function StylesTab({ products, colorVariants }) {
         </div>
       ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />,
     },
-    { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <span className="font-medium">{p.name}</span> },
+    { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
     { id: "type", label: "Type", width: 100, sortKey: (p) => p.type || "", render: (p) => <span className="text-xs text-muted-foreground">{p.type}</span> },
     { id: "category", label: "Category", width: 140, sortKey: (p) => p.category || "", render: (p) => <span className="text-xs">{p.category || "—"}</span> },
     { id: "sub_category", label: "Sub-Category", width: 160, sortKey: (p) => p.sub_category || "", render: (p) => <span className="text-xs">{p.sub_category || "—"}</span> },
@@ -54,12 +54,7 @@ function StylesTab({ products, colorVariants }) {
         );
       },
     },
-    {
-      id: "actions", label: "", width: 50,
-      render: (p) => (
-        <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="text-xs text-primary hover:underline">View</button>
-      ),
-    },
+
   ];
 
   const filterableFields = [
