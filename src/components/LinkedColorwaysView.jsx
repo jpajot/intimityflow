@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { LayoutGrid, List, Search } from "lucide-react";
 import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
+import GalleryView from "./GalleryView";
 
 function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
   const styleImage = product?.images?.[0];
@@ -202,18 +203,37 @@ export default function LinkedColorwaysView({
           <p className="text-sm text-muted-foreground">No results match your search.</p>
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {filtered.map((cw) => (
-            <LinkedColorwayCard
-              key={cw.id}
-              cw={cw}
-              product={getProduct(cw)}
-              techColor={getTechColor(cw)}
-              commColor={getCommColor(cw)}
-              navigate={navigate}
-            />
-          ))}
-        </div>
+        <GalleryView
+          pageKey="project_linked_colorways"
+          allFields={[
+            { id: "style_name", label: "Style", getValue: (cw) => getProduct(cw)?.name || "—", render: (cw) => getProduct(cw)?.name || "—" },
+            { id: "color_name", label: "Color", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
+            { id: "codes", label: "Codes", getValue: (cw) => (getTechColor(cw)?.code || "") + (cw.colorway_code || ""), render: (cw) => {
+              const tc = getTechColor(cw);
+              return (
+                <div className="flex flex-col gap-0.5">
+                  {tc && <span className="text-xs font-mono text-muted-foreground">{tc.code} – {tc.name}</span>}
+                  {cw.colorway_code && <span className="text-xs font-mono text-muted-foreground">{cw.colorway_code}</span>}
+                </div>
+              );
+            } },
+          ]}
+          rows={filtered}
+          renderThumbnail={(cw) => {
+            const product = getProduct(cw);
+            const styleImage = product?.images?.[0];
+            return styleImage ? (
+              <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
+            ) : cw.image_url ? (
+              <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }}>
+                <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+              </div>
+            );
+          }}
+          onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}
+        />
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
       )}

@@ -8,6 +8,7 @@ import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers } from "lucid
 import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
+import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
@@ -103,11 +104,48 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
           <p className="text-sm text-muted-foreground">{products.length === 0 ? "No styles yet." : "No results match your search."}</p>
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} colorVariants={colorVariants.filter((cv) => cv.product_id === p.id)} />
-          ))}
-        </div>
+        <GalleryView
+          pageKey="styles_list"
+          allFields={[
+            { id: "colorways", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
+              const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 4);
+              return cvs.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {cvs.map((cv) => (
+                    <div key={cv.id} className="flex items-center gap-2">
+                      {cv.image_url ? (
+                        <div className="w-6 h-6 rounded overflow-hidden border border-border shrink-0">
+                          <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                      )}
+                      <span className="text-xs font-medium truncate">{cv.color_name}</span>
+                    </div>
+                  ))}
+                  {colorVariants.filter((cv) => cv.product_id === product.id).length > 4 && (
+                    <span className="text-xs text-muted-foreground">+{colorVariants.filter((cv) => cv.product_id === product.id).length - 4} more</span>
+                  )}
+                </div>
+              ) : "—";
+            } },
+            { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name },
+            { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category },
+          ]}
+          filterableFields={filterableFields}
+          rows={filtered}
+          renderThumbnail={(product) => {
+            const mainImage = product.images?.[0];
+            return mainImage ? (
+              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center text-sm font-semibold">
+                {product.name?.charAt(0)?.toUpperCase()}
+              </div>
+            );
+          }}
+          onClickItem={(p) => navigate(`/products/${p.id}`)}
+        />
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
       )}
