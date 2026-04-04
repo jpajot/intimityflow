@@ -1,19 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Loader2, Trash2, FileText, Upload, Save, LayoutGrid, List, Search } from "lucide-react";
-import ViewSelector from "../components/ViewSelector";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import DataTable from "../components/DataTable";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
+import ItemSubNav from "../components/ItemSubNav";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -30,6 +28,7 @@ export default function ProjectDetail() {
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [activeSection, setActiveSection] = useState("palettes");
   const [cwSearch, setCwSearch] = useState("");
   const [cwView, setCwView] = useState("grid");
   const [cwActiveColumns, setCwActiveColumns] = useState(null);
@@ -44,12 +43,6 @@ export default function ProjectDetail() {
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
   const PROJECT_TYPES = ["Seasonal Collection", "Artist Collaboration", "Capsule", "Limited Edition", "Core Range", "Other"];
-
-  const STATUS_COLORS = {
-    Planning: "bg-amber-100 text-amber-700",
-    Active: "bg-green-100 text-green-700",
-    Archived: "bg-slate-100 text-slate-500",
-  };
 
   useEffect(() => {
     loadData();
@@ -73,7 +66,6 @@ export default function ProjectDetail() {
     setCommColors(cc);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
 
-    // Fetch colorways linked to this project
     const allColorways = await base44.entities.ProductColor.list("-created_date", 5000);
     const linked = allColorways.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
@@ -82,7 +74,7 @@ export default function ProjectDetail() {
       const prods = await Promise.all(productIds.map((pid) => base44.entities.Product.filter({ id: pid }).then((r) => r[0]).catch(() => null)));
       setLinkedProducts(prods.filter(Boolean));
     }
-    
+
     if (lovTypes.length > 0) {
       const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
       setDocTypes(values.map(v => v.name));
@@ -254,87 +246,89 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="palettes">
-        <TabsList>
-          <TabsTrigger value="palettes">Color Palettes ({palettes.length})</TabsTrigger>
-          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-          <TabsTrigger value="colorways">Linked Colorways ({linkedColorways.length})</TabsTrigger>
-        </TabsList>
-
-        {/* PALETTES TAB */}
-        <TabsContent value="palettes" className="mt-4 space-y-4">
-          {palettes.length === 0 ? (
-            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No color palettes yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {palettes.map((palette) => {
-                const hexes = getPaletteHexes(palette.id);
-                const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
-                return (
-                  <button key={palette.id} onClick={() => navigate(`/color-palettes/${palette.id}`)} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all text-left">
-                    <div className="h-12 flex">
-                      {hexes.length === 0 ? (
-                        <div className="flex-1 bg-muted" />
-                      ) : (
-                        hexes.slice(0, 10).map((hex, i) => <div key={i} className="flex-1" style={{ backgroundColor: hex }} />)
-                      )}
-                    </div>
-                    <div className="px-4 py-2.5 flex items-center justify-between">
-                      <span className="font-medium text-sm">{palette.name}</span>
-                      <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* DOCUMENTS TAB */}
-        <TabsContent value="documents" className="mt-4 space-y-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 max-w-sm">
-              <Upload className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search documents…" className="pl-8 h-9" />
-            </div>
-            <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
-              <Upload className="w-4 h-4" /> Upload &amp; Parse
-            </Button>
+      {/* Sub-navigation */}
+      <ItemSubNav
+        items={[
+          { id: "palettes", label: "Color Palettes", count: palettes.length },
+          { id: "documents", label: "Documents", count: documents.length },
+          { id: "colorways", label: "Linked Colorways", count: linkedColorways.length },
+        ]}
+        activeId={activeSection}
+        onChange={setActiveSection}
+      >
+        {activeSection === "palettes" && (
+          <div className="space-y-4">
+            {palettes.length === 0 ? (
+              <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+                <p className="text-sm text-muted-foreground">No color palettes yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {palettes.map((palette) => {
+                  const hexes = getPaletteHexes(palette.id);
+                  const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
+                  return (
+                    <button key={palette.id} onClick={() => navigate(`/color-palettes/${palette.id}`)} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all text-left">
+                      <div className="h-12 flex">
+                        {hexes.length === 0 ? (
+                          <div className="flex-1 bg-muted" />
+                        ) : (
+                          hexes.slice(0, 10).map((hex, i) => <div key={i} className="flex-1" style={{ backgroundColor: hex }} />)
+                        )}
+                      </div>
+                      <div className="px-4 py-2.5 flex items-center justify-between">
+                        <span className="font-medium text-sm">{palette.name}</span>
+                        <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
+        )}
 
-          {filteredDocs.length === 0 ? (
-            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
+        {activeSection === "documents" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search documents…" className="pl-8 h-9" />
+              </div>
+              <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
+                <Upload className="w-4 h-4" /> Upload &amp; Parse
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredDocs.map((doc) => (
-                <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
-                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{doc.original_filename || "Document"}</p>
-                    <p className="text-xs text-muted-foreground">{doc.document_type} • {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ""}</p>
-                    {doc.collection_name && <p className="text-xs text-primary mt-0.5">{doc.collection_name}</p>}
+            {filteredDocs.length === 0 ? (
+              <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+                <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredDocs.map((doc) => (
+                  <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{doc.original_filename || "Document"}</p>
+                      <p className="text-xs text-muted-foreground">{doc.document_type} • {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ""}</p>
+                      {doc.collection_name && <p className="text-xs text-primary mt-0.5">{doc.collection_name}</p>}
+                    </div>
+                    <Badge variant={doc.status === "processed" ? "default" : doc.status === "error" ? "destructive" : "secondary"} className="text-xs shrink-0">
+                      {doc.status === "processed" ? "Processed" : doc.status === "error" ? "Error" : doc.status === "processing" ? "Parsing…" : "Staged"}
+                    </Badge>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate(`/projects/${id}/documents-to-parse/${doc.id}`)} title="View details">→</Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={() => handleDeleteDoc(doc.id)} title="Delete">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <Badge variant={doc.status === "processed" ? "default" : doc.status === "error" ? "destructive" : "secondary"} className="text-xs shrink-0">
-                    {doc.status === "processed" ? "Processed" : doc.status === "error" ? "Error" : doc.status === "processing" ? "Parsing…" : "Staged"}
-                  </Badge>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate(`/projects/${id}/documents-to-parse/${doc.id}`)} title="View details">→</Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={() => handleDeleteDoc(doc.id)} title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* LINKED COLORWAYS TAB */}
-        <TabsContent value="colorways" className="mt-4 space-y-4">
+        {activeSection === "colorways" && (
           <LinkedColorwaysView
             colorways={linkedColorways}
             products={linkedProducts}
@@ -348,8 +342,8 @@ export default function ProjectDetail() {
             activeColumns={cwActiveColumns}
             onColumnsChange={setCwActiveColumns}
           />
-        </TabsContent>
-      </Tabs>
+        )}
+      </ItemSubNav>
 
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={(o) => { if (!o) { setFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ItemSubNav from "../components/ItemSubNav";
+
 import MoreVariationsSection from "../components/MoreVariationsSection";
 import StyleSizesSection from "../components/StyleSizesSection";
 import ColorwaySection from "../components/ColorwaySection";
@@ -442,27 +443,30 @@ export default function ProductDetail() {
       </form>
 
       {!isNew && (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="colorways">Colorways</TabsTrigger>
-            <TabsTrigger value="sizes">Sizes</TabsTrigger>
-            <TabsTrigger value="more">More Variations</TabsTrigger>
-          </TabsList>
-          <TabsContent value="colorways" className="mt-4">
+        <ItemSubNav
+          items={[
+            { id: "colorways", label: "Colorways", count: colorVariants.length },
+            { id: "sizes", label: "Sizes" },
+            { id: "more", label: "More Variations" },
+          ]}
+          activeId={activeTab}
+          onChange={setActiveTab}
+        >
+          {activeTab === "colorways" && (
             <ColorwaySection
               colorVariants={colorVariants}
               onEdit={(cv) => setEditingColor(cv)}
               onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
               onAddFromLibrary={() => setShowLibraryPicker(true)}
             />
-          </TabsContent>
-          <TabsContent value="sizes" className="mt-4">
+          )}
+          {activeTab === "sizes" && (
             <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
-          </TabsContent>
-          <TabsContent value="more" className="mt-4">
+          )}
+          {activeTab === "more" && (
             <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
-          </TabsContent>
-        </Tabs>
+          )}
+        </ItemSubNav>
       )}
 
       <ColorwayEditModal

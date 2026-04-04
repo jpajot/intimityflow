@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, List, Search, Loader2 } from "lucide-react";
+import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
 import ProductCard from "../components/ProductCard";
@@ -436,6 +437,7 @@ export default function ListView() {
   const [sizeGrids, setSizeGrids] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState("styles");
 
   useEffect(() => {
     Promise.all([
@@ -475,25 +477,25 @@ export default function ListView() {
         <p className="text-muted-foreground mt-1">Browse and filter styles, colorways, and variations</p>
       </div>
 
-      <Tabs defaultValue="styles">
-        <TabsList>
-          <TabsTrigger value="styles">Styles ({products.length})</TabsTrigger>
-          <TabsTrigger value="colorways">Colorways ({colorways.length})</TabsTrigger>
-          <TabsTrigger value="variations">More Variations ({variations.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="styles" className="mt-4">
+      <ItemSubNav
+        items={[
+          { id: "styles", label: "Styles", count: products.length },
+          { id: "colorways", label: "Colorways", count: colorways.length },
+          { id: "variations", label: "More Variations", count: variations.length },
+        ]}
+        activeId={activeSection}
+        onChange={setActiveSection}
+      >
+        {activeSection === "styles" && (
           <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} />
-        </TabsContent>
-
-        <TabsContent value="colorways" className="mt-4">
+        )}
+        {activeSection === "colorways" && (
           <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
-        </TabsContent>
-
-        <TabsContent value="variations" className="mt-4">
+        )}
+        {activeSection === "variations" && (
           <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
-        </TabsContent>
-      </Tabs>
+        )}
+      </ItemSubNav>
     </div>
   );
 }

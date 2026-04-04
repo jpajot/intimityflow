@@ -110,7 +110,7 @@ export default function Layout() {
     <div className="min-h-screen bg-background flex">
       {/* Desktop / Tablet sidebar — always visible */}
       <aside
-        className={`hidden sm:flex flex-col border-r border-border bg-sidebar transition-all duration-300 shrink-0 ${
+        className={`hidden sm:flex flex-col border-r border-border bg-[hsl(var(--sidebar-background)/0.7)] transition-all duration-300 shrink-0 ${
           expanded ? "w-56" : "w-14"
         }`}
       >
