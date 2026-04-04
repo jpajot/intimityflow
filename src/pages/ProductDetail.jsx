@@ -292,25 +292,23 @@ export default function ProductDetail() {
             </AlertDialogContent>
           </AlertDialog>
         )}
-      </div>
 
-            {product.type === "Product" && (
-              <div className="space-y-2">
-                <Label className="text-xs">Customer Need</Label>
-                <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                  <SelectContent>
-                    {getCustomerNeeds().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
+        {product.type === "Product" && (
           <div className="space-y-2">
-            <Label className="text-xs">Description</Label>
-            <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
+            <Label className="text-xs">Customer Need</Label>
+            <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
+              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+              <SelectContent>
+                {getCustomerNeeds().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
+        )}
+        <div className="space-y-2">
+          <Label className="text-xs">Description</Label>
+          <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
         </div>
+      </div>
 
         {/* Style Images */}
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
@@ -382,7 +380,9 @@ export default function ProductDetail() {
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Create
           </Button>
+        )}
       </form>
+      </div>
 
       {!isNew && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
