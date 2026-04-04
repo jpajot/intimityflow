@@ -417,19 +417,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
 
           {mode === "list" && (
             <div className="space-y-3">
-              {/* Display (thumb size) always visible in list mode */}
-              <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Thumbnail Size</p>
-                <div className="flex gap-1.5">
-                  {THUMB_SIZES.map((s) => (
-                    <button key={s.id} type="button"
-                      onClick={() => { setThumbSize(s.id); localStorage.setItem(THUMB_KEY(pageKey), s.id); }}
-                      className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors border ${thumbSize === s.id ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}`}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
 
               {loading ? (
                 <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
@@ -467,6 +455,19 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
               <div className="space-y-1.5">
                 <Label className="text-xs">View Name</Label>
                 <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Compact View" autoFocus />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Thumbnail Size</Label>
+                <div className="flex gap-1.5">
+                  {THUMB_SIZES.map((s) => (
+                    <button key={s.id} type="button"
+                      onClick={() => setLocalThumbSize(s.id)}
+                      className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors border ${localThumbSize === s.id ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}`}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <Tabs value={dialogTab} onValueChange={setDialogTab}>
