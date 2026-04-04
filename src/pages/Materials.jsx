@@ -167,10 +167,27 @@ export default function Materials() {
           <p className="text-sm text-muted-foreground mt-1">Create your first material to get started</p>
         </div>
       ) : view === "gallery" ? (
-        <GalleryView
-          pageKey="materials"
-          rows={filtered}
-          toolbarExtra={
+       <GalleryView
+         pageKey="materials"
+         allFields={[
+           { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name },
+           { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category },
+           { id: "colors", label: "Colors", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length },
+         ]}
+         filterableFields={filterableFields}
+         rows={filtered}
+         renderThumbnail={(product) => {
+           const mainImage = product.images?.[0];
+           return mainImage ? (
+             <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+           ) : (
+             <div className="w-full h-full bg-muted flex items-center justify-center text-sm font-semibold">
+               {product.name?.charAt(0)?.toUpperCase()}
+             </div>
+           );
+         }}
+         onClickItem={(p) => navigate(`/products/${p.id}`)}
+         toolbarExtra={
             <>
               <div className="flex items-center border border-border rounded-lg overflow-hidden">
                 <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
