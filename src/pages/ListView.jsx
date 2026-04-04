@@ -10,7 +10,7 @@ import DataTable from "../components/DataTable";
 import ProductCard from "../components/ProductCard";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
-function StylesTab({ products, colorVariants }) {
+function StylesTab({ products, colorVariants, techColors }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
@@ -19,12 +19,25 @@ function StylesTab({ products, colorVariants }) {
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
     const q = search.toLowerCase();
-    return products.filter((p) =>
-      p.name?.toLowerCase().includes(q) ||
-      p.category?.toLowerCase().includes(q) ||
-      p.sub_category?.toLowerCase().includes(q)
-    );
-  }, [products, search]);
+    return products.filter((p) => {
+      if (
+        p.name?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q) ||
+        p.sub_category?.toLowerCase().includes(q)
+      ) return true;
+      // Also search by colorway name/code or tech color code
+      const pColorways = colorVariants.filter((cv) => cv.product_id === p.id);
+      return pColorways.some((cv) => {
+        const tc = techColors.find((t) => t.id === cv.linked_tech_color_id);
+        return (
+          cv.color_name?.toLowerCase().includes(q) ||
+          cv.colorway_code?.toLowerCase().includes(q) ||
+          tc?.code?.toLowerCase().includes(q) ||
+          tc?.name?.toLowerCase().includes(q)
+        );
+      });
+    });
+  }, [products, search, colorVariants, techColors]);
 
   const columns = [
     {
@@ -450,7 +463,7 @@ export default function ListView() {
         </TabsList>
 
         <TabsContent value="styles" className="mt-4">
-          <StylesTab products={products} colorVariants={colorways} />
+          <StylesTab products={products} colorVariants={colorways} techColors={techColors} />
         </TabsContent>
 
         <TabsContent value="colorways" className="mt-4">
