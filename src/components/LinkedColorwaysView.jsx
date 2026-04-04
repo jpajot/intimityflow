@@ -175,7 +175,7 @@ export default function LinkedColorwaysView({
           <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
         </div>
         {view === "list" && (
-          <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} />
+          <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} />
         )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button

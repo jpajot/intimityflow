@@ -141,7 +141,7 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
         {colorVariants.length > 0 && (
           <>
             {view === "list" && (
-              <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} />
+              <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColor"]} />
             )}
             <div className="flex items-center border border-border rounded-lg overflow-hidden">
               <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
