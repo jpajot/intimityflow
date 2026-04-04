@@ -115,7 +115,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
 }
 
 // ─── Colorways Tab ────────────────────────────────────────────────────────────
-function ColorwaysTab({ colorways, products, techColors }) {
+function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
@@ -165,6 +165,8 @@ function ColorwaysTab({ colorways, products, techColors }) {
     { id: "style_category", label: "Style: Category", width: 140, sortKey: (cw) => getProduct(cw)?.category || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.category || "—"}</span> },
     { id: "style_sub_category", label: "Style: Sub-Category", width: 160, sortKey: (cw) => getProduct(cw)?.sub_category || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_category || "—"}</span> },
     { id: "style_customer_need", label: "Style: Customer Need", width: 170, sortKey: (cw) => getProduct(cw)?.customer_need || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.customer_need || "—"}</span> },
+    { id: "style_size_grid", label: "Style: Size Grid", width: 130, sortKey: (cw) => sizeGrids.find((sg) => sg.id === getProduct(cw)?.size_grid_id)?.name || "", render: (cw) => { const sg = sizeGrids.find((sg) => sg.id === getProduct(cw)?.size_grid_id); return <span className="text-xs">{sg?.name || "—"}</span>; } },
+    { id: "style_created_by", label: "Style: Created By", width: 180, sortKey: (cw) => getProduct(cw)?.created_by || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.created_by || "—"}</span> },
     {
       id: "cw_image", label: "Colorway Image", width: 70,
       render: (cw) => cw.image_url ? (
@@ -199,11 +201,15 @@ function ColorwaysTab({ colorways, products, techColors }) {
         );
       },
     },
+    { id: "creation_project", label: "Creation Project", width: 160, sortKey: (cw) => projects.find((p) => p.id === cw.creation_project_id)?.name || "", render: (cw) => { const p = projects.find((proj) => proj.id === cw.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; } },
+    { id: "linked_projects", label: "Linked Projects", width: 200, render: (cw) => { const names = (cw.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
+    { id: "cw_created_by", label: "Colorway: Created By", width: 180, sortKey: (cw) => cw.created_by || "", render: (cw) => <span className="text-xs text-muted-foreground">{cw.created_by || "—"}</span> },
   ];
 
   const filterableFields = [
     { id: "style_category", label: "Style: Category", getValue: (cw) => getProduct(cw)?.category },
     { id: "style_sub_category", label: "Style: Sub-Category", getValue: (cw) => getProduct(cw)?.sub_category },
+    { id: "creation_project", label: "Creation Project", getValue: (cw) => projects.find((p) => p.id === cw.creation_project_id)?.name },
   ];
 
   const visibleColumns = activeColumns || columns;
@@ -266,7 +272,7 @@ function ColorwaysTab({ colorways, products, techColors }) {
 }
 
 // ─── More Variations Tab ──────────────────────────────────────────────────────
-function MoreVariationsTab({ variations, colorways, products }) {
+function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
@@ -318,6 +324,9 @@ function MoreVariationsTab({ variations, colorways, products }) {
     },
     { id: "style_category", label: "Style: Category", width: 140, sortKey: (v) => getProduct(v)?.category || "", render: (v) => <span className="text-xs text-muted-foreground">{getProduct(v)?.category || "—"}</span> },
     { id: "style_sub_category", label: "Style: Sub-Category", width: 160, sortKey: (v) => getProduct(v)?.sub_category || "", render: (v) => <span className="text-xs text-muted-foreground">{getProduct(v)?.sub_category || "—"}</span> },
+    { id: "style_customer_need", label: "Style: Customer Need", width: 170, sortKey: (v) => getProduct(v)?.customer_need || "", render: (v) => <span className="text-xs text-muted-foreground">{getProduct(v)?.customer_need || "—"}</span> },
+    { id: "style_size_grid", label: "Style: Size Grid", width: 130, sortKey: (v) => sizeGrids.find((sg) => sg.id === getProduct(v)?.size_grid_id)?.name || "", render: (v) => { const sg = sizeGrids.find((sg) => sg.id === getProduct(v)?.size_grid_id); return <span className="text-xs">{sg?.name || "—"}</span>; } },
+    { id: "style_created_by", label: "Style: Created By", width: 180, sortKey: (v) => getProduct(v)?.created_by || "", render: (v) => <span className="text-xs text-muted-foreground">{getProduct(v)?.created_by || "—"}</span> },
     {
       id: "cw_image", label: "Colorway", width: 70,
       render: (v) => {
@@ -346,6 +355,9 @@ function MoreVariationsTab({ variations, colorways, products }) {
     { id: "description", label: "Description", width: 200, render: (v) => <span className="text-xs text-muted-foreground truncate max-w-[180px] block">{v.description || "—"}</span> },
     { id: "pack_code", label: "Pack Code", width: 110, sortKey: (v) => v.pack_code || "", render: (v) => <span className="text-xs">{v.pack_code || "—"}</span> },
     { id: "variant", label: "Variant", width: 110, sortKey: (v) => v.variant || "", render: (v) => <span className="text-xs">{v.variant || "—"}</span> },
+    { id: "cw_creation_project", label: "CW: Creation Project", width: 160, sortKey: (v) => projects.find((p) => p.id === getColorway(v)?.creation_project_id)?.name || "", render: (v) => { const p = projects.find((proj) => proj.id === getColorway(v)?.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; } },
+    { id: "cw_linked_projects", label: "CW: Linked Projects", width: 200, render: (v) => { const names = (getColorway(v)?.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
+    { id: "var_created_by", label: "Variation: Created By", width: 180, sortKey: (v) => v.created_by || "", render: (v) => <span className="text-xs text-muted-foreground">{v.created_by || "—"}</span> },
   ];
 
   const filterableFields = [
@@ -422,6 +434,7 @@ export default function ListView() {
   const [variations, setVariations] = useState([]);
   const [techColors, setTechColors] = useState([]);
   const [sizeGrids, setSizeGrids] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -431,8 +444,10 @@ export default function ListView() {
       base44.entities.ProductColorAndMore.list("-created_date", 5000),
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.SizeGrid.list("name", 200),
-    ]).then(([prods, cws, vars, tcs, sgs]) => {
+      base44.entities.Project.list("name", 500),
+    ]).then(([prods, cws, vars, tcs, sgs, projs]) => {
       setSizeGrids(sgs);
+      setProjects(projs);
       const styleProds = prods.filter((p) => p.type === "Product");
       const styleIds = new Set(styleProds.map((p) => p.id));
       const styleCws = cws.filter((cw) => styleIds.has(cw.product_id));
@@ -472,11 +487,11 @@ export default function ListView() {
         </TabsContent>
 
         <TabsContent value="colorways" className="mt-4">
-          <ColorwaysTab colorways={colorways} products={products} techColors={techColors} />
+          <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
         </TabsContent>
 
         <TabsContent value="variations" className="mt-4">
-          <MoreVariationsTab variations={variations} colorways={colorways} products={products} />
+          <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
         </TabsContent>
       </Tabs>
     </div>
