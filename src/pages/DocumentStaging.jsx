@@ -373,6 +373,8 @@ export default function DocumentStaging() {
           linked_tech_color_id: tc?.id || "",
           linked_color_type: "",
           linked_color_id: "",
+          creation_project_id: id,
+          project_ids: [id],
         });
       }
       setCreatedRowIds(prev => new Set([...prev, row.id]));
