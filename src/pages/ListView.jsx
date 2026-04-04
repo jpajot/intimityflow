@@ -106,6 +106,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
       ) : view === "grid" ? (
         <GalleryView
           pageKey="styles_list"
+          navigate={navigate}
           allFields={[
             { id: "colorways", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
               const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 4);
@@ -276,6 +277,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
       ) : view === "grid" ? (
         <GalleryView
           pageKey="colorways_list"
+          navigate={navigate}
           allFields={[
             { id: "cw_color_name", label: "CW: Color Name", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
             { id: "cw_colorway_code", label: "CW: Colorway Code", getValue: (cw) => cw.colorway_code || "—", render: (cw) => cw.colorway_code || "—" },
@@ -437,6 +439,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
       ) : view === "grid" ? (
         <GalleryView
           pageKey="variations_list"
+          navigate={navigate}
           allFields={[
             { id: "sequence", label: "Var: Sequence", getValue: (v) => v.sequence || "—", render: (v) => v.sequence || "—" },
             { id: "name", label: "Var: Name", getValue: (v) => v.name || "—", render: (v) => v.name || "—" },

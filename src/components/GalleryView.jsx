@@ -98,17 +98,20 @@ function GalleryCard({ row, activeFields, allFields, thumbSize, renderThumbnail,
             const field = allFields.find((f) => f.id === fieldId);
             if (!field) return null;
             const content = field.render ? field.render(row) : (field.getValue?.(row) ?? "—");
+            const isClickable = fieldId.includes("name") || fieldId.includes("prod_");
             return (
               <div
                 key={fieldId}
-                className="text-xs truncate cursor-default select-none"
+                className={`text-xs truncate select-none ${
+                  isClickable ? "cursor-pointer text-primary hover:underline" : "cursor-default"
+                }`}
+                onClick={() => isClickable && onClickItem?.(row)}
                 onContextMenu={(e) => { e.preventDefault(); onFieldRightClick(e, field); }}
               >
                 {content || <span className="text-muted-foreground/40">—</span>}
               </div>
             );
-          })}
-        </div>
+          })}                 </div>
       )}
     </div>
   );
@@ -157,7 +160,7 @@ function countLeaves(groups) {
 }
 
 // ─── Main GalleryView ─────────────────────────────────────────────────────────
-export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [], toolbarExtra }) {
+export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [], toolbarExtra, navigate }) {
   const [views, setViews] = useState([]);
   const [activeViewId, setActiveViewId] = useState(() => localStorage.getItem(STORAGE_KEY(pageKey)) || "default");
   const [activeFieldIds, setActiveFieldIds] = useState(() => allFields.map((f) => f.id));
