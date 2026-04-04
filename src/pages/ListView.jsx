@@ -277,17 +277,22 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
         <GalleryView
           pageKey="colorways_list"
           allFields={[
-            { id: "style_name", label: "Style", getValue: (cw) => getProduct(cw)?.name || "—", render: (cw) => getProduct(cw)?.name || "—" },
-            { id: "color_name", label: "Color", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
-            { id: "codes", label: "Codes", getValue: (cw) => (getTechColor(cw)?.code || "") + (cw.colorway_code || ""), render: (cw) => {
-              const tc = getTechColor(cw);
-              return (
-                <div className="flex flex-col gap-0.5">
-                  {tc && <span className="text-xs font-mono text-muted-foreground">{tc.code} – {tc.name}</span>}
-                  {cw.colorway_code && <span className="text-xs font-mono text-muted-foreground">{cw.colorway_code}</span>}
-                </div>
-              );
-            } },
+            { id: "cw_color_name", label: "CW: Color Name", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
+            { id: "cw_colorway_code", label: "CW: Colorway Code", getValue: (cw) => cw.colorway_code || "—", render: (cw) => cw.colorway_code || "—" },
+            { id: "cw_color_hex", label: "CW: Color Hex", getValue: (cw) => cw.color_hex || "—", render: (cw) => cw.color_hex || "—" },
+            { id: "cw_image_url", label: "CW: Image URL", getValue: (cw) => cw.image_url || "—", render: (cw) => cw.image_url || "—" },
+            { id: "cw_linked_tech_color_id", label: "CW: Linked Tech Color ID", getValue: (cw) => cw.linked_tech_color_id || "—", render: (cw) => cw.linked_tech_color_id || "—" },
+            { id: "cw_linked_color_type", label: "CW: Linked Color Type", getValue: (cw) => cw.linked_color_type || "—", render: (cw) => cw.linked_color_type || "—" },
+            { id: "cw_linked_color_id", label: "CW: Linked Color ID", getValue: (cw) => cw.linked_color_id || "—", render: (cw) => cw.linked_color_id || "—" },
+            { id: "cw_creation_project_id", label: "CW: Creation Project ID", getValue: (cw) => cw.creation_project_id || "—", render: (cw) => cw.creation_project_id || "—" },
+            { id: "cw_project_ids", label: "CW: Linked Project IDs", getValue: (cw) => (cw.project_ids || []).join(", ") || "—", render: (cw) => (cw.project_ids || []).join(", ") || "—" },
+            { id: "prod_name", label: "Product: Name", getValue: (cw) => getProduct(cw)?.name || "—", render: (cw) => getProduct(cw)?.name || "—" },
+            { id: "prod_type", label: "Product: Type", getValue: (cw) => getProduct(cw)?.type || "—", render: (cw) => getProduct(cw)?.type || "—" },
+            { id: "prod_category", label: "Product: Category", getValue: (cw) => getProduct(cw)?.category || "—", render: (cw) => getProduct(cw)?.category || "—" },
+            { id: "prod_sub_category", label: "Product: Sub-Category", getValue: (cw) => getProduct(cw)?.sub_category || "—", render: (cw) => getProduct(cw)?.sub_category || "—" },
+            { id: "prod_customer_need", label: "Product: Customer Need", getValue: (cw) => getProduct(cw)?.customer_need || "—", render: (cw) => getProduct(cw)?.customer_need || "—" },
+            { id: "prod_description", label: "Product: Description", getValue: (cw) => getProduct(cw)?.description || "—", render: (cw) => getProduct(cw)?.description || "—" },
+            { id: "prod_size_grid_id", label: "Product: Size Grid ID", getValue: (cw) => getProduct(cw)?.size_grid_id || "—", render: (cw) => getProduct(cw)?.size_grid_id || "—" },
           ]}
           filterableFields={filterableFields}
           rows={filtered}
