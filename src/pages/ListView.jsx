@@ -274,35 +274,36 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
           <p className="text-sm text-muted-foreground">{colorways.length === 0 ? "No colorways yet." : "No results match your search."}</p>
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {filtered.map((cw) => {
+        <GalleryView
+          pageKey="colorways_list"
+          allFields={[
+            { id: "style_name", label: "Style", getValue: (cw) => getProduct(cw)?.name || "—", render: (cw) => getProduct(cw)?.name || "—" },
+            { id: "color_name", label: "Color", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
+            { id: "codes", label: "Codes", getValue: (cw) => (getTechColor(cw)?.code || "") + (cw.colorway_code || ""), render: (cw) => {
+              const tc = getTechColor(cw);
+              return (
+                <div className="flex flex-col gap-0.5">
+                  {tc && <span className="text-xs font-mono text-muted-foreground">{tc.code} – {tc.name}</span>}
+                  {cw.colorway_code && <span className="text-xs font-mono text-muted-foreground">{cw.colorway_code}</span>}
+                </div>
+              );
+            } },
+          ]}
+          filterableFields={filterableFields}
+          rows={filtered}
+          renderThumbnail={(cw) => {
             const prod = getProduct(cw);
             const img = prod?.images?.[0];
-            return (
-              <div key={cw.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-                <div className="aspect-square bg-muted relative">
-                  {img ? (
-                    <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
-                  ) : cw.image_url ? (
-                    <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-contain" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-                    </div>
-                  )}
-                  <div className="absolute bottom-2 right-2 w-8 h-8 rounded-md border-2 border-white shadow" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-                </div>
-                <div className="p-3 space-y-1">
-                  {prod && (
-                    <button type="button" onClick={() => navigate(`/products/${prod.id}`)} className="text-xs font-semibold text-primary hover:underline truncate block w-full text-left">{prod.name}</button>
-                  )}
-                  <p className="text-sm font-medium truncate">{cw.color_name}</p>
-                  {cw.colorway_code && <p className="text-xs font-mono text-muted-foreground">{cw.colorway_code}</p>}
-                </div>
-              </div>
+            return img ? (
+              <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
+            ) : cw.image_url ? (
+              <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
             );
-          })}
-        </div>
+          }}
+          onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}
+        />
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
       )}
