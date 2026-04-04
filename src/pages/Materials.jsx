@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import ProductCard from "../components/ProductCard";
+import { Link, useNavigate } from "react-router-dom";
 import ViewSelector from "../components/ViewSelector";
+import GalleryView from "../components/GalleryView";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Package, Loader2, LayoutGrid, List, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 
 export default function Materials() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,15 +179,28 @@ export default function Materials() {
           <p className="text-sm text-muted-foreground mt-1">Create your first material to get started</p>
         </div>
       ) : view === "gallery" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filtered.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              colorVariants={colorVariants.filter((cv) => cv.product_id === product.id)}
-            />
-          ))}
-        </div>
+        <GalleryView
+          pageKey="materials"
+          rows={filtered}
+          allFields={[
+            { id: "name", label: "Name", getValue: (p) => p.name, render: (p) => <Link to={`/products/${p.id}`} className="font-semibold text-sm hover:text-primary transition-colors">{p.name}</Link> },
+            { id: "category", label: "Category", getValue: (p) => p.category, render: (p) => <span className="text-xs text-muted-foreground">{p.category || "—"}</span> },
+            { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category, render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category || "—"}</span> },
+            { id: "colors", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (p) => {
+              const cvs = colorVariants.filter((cv) => cv.product_id === p.id);
+              return <div className="flex gap-1 flex-wrap">{cvs.slice(0,6).map((cv) => <div key={cv.id} className="w-4 h-4 rounded-full border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />)}{cvs.length > 6 && <span className="text-xs text-muted-foreground">+{cvs.length - 6}</span>}</div>;
+            }},
+          ]}
+          filterableFields={[
+            { id: "category", label: "Category", getValue: (p) => p.category },
+            { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
+          ]}
+          renderThumbnail={(p) => {
+            const img = p.images?.[0];
+            return img ? <img src={img} alt={p.name} className="w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground/40"><span className="text-4xl font-display">{p.name?.charAt(0)}</span></div>;
+          }}
+          onClickItem={(p) => navigate(`/products/${p.id}`)}
+        />
       ) : (
         <DataTable
           columns={columns}
