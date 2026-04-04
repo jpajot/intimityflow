@@ -98,7 +98,7 @@ function StylesTab({ products, colorVariants }) {
           ))}
         </div>
       ) : (
-        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle filterFields={filterableFields} />
+        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
       )}
     </div>
   );
