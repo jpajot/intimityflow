@@ -74,12 +74,6 @@ export default function Products() {
       label: "Category",
       width: 120,
       sortKey: (p) => p.category || "",
-      editable: true,
-      entityField: "category",
-      entityType: "Product",
-      options: categories,
-      getValue: (p) => p.category || "",
-      getDisplayValue: (p) => p.category || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.category}</span>,
     },
     {
@@ -87,12 +81,6 @@ export default function Products() {
       label: "Sub-Category",
       width: 120,
       sortKey: (p) => p.sub_category || "",
-      editable: true,
-      entityField: "sub_category",
-      entityType: "Product",
-      options: subCategories,
-      getValue: (p) => p.sub_category || "",
-      getDisplayValue: (p) => p.sub_category || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category}</span>,
     },
     {
@@ -100,12 +88,6 @@ export default function Products() {
       label: "Customer Need",
       width: 130,
       sortKey: (p) => p.customer_need || "",
-      editable: true,
-      entityField: "customer_need",
-      entityType: "Product",
-      options: customerNeeds,
-      getValue: (p) => p.customer_need || "",
-      getDisplayValue: (p) => p.customer_need || "",
       render: (p) => <span className="text-xs text-muted-foreground">{p.customer_need}</span>,
     },
     {
@@ -154,12 +136,7 @@ export default function Products() {
     { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
   ];
 
-  const columns = (activeColumns || allColumns).map(col => {
-    if (col.id === 'category') return { ...col, options: categories };
-    if (col.id === 'sub_category') return { ...col, options: subCategories };
-    if (col.id === 'customer_need') return { ...col, options: customerNeeds };
-    return col;
-  });
+  const columns = activeColumns || allColumns;
   const tableRows = filteredRows !== null ? filteredRows : filtered;
 
   if (loading) {
@@ -259,13 +236,6 @@ export default function Products() {
           rows={tableRows}
           fixedColumns={["image"]}
           hideColumnToggle
-          onEdit={async (rowId, field, value) => {
-            const product = tableRows.find(p => p.id === rowId);
-            if (product) {
-              await base44.entities.Product.update(rowId, { [field]: value });
-              setProducts(prev => prev.map(p => p.id === rowId ? { ...p, [field]: value } : p));
-            }
-          }}
         />
       )}
     </div>
