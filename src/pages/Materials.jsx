@@ -147,27 +147,15 @@ export default function Materials() {
             onFilteredRowsChange={setFilteredRows}
           />
         )}
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }}
-            className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Gallery view"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }}
-            className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Table view"
-          >
-            <List className="w-4 h-4" />
-          </button>
-        </div>
-        <Link to="/products/new?type=Material">
-          <Button className="gap-2"><Plus className="w-4 h-4" /> New Material</Button>
-        </Link>
+        {view === "table" && (
+          <>
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
+              <button type="button" onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
+            </div>
+            <Link to="/products/new?type=Material"><Button className="gap-2"><Plus className="w-4 h-4" /> New Material</Button></Link>
+          </>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -182,36 +170,15 @@ export default function Materials() {
         <GalleryView
           pageKey="materials"
           rows={filtered}
-          allFields={[
-            { id: "name", label: "Name", getValue: (p) => p.name, render: (p) => <Link to={`/products/${p.id}`} className="font-semibold text-sm hover:text-primary transition-colors">{p.name}</Link> },
-            { id: "category", label: "Category", getValue: (p) => p.category, render: (p) => <span className="text-xs text-muted-foreground">{p.category || "—"}</span> },
-            { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category, render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category || "—"}</span> },
-            { id: "colors", label: "Colorways",
-              getValue: (p) => { const cv = colorVariants.find((cv) => cv.product_id === p.id); return cv ? `${cv.color_name}|${cv.color_hex || ""}` : "—"; },
-              renderGroupLabel: (key) => { const [name, hex] = key.split("|"); return <span className="flex items-center gap-2 normal-case tracking-normal font-semibold text-foreground"><span className="w-4 h-4 rounded-full border border-border shrink-0 inline-block" style={{ backgroundColor: hex || "#ccc" }} />{name}</span>; },
-              render: (p) => {
-              const cvs = colorVariants.filter((cv) => cv.product_id === p.id);
-              return (
-                <div className="flex flex-col gap-0.5">
-                  {cvs.map((cv) => (
-                    <div key={cv.id} className="flex items-center gap-1.5">
-                      <div className="w-3.5 h-3.5 rounded-full border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-                      <span className="text-xs text-muted-foreground truncate">{cv.color_name}</span>
-                    </div>
-                  ))}
-                </div>
-              );
-            }},
-          ]}
-          filterableFields={[
-            { id: "category", label: "Category", getValue: (p) => p.category },
-            { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
-          ]}
-          renderThumbnail={(p) => {
-            const img = p.images?.[0];
-            return img ? <img src={img} alt={p.name} className="w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground/40"><span className="text-4xl font-display">{p.name?.charAt(0)}</span></div>;
-          }}
-          onClickItem={(p) => navigate(`/products/${p.id}`)}
+          toolbarExtra={
+            <>
+              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
+                <button type="button" onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
+              </div>
+              <Link to="/products/new?type=Material"><Button className="gap-2"><Plus className="w-4 h-4" /> New Material</Button></Link>
+            </>
+          }
         />
       ) : (
         <DataTable

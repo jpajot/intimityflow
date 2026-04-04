@@ -157,7 +157,7 @@ function countLeaves(groups) {
 }
 
 // ─── Main GalleryView ─────────────────────────────────────────────────────────
-export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [] }) {
+export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [], toolbarExtra }) {
   const [views, setViews] = useState([]);
   const [activeViewId, setActiveViewId] = useState(() => localStorage.getItem(STORAGE_KEY(pageKey)) || "default");
   const [activeFieldIds, setActiveFieldIds] = useState(() => allFields.map((f) => f.id));
@@ -356,6 +356,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
           <Pencil className="w-3 h-3" /> Manage Views
           {activeFilterCount > 0 && <Badge className="ml-1 px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>}
         </Button>
+        {toolbarExtra}
       </div>
 
       {/* Active grouping pills */}
