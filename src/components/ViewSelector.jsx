@@ -90,7 +90,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
       for (const records of results) {
         if (!records || records.length === 0) continue;
         for (const key of Object.keys(records[0])) {
-          if (SKIP.has(key) || seen.has(key)) continue;
+          if (SKIP.has(key) || seen.has(key) || key.endsWith("_id")) continue;
           seen.add(key);
           extra.push({
             id: key,
