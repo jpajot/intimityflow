@@ -188,7 +188,16 @@ export default function Materials() {
             { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category, render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category || "—"}</span> },
             { id: "colors", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (p) => {
               const cvs = colorVariants.filter((cv) => cv.product_id === p.id);
-              return <div className="flex gap-1 flex-wrap">{cvs.slice(0,6).map((cv) => <div key={cv.id} className="w-4 h-4 rounded-full border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />)}{cvs.length > 6 && <span className="text-xs text-muted-foreground">+{cvs.length - 6}</span>}</div>;
+              return (
+                <div className="flex flex-col gap-0.5">
+                  {cvs.map((cv) => (
+                    <div key={cv.id} className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 rounded-full border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                      <span className="text-xs text-muted-foreground truncate">{cv.color_name}</span>
+                    </div>
+                  ))}
+                </div>
+              );
             }},
           ]}
           filterableFields={[
