@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Loader2, Trash2, FileText, Upload, Save } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Trash2, FileText, Upload, Save, LayoutGrid, List, Search } from "lucide-react";
+import ViewSelector from "../components/ViewSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import DataTable from "../components/DataTable";
+import LinkedColorwaysView from "../components/LinkedColorwaysView";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -27,6 +29,10 @@ export default function ProjectDetail() {
   const [documents, setDocuments] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [cwSearch, setCwSearch] = useState("");
+  const [cwView, setCwView] = useState("grid");
+  const [cwActiveColumns, setCwActiveColumns] = useState(null);
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -329,64 +335,19 @@ export default function ProjectDetail() {
 
         {/* LINKED COLORWAYS TAB */}
         <TabsContent value="colorways" className="mt-4 space-y-4">
-          {linkedColorways.length === 0 ? (
-            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No colorways linked to this project yet.</p>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground w-10"></th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Colorway</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Code</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Style</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Hex</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {linkedColorways.map((cw) => {
-                    const product = linkedProducts.find((p) => p.id === cw.product_id);
-                    return (
-                      <tr key={cw.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3">
-                          {cw.image_url ? (
-                            <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
-                              <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-medium">{cw.color_name}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{cw.colorway_code || "—"}</td>
-                        <td className="px-4 py-3">
-                          {product ? (
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/products/${product.id}`)}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              {product.name}
-                            </button>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          {cw.color_hex ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: cw.color_hex }} />
-                              <span className="font-mono text-xs text-muted-foreground">{cw.color_hex}</span>
-                            </div>
-                          ) : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <LinkedColorwaysView
+            colorways={linkedColorways}
+            products={linkedProducts}
+            techColors={techColors}
+            commColors={commColors}
+            navigate={navigate}
+            search={cwSearch}
+            onSearchChange={setCwSearch}
+            view={cwView}
+            onViewChange={setCwView}
+            activeColumns={cwActiveColumns}
+            onColumnsChange={setCwActiveColumns}
+          />
         </TabsContent>
       </Tabs>
 
