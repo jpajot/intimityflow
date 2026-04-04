@@ -137,7 +137,7 @@ export default function Materials() {
             ))}
           </SelectContent>
         </Select>
-        {view === "table" && (
+        {view === "gallery" && (
           <ViewSelector
             pageKey="materials"
             allColumns={allColumns}
@@ -148,14 +148,20 @@ export default function Materials() {
           />
         )}
         {view === "table" && (
-          <>
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-              <button type="button" onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
-            </div>
-            <Link to="/products/new?type=Material"><Button className="gap-2"><Plus className="w-4 h-4" /> New Material</Button></Link>
-          </>
+          <ViewSelector
+            pageKey="materials"
+            allColumns={allColumns}
+            onColumnsChange={setActiveColumns}
+            filterableFields={filterableFields}
+            rows={filtered}
+            onFilteredRowsChange={setFilteredRows}
+          />
         )}
+        <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
+          <button type="button" onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
+        </div>
+        <Link to="/products/new?type=Material"><Button className="gap-2"><Plus className="w-4 h-4" /> New Material</Button></Link>
       </div>
 
       {filtered.length === 0 ? (
@@ -205,16 +211,7 @@ export default function Materials() {
            );
          }}
          onClickItem={(p) => navigate(`/products/${p.id}`)}
-         toolbarExtra={
-            <>
-              <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("materials_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-                <button type="button" onClick={() => { setView("table"); localStorage.setItem("materials_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
-              </div>
-              <Link to="/products/new?type=Material"><Button className="gap-2"><Plus className="w-4 h-4" /> New Material</Button></Link>
-            </>
-          }
-        />
+       />
       ) : (
         <DataTable
           columns={columns}

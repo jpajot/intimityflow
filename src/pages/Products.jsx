@@ -176,8 +176,17 @@ export default function Products() {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2 flex-wrap">
-          {view === "table" && (
+        {view === "gallery" && (
+          <ViewSelector
+            pageKey="styles"
+            allColumns={allColumns}
+            onColumnsChange={setActiveColumns}
+            filterableFields={filterableFields}
+            rows={filtered}
+            onFilteredRowsChange={setFilteredRows}
+          />
+        )}
+        {view === "table" && (
             <ViewSelector
               pageKey="styles"
               allColumns={allColumns}
@@ -196,7 +205,11 @@ export default function Products() {
               <Link to="/products/new" asChild><Button className="gap-2"><Plus className="w-4 h-4" />New Style</Button></Link>
             </>
           )}
+        <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("products_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
+          <button type="button" onClick={() => { setView("table"); localStorage.setItem("products_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
         </div>
+        <Link to="/products/new" asChild><Button className="gap-2"><Plus className="w-4 h-4" />New Style</Button></Link>
       </div>
 
       {filtered.length === 0 ? (
@@ -213,7 +226,25 @@ export default function Products() {
          allFields={[
            { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name },
            { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category },
-           { id: "colors", label: "Colors", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length },
+           { id: "colorway_images", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
+             const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 3);
+             return cvs.length > 0 ? (
+               <div className="flex flex-col gap-1">
+                 {cvs.map((cv) => (
+                   <div key={cv.id} className="flex items-center gap-2">
+                     {cv.image_url ? (
+                       <div className="w-5 h-5 rounded-sm overflow-hidden border border-border shrink-0">
+                         <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                       </div>
+                     ) : (
+                       <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                     )}
+                     <span className="text-xs truncate">{cv.color_name}</span>
+                   </div>
+                 ))}
+               </div>
+             ) : "—";
+           } },
          ]}
          filterableFields={filterableFields}
          rows={filtered}
@@ -228,16 +259,7 @@ export default function Products() {
            );
          }}
          onClickItem={(p) => navigate(`/products/${p.id}`)}
-         toolbarExtra={
-            <>
-              <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("products_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-                <button type="button" onClick={() => { setView("table"); localStorage.setItem("products_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
-              </div>
-              <Link to="/products/new" asChild><Button className="gap-2"><Plus className="w-4 h-4" />New Style</Button></Link>
-            </>
-          }
-        />
+         />
       ) : (
         <DataTable
           columns={columns}
