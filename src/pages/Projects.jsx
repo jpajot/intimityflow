@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Loader2, FolderOpen, ChevronRight, Pencil } from "lucide-react";
+import { Plus, Loader2, FolderOpen, Pencil, Search, LayoutGrid, List } from "lucide-react";
+import DataTable from "@/components/DataTable";
+import ViewSelector from "../components/ViewSelector";
 
 const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
 const STATUSES = ["Planning", "Active", "Archived"];
@@ -27,6 +29,10 @@ export default function Projects() {
   const [form, setForm] = useState({ name: "", type: "", season: "", description: "", status: "Planning" });
   const [editingProject, setEditingProject] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState(() => localStorage.getItem("projects_view") || "gallery");
+  const [activeColumns, setActiveColumns] = useState(null);
+  const [filteredRows, setFilteredRows] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -77,6 +83,71 @@ export default function Projects() {
 
 
 
+  const filtered = projects.filter((p) =>
+    !search || p.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const types = [...new Set(projects.map((p) => p.type).filter(Boolean))];
+  const seasons = [...new Set(projects.map((p) => p.season).filter(Boolean))];
+
+  const allColumns = [
+    {
+      id: "name",
+      label: "Name",
+      width: 200,
+      sortKey: (p) => p.name || "",
+      render: (p) => <Link to={`/projects/${p.id}`} className="font-medium hover:text-primary transition-colors">{p.name}</Link>,
+    },
+    {
+      id: "type",
+      label: "Type",
+      width: 150,
+      sortKey: (p) => p.type || "",
+      render: (p) => <span className="text-xs text-muted-foreground">{p.type}</span>,
+    },
+    {
+      id: "season",
+      label: "Season",
+      width: 100,
+      sortKey: (p) => p.season || "",
+      render: (p) => <span className="text-xs text-muted-foreground">{p.season}</span>,
+    },
+    {
+      id: "status",
+      label: "Status",
+      width: 110,
+      sortKey: (p) => p.status || "",
+      render: (p) => (
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[p.status] || STATUS_COLORS.Planning}`}>{p.status}</span>
+      ),
+    },
+    {
+      id: "description",
+      label: "Description",
+      width: 250,
+      render: (p) => <span className="text-xs text-muted-foreground line-clamp-1">{p.description}</span>,
+    },
+    {
+      id: "actions",
+      label: "",
+      width: 50,
+      render: (p) => (
+        <button onClick={(e) => { e.preventDefault(); setEditingProject({ ...p }); }} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
+      ),
+    },
+  ];
+
+  const filterableFields = [
+    { id: "type", label: "Type", getValue: (p) => p.type },
+    { id: "season", label: "Season", getValue: (p) => p.season },
+    { id: "status", label: "Status", getValue: (p) => p.status },
+  ];
+
+  const columns = activeColumns || allColumns;
+  const tableRows = filteredRows !== null ? filteredRows : filtered;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -87,14 +158,41 @@ export default function Projects() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Projects</h1>
-        <Button onClick={() => setShowNew(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> New Project
-        </Button>
       </div>
 
-      {projects.length === 0 ? (
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects..." className="pl-10" />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {view === "table" && (
+            <ViewSelector
+              pageKey="projects"
+              allColumns={allColumns}
+              onColumnsChange={setActiveColumns}
+              filterableFields={filterableFields}
+              rows={filtered}
+              onFilteredRowsChange={setFilteredRows}
+            />
+          )}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("projects_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view">
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button type="button" onClick={() => { setView("table"); localStorage.setItem("projects_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view">
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <Button onClick={() => setShowNew(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> New Project
+          </Button>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-muted-foreground" />
@@ -102,10 +200,9 @@ export default function Projects() {
           <h3 className="font-semibold">No projects yet</h3>
           <p className="text-sm text-muted-foreground mt-1">Create your first project to get started</p>
         </div>
-      ) : (
-        <div className="p-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
+      ) : view === "gallery" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((project) => (
             <div key={project.id} className="group relative bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:border-primary/20 transition-all">
               <Link to={`/projects/${project.id}`} className="absolute inset-0 rounded-xl" />
               <div className="flex items-start justify-between mb-3">
@@ -113,10 +210,7 @@ export default function Projects() {
                   <h3 className="font-semibold group-hover:text-primary transition-colors">{project.name}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{project.type}{project.season ? ` · ${project.season}` : ""}</p>
                 </div>
-                <button
-                  onClick={(e) => { e.preventDefault(); setEditingProject({ ...project }); }}
-                  className="relative z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                >
+                <button onClick={(e) => { e.preventDefault(); setEditingProject({ ...project }); }} className="relative z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -124,14 +218,17 @@ export default function Projects() {
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{project.description}</p>
               )}
               <div className="flex items-center justify-between mt-auto">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[project.status] || STATUS_COLORS.Planning}`}>
-                  {project.status}
-                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[project.status] || STATUS_COLORS.Planning}`}>{project.status}</span>
               </div>
             </div>
           ))}
-          </div>
         </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={tableRows}
+          hideColumnToggle
+        />
       )}
 
       <Dialog open={showNew} onOpenChange={setShowNew}>
@@ -177,7 +274,6 @@ export default function Projects() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Project Dialog */}
       {editingProject && (
         <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
           <DialogContent className="max-w-md">
