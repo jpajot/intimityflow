@@ -254,6 +254,7 @@ export default function ProductDetail() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(product.type === "Material" ? "/materials" : "/")}>
           <ArrowLeft className="w-4 h-4" />
@@ -292,23 +293,87 @@ export default function ProductDetail() {
             </AlertDialogContent>
           </AlertDialog>
         )}
+      </div>
 
-        {product.type === "Product" && (
+      {/* Form */}
+      <form id="product-form" onSubmit={handleSave} className="space-y-6">
+        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+          {/* Type */}
           <div className="space-y-2">
-            <Label className="text-xs">Customer Need</Label>
-            <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
+            <Label className="text-xs">Type</Label>
+            {productTypeOptions.length > 0 ? (
+              <Select value={product.type} onValueChange={(v) => updateField("type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                <SelectContent>
+                  {productTypeOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-sm text-muted-foreground">{product.type}</p>
+            )}
+          </div>
+
+          {/* Name */}
+          <div className="space-y-2">
+            <Label className="text-xs">Name</Label>
+            <Input value={product.name} onChange={(e) => updateField("name", e.target.value)} required />
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label className="text-xs">Category</Label>
+            <Select value={product.category} onValueChange={(v) => { updateField("category", v); updateField("sub_category", ""); updateField("customer_need", ""); }}>
               <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
               <SelectContent>
-                {getCustomerNeeds().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                {getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-        )}
-        <div className="space-y-2">
-          <Label className="text-xs">Description</Label>
-          <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
+
+          {/* Sub-Category */}
+          {product.category && (
+            <div className="space-y-2">
+              <Label className="text-xs">Sub-Category</Label>
+              <Select value={product.sub_category} onValueChange={(v) => { updateField("sub_category", v); updateField("customer_need", ""); }}>
+                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent>
+                  {getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Customer Need */}
+          {product.type === "Product" && product.sub_category && (
+            <div className="space-y-2">
+              <Label className="text-xs">Customer Need</Label>
+              <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
+                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent>
+                  {getCustomerNeeds().map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Size Grid */}
+          <div className="space-y-2">
+            <Label className="text-xs">Size Grid</Label>
+            <Select value={product.size_grid_id || "none"} onValueChange={handleSizeGridChange}>
+              <SelectTrigger><SelectValue placeholder="Select size grid..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label className="text-xs">Description</Label>
+            <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
+          </div>
         </div>
-      </div>
 
         {/* Style Images */}
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
@@ -382,7 +447,6 @@ export default function ProductDetail() {
           </Button>
         )}
       </form>
-      </div>
 
       {!isNew && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -400,7 +464,7 @@ export default function ProductDetail() {
             />
           </TabsContent>
           <TabsContent value="sizes" className="mt-4">
-           <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
+            <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
           </TabsContent>
           <TabsContent value="more" className="mt-4">
             <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
