@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Loader2 } from "lucide-react";
+import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers } from "lucide-react";
 import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
@@ -479,9 +479,9 @@ export default function ListView() {
 
       <ItemSubNav
         items={[
-          { id: "styles", label: "Styles", count: products.length },
-          { id: "colorways", label: "Colorways", count: colorways.length },
-          { id: "variations", label: "More Variations", count: variations.length },
+          { id: "styles", label: "Styles", count: products.length, icon: Shirt },
+          { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
+          { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
         ]}
         activeId={activeSection}
         onChange={setActiveSection}
