@@ -173,8 +173,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
   const openEdit = (view) => {
     setFormName(view.name);
     const inView = (view.column_ids || []).filter((id) => mergedColumns.find((c) => c.id === id));
-    const notInView = mergedColumns.map((c) => c.id).filter((id) => !inView.includes(id));
-    setFormColumnIds([...inView, ...notInView]);
+    setFormColumnIds([...inView]);
     setFormFilters(view.filters_config || DEFAULT_FILTERS);
     setFormRoles(view.allowed_roles || []);
     setRoleInput("");
