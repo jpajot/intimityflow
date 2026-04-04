@@ -295,7 +295,8 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
       const created = await base44.entities.ListViewConfig.create(data);
       const updated = [...views, created];
       setViews(updated);
-      switchView(created.id);
+      setActiveViewId(created.id);
+      localStorage.setItem(STORAGE_KEY(pageKey), created.id);
       setActiveFieldIds(formFieldIds);
       setActiveFiltersConfig(formFilters);
     }
