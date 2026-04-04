@@ -22,6 +22,8 @@ export default function ProjectDetail() {
   const [paletteColors, setPaletteColors] = useState([]);
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
+  const [linkedColorways, setLinkedColorways] = useState([]);
+  const [linkedProducts, setLinkedProducts] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,16 @@ export default function ProjectDetail() {
     setTechColors(tc);
     setCommColors(cc);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
+
+    // Fetch colorways linked to this project
+    const allColorways = await base44.entities.ProductColor.list("-created_date", 5000);
+    const linked = allColorways.filter((c) => (c.project_ids || []).includes(id));
+    setLinkedColorways(linked);
+    if (linked.length > 0) {
+      const productIds = [...new Set(linked.map((c) => c.product_id))];
+      const prods = await Promise.all(productIds.map((pid) => base44.entities.Product.filter({ id: pid }).then((r) => r[0]).catch(() => null)));
+      setLinkedProducts(prods.filter(Boolean));
+    }
     
     if (lovTypes.length > 0) {
       const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
@@ -241,6 +253,7 @@ export default function ProjectDetail() {
         <TabsList>
           <TabsTrigger value="palettes">Color Palettes ({palettes.length})</TabsTrigger>
           <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
+          <TabsTrigger value="colorways">Linked Colorways ({linkedColorways.length})</TabsTrigger>
         </TabsList>
 
         {/* PALETTES TAB */}
@@ -310,6 +323,68 @@ export default function ProjectDetail() {
                   </Button>
                 </div>
               ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* LINKED COLORWAYS TAB */}
+        <TabsContent value="colorways" className="mt-4 space-y-4">
+          {linkedColorways.length === 0 ? (
+            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+              <p className="text-sm text-muted-foreground">No colorways linked to this project yet.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground w-10"></th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Colorway</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Code</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Style</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Hex</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {linkedColorways.map((cw) => {
+                    const product = linkedProducts.find((p) => p.id === cw.product_id);
+                    return (
+                      <tr key={cw.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3">
+                          {cw.image_url ? (
+                            <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+                              <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-medium">{cw.color_name}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{cw.colorway_code || "—"}</td>
+                        <td className="px-4 py-3">
+                          {product ? (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/products/${product.id}`)}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              {product.name}
+                            </button>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {cw.color_hex ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: cw.color_hex }} />
+                              <span className="font-mono text-xs text-muted-foreground">{cw.color_hex}</span>
+                            </div>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </TabsContent>
