@@ -433,16 +433,23 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         <GalleryView
           pageKey="variations_list"
           allFields={[
-            { id: "sequence", label: "Sequence", getValue: (v) => v.sequence || "—", render: (v) => v.sequence || "—" },
-            { id: "name", label: "Name", getValue: (v) => v.name || "—", render: (v) => v.name || "—" },
-            { id: "description", label: "Description", getValue: (v) => v.description || "—", render: (v) => v.description || "—" },
-            { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code || "—", render: (v) => v.pack_code || "—" },
-            { id: "variant", label: "Variant", getValue: (v) => v.variant || "—", render: (v) => v.variant || "—" },
-            { id: "color_hex", label: "Color Hex", getValue: (v) => v.color_hex || "—", render: (v) => v.color_hex || "—" },
-            { id: "style_name", label: "Style Name", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
-            { id: "colorway_name", label: "Colorway Name", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
-            { id: "style_category", label: "Style Category", getValue: (v) => getProduct(v)?.category || "—", render: (v) => getProduct(v)?.category || "—" },
-            { id: "style_sub_category", label: "Style Sub-Category", getValue: (v) => getProduct(v)?.sub_category || "—", render: (v) => getProduct(v)?.sub_category || "—" },
+            { id: "sequence", label: "Var: Sequence", getValue: (v) => v.sequence || "—", render: (v) => v.sequence || "—" },
+            { id: "name", label: "Var: Name", getValue: (v) => v.name || "—", render: (v) => v.name || "—" },
+            { id: "description", label: "Var: Description", getValue: (v) => v.description || "—", render: (v) => v.description || "—" },
+            { id: "pack_code", label: "Var: Pack Code", getValue: (v) => v.pack_code || "—", render: (v) => v.pack_code || "—" },
+            { id: "variant", label: "Var: Variant", getValue: (v) => v.variant || "—", render: (v) => v.variant || "—" },
+            { id: "var_color_hex", label: "Var: Color Hex", getValue: (v) => v.color_hex || "—", render: (v) => v.color_hex || "—" },
+            { id: "cw_color_name", label: "CW: Color Name", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
+            { id: "cw_colorway_code", label: "CW: Colorway Code", getValue: (v) => getColorway(v)?.colorway_code || "—", render: (v) => getColorway(v)?.colorway_code || "—" },
+            { id: "cw_color_hex", label: "CW: Color Hex", getValue: (v) => getColorway(v)?.color_hex || "—", render: (v) => getColorway(v)?.color_hex || "—" },
+            { id: "cw_image_url", label: "CW: Image URL", getValue: (v) => getColorway(v)?.image_url || "—", render: (v) => getColorway(v)?.image_url || "—" },
+            { id: "prod_name", label: "Product: Name", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
+            { id: "prod_type", label: "Product: Type", getValue: (v) => getProduct(v)?.type || "—", render: (v) => getProduct(v)?.type || "—" },
+            { id: "prod_category", label: "Product: Category", getValue: (v) => getProduct(v)?.category || "—", render: (v) => getProduct(v)?.category || "—" },
+            { id: "prod_sub_category", label: "Product: Sub-Category", getValue: (v) => getProduct(v)?.sub_category || "—", render: (v) => getProduct(v)?.sub_category || "—" },
+            { id: "prod_customer_need", label: "Product: Customer Need", getValue: (v) => getProduct(v)?.customer_need || "—", render: (v) => getProduct(v)?.customer_need || "—" },
+            { id: "prod_description", label: "Product: Description", getValue: (v) => getProduct(v)?.description || "—", render: (v) => getProduct(v)?.description || "—" },
+            { id: "prod_size_grid_id", label: "Product: Size Grid ID", getValue: (v) => getProduct(v)?.size_grid_id || "—", render: (v) => getProduct(v)?.size_grid_id || "—" },
           ]}
           filterableFields={filterableFields}
           rows={filtered}
