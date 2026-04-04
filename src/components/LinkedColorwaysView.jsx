@@ -12,7 +12,7 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
       {/* Style image as thumbnail */}
       <div className="aspect-square bg-muted relative">
         {styleImage ? (
-          <img src={styleImage} alt={product?.name} className="w-full h-full object-cover" />
+          <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
         ) : cw.image_url ? (
           <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
         ) : (
@@ -84,7 +84,7 @@ export default function LinkedColorwaysView({
         const img = prod?.images?.[0];
         return img ? (
           <div className="w-10 h-10 rounded-md overflow-hidden border border-border">
-            <img src={img} alt={prod?.name} className="w-full h-full object-cover" />
+            <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
           </div>
         ) : (
           <div className="w-10 h-10 rounded-md border border-border bg-muted" />
