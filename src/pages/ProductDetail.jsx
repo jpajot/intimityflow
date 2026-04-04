@@ -106,12 +106,17 @@ export default function ProductDetail() {
 
   const getCustomerNeeds = () => {
     const customerNeedTypeId = lovTypes["Customer Need"];
-    if (!customerNeedTypeId || !product.sub_category) return [];
+    if (!customerNeedTypeId) return [];
+    const allCustomerNeeds = lovValues.filter((v) => v.type_of_lov_id === customerNeedTypeId);
+    // Check if any customer needs have dependencies
+    const hasDependencies = allCustomerNeeds.some((v) => v.depends_on_value_id);
+    if (!hasDependencies) return allCustomerNeeds.map((v) => v.name);
+    if (!product.sub_category) return allCustomerNeeds.map((v) => v.name);
     const subCategoryValue = lovValues.find((v) => v.type_of_lov_id === lovTypes["Sub-Category"] && v.name === product.sub_category);
-    if (!subCategoryValue) return [];
-    return lovValues
-      .filter((v) => v.type_of_lov_id === customerNeedTypeId && v.depends_on_value_id === subCategoryValue.id)
-      .map(v => v.name);
+    if (!subCategoryValue) return allCustomerNeeds.map((v) => v.name);
+    return allCustomerNeeds
+      .filter((v) => v.depends_on_value_id === subCategoryValue.id)
+      .map((v) => v.name);
   };
 
   const loadProduct = async () => {
@@ -344,7 +349,7 @@ export default function ProductDetail() {
           )}
 
           {/* Customer Need */}
-          {product.type === "Product" && product.sub_category && (
+          {product.type === "Product" && (
             <div className="space-y-2">
               <Label className="text-xs">Customer Need</Label>
               <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
