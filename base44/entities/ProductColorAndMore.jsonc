@@ -1,0 +1,47 @@
+{
+  "name": "ProductColorAndMore",
+  "type": "object",
+  "parent_entity": "ProductColor",
+  "parent_field": "product_color_id",
+  "properties": {
+    "product_color_id": {
+      "type": "string",
+      "description": "Linked ProductColor (colorway) ID"
+    },
+    "sequence": {
+      "type": "string",
+      "description": "4-digit auto-generated sequence number e.g. 0001"
+    },
+    "name": {
+      "type": "string",
+      "description": "Variation name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "color_hex": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "size_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Selected StyleSize IDs"
+    },
+    "pack_code": {
+      "type": "string",
+      "description": "Pack code - linked to Pack LOV"
+    },
+    "variant": {
+      "type": "string",
+      "description": "Variant - linked to Variant LOV"
+    }
+  },
+  "required": [
+    "product_color_id"
+  ]
+}
