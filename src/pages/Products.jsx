@@ -196,7 +196,6 @@ export default function Products() {
           </>
         )}
       </div>
-      </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-20">
