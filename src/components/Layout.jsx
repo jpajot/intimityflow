@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { path: "/", label: "Styles", icon: Shirt },
   { path: "/materials", label: "Materials", icon: SwatchBook },
   { path: "/projects", label: "Projects", icon: FolderOpen },
-  { path: "/list-view", label: "List View", icon: LayoutList },
+  { path: "/list-view", label: "Styles Lists", icon: LayoutList },
 ];
 
 
