@@ -10,7 +10,7 @@ import DataTable from "../components/DataTable";
 import ProductCard from "../components/ProductCard";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
-function StylesTab({ products, colorVariants, techColors }) {
+function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
@@ -53,6 +53,7 @@ function StylesTab({ products, colorVariants, techColors }) {
     { id: "category", label: "Category", width: 140, sortKey: (p) => p.category || "", render: (p) => <span className="text-xs">{p.category || "—"}</span> },
     { id: "sub_category", label: "Sub-Category", width: 160, sortKey: (p) => p.sub_category || "", render: (p) => <span className="text-xs">{p.sub_category || "—"}</span> },
     { id: "customer_need", label: "Customer Need", width: 160, sortKey: (p) => p.customer_need || "", render: (p) => <span className="text-xs">{p.customer_need || "—"}</span> },
+    { id: "size_grid_id", label: "Size Grid", width: 130, sortKey: (p) => sizeGrids.find((sg) => sg.id === p.size_grid_id)?.name || "", render: (p) => { const sg = sizeGrids.find((sg) => sg.id === p.size_grid_id); return <span className="text-xs">{sg?.name || "—"}</span>; } },
     {
       id: "colors", label: "Colorways", width: 120,
       render: (p) => {
@@ -419,6 +420,7 @@ export default function ListView() {
   const [colorways, setColorways] = useState([]);
   const [variations, setVariations] = useState([]);
   const [techColors, setTechColors] = useState([]);
+  const [sizeGrids, setSizeGrids] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -427,7 +429,9 @@ export default function ListView() {
       base44.entities.ProductColor.list("-created_date", 2000),
       base44.entities.ProductColorAndMore.list("-created_date", 5000),
       base44.entities.TechnicalColor.list("code", 2000),
-    ]).then(([prods, cws, vars, tcs]) => {
+      base44.entities.SizeGrid.list("name", 200),
+    ]).then(([prods, cws, vars, tcs, sgs]) => {
+      setSizeGrids(sgs);
       const styleProds = prods.filter((p) => p.type === "Product");
       const styleIds = new Set(styleProds.map((p) => p.id));
       const styleCws = cws.filter((cw) => styleIds.has(cw.product_id));
@@ -463,7 +467,7 @@ export default function ListView() {
         </TabsList>
 
         <TabsContent value="styles" className="mt-4">
-          <StylesTab products={products} colorVariants={colorways} techColors={techColors} />
+          <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} />
         </TabsContent>
 
         <TabsContent value="colorways" className="mt-4">
