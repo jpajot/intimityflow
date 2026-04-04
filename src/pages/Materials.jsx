@@ -172,7 +172,25 @@ export default function Materials() {
          allFields={[
            { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name },
            { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category },
-           { id: "colors", label: "Colors", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length },
+           { id: "colorway_images", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
+             const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 3);
+             return cvs.length > 0 ? (
+               <div className="flex flex-col gap-1">
+                 {cvs.map((cv) => (
+                   <div key={cv.id} className="flex items-center gap-2">
+                     {cv.image_url ? (
+                       <div className="w-5 h-5 rounded-sm overflow-hidden border border-border shrink-0">
+                         <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                       </div>
+                     ) : (
+                       <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                     )}
+                     <span className="text-xs truncate">{cv.color_name}</span>
+                   </div>
+                 ))}
+               </div>
+             ) : "—";
+           } },
          ]}
          filterableFields={filterableFields}
          rows={filtered}
