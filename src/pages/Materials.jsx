@@ -186,7 +186,10 @@ export default function Materials() {
             { id: "name", label: "Name", getValue: (p) => p.name, render: (p) => <Link to={`/products/${p.id}`} className="font-semibold text-sm hover:text-primary transition-colors">{p.name}</Link> },
             { id: "category", label: "Category", getValue: (p) => p.category, render: (p) => <span className="text-xs text-muted-foreground">{p.category || "—"}</span> },
             { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category, render: (p) => <span className="text-xs text-muted-foreground">{p.sub_category || "—"}</span> },
-            { id: "colors", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (p) => {
+            { id: "colors", label: "Colorways",
+              getValue: (p) => { const cv = colorVariants.find((cv) => cv.product_id === p.id); return cv ? `${cv.color_name}|${cv.color_hex || ""}` : "—"; },
+              renderGroupLabel: (key) => { const [name, hex] = key.split("|"); return <span className="flex items-center gap-2 normal-case tracking-normal font-semibold text-foreground"><span className="w-4 h-4 rounded-full border border-border shrink-0 inline-block" style={{ backgroundColor: hex || "#ccc" }} />{name}</span>; },
+              render: (p) => {
               const cvs = colorVariants.filter((cv) => cv.product_id === p.id);
               return (
                 <div className="flex flex-col gap-0.5">

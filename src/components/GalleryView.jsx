@@ -114,17 +114,19 @@ function GalleryCard({ row, activeFields, allFields, thumbSize, renderThumbnail,
   );
 }
 
-function GroupSection({ group, allFields, activeFields, thumbSize, renderThumbnail, onClickItem, onFieldRightClick, expandedGroups, toggleGroup, depth = 0 }) {
+function GroupSection({ group, allFields, activeFields, thumbSize, renderThumbnail, onClickItem, onFieldRightClick, expandedGroups, toggleGroup, groupCols, depth = 0 }) {
   const isExpanded = expandedGroups.has(group.key);
   const count = group.items ? group.items.length : countLeaves(group.children || []);
   const ts = THUMB_SIZES.find((s) => s.id === thumbSize) || THUMB_SIZES[2];
+  const groupField = allFields.find((f) => f.id === (groupCols?.[depth]));
+  const labelContent = groupField?.renderGroupLabel ? groupField.renderGroupLabel(group.label) : group.label;
 
   return (
     <div>
       <button type="button" onClick={() => toggleGroup(group.key)}
         className="w-full flex items-center justify-between px-3 py-2 mb-2 bg-muted/60 rounded-lg hover:bg-muted transition-colors"
         style={{ marginLeft: depth * 16 }}>
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.label} ({count})</span>
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">{labelContent} <span className="font-normal">({count})</span></span>
         <span className="text-sm text-muted-foreground">{isExpanded ? "−" : "+"}</span>
       </button>
       {isExpanded && (
@@ -133,7 +135,7 @@ function GroupSection({ group, allFields, activeFields, thumbSize, renderThumbna
             {group.children.map((child) => (
               <GroupSection key={child.key} group={child} allFields={allFields} activeFields={activeFields}
                 thumbSize={thumbSize} renderThumbnail={renderThumbnail} onClickItem={onClickItem}
-                onFieldRightClick={onFieldRightClick} expandedGroups={expandedGroups} toggleGroup={toggleGroup} depth={depth + 1} />
+                onFieldRightClick={onFieldRightClick} expandedGroups={expandedGroups} toggleGroup={toggleGroup} groupCols={groupCols} depth={depth + 1} />
             ))}
           </div>
         ) : (
@@ -393,7 +395,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
             <GroupSection key={group.key} group={group} allFields={allFields} activeFields={activeFieldIds}
               thumbSize={thumbSize} renderThumbnail={renderThumbnail} onClickItem={onClickItem}
               onFieldRightClick={(e, field) => setContextMenu({ x: e.clientX, y: e.clientY, field })}
-              expandedGroups={expandedGroups} toggleGroup={toggleGroup} />
+              expandedGroups={expandedGroups} toggleGroup={toggleGroup} groupCols={groupCols} />
           ))}
         </div>
       ) : (
