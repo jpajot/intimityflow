@@ -351,20 +351,26 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                 {/* COLUMNS TAB */}
                 <TabsContent value="columns" className="mt-3">
                   <div className="border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
-                    {formColumnIds.map((id, idx) => {
-                      const col = mergedColumns.find((c) => c.id === id);
-                      if (!col) return null;
-                      return (
-                        <div key={id} className="flex items-center gap-2.5 px-3 py-2">
-                          <Checkbox checked={formColumnIds.includes(id)} onCheckedChange={() => toggleCol(id)} id={`col-${id}`} />
-                          <label htmlFor={`col-${id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
-                          <div className="flex gap-0.5">
-                            <button type="button" onClick={() => moveCol(id, -1)} disabled={idx === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
-                            <button type="button" onClick={() => moveCol(id, 1)} disabled={idx === formColumnIds.length - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>
+                    {(() => {
+                      // Show checked columns first (in their order), then unchecked ones
+                      const checked = formColumnIds.map((id) => mergedColumns.find((c) => c.id === id)).filter(Boolean);
+                      const unchecked = mergedColumns.filter((c) => !formColumnIds.includes(c.id));
+                      const allOrdered = [...checked, ...unchecked];
+                      return allOrdered.map((col) => {
+                        const isChecked = formColumnIds.includes(col.id);
+                        const idx = formColumnIds.indexOf(col.id);
+                        return (
+                          <div key={col.id} className={`flex items-center gap-2.5 px-3 py-2 ${!isChecked ? "opacity-50" : ""}`}>
+                            <Checkbox checked={isChecked} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
+                            <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                            <div className="flex gap-0.5">
+                              <button type="button" onClick={() => moveCol(col.id, -1)} disabled={!isChecked || idx === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
+                              <button type="button" onClick={() => moveCol(col.id, 1)} disabled={!isChecked || idx === formColumnIds.length - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                 </TabsContent>
 
