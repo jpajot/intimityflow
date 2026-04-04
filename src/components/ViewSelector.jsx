@@ -78,7 +78,9 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
 
   useEffect(() => {
     if (entityNames.length > 0) {
-      Promise.all(entityNames.map((name) => base44.entities[name]?.schema())).then((schemas) => {
+      Promise.all(entityNames.map((name) => {
+        try { return base44.entities[name]?.schema?.(); } catch { return null; }
+      })).then((schemas) => {
         const allSchemaColumns = schemas.flatMap((s) => s ? schemaToColumns(s) : []);
         const existingIds = new Set(allColumns.map((c) => c.id));
         setSchemaColumns(allSchemaColumns.filter((c) => !existingIds.has(c.id)));
