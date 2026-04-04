@@ -258,7 +258,7 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(product.type === "Material" ? "/materials" : "/")}>
@@ -301,156 +301,144 @@ export default function ProductDetail() {
       </div>
 
       {/* Form */}
-      <form id="product-form" onSubmit={handleSave} className="space-y-6">
-        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          {/* Type */}
-          <div className="space-y-2">
-            <Label className="text-xs">Type</Label>
-            {productTypeOptions.length > 0 ? (
-              <Select value={product.type} onValueChange={(v) => updateField("type", v)}>
-                <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
-                <SelectContent>
-                  {productTypeOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            ) : (
-              <p className="text-sm text-muted-foreground">{product.type}</p>
+      <form id="product-form" onSubmit={handleSave}>
+        <div className="flex gap-6 items-start">
+
+          {/* 1/4 — Images */}
+          <div className="w-1/4 shrink-0">
+            <div className="bg-card rounded-xl border border-border p-4 space-y-3 sticky top-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Images</p>
+                <label className={`flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
+                  {uploadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                  {uploadingImage ? "…" : "Add"}
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (!files.length) return;
+                    setUploadingImage(true);
+                    const urls = await Promise.all(files.map(async (file) => {
+                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                      return file_url;
+                    }));
+                    updateField("images", [...(product.images || []), ...urls]);
+                    setUploadingImage(false);
+                    e.target.value = "";
+                  }} />
+                </label>
+              </div>
+              {(product.images || []).length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {(product.images || []).map((url, idx) => (
+                    <div key={url} className="relative group/img aspect-square rounded-lg overflow-hidden border border-border">
+                      <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover" />
+                      {idx === 0 && (
+                        <div className="absolute top-1 left-1 px-1 py-0.5 bg-primary text-primary-foreground text-[9px] font-semibold rounded">Main</div>
+                      )}
+                      <button type="button" onClick={() => updateField("images", (product.images || []).filter((_, i) => i !== idx))} className="absolute top-1 right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/img:flex">
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                      {idx > 0 && (
+                        <button type="button" onClick={() => { const imgs = [...(product.images || [])]; imgs.splice(idx, 1); imgs.unshift(url); updateField("images", imgs); }} className="absolute bottom-1 left-1 px-1 py-0.5 bg-background/80 text-foreground text-[9px] rounded hidden group-hover/img:block">Set main</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="aspect-square flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
+                  <p className="text-xs text-muted-foreground text-center px-2">No images yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 3/4 — Fields */}
+          <div className="flex-1 bg-card rounded-xl border border-border p-5 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+
+              {/* Type */}
+              <div className="space-y-2">
+                <Label className="text-xs">Type</Label>
+                {productTypeOptions.length > 0 ? (
+                  <Select value={product.type} onValueChange={(v) => updateField("type", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                    <SelectContent>
+                      {productTypeOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{product.type}</p>
+                )}
+              </div>
+
+              {/* Name */}
+              <div className="space-y-2">
+                <Label className="text-xs">Name</Label>
+                <Input value={product.name} onChange={(e) => updateField("name", e.target.value)} required />
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <Label className="text-xs">Category</Label>
+                <Select value={product.category} onValueChange={(v) => { updateField("category", v); updateField("sub_category", ""); updateField("customer_need", ""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>
+                    {getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sub-Category */}
+              <div className="space-y-2">
+                <Label className="text-xs">Sub-Category</Label>
+                <Select value={product.sub_category} onValueChange={(v) => { updateField("sub_category", v); updateField("customer_need", ""); }} disabled={!product.category}>
+                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>
+                    {getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Customer Need */}
+              {product.type === "Product" && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Customer Need</Label>
+                  <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      {getCustomerNeeds().map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Size Grid */}
+              <div className="space-y-2">
+                <Label className="text-xs">Size Grid</Label>
+                <Select value={product.size_grid_id || "none"} onValueChange={handleSizeGridChange}>
+                  <SelectTrigger><SelectValue placeholder="Select size grid..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+            </div>
+
+            {/* Description — full width */}
+            <div className="space-y-2">
+              <Label className="text-xs">Description</Label>
+              <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={4} />
+            </div>
+
+            {isNew && (
+              <Button type="submit" disabled={saving} className="gap-2">
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Create
+              </Button>
             )}
           </div>
-
-          {/* Name */}
-          <div className="space-y-2">
-            <Label className="text-xs">Name</Label>
-            <Input value={product.name} onChange={(e) => updateField("name", e.target.value)} required />
-          </div>
-
-          {/* Category */}
-          <div className="space-y-2">
-            <Label className="text-xs">Category</Label>
-            <Select value={product.category} onValueChange={(v) => { updateField("category", v); updateField("sub_category", ""); updateField("customer_need", ""); }}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
-                {getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Sub-Category */}
-          {product.category && (
-            <div className="space-y-2">
-              <Label className="text-xs">Sub-Category</Label>
-              <Select value={product.sub_category} onValueChange={(v) => { updateField("sub_category", v); updateField("customer_need", ""); }}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>
-                  {getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Customer Need */}
-          {product.type === "Product" && (
-            <div className="space-y-2">
-              <Label className="text-xs">Customer Need</Label>
-              <Select value={product.customer_need} onValueChange={(v) => updateField("customer_need", v)}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>
-                  {getCustomerNeeds().map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Size Grid */}
-          <div className="space-y-2">
-            <Label className="text-xs">Size Grid</Label>
-            <Select value={product.size_grid_id || "none"} onValueChange={handleSizeGridChange}>
-              <SelectTrigger><SelectValue placeholder="Select size grid..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {sizeGrids.map((sg) => <SelectItem key={sg.id} value={sg.id}>{sg.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label className="text-xs">Description</Label>
-            <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
-          </div>
         </div>
-
-        {/* Style Images */}
-        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-sm">Images</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">First image will be the main/cover image</p>
-            </div>
-            <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
-              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {uploadingImage ? "Uploading..." : "Add Image"}
-              <input type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
-                const files = Array.from(e.target.files || []);
-                if (!files.length) return;
-                setUploadingImage(true);
-                const urls = await Promise.all(files.map(async (file) => {
-                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                  return file_url;
-                }));
-                updateField("images", [...(product.images || []), ...urls]);
-                setUploadingImage(false);
-                e.target.value = "";
-              }} />
-            </label>
-          </div>
-          {(product.images || []).length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {(product.images || []).map((url, idx) => (
-                <div key={url} className="relative group/img aspect-square rounded-lg overflow-hidden border border-border">
-                  <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover" />
-                  {idx === 0 && (
-                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded">
-                      Main
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => updateField("images", (product.images || []).filter((_, i) => i !== idx))}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/img:flex"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                  {idx > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const imgs = [...(product.images || [])];
-                        imgs.splice(idx, 1);
-                        imgs.unshift(url);
-                        updateField("images", imgs);
-                      }}
-                      className="absolute bottom-1 left-1 px-1 py-0.5 bg-background/80 text-foreground text-[10px] rounded hidden group-hover/img:block"
-                    >
-                      Set main
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="h-28 flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-              <p className="text-sm text-muted-foreground">No images yet — click "Add Image" to upload</p>
-            </div>
-          )}
-        </div>
-
-        {isNew && (
-          <Button type="submit" disabled={saving} className="gap-2">
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Create
-          </Button>
-        )}
       </form>
 
       {!isNew && (
