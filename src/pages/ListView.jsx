@@ -420,9 +420,13 @@ export default function ListView() {
       base44.entities.ProductColorAndMore.list("-created_date", 5000),
       base44.entities.TechnicalColor.list("code", 2000),
     ]).then(([prods, cws, vars, tcs]) => {
-      setProducts(prods);
-      setColorways(cws);
-      setVariations(vars);
+      const styleProds = prods.filter((p) => p.type === "Product");
+      const styleIds = new Set(styleProds.map((p) => p.id));
+      const styleCws = cws.filter((cw) => styleIds.has(cw.product_id));
+      const cwIds = new Set(styleCws.map((cw) => cw.id));
+      setProducts(styleProds);
+      setColorways(styleCws);
+      setVariations(vars.filter((v) => cwIds.has(v.product_color_id)));
       setTechColors(tcs);
       setLoading(false);
     });
