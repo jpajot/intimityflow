@@ -430,36 +430,27 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
           <p className="text-sm text-muted-foreground">{variations.length === 0 ? "No variations yet." : "No results match your search."}</p>
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {filtered.map((v) => {
+        <GalleryView
+          pageKey="variations_list"
+          allFields={[
+            { id: "style_name", label: "Style", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
+            { id: "colorway", label: "Colorway", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
+            { id: "var_name", label: "Variation", getValue: (v) => v.name || `#${v.sequence}`, render: (v) => v.name || `#${v.sequence}` },
+          ]}
+          filterableFields={filterableFields}
+          rows={filtered}
+          renderThumbnail={(v) => {
             const prod = getProduct(v);
             const cw = getColorway(v);
             const img = v.image_url || prod?.images?.[0];
-            return (
-              <div key={v.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-                <div className="aspect-square bg-muted relative">
-                  {img ? (
-                    <img src={img} alt={v.name} className="w-full h-full object-contain" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />
-                    </div>
-                  )}
-                  {cw?.color_hex && (
-                    <div className="absolute bottom-2 right-2 w-8 h-8 rounded-md border-2 border-white shadow" style={{ backgroundColor: cw.color_hex }} />
-                  )}
-                </div>
-                <div className="p-3 space-y-1">
-                  {prod && (
-                    <button type="button" onClick={() => navigate(`/products/${prod.id}`)} className="text-xs font-semibold text-primary hover:underline truncate block w-full text-left">{prod.name}</button>
-                  )}
-                  {cw && <p className="text-xs text-muted-foreground truncate">{cw.color_name}</p>}
-                  <p className="text-sm font-medium truncate">{v.name || `#${v.sequence}`}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+            return img ? (
+              <img src={img} alt={v.name} className="w-full h-full object-contain" />
+              ) : (
+              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />
+              );
+              }}
+              onClickItem={(v) => navigate(`/products/${getProduct(v)?.id}`)}
+              />
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
       )}
