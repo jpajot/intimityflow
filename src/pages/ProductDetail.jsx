@@ -43,6 +43,7 @@ export default function ProductDetail() {
     description: "", images: [], size_grid_id: "",
   });
   const [sizeGrids, setSizeGrids] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [hasStyleSizes, setHasStyleSizes] = useState(false);
   const [lovTypes, setLovTypes] = useState({});
   const [lovValues, setLovValues] = useState([]);
@@ -61,6 +62,7 @@ export default function ProductDetail() {
   useEffect(() => {
     loadLovData();
     base44.entities.SizeGrid.list("name", 200).then(setSizeGrids);
+    base44.entities.Project.list("name", 500).then(setProjects);
     if (!isNew) {
       loadProduct();
       checkStyleSizes();
@@ -448,6 +450,41 @@ export default function ProductDetail() {
                     </Select>
                   </div>
 
+                  {/* Creation Project */}
+                  <div className="space-y-2">
+                    <Label className="text-xs">Creation Project</Label>
+                    <Select value={product.creation_project_id || "none"} onValueChange={(v) => updateField("creation_project_id", v === "none" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Select project..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                </div>
+
+                {/* Linked Projects */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Linked Projects</Label>
+                  <div className="flex flex-wrap gap-2 p-2 rounded-md border border-input min-h-[36px]">
+                    {(product.project_ids || []).map((pid) => {
+                      const proj = projects.find((p) => p.id === pid);
+                      return proj ? (
+                        <span key={pid} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
+                          {proj.name}
+                          <button type="button" onClick={() => updateField("project_ids", (product.project_ids || []).filter((x) => x !== pid))} className="ml-1 hover:text-destructive">×</button>
+                        </span>
+                      ) : null;
+                    })}
+                    <Select value="none" onValueChange={(v) => { if (v !== "none" && !(product.project_ids || []).includes(v)) updateField("project_ids", [...(product.project_ids || []), v]); }}>
+                      <SelectTrigger className="h-6 text-xs border-dashed w-auto min-w-[120px] border-0 shadow-none p-0 pl-1"><SelectValue placeholder="+ Add project" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">+ Add project</SelectItem>
+                        {projects.filter((p) => !(product.project_ids || []).includes(p.id)).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Description — full width */}
