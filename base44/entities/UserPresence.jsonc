@@ -1,0 +1,29 @@
+{
+  "name": "UserPresence",
+  "type": "object",
+  "properties": {
+    "entity_type": {
+      "type": "string",
+      "description": "e.g. Product, Project"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "last_seen": {
+      "type": "string",
+      "description": "ISO timestamp"
+    }
+  },
+  "required": [
+    "entity_type",
+    "entity_id",
+    "user_email",
+    "last_seen"
+  ]
+}

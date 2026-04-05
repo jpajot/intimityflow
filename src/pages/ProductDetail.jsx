@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import PresenceIndicator from "../components/PresenceIndicator";
 
 // Categories, sub-categories, and customer needs are now fetched from database
 
@@ -51,6 +52,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [originalSizeGridId, setOriginalSizeGridId] = useState("");
+  const autoSaveTimer = useRef(null);
   const [editingColor, setEditingColor] = useState(null);
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
@@ -249,7 +251,21 @@ export default function ProductDetail() {
     navigate("/");
   };
 
-  const updateField = (field, value) => setProduct((p) => ({ ...p, [field]: value }));
+  const updateField = (field, value) => {
+    setProduct((p) => {
+      const updated = { ...p, [field]: value };
+      if (!isNew) {
+        clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = setTimeout(() => autoSave(updated), 800);
+      }
+      return updated;
+    });
+  };
+
+  const autoSave = async (data) => {
+    const { id: _, created_date, updated_date, created_by, ...fields } = data;
+    await base44.entities.Product.update(data.id, fields);
+  };
 
   if (loading) {
     return (
@@ -272,10 +288,7 @@ export default function ProductDetail() {
           </h1>
         </div>
         {!isNew && (
-          <Button type="submit" form="product-form" disabled={saving} className="gap-2">
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Save Changes
-          </Button>
+          <PresenceIndicator entityType="Product" entityId={product.id} />
         )}
         {!isNew && (
           <AlertDialog>
@@ -313,7 +326,7 @@ export default function ProductDetail() {
           <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${detailsOpen ? "" : "-rotate-90"}`} />
         </button>
         {detailsOpen && (
-          <form id="product-form" onSubmit={handleSave} className="p-5 pt-0">
+          <div className="p-5 pt-0">
             <div className="flex gap-6 items-start">
 
               {/* 1/4 — Images */}
@@ -444,14 +457,14 @@ export default function ProductDetail() {
                 </div>
 
                 {isNew && (
-                  <Button type="submit" disabled={saving} className="gap-2">
+                  <Button onClick={handleSave} disabled={saving} className="gap-2">
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     Create
                   </Button>
                 )}
               </div>
             </div>
-          </form>
+          </div>
         )}
       </div>
 

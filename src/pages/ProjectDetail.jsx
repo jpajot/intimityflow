@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, Layers, ChevronDown } from "lucide-react";
+import PresenceIndicator from "../components/PresenceIndicator";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
@@ -41,6 +42,7 @@ export default function ProjectDetail() {
   const [docSearch, setDocSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const autoSaveTimer = useRef(null);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
@@ -148,14 +150,19 @@ export default function ProjectDetail() {
     navigate("/projects");
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    const { id: pid, created_date, updated_date, created_by, ...data } = project;
-    await base44.entities.Project.update(pid, data);
-    setSaving(false);
-  };
 
-  const updateField = (field, value) => setProject((p) => ({ ...p, [field]: value }));
+
+  const updateField = (field, value) => {
+    setProject((p) => {
+      const updated = { ...p, [field]: value };
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = setTimeout(async () => {
+        const { id: pid, created_date, updated_date, created_by, ...data } = updated;
+        await base44.entities.Project.update(pid, data);
+      }, 800);
+      return updated;
+    });
+  };
 
   if (loading) {
     return (
@@ -187,13 +194,10 @@ export default function ProjectDetail() {
         <div className="flex-1">
           <h1 className="font-display text-2xl font-semibold tracking-tight">{project.name}</h1>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
-          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          Save Changes
-        </Button>
+        <PresenceIndicator entityType="Project" entityId={id} />
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" title="Delete Project">
               <Trash2 className="w-4 h-4" />
             </Button>
           </AlertDialogTrigger>
