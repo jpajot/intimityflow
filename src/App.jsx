@@ -23,6 +23,7 @@ import Translations from './pages/Translations';
 import Config from './pages/Config';
 import ProjectDocuments from './pages/ProjectDocuments';
 import DocumentStaging from './pages/DocumentStaging';
+import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
         <Route path="/code-generators" element={<SystemCodeGeneratorLibrary />} />
         <Route path="/translations" element={<Translations />} />
         <Route path="/config" element={<Config />} />
+        <Route path="/document-parsing-schemes" element={<DocumentParsingSchemes />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>

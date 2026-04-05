@@ -1,5 +1,43 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-import JSZip from 'npm:jszip@3.10.1';
+
+// Fallback hardcoded scheme (used only if no active scheme found for the document type)
+const FALLBACK_PROMPT = `Extract product data from document. For each table row/style, extract:
+- "Style Description": product/style name
+- "Style Technical Color Codes": array of Pantone TCX codes (e.g., "19-1664 TCX")
+- "image_url": if there's an associated image/photo for this style, include its URL or reference; otherwise null`;
+
+const FALLBACK_SCHEMA = {
+  type: "object",
+  properties: {
+    fileName: { type: "string" },
+    slides: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          slideNumber: { type: "number" },
+          title: { type: "string" },
+          table: {
+            type: "object",
+            properties: {
+              rows: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    "Style Description": { type: "string" },
+                    "Style Technical Color Codes": { type: "array", items: { type: "string" } },
+                    "image_url": { type: ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
 
 Deno.serve(async (req) => {
   let base44;
@@ -16,45 +54,30 @@ Deno.serve(async (req) => {
     if (!docs.length) throw new Error('Document not found');
     const doc = docs[0];
 
-    // Extract text and structure
-    const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Extract product data from document. For each table row/style, extract:
-- "Style Description": product/style name
-- "Style Technical Color Codes": array of Pantone TCX codes (e.g., "19-1664 TCX")
-- "image_url": if there's an associated image/photo for this style, include its URL or reference; otherwise null`,
-      file_urls: [doc.file_url],
-      response_json_schema: {
-        type: "object",
-        properties: {
-          fileName: { type: "string" },
-          slides: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                slideNumber: { type: "number" },
-                title: { type: "string" },
-                table: {
-                  type: "object",
-                  properties: {
-                    rows: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          "Style Description": { type: "string" },
-                          "Style Technical Color Codes": { type: "array", items: { type: "string" } },
-                          "image_url": { type: ["string", "null"] }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+    // Look up active parsing scheme for this document type
+    let extractionPrompt = FALLBACK_PROMPT;
+    let jsonSchema = FALLBACK_SCHEMA;
+
+    if (doc.document_type) {
+      const schemes = await base44.asServiceRole.entities.DocumentParsingScheme.filter({
+        document_type: doc.document_type,
+        is_active: true,
+      });
+      if (schemes.length > 0) {
+        const scheme = schemes[0];
+        extractionPrompt = scheme.extraction_prompt || FALLBACK_PROMPT;
+        jsonSchema = scheme.json_schema || FALLBACK_SCHEMA;
+        console.log(`Using parsing scheme: ${scheme.name}`);
+      } else {
+        console.log(`No active scheme found for document type "${doc.document_type}", using fallback.`);
       }
+    }
+
+    // Extract text and structure using the scheme
+    const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: extractionPrompt,
+      file_urls: [doc.file_url],
+      response_json_schema: jsonSchema,
     });
 
     if (!extracted?.slides?.length) {

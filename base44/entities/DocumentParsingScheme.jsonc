@@ -1,0 +1,36 @@
+{
+  "name": "DocumentParsingScheme",
+  "type": "object",
+  "properties": {
+    "document_type": {
+      "type": "string",
+      "description": "Document type name this scheme applies to (e.g. Line Sheet)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Scheme name / version label (e.g. Line Sheet V1)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Notes about this scheme or the document layout it handles"
+    },
+    "extraction_prompt": {
+      "type": "string",
+      "description": "The LLM prompt used to guide data extraction from the document"
+    },
+    "json_schema": {
+      "type": "object",
+      "description": "The JSON schema defining the expected output structure for the LLM extraction"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this scheme is currently used for parsing"
+    }
+  },
+  "required": [
+    "document_type",
+    "name",
+    "extraction_prompt"
+  ]
+}

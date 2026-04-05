@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Languages, ListCollapse, Hash, ChevronRight } from "lucide-react";
+import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const CONFIG_ITEMS = [
@@ -21,6 +21,12 @@ const CONFIG_ITEMS = [
     label: "Code Generators",
     description: "Configure automatic code generation sequences for entities",
     icon: Hash,
+  },
+  {
+    path: "/document-parsing-schemes",
+    label: "Document Parsing Schemes",
+    description: "Define AI extraction prompts and JSON schemas per document type",
+    icon: FileJson,
   },
 ];
 
