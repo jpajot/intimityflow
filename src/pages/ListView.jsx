@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers, Plus } from "lucide-react";
+import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers, Plus, Maximize2, Minimize2 } from "lucide-react";
 import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
@@ -491,6 +491,7 @@ export default function ListView() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("styles");
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -525,30 +526,47 @@ export default function ListView() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Styles Lists</h1>
-        <p className="text-muted-foreground mt-1">Browse and filter styles, colorways, and variations</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Styles Lists</h1>
+          <p className="text-muted-foreground mt-1">Browse and filter styles, colorways, and variations</p>
+        </div>
+        <button type="button" onClick={() => setFullscreen(true)} className="mt-1 p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0" title="Fullscreen">
+          <Maximize2 className="w-4 h-4" />
+        </button>
       </div>
 
-      <ItemSubNav
-        items={[
-          { id: "styles", label: "Styles", count: products.length, icon: Shirt },
-          { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
-          { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
-        ]}
-        activeId={activeSection}
-        onChange={setActiveSection}
-      >
-        {activeSection === "styles" && (
-          <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} />
+      <div className={fullscreen ? "fixed inset-0 z-50 bg-background flex flex-col" : ""}>
+        {fullscreen && (
+          <div className="flex items-center justify-between px-6 py-3 border-b border-border shrink-0">
+            <h1 className="font-display text-xl font-semibold tracking-tight">Styles Lists</h1>
+            <button type="button" onClick={() => setFullscreen(false)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Exit fullscreen">
+              <Minimize2 className="w-4 h-4" />
+            </button>
+          </div>
         )}
-        {activeSection === "colorways" && (
-          <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
-        )}
-        {activeSection === "variations" && (
-          <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
-        )}
-      </ItemSubNav>
+        <div className={fullscreen ? "flex-1 overflow-auto px-6 py-4" : ""}>
+          <ItemSubNav
+            items={[
+              { id: "styles", label: "Styles", count: products.length, icon: Shirt },
+              { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
+              { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
+            ]}
+            activeId={activeSection}
+            onChange={setActiveSection}
+          >
+            {activeSection === "styles" && (
+              <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} />
+            )}
+            {activeSection === "colorways" && (
+              <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
+            )}
+            {activeSection === "variations" && (
+              <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
+            )}
+          </ItemSubNav>
+        </div>
+      </div>
     </div>
   );
 }
