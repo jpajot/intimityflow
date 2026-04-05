@@ -46,6 +46,7 @@ export default function ProductDetail() {
   const [projects, setProjects] = useState([]);
   const [hasStyleSizes, setHasStyleSizes] = useState(false);
   const [lovTypes, setLovTypes] = useState({});
+  const [lovTypesArray, setLovTypesArray] = useState([]);
   const [lovValues, setLovValues] = useState([]);
   const [productTypeOptions, setProductTypeOptions] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -82,6 +83,7 @@ export default function ProductDetail() {
     const typeMap = {};
     types.forEach((t) => (typeMap[t.code] = t.id));
     setLovTypes(typeMap);
+    setLovTypesArray(types);
     setLovValues(values);
 
     // Load product type options from EntityTypes LOV filtered by Product entity
@@ -114,7 +116,6 @@ export default function ProductDetail() {
     const customerNeedTypeId = lovTypes["Customer Need"];
     if (!customerNeedTypeId) return [];
     const allCustomerNeeds = lovValues.filter((v) => v.type_of_lov_id === customerNeedTypeId);
-    // Check if any customer needs have dependencies
     const hasDependencies = allCustomerNeeds.some((v) => v.depends_on_value_id);
     if (!hasDependencies) return allCustomerNeeds.map((v) => v.name);
     if (!product.sub_category) return allCustomerNeeds.map((v) => v.name);
@@ -123,6 +124,20 @@ export default function ProductDetail() {
     return allCustomerNeeds
       .filter((v) => v.depends_on_value_id === subCategoryValue.id)
       .map((v) => v.name);
+  };
+
+  const getSubTypes = () => {
+    const subTypesDef = lovTypesArray.find((t) => t.code === "Sub-Types");
+    if (!subTypesDef) return [];
+    const allSubTypes = lovValues.filter((v) => v.type_of_lov_id === subTypesDef.id);
+    if (!allSubTypes.some((v) => v.depends_on_value_id)) return allSubTypes.map((v) => v.name);
+    if (!product.type) return allSubTypes.map((v) => v.name);
+    // Find the parent TypeOfLOV
+    const parentTypeDef = lovTypesArray.find((t) => t.id === subTypesDef.depends_on_id);
+    if (!parentTypeDef) return allSubTypes.map((v) => v.name);
+    const parentValue = lovValues.find((v) => v.type_of_lov_id === parentTypeDef.id && v.name === product.type);
+    if (!parentValue) return allSubTypes.map((v) => v.name);
+    return allSubTypes.filter((v) => v.depends_on_value_id === parentValue.id).map((v) => v.name);
   };
 
   const loadProduct = async () => {
@@ -424,6 +439,20 @@ export default function ProductDetail() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Sub-type */}
+                  {getSubTypes().length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">Sub-type</Label>
+                      <Select value={product.sub_type || "none"} onValueChange={(v) => updateField("sub_type", v === "none" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {getSubTypes().map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {/* Customer Need */}
                   {product.type === "Product" && (

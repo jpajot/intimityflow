@@ -1,0 +1,50 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Seasonal Collection",
+        "Artist Collaboration",
+        "Capsule",
+        "Limited Edition",
+        "Core Range",
+        "Other"
+      ]
+    },
+    "sub_type": {
+      "type": "string",
+      "description": "Project sub-type - linked to Sub-Types LOV"
+    },
+    "season": {
+      "type": "string",
+      "enum": [
+        "SS25",
+        "FW25",
+        "SS26",
+        "FW26",
+        "Evergreen"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Planning",
+        "Active",
+        "Archived"
+      ],
+      "default": "Planning"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

@@ -27,6 +27,8 @@ export default function ProjectDetail() {
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
+  const [lovTypes, setLovTypes] = useState([]);
+  const [lovValues, setLovValues] = useState([]);
   const [sizeGrids, setSizeGrids] = useState([]);
   const [linkedColorways, setLinkedColorways] = useState([]);
   const [linkedProducts, setLinkedProducts] = useState([]);
@@ -71,6 +73,19 @@ export default function ProjectDetail() {
   };
   const autoSaveTimer = useRef(null);
 
+  const getProjectSubTypes = () => {
+    const subTypesDef = lovTypes.find((t) => t.code === "Sub-Types");
+    if (!subTypesDef) return [];
+    const allSubTypes = lovValues.filter((v) => v.type_of_lov_id === subTypesDef.id);
+    if (!allSubTypes.some((v) => v.depends_on_value_id)) return allSubTypes.map((v) => v.name);
+    if (!project?.type) return allSubTypes.map((v) => v.name);
+    const parentTypeDef = lovTypes.find((t) => t.id === subTypesDef.depends_on_id);
+    if (!parentTypeDef) return allSubTypes.map((v) => v.name);
+    const parentValue = lovValues.find((v) => v.type_of_lov_id === parentTypeDef.id && v.name === project.type);
+    if (!parentValue) return allSubTypes.map((v) => v.name);
+    return allSubTypes.filter((v) => v.depends_on_value_id === parentValue.id).map((v) => v.name);
+  };
+
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
   const PROJECT_TYPES = ["Seasonal Collection", "Artist Collaboration", "Capsule", "Limited Edition", "Core Range", "Other"];
@@ -81,19 +96,22 @@ export default function ProjectDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [proj, pals, palCols, tc, cc, docs, lovTypes, projs, sgs] = await Promise.all([
+    const [proj, pals, palCols, tc, cc, docs, lovTypesData, projs, sgs, lovVals] = await Promise.all([
       base44.entities.Project.filter({ id }),
       base44.entities.ColorPalette.filter({ project_id: id }),
       base44.entities.ColorPaletteColor.list("-created_date", 2000),
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.CommercialColor.list("code", 2000),
       base44.entities.UploadedDocument.filter({ project_id: id }),
-      base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
+      base44.entities.TypeOfLOV.list("code", 500),
       base44.entities.Project.list("name", 500),
       base44.entities.SizeGrid.list("name", 200),
+      base44.entities.ListOfValues.list("name", 5000),
     ]);
     setAllProjects(projs);
     setSizeGrids(sgs);
+    setLovTypes(lovTypesData);
+    setLovValues(lovVals);
     setProject(proj[0] || null);
     setPalettes(pals);
     setPaletteColors(palCols);
@@ -284,6 +302,18 @@ export default function ProjectDetail() {
                   <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              {getProjectSubTypes().length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Sub-type</Label>
+                  <Select value={project.sub_type || "none"} onValueChange={(v) => updateField("sub_type", v === "none" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {getProjectSubTypes().map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label className="text-xs">Season</Label>
                 <Select value={project.season || "none"} onValueChange={(v) => updateField("season", v === "none" ? "" : v)}>

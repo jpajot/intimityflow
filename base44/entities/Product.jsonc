@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Product name"
     },
+    "sub_type": {
+      "type": "string",
+      "description": "Product sub-type - linked to Sub-Types LOV"
+    },
     "category": {
       "type": "string",
       "description": "Product category"
