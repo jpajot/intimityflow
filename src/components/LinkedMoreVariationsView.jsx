@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, LayoutGrid, List, Plus } from "lucide-react";
+import { Search, LayoutGrid, List, Plus, X } from "lucide-react";
 import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
@@ -13,6 +13,13 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
   const [showLink, setShowLink] = useState(false);
 
   const alreadyLinkedIds = useMemo(() => variations.map((v) => v.id), [variations]);
+
+  const handleUnlink = async (v) => {
+    await base44.entities.ProductColorAndMore.update(v.id, {
+      project_ids: (v.project_ids || []).filter((pid) => pid !== projectId),
+    });
+    if (onLinked) onLinked();
+  };
 
   const handleLink = async (selectedIds) => {
     for (const vid of selectedIds) {
@@ -125,6 +132,11 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     { id: "variant", label: "Variant", width: 110, sortKey: (v) => v.variant || "", render: (v) => <span className="text-xs">{v.variant || "—"}</span> },
     { id: "creation_project", label: "Creation Project", width: 160, sortKey: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "", render: (v) => { const p = projects.find((pr) => pr.id === v.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; } },
     { id: "linked_projects", label: "Linked Projects", width: 200, render: (v) => { const names = (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
+    { id: "_unlink", label: "", width: 50, render: (v) => (
+      <button type="button" onClick={() => handleUnlink(v)} title="Unlink from project" className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    ) },
   ];
 
   const filterableFields = [

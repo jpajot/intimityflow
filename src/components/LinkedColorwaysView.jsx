@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Plus } from "lucide-react";
+import { LayoutGrid, List, Search, Plus, X } from "lucide-react";
 import LinkToProjectModal from "./LinkToProjectModal";
 import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
@@ -62,6 +62,13 @@ export default function LinkedColorwaysView({
   const [showLink, setShowLink] = useState(false);
 
   const alreadyLinkedIds = useMemo(() => colorways.map((cw) => cw.id), [colorways]);
+
+  const handleUnlink = async (cw) => {
+    await base44.entities.ProductColor.update(cw.id, {
+      project_ids: (cw.project_ids || []).filter((pid) => pid !== projectId),
+    });
+    if (onLinked) onLinked();
+  };
 
   const handleLink = async (selectedIds) => {
     for (const cwId of selectedIds) {
@@ -195,6 +202,11 @@ export default function LinkedColorwaysView({
         );
       },
     },
+    { id: "_unlink", label: "", width: 50, render: (cw) => (
+      <button type="button" onClick={() => handleUnlink(cw)} title="Unlink from project" className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    ) },
   ];
 
   const visibleColumns = activeColumns || columns;

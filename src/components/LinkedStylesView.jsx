@@ -2,13 +2,13 @@ import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, LayoutGrid, List, Plus } from "lucide-react";
+import { Search, LayoutGrid, List, Plus, X } from "lucide-react";
 import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 
-export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], onLinked }) {
+export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked }) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
@@ -16,6 +16,29 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
   const [showLink, setShowLink] = useState(false);
 
   const alreadyLinkedIds = useMemo(() => styles.map((s) => s.id), [styles]);
+
+  const handleUnlink = async (style) => {
+    // Remove project from style
+    await base44.entities.Product.update(style.id, {
+      project_ids: (style.project_ids || []).filter((pid) => pid !== projectId),
+    });
+    // Cascade: unlink colorways of this style that are linked to this project
+    const styleCws = allColorways.filter((cw) => cw.product_id === style.id && (cw.project_ids || []).includes(projectId));
+    for (const cw of styleCws) {
+      await base44.entities.ProductColor.update(cw.id, {
+        project_ids: (cw.project_ids || []).filter((pid) => pid !== projectId),
+      });
+    }
+    // Cascade: unlink variations of those colorways that are linked to this project
+    const cwIds = new Set(styleCws.map((cw) => cw.id));
+    const styleVars = allVariations.filter((v) => cwIds.has(v.product_color_id) && (v.project_ids || []).includes(projectId));
+    for (const v of styleVars) {
+      await base44.entities.ProductColorAndMore.update(v.id, {
+        project_ids: (v.project_ids || []).filter((pid) => pid !== projectId),
+      });
+    }
+    if (onLinked) onLinked();
+  };
 
   const handleLink = async (selectedIds) => {
     for (const sid of selectedIds) {
@@ -65,6 +88,11 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
     { id: "creation_project", label: "Creation Project", width: 160, sortKey: (p) => projects.find((pr) => pr.id === p.creation_project_id)?.name || "", render: (p) => { const pr = projects.find((proj) => proj.id === p.creation_project_id); return <span className="text-xs text-muted-foreground">{pr?.name || "—"}</span>; } },
     { id: "linked_projects", label: "Linked Projects", width: 200, render: (p) => { const names = (p.project_ids || []).map((pid) => projects.find((pr) => pr.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
     { id: "created_by", label: "Created By", width: 180, sortKey: (p) => p.created_by || "", render: (p) => <span className="text-xs text-muted-foreground">{p.created_by || "—"}</span> },
+    { id: "_unlink", label: "", width: 50, render: (p) => (
+      <button type="button" onClick={() => handleUnlink(p)} title="Unlink from project" className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    ) },
   ];
 
   const filterableFields = [
