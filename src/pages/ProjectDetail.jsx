@@ -24,6 +24,8 @@ export default function ProjectDetail() {
   const [paletteColors, setPaletteColors] = useState([]);
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
+  const [sizeGrids, setSizeGrids] = useState([]);
   const [linkedColorways, setLinkedColorways] = useState([]);
   const [linkedProducts, setLinkedProducts] = useState([]);
   const [linkedStyles, setLinkedStyles] = useState([]);
@@ -56,7 +58,7 @@ export default function ProjectDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [proj, pals, palCols, tc, cc, docs, lovTypes] = await Promise.all([
+    const [proj, pals, palCols, tc, cc, docs, lovTypes, projs, sgs] = await Promise.all([
       base44.entities.Project.filter({ id }),
       base44.entities.ColorPalette.filter({ project_id: id }),
       base44.entities.ColorPaletteColor.list("-created_date", 2000),
@@ -64,7 +66,11 @@ export default function ProjectDetail() {
       base44.entities.CommercialColor.list("code", 2000),
       base44.entities.UploadedDocument.filter({ project_id: id }),
       base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
+      base44.entities.Project.list("name", 500),
+      base44.entities.SizeGrid.list("name", 200),
     ]);
+    setAllProjects(projs);
+    setSizeGrids(sgs);
     setProject(proj[0] || null);
     setPalettes(pals);
     setPaletteColors(palCols);
@@ -366,7 +372,7 @@ export default function ProjectDetail() {
           />
         )}
         {activeSection === "styles" && (
-          <LinkedStylesView styles={linkedStyles} navigate={navigate} />
+          <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} />
         )}
       </ItemSubNav>
 
