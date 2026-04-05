@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers } from "lucide-react";
+import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers, Plus } from "lucide-react";
 import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
@@ -97,6 +97,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
           <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
           <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
         </div>
+        <Button size="sm" className="gap-1.5 h-8" onClick={() => navigate("/products/new")}><Plus className="w-3.5 h-3.5" /> Create Style</Button>
       </div>
 
       {filtered.length === 0 ? (
