@@ -12,7 +12,7 @@ import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
-function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
+function StylesTab({ products, colorVariants, techColors, sizeGrids, projects }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
@@ -58,6 +58,8 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
     { id: "customer_need", label: "Customer Need", width: 160, sortKey: (p) => p.customer_need || "", render: (p) => <span className="text-xs">{p.customer_need || "—"}</span> },
     { id: "size_grid_id", label: "Size Grid", width: 130, sortKey: (p) => sizeGrids.find((sg) => sg.id === p.size_grid_id)?.name || "", render: (p) => { const sg = sizeGrids.find((sg) => sg.id === p.size_grid_id); return <span className="text-xs">{sg?.name || "—"}</span>; } },
     { id: "created_by", label: "Created By", width: 180, sortKey: (p) => p.created_by || "", render: (p) => <span className="text-xs text-muted-foreground">{p.created_by || "—"}</span> },
+    { id: "creation_project", label: "Creation Project", width: 160, sortKey: (p) => sizeGrids.find ? (projects.find((pr) => pr.id === p.creation_project_id)?.name || "") : "", render: (p) => { const pr = projects.find((proj) => proj.id === p.creation_project_id); return <span className="text-xs text-muted-foreground">{pr?.name || "—"}</span>; } },
+    { id: "linked_projects", label: "Linked Projects", width: 200, render: (p) => { const names = (p.project_ids || []).map((pid) => projects.find((pr) => pr.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
     {
       id: "colors", label: "Colorways", width: 120,
       render: (p) => {
@@ -80,6 +82,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
     { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
     { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
     { id: "type", label: "Type", getValue: (p) => p.type },
+    { id: "creation_project", label: "Creation Project", getValue: (p) => projects.find((pr) => pr.id === p.creation_project_id)?.name },
   ];
 
   const visibleColumns = activeColumns || columns;
@@ -409,6 +412,8 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
     { id: "cw_creation_project", label: "CW: Creation Project", width: 160, sortKey: (v) => projects.find((p) => p.id === getColorway(v)?.creation_project_id)?.name || "", render: (v) => { const p = projects.find((proj) => proj.id === getColorway(v)?.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; } },
     { id: "cw_linked_projects", label: "CW: Linked Projects", width: 200, render: (v) => { const names = (getColorway(v)?.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
     { id: "var_created_by", label: "Variation: Created By", width: 180, sortKey: (v) => v.created_by || "", render: (v) => <span className="text-xs text-muted-foreground">{v.created_by || "—"}</span> },
+    { id: "style_creation_project", label: "Style: Creation Project", width: 160, sortKey: (v) => projects.find((p) => p.id === getProduct(v)?.creation_project_id)?.name || "", render: (v) => { const p = projects.find((pr) => pr.id === getProduct(v)?.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; } },
+    { id: "style_linked_projects", label: "Style: Linked Projects", width: 200, render: (v) => { const names = (getProduct(v)?.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
   ];
 
   const filterableFields = [
@@ -416,6 +421,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
     { id: "style_sub_category", label: "Style: Sub-Category", getValue: (v) => getProduct(v)?.sub_category },
     { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code },
     { id: "variant", label: "Variant", getValue: (v) => v.variant },
+    { id: "style_creation_project", label: "Style: Creation Project", getValue: (v) => projects.find((p) => p.id === getProduct(v)?.creation_project_id)?.name },
   ];
 
   const visibleColumns = activeColumns || columns;
@@ -543,7 +549,7 @@ export default function ListView() {
             onChange={setActiveSection}
           >
             {activeSection === "styles" && (
-              <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} />
+              <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
             )}
             {activeSection === "colorways" && (
               <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
