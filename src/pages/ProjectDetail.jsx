@@ -312,7 +312,7 @@ export default function ProjectDetail() {
           { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
           { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
           { id: "variations", label: "Linked Variations", count: linkedVariations.length, icon: Layers },
-          { id: "palettes", label: "Color Palettes", count: palettes.length, icon: Layers },
+          { id: "palettes", label: "Color Palettes", count: palettes.length, icon: Palette },
         ]}
         activeId={activeSection}
         onChange={setActiveSection}

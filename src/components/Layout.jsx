@@ -113,7 +113,7 @@ export default function Layout() {
       <div className="my-2 border-t border-border" />
 
       {/* Color Studio */}
-      <NavItem item={{ path: "/color-palettes", label: "Color Studio", icon: Palette }} onNavigate={onNavigate} isActive={isStudioActive} />
+      <NavItem item={{ path: "/color-palettes", label: "Color Studio", icon: SwatchBook }} onNavigate={onNavigate} isActive={isStudioActive} />
 
       {/* Size Studio */}
       <NavItem item={{ path: "/size-grid-library", label: "Size Studio", icon: Ruler }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/size-grid-library")} />
