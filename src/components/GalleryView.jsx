@@ -508,20 +508,21 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
                       setFormFieldIds(newIds);
                     };
                     return (
-                      <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
+                      <div className="border border-border rounded-lg overflow-hidden">
                         <DragDropContext onDragEnd={handleDragEnd}>
                           <Droppable droppableId="fields-checked">
                             {(provided) => (
-                              <div ref={provided.innerRef} {...provided.droppableProps}>
+                              <div ref={provided.innerRef} {...provided.droppableProps} className="max-h-44 overflow-y-auto divide-y divide-border">
                                 {filteredChecked.map((field, index) => (
                                   <Draggable key={field.id} draggableId={field.id} index={index}>
                                     {(drag, snapshot) => (
                                       <div
                                         ref={drag.innerRef}
                                         {...drag.draggableProps}
-                                        className={`flex items-center gap-2.5 px-3 py-2 bg-card ${snapshot.isDragging ? "shadow-lg rounded-lg" : ""}`}
+                                        style={drag.draggableProps.style}
+                                        className={`flex items-center gap-2.5 px-3 py-2 bg-card ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}
                                       >
-                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing">
+                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0">
                                           <GripVertical className="w-3.5 h-3.5" />
                                         </div>
                                         <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
@@ -535,13 +536,17 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
                             )}
                           </Droppable>
                         </DragDropContext>
-                        {filteredUnchecked.map((field) => (
-                          <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
-                            <div className="w-3.5 h-3.5" />
-                            <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
-                            <label htmlFor={`f-${field.id}`} className="flex-1 text-sm cursor-pointer">{field.label}</label>
+                        {filteredUnchecked.length > 0 && (
+                          <div className="border-t border-border max-h-24 overflow-y-auto divide-y divide-border">
+                            {filteredUnchecked.map((field) => (
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
+                                <div className="w-3.5 h-3.5 shrink-0" />
+                                <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                                <label htmlFor={`f-${field.id}`} className="flex-1 text-sm cursor-pointer">{field.label}</label>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     );
                   })()}

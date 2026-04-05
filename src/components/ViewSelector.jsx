@@ -380,11 +380,11 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                       setFormColumnIds(newIds);
                     };
                     return (
-                      <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
+                      <div className="border border-border rounded-lg overflow-hidden">
                         <DragDropContext onDragEnd={handleDragEnd}>
                           <Droppable droppableId="columns-checked">
                             {(provided) => (
-                              <div ref={provided.innerRef} {...provided.droppableProps}>
+                              <div ref={provided.innerRef} {...provided.droppableProps} className="max-h-44 overflow-y-auto divide-y divide-border">
                                 {filteredChecked.map((col, index) => {
                                   const isPinned = formFixedColumnIds.includes(col.id);
                                   return (
@@ -393,9 +393,10 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                                         <div
                                           ref={drag.innerRef}
                                           {...drag.draggableProps}
-                                          className={`flex items-center gap-2.5 px-3 py-2 bg-card ${isPinned ? "bg-primary/5" : ""} ${snapshot.isDragging ? "shadow-lg rounded-lg" : ""}`}
+                                          style={drag.draggableProps.style}
+                                          className={`flex items-center gap-2.5 px-3 py-2 bg-card ${isPinned ? "bg-primary/5" : ""} ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}
                                         >
-                                          <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing">
+                                          <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0">
                                             <GripVertical className="w-3.5 h-3.5" />
                                           </div>
                                           <Checkbox checked={true} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
@@ -418,13 +419,17 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                             )}
                           </Droppable>
                         </DragDropContext>
-                        {filteredUnchecked.map((col) => (
-                          <div key={col.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
-                            <div className="w-3.5 h-3.5" />
-                            <Checkbox checked={false} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
-                            <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                        {filteredUnchecked.length > 0 && (
+                          <div className="border-t border-border max-h-24 overflow-y-auto divide-y divide-border">
+                            {filteredUnchecked.map((col) => (
+                              <div key={col.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
+                                <div className="w-3.5 h-3.5 shrink-0" />
+                                <Checkbox checked={false} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
+                                <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     );
                   })()}
