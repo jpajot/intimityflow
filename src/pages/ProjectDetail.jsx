@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
 import LinkedStylesView from "../components/LinkedStylesView";
+import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
 import ItemSubNav from "../components/ItemSubNav";
 
 export default function ProjectDetail() {
@@ -30,6 +31,8 @@ export default function ProjectDetail() {
   const [linkedColorways, setLinkedColorways] = useState([]);
   const [linkedProducts, setLinkedProducts] = useState([]);
   const [linkedStyles, setLinkedStyles] = useState([]);
+  const [linkedVariations, setLinkedVariations] = useState([]);
+  const [allColorways, setAllColorways] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,15 +99,18 @@ export default function ProjectDetail() {
     setCommColors(cc);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
 
-    const [allColorways, allProducts] = await Promise.all([
+    const [allCws, allProducts, allVars] = await Promise.all([
       base44.entities.ProductColor.list("-created_date", 5000),
       base44.entities.Product.list("-created_date", 2000),
+      base44.entities.ProductColorAndMore.list("-created_date", 5000),
     ]);
-    const linked = allColorways.filter((c) => (c.project_ids || []).includes(id));
+    const linked = allCws.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
+    setAllColorways(allCws);
     const cwProductIds = new Set(linked.map((c) => c.product_id));
     setLinkedProducts(allProducts.filter((p) => cwProductIds.has(p.id)));
     setLinkedStyles(allProducts.filter((p) => (p.project_ids || []).includes(id)));
+    setLinkedVariations(allVars.filter((v) => (v.project_ids || []).includes(id)));
 
     if (lovTypes.length > 0) {
       const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
@@ -305,6 +311,7 @@ export default function ProjectDetail() {
           { id: "documents", label: "Documents", count: documents.length, icon: FileText },
           { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
           { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
+          { id: "variations", label: "Linked Variations", count: linkedVariations.length, icon: Layers },
           { id: "palettes", label: "Color Palettes", count: palettes.length, icon: Layers },
         ]}
         activeId={activeSection}
@@ -399,6 +406,9 @@ export default function ProjectDetail() {
         )}
         {activeSection === "styles" && (
           <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} />
+        )}
+        {activeSection === "variations" && (
+          <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={linkedProducts.concat(linkedStyles)} projects={allProjects} navigate={navigate} />
         )}
       </ItemSubNav>
 

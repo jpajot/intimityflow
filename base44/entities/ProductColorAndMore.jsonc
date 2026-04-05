@@ -39,6 +39,17 @@
     "variant": {
       "type": "string",
       "description": "Variant - linked to Variant LOV"
+    },
+    "creation_project_id": {
+      "type": "string",
+      "description": "ID of the Project where this variation was created"
+    },
+    "project_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of Projects this variation is linked to"
     }
   },
   "required": [
