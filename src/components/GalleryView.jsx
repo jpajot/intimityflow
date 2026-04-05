@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, LayoutGrid, X, ShieldCheck, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, LayoutGrid, X, ShieldCheck, Layers, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const STORAGE_KEY = (pageKey) => `gallery_active_view_${pageKey}`;
 const THUMB_KEY = (pageKey) => `gallery_thumb_size_${pageKey}`;
@@ -493,28 +494,57 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
                 {/* FIELDS TAB */}
                 <TabsContent value="fields" className="mt-3">
                   <Input value={fieldSearch} onChange={(e) => setFieldSearch(e.target.value)} placeholder="Search fields…" className="h-7 text-xs mb-2" />
-                  <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
-                    {(() => {
-                      const checked = formFieldIds.map((id) => allFields.find((f) => f.id === id)).filter(Boolean);
-                      const unchecked = allFields.filter((f) => !formFieldIds.includes(f.id));
-                      const all = [...checked, ...unchecked];
-                      const q = fieldSearch.toLowerCase();
-                      return (q ? all.filter((f) => f.label.toLowerCase().includes(q)) : all).map((field) => {
-                        const isChecked = formFieldIds.includes(field.id);
-                        const idx = formFieldIds.indexOf(field.id);
-                        return (
-                          <div key={field.id} className={`flex items-center gap-2.5 px-3 py-2 ${!isChecked ? "opacity-50" : ""}`}>
-                            <Checkbox checked={isChecked} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                  {(() => {
+                    const q = fieldSearch.toLowerCase();
+                    const checked = formFieldIds.map((id) => allFields.find((f) => f.id === id)).filter(Boolean);
+                    const unchecked = allFields.filter((f) => !formFieldIds.includes(f.id));
+                    const filteredChecked = q ? checked.filter((f) => f.label.toLowerCase().includes(q)) : checked;
+                    const filteredUnchecked = q ? unchecked.filter((f) => f.label.toLowerCase().includes(q)) : unchecked;
+                    const handleDragEnd = (result) => {
+                      if (!result.destination) return;
+                      const newIds = [...formFieldIds];
+                      const [removed] = newIds.splice(result.source.index, 1);
+                      newIds.splice(result.destination.index, 0, removed);
+                      setFormFieldIds(newIds);
+                    };
+                    return (
+                      <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                          <Droppable droppableId="fields-checked">
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.droppableProps}>
+                                {filteredChecked.map((field, index) => (
+                                  <Draggable key={field.id} draggableId={field.id} index={index}>
+                                    {(drag, snapshot) => (
+                                      <div
+                                        ref={drag.innerRef}
+                                        {...drag.draggableProps}
+                                        className={`flex items-center gap-2.5 px-3 py-2 bg-card ${snapshot.isDragging ? "shadow-lg rounded-lg" : ""}`}
+                                      >
+                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing">
+                                          <GripVertical className="w-3.5 h-3.5" />
+                                        </div>
+                                        <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                                        <label htmlFor={`f-${field.id}`} className="flex-1 text-sm cursor-pointer">{field.label}</label>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+                        {filteredUnchecked.map((field) => (
+                          <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
+                            <div className="w-3.5 h-3.5" />
+                            <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
                             <label htmlFor={`f-${field.id}`} className="flex-1 text-sm cursor-pointer">{field.label}</label>
-                            <div className="flex gap-0.5">
-                              <button type="button" onClick={() => moveField(field.id, -1)} disabled={!isChecked || idx === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
-                              <button type="button" onClick={() => moveField(field.id, 1)} disabled={!isChecked || idx === formFieldIds.length - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>
-                            </div>
                           </div>
-                        );
-                      });
-                    })()}
-                  </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </TabsContent>
 
                 {/* FILTERS TAB */}

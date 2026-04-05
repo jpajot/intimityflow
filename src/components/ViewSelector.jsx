@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, LayoutList, X, ShieldCheck, Pin } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, LayoutList, X, ShieldCheck, Pin, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
@@ -365,39 +366,68 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                       className="h-7 text-xs"
                     />
                   </div>
-                  <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
-                    {(() => {
-                      const checked = formColumnIds.map((id) => mergedColumns.find((c) => c.id === id)).filter(Boolean);
-                      const unchecked = mergedColumns.filter((c) => !formColumnIds.includes(c.id));
-                      const allOrdered = [...checked, ...unchecked];
-                      const q = columnSearch.toLowerCase();
-                      const filtered = q ? allOrdered.filter((c) => c.label.toLowerCase().includes(q)) : allOrdered;
-                      return filtered.map((col) => {
-                        const isChecked = formColumnIds.includes(col.id);
-                        const idx = formColumnIds.indexOf(col.id);
-                        const isPinned = formFixedColumnIds.includes(col.id);
-                        return (
-                          <div key={col.id} className={`flex items-center gap-2.5 px-3 py-2 ${!isChecked ? "opacity-50" : ""} ${isPinned ? "bg-primary/5" : ""}`}>
-                            <Checkbox checked={isChecked} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
+                  {(() => {
+                    const q = columnSearch.toLowerCase();
+                    const checked = formColumnIds.map((id) => mergedColumns.find((c) => c.id === id)).filter(Boolean);
+                    const unchecked = mergedColumns.filter((c) => !formColumnIds.includes(c.id));
+                    const filteredChecked = q ? checked.filter((c) => c.label.toLowerCase().includes(q)) : checked;
+                    const filteredUnchecked = q ? unchecked.filter((c) => c.label.toLowerCase().includes(q)) : unchecked;
+                    const handleDragEnd = (result) => {
+                      if (!result.destination) return;
+                      const newIds = [...formColumnIds];
+                      const [removed] = newIds.splice(result.source.index, 1);
+                      newIds.splice(result.destination.index, 0, removed);
+                      setFormColumnIds(newIds);
+                    };
+                    return (
+                      <div className="border border-border rounded-lg divide-y divide-border max-h-56 overflow-y-auto">
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                          <Droppable droppableId="columns-checked">
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.droppableProps}>
+                                {filteredChecked.map((col, index) => {
+                                  const isPinned = formFixedColumnIds.includes(col.id);
+                                  return (
+                                    <Draggable key={col.id} draggableId={col.id} index={index}>
+                                      {(drag, snapshot) => (
+                                        <div
+                                          ref={drag.innerRef}
+                                          {...drag.draggableProps}
+                                          className={`flex items-center gap-2.5 px-3 py-2 bg-card ${isPinned ? "bg-primary/5" : ""} ${snapshot.isDragging ? "shadow-lg rounded-lg" : ""}`}
+                                        >
+                                          <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing">
+                                            <GripVertical className="w-3.5 h-3.5" />
+                                          </div>
+                                          <Checkbox checked={true} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
+                                          <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                                          <button
+                                            type="button"
+                                            title={isPinned ? "Unpin column" : "Pin column"}
+                                            onClick={() => setFormFixedColumnIds((prev) => isPinned ? prev.filter((id) => id !== col.id) : [...prev, col.id])}
+                                            className={`p-0.5 rounded hover:bg-muted transition-colors ${isPinned ? "text-primary" : "text-muted-foreground"}`}
+                                          >
+                                            <Pin className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  );
+                                })}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+                        {filteredUnchecked.map((col) => (
+                          <div key={col.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
+                            <div className="w-3.5 h-3.5" />
+                            <Checkbox checked={false} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
                             <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
-                            <button
-                              type="button"
-                              title={isPinned ? "Unpin column" : "Pin column"}
-                              disabled={!isChecked}
-                              onClick={() => setFormFixedColumnIds((prev) => isPinned ? prev.filter((id) => id !== col.id) : [...prev, col.id])}
-                              className={`p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors ${isPinned ? "text-primary" : "text-muted-foreground"}`}
-                            >
-                              <Pin className="w-3 h-3" />
-                            </button>
-                            <div className="flex gap-0.5">
-                              <button type="button" onClick={() => moveCol(col.id, -1)} disabled={!isChecked || idx === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
-                              <button type="button" onClick={() => moveCol(col.id, 1)} disabled={!isChecked || idx === formColumnIds.length - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>
-                            </div>
                           </div>
-                        );
-                      });
-                    })()}
-                  </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </TabsContent>
 
                 {/* FILTERS TAB */}
