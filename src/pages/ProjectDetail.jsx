@@ -416,7 +416,7 @@ export default function ProjectDetail() {
           <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} />
         )}
         {activeSection === "variations" && (
-          <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={linkedProducts.concat(linkedStyles)} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
+          <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
         )}
       </ItemSubNav>
 
