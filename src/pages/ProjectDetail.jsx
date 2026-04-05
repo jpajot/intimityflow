@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, Layers, ChevronDown, Shirt } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, Layers, ChevronDown, Shirt, Pin, PinOff } from "lucide-react";
+import { getPinnedItems, setPinnedItems } from "../components/Layout";
 import PresenceIndicator from "../components/PresenceIndicator";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -46,6 +47,23 @@ export default function ProjectDetail() {
   const [docSearch, setDocSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+
+  const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
+
+  const togglePin = () => {
+    const current = getPinnedItems();
+    let updated;
+    if (current.some((p) => p.path === `/projects/${id}`)) {
+      updated = current.filter((p) => p.path !== `/projects/${id}`);
+    } else {
+      if (current.length >= 3) return;
+      updated = [...current, { path: `/projects/${id}`, label: project?.name || "Project" }];
+    }
+    setPinnedItems(updated);
+    setPinnedItemsState(updated);
+    window.dispatchEvent(new Event("pinned-items-changed"));
+  };
   const autoSaveTimer = useRef(null);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
@@ -204,6 +222,14 @@ export default function ProjectDetail() {
           <h1 className="font-display text-2xl font-semibold tracking-tight">{project.name}</h1>
         </div>
         <PresenceIndicator entityType="Project" entityId={id} />
+        <button
+          type="button"
+          onClick={togglePin}
+          title={isPinned ? "Unpin from sidebar" : (getPinnedItems().length >= 3 ? "Max 3 pinned items" : "Pin to sidebar")}
+          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"} ${!isPinned && getPinnedItems().length >= 3 ? "opacity-40 cursor-not-allowed" : ""}`}
+        >
+          {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+        </button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" title="Delete Project">

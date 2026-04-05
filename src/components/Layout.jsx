@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages } from "lucide-react";
+import { Shirt, SwatchBook, FolderOpen, Palette, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages, Settings, Pin, PinOff, ChevronDown } from "lucide-react";
+
+export const PINNED_ITEMS_KEY = "pinnedNavItems";
+export function getPinnedItems() {
+  try { return JSON.parse(localStorage.getItem(PINNED_ITEMS_KEY) || "[]"); } catch { return []; }
+}
+export function setPinnedItems(items) {
+  localStorage.setItem(PINNED_ITEMS_KEY, JSON.stringify(items));
+}
 
 const NAV_ITEMS = [
   { path: "/list-view", label: "Styles Lists", icon: Shirt },
@@ -31,6 +39,15 @@ export default function Layout() {
   const [studioOpen, setStudioOpen] = useState(false);
   const [sizeStudioOpen, setSizeStudioOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+  const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+
+  // Keep pinned items in sync across tabs/pages
+  useEffect(() => {
+    const handler = () => setPinnedItemsState(getPinnedItems());
+    window.addEventListener("storage", handler);
+    window.addEventListener("pinned-items-changed", handler);
+    return () => { window.removeEventListener("storage", handler); window.removeEventListener("pinned-items-changed", handler); };
+  }, []);
 
   const toggleExpanded = () => {
     setExpanded((v) => {
@@ -101,7 +118,45 @@ export default function Layout() {
       {/* Size Studio */}
       <NavItem item={{ path: "/size-grid-library", label: "Size Studio", icon: Ruler }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/size-grid-library")} />
 
-      <NavItem item={{ path: "/config", label: "Config", icon: ListCollapse }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/config") || isConfigActive} />
+      {/* Pinned Items */}
+      {pinnedItems.length > 0 && (
+        <>
+          <div className="my-2 border-t border-border" />
+          {expanded && <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1 pb-0.5">Pinned</p>}
+          {pinnedItems.map((item) => (
+            <div key={item.path} className="group relative">
+              <Link
+                to={item.path}
+                onClick={onNavigate}
+                title={!expanded ? item.label : undefined}
+                className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
+                  expanded ? "px-3 py-2" : "px-0 py-2 justify-center"
+                } ${
+                  location.pathname === item.path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <Pin className="w-3.5 h-3.5 shrink-0" />
+                {expanded && <span className="flex-1 truncate">{item.label}</span>}
+              </Link>
+              {expanded && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = pinnedItems.filter((p) => p.path !== item.path);
+                    setPinnedItems(updated);
+                    setPinnedItemsState(updated);
+                    window.dispatchEvent(new Event("pinned-items-changed"));
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive text-muted-foreground transition-opacity"
+                  title="Unpin"
+                >
+                  <PinOff className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </>
+      )}
     </nav>
   );
 
@@ -150,6 +205,11 @@ export default function Layout() {
           expanded ? "px-3" : "px-2"
         }`}>
           <NavContent />
+        </div>
+
+        {/* Config at bottom */}
+        <div className={`shrink-0 border-t border-border py-3 ${ expanded ? "px-3" : "px-2" }`}>
+          <NavItem item={{ path: "/config", label: "Settings", icon: Settings }} onNavigate={null} isActive={location.pathname.startsWith("/config") || isConfigActive} />
         </div>
       </aside>
 
