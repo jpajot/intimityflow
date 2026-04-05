@@ -386,8 +386,52 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
   );
 }
 
+function ResizeHandle({ colId, onResize }) {
+  const startX = useRef(null);
+
+  const startResize = (clientX) => {
+    startX.current = clientX;
+    const onMove = (e) => {
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      onResize(colId, x - startX.current);
+      startX.current = x;
+    };
+    const onEnd = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onMove, { passive: true });
+    document.addEventListener("touchend", onEnd);
+  };
+
+  return (
+    <div
+      className="absolute top-0 right-0 h-full w-3 cursor-col-resize flex items-center justify-center group/resize z-20"
+      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); startResize(e.clientX); }}
+      onTouchStart={(e) => { e.stopPropagation(); startResize(e.touches[0].clientX); }}
+    >
+      <div className="w-0.5 h-4 bg-border group-hover/resize:bg-primary transition-colors rounded-full" />
+    </div>
+  );
+}
+
 function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, sortBy, sortDir, onEdit, editingCell, setEditingCell, editValue, setEditValue, headerProps }) {
   const [draggingFrom, setDraggingFrom] = useState(null);
+  const [colWidths, setColWidths] = useState({});
+
+  const getWidth = (col) => colWidths[col.id] ?? col.width ?? 120;
+
+  const handleResize = useCallback((colId, delta) => {
+    setColWidths((prev) => {
+      const col = [...fixedCols, ...scrollableCols].find((c) => c.id === colId);
+      const current = prev[colId] ?? col?.width ?? 120;
+      return { ...prev, [colId]: Math.max(50, current + delta) };
+    });
+  }, [fixedCols, scrollableCols]);
 
   // Compute cumulative left offsets for sticky columns
   const fixedOffsets = useMemo(() => {
@@ -395,10 +439,11 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
     let acc = 0;
     for (const col of fixedCols) {
       offsets.push(acc);
-      acc += col.width || 120;
+      acc += getWidth(col);
     }
     return offsets;
-  }, [fixedCols]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fixedCols, colWidths]);
 
   return (
     <div className="overflow-x-auto">
@@ -406,13 +451,15 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
         <thead>
           <tr className="border-b border-border bg-muted/40">
             {fixedCols.map((col, i) => (
-              <th key={col.id} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky bg-muted/40 z-10 cursor-context-menu select-none border-r border-border/60" style={{ width: col.width, left: fixedOffsets[i] }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky bg-muted/40 z-10 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i] }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
+                <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
             ))}
             {scrollableCols.map((col) => (
-              <th key={col.id} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: col.width }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col) }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
+                <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
             ))}
           </tr>
@@ -421,7 +468,7 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
           {rows.map((row, rowIdx) => (
             <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
               {fixedCols.map((col, i) => (
-                <td key={col.id} className="px-4 py-3 text-sm sticky bg-card border-r border-border/60 z-[5]" style={{ left: fixedOffsets[i], width: col.width }}>
+                <td key={col.id} className="px-4 py-3 text-sm sticky bg-card border-r border-border/60 z-[5]" style={{ left: fixedOffsets[i], width: getWidth(col), minWidth: getWidth(col) }}>
                   {col.render ? col.render(row) : "—"}
                 </td>
               ))}
