@@ -17,6 +17,13 @@
       },
       "description": "Ordered list of visible column IDs"
     },
+    "fixed_column_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of column IDs that are pinned/fixed to the left"
+    },
     "filters_config": {
       "type": "object",
       "description": "Filter configuration: { operator: 'and'|'or'|'nor', filters: [{field, values}] }"

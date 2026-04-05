@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, LayoutList, X, ShieldCheck } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, LayoutList, X, ShieldCheck, Pin } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
@@ -59,7 +59,7 @@ function schemaToColumns(schema) {
   }));
 }
 
-export default function ViewSelector({ pageKey, allColumns, onColumnsChange, filterableFields = [], rows = [], onFilteredRowsChange, entityNames = [] }) {
+export default function ViewSelector({ pageKey, allColumns, onColumnsChange, filterableFields = [], rows = [], onFilteredRowsChange, entityNames = [], fixedColumnIds = [], onFixedColumnIdsChange = null }) {
   const [views, setViews] = useState([]);
   const [schemaColumns, setSchemaColumns] = useState([]);
   const [activeViewId, setActiveViewId] = useState(() => localStorage.getItem(STORAGE_KEY(pageKey)) || "default");
@@ -75,6 +75,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dialogTab, setDialogTab] = useState("columns");
+  const [formFixedColumnIds, setFormFixedColumnIds] = useState([]);
   const [columnSearch, setColumnSearch] = useState("");
 
   useEffect(() => {
@@ -126,15 +127,17 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
       onColumnsChange(mergedColumns);
       const stored = tryParseJSON(localStorage.getItem(`${STORAGE_KEY(pageKey)}_filters`)) || DEFAULT_FILTERS;
       setActiveFiltersConfig(stored);
+      if (onFixedColumnIdsChange) onFixedColumnIdsChange([]);
     } else {
       const view = list.find((v) => v.id === viewId);
       if (view) {
         const ordered = (view.column_ids || []).map((id) => mergedColumns.find((c) => c.id === id)).filter(Boolean);
         onColumnsChange(ordered.length > 0 ? ordered : mergedColumns);
         setActiveFiltersConfig(view.filters_config || DEFAULT_FILTERS);
+        if (onFixedColumnIdsChange) onFixedColumnIdsChange(view.fixed_column_ids || []);
       }
     }
-  }, [views, allColumns, onColumnsChange, pageKey]);
+  }, [views, allColumns, onColumnsChange, pageKey, onFixedColumnIdsChange]);
 
   useEffect(() => {
     if (!loading) applyView(activeViewId);
@@ -164,6 +167,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
     setFormColumnIds(mergedColumns.map((c) => c.id));
     setFormFilters(DEFAULT_FILTERS);
     setFormRoles([]);
+    setFormFixedColumnIds([]);
     setRoleInput("");
     setEditingView(null);
     setDialogTab("columns");
@@ -176,6 +180,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
     setFormColumnIds([...inView]);
     setFormFilters(view.filters_config || DEFAULT_FILTERS);
     setFormRoles(view.allowed_roles || []);
+    setFormFixedColumnIds(view.fixed_column_ids || []);
     setRoleInput("");
     setEditingView(view);
     setDialogTab("columns");
@@ -235,6 +240,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
       page_key: pageKey,
       name: formName.trim(),
       column_ids: formColumnIds.filter((id) => mergedColumns.find((c) => c.id === id)),
+      fixed_column_ids: formFixedColumnIds,
       filters_config: formFilters,
       allowed_roles: formRoles,
     };
@@ -245,6 +251,7 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
       if (activeViewId === editingView.id) {
         onColumnsChange(formColumnIds.map((id) => allColumns.find((c) => c.id === id)).filter(Boolean));
         setActiveFiltersConfig(formFilters);
+        if (onFixedColumnIdsChange) onFixedColumnIdsChange(formFixedColumnIds);
       }
     } else {
       const created = await base44.entities.ListViewConfig.create(data);
@@ -368,10 +375,20 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
                       return filtered.map((col) => {
                         const isChecked = formColumnIds.includes(col.id);
                         const idx = formColumnIds.indexOf(col.id);
+                        const isPinned = formFixedColumnIds.includes(col.id);
                         return (
-                          <div key={col.id} className={`flex items-center gap-2.5 px-3 py-2 ${!isChecked ? "opacity-50" : ""}`}>
+                          <div key={col.id} className={`flex items-center gap-2.5 px-3 py-2 ${!isChecked ? "opacity-50" : ""} ${isPinned ? "bg-primary/5" : ""}`}>
                             <Checkbox checked={isChecked} onCheckedChange={() => toggleCol(col.id)} id={`col-${col.id}`} />
                             <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                            <button
+                              type="button"
+                              title={isPinned ? "Unpin column" : "Pin column"}
+                              disabled={!isChecked}
+                              onClick={() => setFormFixedColumnIds((prev) => isPinned ? prev.filter((id) => id !== col.id) : [...prev, col.id])}
+                              className={`p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors ${isPinned ? "text-primary" : "text-muted-foreground"}`}
+                            >
+                              <Pin className="w-3 h-3" />
+                            </button>
                             <div className="flex gap-0.5">
                               <button type="button" onClick={() => moveCol(col.id, -1)} disabled={!isChecked || idx === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
                               <button type="button" onClick={() => moveCol(col.id, 1)} disabled={!isChecked || idx === formColumnIds.length - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>

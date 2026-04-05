@@ -10,10 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, ArrowUp, ArrowDown, Settings2, Search, Layers, X } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Settings2, Search, Layers, X, Pin, PinOff } from "lucide-react";
 
 // Context menu component
-function ColContextMenu({ x, y, colLabel, onGroup, onClose }) {
+function ColContextMenu({ x, y, colLabel, onGroup, onPin, isPinned, onClose }) {
   const ref = useRef(null);
   useEffect(() => {
     const handler = (e) => {
@@ -38,11 +38,19 @@ function ColContextMenu({ x, y, colLabel, onGroup, onClose }) {
         <Layers className="w-3.5 h-3.5 text-muted-foreground" />
         Group by <span className="font-medium ml-1">{colLabel}</span>
       </button>
+      <button
+        type="button"
+        onClick={() => { onPin(); onClose(); }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+      >
+        {isPinned ? <PinOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Pin className="w-3.5 h-3.5 text-muted-foreground" />}
+        {isPinned ? "Unpin column" : "Pin column"}
+      </button>
     </div>
   );
 }
 
-export default function DataTable({ columns, rows, fixedColumns = [], groupOptions = [], getGroupKey = null, filterFields = [], onEdit = null, hideColumnToggle = false }) {
+export default function DataTable({ columns, rows, fixedColumns = [], groupOptions = [], getGroupKey = null, filterFields = [], onEdit = null, hideColumnToggle = false, onPinColumn = null }) {
   const [sortBy, setSortBy] = useState(null);
   const [sortDir, setSortDir] = useState("asc");
   const [visibleCols, setVisibleCols] = useState(new Set(columns.map((c) => c.id)));
@@ -215,6 +223,8 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
           y={contextMenu.y}
           colLabel={contextMenu.colLabel}
           onGroup={() => addGroupCol(contextMenu.colId)}
+          onPin={() => onPinColumn && onPinColumn(contextMenu.colId)}
+          isPinned={fixedColumns.includes(contextMenu.colId)}
           onClose={() => setContextMenu(null)}
         />
       )}
@@ -378,14 +388,25 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
 
 function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, sortBy, sortDir, onEdit, editingCell, setEditingCell, editValue, setEditValue, headerProps }) {
   const [draggingFrom, setDraggingFrom] = useState(null);
-  
+
+  // Compute cumulative left offsets for sticky columns
+  const fixedOffsets = useMemo(() => {
+    const offsets = [];
+    let acc = 0;
+    for (const col of fixedCols) {
+      offsets.push(acc);
+      acc += col.width || 120;
+    }
+    return offsets;
+  }, [fixedCols]);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40">
-            {fixedCols.map((col) => (
-              <th key={col.id} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/40 z-10 cursor-context-menu select-none" style={{ width: col.width }} {...(headerProps ? headerProps(col) : {})}>
+            {fixedCols.map((col, i) => (
+              <th key={col.id} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky bg-muted/40 z-10 cursor-context-menu select-none border-r border-border/60" style={{ width: col.width, left: fixedOffsets[i] }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
               </th>
             ))}
@@ -399,7 +420,11 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
         <tbody>
           {rows.map((row, rowIdx) => (
             <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-              {fixedCols.map((col) => <EditableCell key={col.id} col={col} row={row} rowIdx={rowIdx} allRows={rows} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} draggingFrom={draggingFrom} setDraggingFrom={setDraggingFrom} />)}
+              {fixedCols.map((col, i) => (
+                <td key={col.id} className="px-4 py-3 text-sm sticky bg-card border-r border-border/60 z-[5]" style={{ left: fixedOffsets[i], width: col.width }}>
+                  {col.render ? col.render(row) : "—"}
+                </td>
+              ))}
               {scrollableCols.map((col) => <EditableCell key={col.id} col={col} row={row} rowIdx={rowIdx} allRows={rows} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} onEdit={onEdit} draggingFrom={draggingFrom} setDraggingFrom={setDraggingFrom} />)}
             </tr>
           ))}

@@ -17,6 +17,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -91,7 +92,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search styles…" className="pl-8 h-8 text-xs" />
         </div>
         {view === "list" && (
-          <ViewSelector pageKey="styles_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={products} entityNames={["Product"]} />
+          <ViewSelector pageKey="styles_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={products} entityNames={["Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
@@ -149,7 +150,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids }) {
           onClickItem={(p) => navigate(`/products/${p.id}`)}
         />
       ) : (
-        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
+        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       )}
     </div>
   );
@@ -161,6 +162,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
@@ -263,7 +265,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
         </div>
         {view === "list" && (
-          <ViewSelector pageKey="colorways_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={colorways} entityNames={["ProductColor", "Product"]} />
+          <ViewSelector pageKey="colorways_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={colorways} entityNames={["ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
@@ -313,7 +315,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
           onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}
         />
       ) : (
-        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
+        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       )}
     </div>
   );
@@ -325,6 +327,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {
@@ -425,7 +428,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-8 h-8 text-xs" />
         </div>
         {view === "list" && (
-          <ViewSelector pageKey="more_variations_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore", "ProductColor", "Product"]} />
+          <ViewSelector pageKey="more_variations_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore", "ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
@@ -475,7 +478,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
               onClickItem={(v) => navigate(`/products/${getProduct(v)?.id}`)}
               />
       ) : (
-        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
+        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       )}
     </div>
   );
