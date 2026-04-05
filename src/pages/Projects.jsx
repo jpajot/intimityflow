@@ -24,6 +24,9 @@ const STATUS_COLORS = {
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [projectTypes, setProjectTypes] = useState([]);
+  const [subTypeLovId, setSubTypeLovId] = useState(null);
+  const [subTypesMap, setSubTypesMap] = useState({}); // parentTypeLovId -> { parentValueName -> [subTypeNames] }
+  const [allSubTypes, setAllSubTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ name: "", type: "", season: "", description: "", status: "Planning" });
@@ -40,19 +43,44 @@ export default function Projects() {
   }, []);
 
   const loadProjectTypes = async () => {
-    const lovTypes = await base44.entities.TypeOfLOV.filter({ code: "EntityTypes" });
-    if (lovTypes.length > 0) {
-      // Find the Project entity LOV ID from Entities LOV
-      const entitiesLov = await base44.entities.TypeOfLOV.filter({ code: "Entities" });
-      if (entitiesLov.length > 0) {
-        const entityValues = await base44.entities.ListOfValues.filter({ type_of_lov_id: entitiesLov[0].id });
-        const projectEntityValue = entityValues.find((v) => v.name === "Project");
-        if (projectEntityValue) {
-          const types = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id, depends_on_value_id: projectEntityValue.id });
-          setProjectTypes(types.map((t) => t.name));
+    const [lovTypesAll, lovValsAll] = await Promise.all([
+      base44.entities.TypeOfLOV.list("code", 500),
+      base44.entities.ListOfValues.list("name", 5000),
+    ]);
+    // Project types from EntityTypes LOV
+    const entityTypesLov = lovTypesAll.find((t) => t.code === "EntityTypes");
+    const entitiesLov = lovTypesAll.find((t) => t.code === "Entities");
+    if (entityTypesLov && entitiesLov) {
+      const entityValues = lovValsAll.filter((v) => v.type_of_lov_id === entitiesLov.id);
+      const projectEntityValue = entityValues.find((v) => v.name === "Project");
+      if (projectEntityValue) {
+        const types = lovValsAll.filter((v) => v.type_of_lov_id === entityTypesLov.id && v.depends_on_value_id === projectEntityValue.id);
+        setProjectTypes(types.map((t) => t.name));
+      }
+    }
+    // Sub-Types LOV
+    const subTypesDef = lovTypesAll.find((t) => t.code === "Sub-Types");
+    if (subTypesDef) {
+      setSubTypeLovId(subTypesDef.id);
+      const subs = lovValsAll.filter((v) => v.type_of_lov_id === subTypesDef.id);
+      setAllSubTypes(subs);
+      if (subTypesDef.depends_on_id) {
+        const parentTypeDef = lovTypesAll.find((t) => t.id === subTypesDef.depends_on_id);
+        if (parentTypeDef) {
+          const map = {};
+          const parentVals = lovValsAll.filter((v) => v.type_of_lov_id === parentTypeDef.id);
+          parentVals.forEach((pv) => {
+            map[pv.name] = subs.filter((s) => s.depends_on_value_id === pv.id).map((s) => s.name);
+          });
+          setSubTypesMap(map);
         }
       }
     }
+  };
+
+  const getSubTypesForType = (type) => {
+    if (!type || Object.keys(subTypesMap).length === 0) return allSubTypes.map((s) => s.name);
+    return subTypesMap[type] || [];
   };
 
   const loadData = async () => {
@@ -67,7 +95,7 @@ export default function Projects() {
     const created = await base44.entities.Project.create(form);
     setProjects((p) => [created, ...p]);
     setShowNew(false);
-    setForm({ name: "", type: "", season: "", description: "", status: "Planning" });
+    setForm({ name: "", type: "", season: "", sub_type: "", description: "", status: "Planning" });
     setSaving(false);
   };
 
@@ -242,7 +270,7 @@ export default function Projects() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs">Type</Label>
-                <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
+                <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v, sub_type: "" }))}>
                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>{projectTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
@@ -255,6 +283,18 @@ export default function Projects() {
                 </Select>
               </div>
             </div>
+            {getSubTypesForType(form.type).length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs">Sub-type</Label>
+                <Select value={form.sub_type || "none"} onValueChange={(v) => setForm((f) => ({ ...f, sub_type: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {getSubTypesForType(form.type).map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label className="text-xs">Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}>
@@ -286,7 +326,7 @@ export default function Projects() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-xs">Type</Label>
-                  <Select value={editingProject.type} onValueChange={(v) => setEditingProject((p) => ({ ...p, type: v }))}>
+                  <Select value={editingProject.type} onValueChange={(v) => setEditingProject((p) => ({ ...p, type: v, sub_type: "" }))}>
                     <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                     <SelectContent>{projectTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
@@ -299,6 +339,18 @@ export default function Projects() {
                   </Select>
                 </div>
               </div>
+              {getSubTypesForType(editingProject.type).length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Sub-type</Label>
+                  <Select value={editingProject.sub_type || "none"} onValueChange={(v) => setEditingProject((p) => ({ ...p, sub_type: v === "none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {getSubTypesForType(editingProject.type).map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label className="text-xs">Status</Label>
                 <Select value={editingProject.status} onValueChange={(v) => setEditingProject((p) => ({ ...p, status: v }))}>
