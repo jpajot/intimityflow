@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Shirt, SwatchBook, LayoutList, FolderOpen, Palette, Layers, ChevronDown, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages } from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "/", label: "Styles", icon: Shirt },
+  { path: "/list-view", label: "Styles Lists", icon: Shirt },
   { path: "/materials", label: "Materials", icon: SwatchBook },
   { path: "/projects", label: "Projects", icon: FolderOpen },
-  { path: "/list-view", label: "Styles Lists", icon: LayoutList },
 ];
 
 
