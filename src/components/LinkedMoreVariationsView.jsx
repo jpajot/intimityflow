@@ -37,12 +37,14 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         if (!cwProjects.includes(projectId)) {
           await base44.entities.ProductColor.update(cw.id, { project_ids: [...cwProjects, projectId] });
         }
-        // Also link project to grandparent product if not already linked
-        const prod = products.find((p) => p.id === cw.product_id);
-        if (prod) {
-          const prodProjects = prod.project_ids || [];
-          if (!prodProjects.includes(projectId)) {
-            await base44.entities.Product.update(prod.id, { project_ids: [...prodProjects, projectId] });
+        // Fetch fresh product to get up-to-date project_ids
+        if (cw.product_id) {
+          const freshProds = await base44.entities.Product.filter({ id: cw.product_id });
+          if (freshProds.length > 0) {
+            const prod = freshProds[0];
+            if (!(prod.project_ids || []).includes(projectId)) {
+              await base44.entities.Product.update(prod.id, { project_ids: [...(prod.project_ids || []), projectId] });
+            }
           }
         }
       }
