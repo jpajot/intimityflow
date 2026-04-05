@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useParams } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -24,6 +24,8 @@ import Config from './pages/Config';
 import ProjectDocuments from './pages/ProjectDocuments';
 import DocumentStaging from './pages/DocumentStaging';
 import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
+
+const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/documents-to-parse" element={<ProjectDocuments />} />
+        <Route path="/projects/:id/documents" element={<ProjectDocumentsRedirect />} />
         <Route path="/projects/:id/documents-to-parse/:docId" element={<DocumentStaging />} />
         <Route path="/list-view" element={<ListView />} />
         <Route path="/color-library" element={<ColorLibrary />} />
