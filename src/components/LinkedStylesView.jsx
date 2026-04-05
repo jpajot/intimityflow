@@ -93,7 +93,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
           renderThumbnail={(p) => {
             const img = p.images?.[0];
             return img ? (
-              <img src={img} alt={p.name} className="w-full h-full object-cover" />
+              <img src={img} alt={p.name} className="w-full h-full object-contain" />
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground/40">
                 {p.name?.charAt(0)?.toUpperCase()}

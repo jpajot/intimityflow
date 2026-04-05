@@ -147,7 +147,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
           renderThumbnail={(product) => {
             const mainImage = product.images?.[0];
             return mainImage ? (
-              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+              <img src={mainImage} alt={product.name} className="w-full h-full object-contain" />
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center text-sm font-semibold">
                 {product.name?.charAt(0)?.toUpperCase()}
