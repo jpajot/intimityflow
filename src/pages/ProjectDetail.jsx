@@ -33,6 +33,8 @@ export default function ProjectDetail() {
   const [linkedStyles, setLinkedStyles] = useState([]);
   const [linkedVariations, setLinkedVariations] = useState([]);
   const [allColorways, setAllColorways] = useState([]);
+  const [allStyleProducts, setAllStyleProducts] = useState([]);
+  const [allVariations, setAllVariations] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +111,10 @@ export default function ProjectDetail() {
     setAllColorways(allCws);
     const cwProductIds = new Set(linked.map((c) => c.product_id));
     setLinkedProducts(allProducts.filter((p) => cwProductIds.has(p.id)));
-    setLinkedStyles(allProducts.filter((p) => (p.project_ids || []).includes(id)));
+    const styleProds = allProducts.filter((p) => p.type === "Product" || !p.type || p.type === "Style");
+    setAllStyleProducts(styleProds);
+    setLinkedStyles(styleProds.filter((p) => (p.project_ids || []).includes(id)));
+    setAllVariations(allVars);
     setLinkedVariations(allVars.filter((v) => (v.project_ids || []).includes(id)));
 
     if (lovTypes.length > 0) {
@@ -402,13 +407,16 @@ export default function ProjectDetail() {
             onViewChange={setCwView}
             activeColumns={cwActiveColumns}
             onColumnsChange={setCwActiveColumns}
+            projectId={id}
+            allColorways={allColorways}
+            onLinked={loadData}
           />
         )}
         {activeSection === "styles" && (
-          <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} />
+          <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} onLinked={loadData} />
         )}
         {activeSection === "variations" && (
-          <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={linkedProducts.concat(linkedStyles)} projects={allProjects} navigate={navigate} />
+          <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={linkedProducts.concat(linkedStyles)} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
         )}
       </ItemSubNav>
 

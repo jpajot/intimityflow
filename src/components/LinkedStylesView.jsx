@@ -1,15 +1,40 @@
 import { useState, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
-import { Search, LayoutGrid, List } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, LayoutGrid, List, Plus } from "lucide-react";
+import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 
-export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [] }) {
+export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], onLinked }) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+  const [showLink, setShowLink] = useState(false);
+
+  const alreadyLinkedIds = useMemo(() => styles.map((s) => s.id), [styles]);
+
+  const handleLink = async (selectedIds) => {
+    for (const sid of selectedIds) {
+      const style = allStyles.find((s) => s.id === sid);
+      if (!style) continue;
+      const current = style.project_ids || [];
+      if (!current.includes(projectId)) {
+        await base44.entities.Product.update(sid, { project_ids: [...current, projectId] });
+      }
+    }
+    if (onLinked) onLinked();
+  };
+
+  const modalItems = useMemo(() => allStyles.map((s) => ({
+    id: s.id,
+    label: s.name,
+    sublabel: [s.category, s.sub_category].filter(Boolean).join(" · "),
+    imageUrl: s.images?.[0],
+  })), [allStyles]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return styles;
@@ -68,6 +93,11 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search styles…" className="pl-8 h-8 text-xs" />
         </div>
+        {projectId && (
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowLink(true)}>
+            <Plus className="w-3.5 h-3.5" /> Add
+          </Button>
+        )}
         {view === "list" && (
           <ViewSelector pageKey="project_linked_styles" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={styles} entityNames={["Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
@@ -76,6 +106,15 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
           <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
         </div>
       </div>
+
+      <LinkToProjectModal
+        open={showLink}
+        onClose={() => setShowLink(false)}
+        title="Link Styles to Project"
+        items={modalItems}
+        alreadyLinkedIds={alreadyLinkedIds}
+        onSave={handleLink}
+      />
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">

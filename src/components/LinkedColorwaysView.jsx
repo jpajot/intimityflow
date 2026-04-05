@@ -1,6 +1,9 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
-import { LayoutGrid, List, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid, List, Search, Plus } from "lucide-react";
+import LinkToProjectModal from "./LinkToProjectModal";
 import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
@@ -54,7 +57,34 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
 export default function LinkedColorwaysView({
   colorways, products, techColors, commColors, navigate,
   search, onSearchChange, view, onViewChange, activeColumns, onColumnsChange,
+  projectId, allColorways = [], onLinked,
 }) {
+  const [showLink, setShowLink] = useState(false);
+
+  const alreadyLinkedIds = useMemo(() => colorways.map((cw) => cw.id), [colorways]);
+
+  const handleLink = async (selectedIds) => {
+    for (const cwId of selectedIds) {
+      const cw = allColorways.find((c) => c.id === cwId);
+      if (!cw) continue;
+      const current = cw.project_ids || [];
+      if (!current.includes(projectId)) {
+        await base44.entities.ProductColor.update(cwId, { project_ids: [...current, projectId] });
+      }
+    }
+    if (onLinked) onLinked();
+  };
+
+  const modalItems = useMemo(() => allColorways.map((cw) => {
+    const prod = products.find((p) => p.id === cw.product_id);
+    return {
+      id: cw.id,
+      label: cw.color_name || "Unnamed",
+      sublabel: [cw.colorway_code, prod?.name].filter(Boolean).join(" · "),
+      imageUrl: cw.image_url || prod?.images?.[0],
+      colorHex: !cw.image_url && !prod?.images?.[0] ? cw.color_hex : undefined,
+    };
+  }), [allColorways, products]);
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
   const getCommColor = (cw) => commColors.find((c) => c.id === cw.linked_color_id);
@@ -175,6 +205,11 @@ export default function LinkedColorwaysView({
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
         </div>
+        {projectId && (
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowLink(true)}>
+            <Plus className="w-3.5 h-3.5" /> Add
+          </Button>
+        )}
         {view === "list" && (
           <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} />
         )}
@@ -197,6 +232,15 @@ export default function LinkedColorwaysView({
           </button>
         </div>
       </div>
+
+      <LinkToProjectModal
+        open={showLink}
+        onClose={() => setShowLink(false)}
+        title="Link Colorways to Project"
+        items={modalItems}
+        alreadyLinkedIds={alreadyLinkedIds}
+        onSave={handleLink}
+      />
 
       {filtered.length === 0 ? (
         <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
