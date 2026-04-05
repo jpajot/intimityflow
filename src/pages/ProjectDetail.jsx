@@ -276,10 +276,10 @@ export default function ProjectDetail() {
       {/* Sub-navigation */}
       <ItemSubNav
         items={[
-          { id: "palettes", label: "Color Palettes", count: palettes.length, icon: Palette },
           { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-          { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Layers },
           { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
+          { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
+          { id: "palettes", label: "Color Palettes", count: palettes.length, icon: Layers },
         ]}
         activeId={activeSection}
         onChange={setActiveSection}
