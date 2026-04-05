@@ -298,6 +298,8 @@ export default function DocumentStaging() {
             sub_category: "",
             customer_need: "",
             images: row.image_url ? [row.image_url] : [],
+            creation_project_id: id,
+            project_ids: [id],
           });
           createdProductIds.push(product.id);
 
@@ -361,6 +363,8 @@ export default function DocumentStaging() {
         sub_category: "",
         customer_need: "",
         images: row.image_url ? [row.image_url] : [],
+        creation_project_id: id,
+        project_ids: [id],
       });
 
       for (const code of (row["Style Technical Color Codes"] || [])) {

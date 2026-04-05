@@ -1,0 +1,59 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Product type (Product or Material) - linked to Product Type LOV"
+    },
+    "name": {
+      "type": "string",
+      "description": "Product name"
+    },
+    "category": {
+      "type": "string",
+      "description": "Product category"
+    },
+    "sub_category": {
+      "type": "string",
+      "description": "Product sub-category"
+    },
+    "customer_need": {
+      "type": "string",
+      "description": "Target customer need"
+    },
+    "description": {
+      "type": "string",
+      "description": "Product description"
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Style images (first image is the main/cover image)"
+    },
+    "size_grid_id": {
+      "type": "string",
+      "description": "Linked SizeGrid ID"
+    },
+    "creation_project_id": {
+      "type": "string",
+      "description": "ID of the Project where this style was created"
+    },
+    "project_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of Projects this style is linked to"
+    }
+  },
+  "required": [
+    "type",
+    "name",
+    "category",
+    "sub_category",
+    "customer_need"
+  ]
+}

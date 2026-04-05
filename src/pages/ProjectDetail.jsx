@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, Layers, ChevronDown } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, Layers, ChevronDown, Shirt } from "lucide-react";
 import PresenceIndicator from "../components/PresenceIndicator";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
+import LinkedStylesView from "../components/LinkedStylesView";
 import ItemSubNav from "../components/ItemSubNav";
 
 export default function ProjectDetail() {
@@ -25,6 +26,7 @@ export default function ProjectDetail() {
   const [commColors, setCommColors] = useState([]);
   const [linkedColorways, setLinkedColorways] = useState([]);
   const [linkedProducts, setLinkedProducts] = useState([]);
+  const [linkedStyles, setLinkedStyles] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,14 +72,15 @@ export default function ProjectDetail() {
     setCommColors(cc);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
 
-    const allColorways = await base44.entities.ProductColor.list("-created_date", 5000);
+    const [allColorways, allProducts] = await Promise.all([
+      base44.entities.ProductColor.list("-created_date", 5000),
+      base44.entities.Product.list("-created_date", 2000),
+    ]);
     const linked = allColorways.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
-    if (linked.length > 0) {
-      const productIds = [...new Set(linked.map((c) => c.product_id))];
-      const prods = await Promise.all(productIds.map((pid) => base44.entities.Product.filter({ id: pid }).then((r) => r[0]).catch(() => null)));
-      setLinkedProducts(prods.filter(Boolean));
-    }
+    const cwProductIds = new Set(linked.map((c) => c.product_id));
+    setLinkedProducts(allProducts.filter((p) => cwProductIds.has(p.id)));
+    setLinkedStyles(allProducts.filter((p) => (p.project_ids || []).includes(id)));
 
     if (lovTypes.length > 0) {
       const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
@@ -270,6 +273,7 @@ export default function ProjectDetail() {
           { id: "palettes", label: "Color Palettes", count: palettes.length, icon: Palette },
           { id: "documents", label: "Documents", count: documents.length, icon: FileText },
           { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Layers },
+          { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
         ]}
         activeId={activeSection}
         onChange={setActiveSection}
@@ -360,6 +364,9 @@ export default function ProjectDetail() {
             activeColumns={cwActiveColumns}
             onColumnsChange={setCwActiveColumns}
           />
+        )}
+        {activeSection === "styles" && (
+          <LinkedStylesView styles={linkedStyles} navigate={navigate} />
         )}
       </ItemSubNav>
 
