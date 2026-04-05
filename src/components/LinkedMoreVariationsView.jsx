@@ -18,9 +18,26 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     for (const vid of selectedIds) {
       const v = allVariations.find((x) => x.id === vid);
       if (!v) continue;
-      const current = v.project_ids || [];
-      if (!current.includes(projectId)) {
-        await base44.entities.ProductColorAndMore.update(vid, { project_ids: [...current, projectId] });
+      // Link project to variation
+      const varProjects = v.project_ids || [];
+      if (!varProjects.includes(projectId)) {
+        await base44.entities.ProductColorAndMore.update(vid, { project_ids: [...varProjects, projectId] });
+      }
+      // Also link project to parent colorway if not already linked
+      const cw = colorways.find((c) => c.id === v.product_color_id);
+      if (cw) {
+        const cwProjects = cw.project_ids || [];
+        if (!cwProjects.includes(projectId)) {
+          await base44.entities.ProductColor.update(cw.id, { project_ids: [...cwProjects, projectId] });
+        }
+        // Also link project to grandparent product if not already linked
+        const prod = products.find((p) => p.id === cw.product_id);
+        if (prod) {
+          const prodProjects = prod.project_ids || [];
+          if (!prodProjects.includes(projectId)) {
+            await base44.entities.Product.update(prod.id, { project_ids: [...prodProjects, projectId] });
+          }
+        }
       }
     }
     if (onLinked) onLinked();

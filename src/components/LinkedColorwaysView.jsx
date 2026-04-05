@@ -67,9 +67,18 @@ export default function LinkedColorwaysView({
     for (const cwId of selectedIds) {
       const cw = allColorways.find((c) => c.id === cwId);
       if (!cw) continue;
-      const current = cw.project_ids || [];
-      if (!current.includes(projectId)) {
-        await base44.entities.ProductColor.update(cwId, { project_ids: [...current, projectId] });
+      // Link project to colorway
+      const cwProjects = cw.project_ids || [];
+      if (!cwProjects.includes(projectId)) {
+        await base44.entities.ProductColor.update(cwId, { project_ids: [...cwProjects, projectId] });
+      }
+      // Also link project to parent product if not already linked
+      const prod = products.find((p) => p.id === cw.product_id);
+      if (prod) {
+        const prodProjects = prod.project_ids || [];
+        if (!prodProjects.includes(projectId)) {
+          await base44.entities.Product.update(prod.id, { project_ids: [...prodProjects, projectId] });
+        }
       }
     }
     if (onLinked) onLinked();
