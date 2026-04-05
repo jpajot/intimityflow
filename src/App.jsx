@@ -58,7 +58,6 @@ const AuthenticatedApp = () => {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/documents-to-parse" element={<ProjectDocuments />} />
-        <Route path="/projects/:id/documents" element={<ProjectDocuments />} />
         <Route path="/projects/:id/documents-to-parse/:docId" element={<DocumentStaging />} />
         <Route path="/list-view" element={<ListView />} />
         <Route path="/color-library" element={<ColorLibrary />} />
