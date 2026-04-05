@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Loader2, FileJson, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -24,6 +25,16 @@ function SchemeDialog({ open, onOpenChange, scheme, onSave }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [schemaError, setSchemaError] = useState("");
+  const [docTypes, setDocTypes] = useState([]);
+
+  useEffect(() => {
+    base44.entities.TypeOfLOV.filter({ code: "DocumentType" }).then(async (lovTypes) => {
+      if (lovTypes.length > 0) {
+        const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+        setDocTypes(values.map((v) => v.name));
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (scheme) {
@@ -70,7 +81,12 @@ function SchemeDialog({ open, onOpenChange, scheme, onSave }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs">Document Type *</Label>
-              <Input value={form.document_type} onChange={(e) => update("document_type", e.target.value)} placeholder="e.g. Line Sheet" />
+              <Select value={form.document_type} onValueChange={(v) => update("document_type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
+                <SelectContent>
+                  {docTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Scheme Name *</Label>
