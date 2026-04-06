@@ -1,0 +1,37 @@
+{
+  "name": "ProductColorAndMoreProjectLink",
+  "type": "object",
+  "properties": {
+    "product_color_and_more_id": {
+      "type": "string",
+      "description": "ID of the linked ProductColorAndMore (variation)"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID of the linked Project"
+    },
+    "forecasted_quantity": {
+      "type": "number",
+      "description": "Forecasted quantity for this variation in this specific project"
+    },
+    "channels_of_trade": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Channels of Trade for this variation in this project"
+    },
+    "status": {
+      "type": "string",
+      "description": "Project-specific status (e.g. Confirmed, Dropped, Development)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Project-specific notes for this variation"
+    }
+  },
+  "required": [
+    "product_color_and_more_id",
+    "project_id"
+  ]
+}

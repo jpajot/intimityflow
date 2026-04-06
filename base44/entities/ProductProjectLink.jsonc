@@ -1,0 +1,26 @@
+{
+  "name": "ProductProjectLink",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID of the linked Product"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID of the linked Project"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Project-specific notes for this style"
+    },
+    "status": {
+      "type": "string",
+      "description": "Project-specific status of the style (e.g. Confirmed, Dropped, Development)"
+    }
+  },
+  "required": [
+    "product_id",
+    "project_id"
+  ]
+}

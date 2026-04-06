@@ -1,0 +1,37 @@
+{
+  "name": "ProductColorProjectLink",
+  "type": "object",
+  "properties": {
+    "product_color_id": {
+      "type": "string",
+      "description": "ID of the linked ProductColor (colorway)"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID of the linked Project"
+    },
+    "forecasted_quantity": {
+      "type": "number",
+      "description": "Forecasted quantity for this colorway in this specific project"
+    },
+    "channels_of_trade": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Channels of Trade for this colorway in this project (e.g. Wholesale, Retail, E-commerce)"
+    },
+    "status": {
+      "type": "string",
+      "description": "Project-specific status (e.g. Confirmed, Dropped, Development)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Project-specific notes for this colorway"
+    }
+  },
+  "required": [
+    "product_color_id",
+    "project_id"
+  ]
+}
