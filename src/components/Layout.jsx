@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
+import StylesIcon from "./icons/StylesIcon";
 import { Shirt, SwatchBook, Palette, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages, Settings, Pin, PinOff, ChevronDown } from "lucide-react";
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
@@ -16,7 +17,7 @@ export function setPinnedItems(items) {
 }
 
 const NAV_ITEMS = [
-{ path: "/list-view", label: "Styles Lists", icon: Shirt },
+{ path: "/list-view", label: "Styles Lists", icon: StylesIcon },
 { path: "/materials", label: "Materials Lists", icon: FabricRollIcon },
 { path: "/projects", label: "Projects", icon: ProjectsIcon }];
 
