@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,78 @@ import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 
+// Tiny inline-edit cell for link entity fields
+function LinkCell({ value, onSave, type = "text", options = null }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value ?? "");
+  const ref = useRef(null);
+
+  useEffect(() => { setVal(value ?? ""); }, [value]);
+  useEffect(() => { if (editing && ref.current) ref.current.focus(); }, [editing]);
+
+  const save = () => { setEditing(false); if (val !== (value ?? "")) onSave(val); };
+
+  if (!editing) {
+    const display = Array.isArray(value) ? (value.length ? value.join(", ") : "—") : (value || "—");
+    return (
+      <button type="button" onClick={() => setEditing(true)}
+        className="text-left text-xs w-full px-1 py-0.5 rounded hover:bg-primary/10 hover:text-primary transition-colors min-h-[20px] text-muted-foreground">
+        {display}
+      </button>
+    );
+  }
+
+  if (options) {
+    return (
+      <select ref={ref} value={val} onChange={(e) => setVal(e.target.value)}
+        onBlur={() => save()}
+        className="text-xs border border-input rounded px-1 py-0.5 bg-background w-full">
+        <option value="">—</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    );
+  }
+
+  return (
+    <input ref={ref} type={type === "number" ? "number" : "text"} value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setVal(value ?? ""); setEditing(false); } }}
+      className="text-xs border border-input rounded px-1 py-0.5 bg-background w-full" />
+  );
+}
+
+const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
+
 export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked }) {
-  const [search, setSearch] = useState("");
-  const [showLink, setShowLink] = useState(false);
+  const [linkMap, setLinkMap] = useState({}); // keyed by product_color_and_more_id
+
+  useEffect(() => {
+    if (!projectId) return;
+    base44.entities.ProductColorAndMoreProjectLink.filter({ project_id: projectId }).then((links) => {
+      const map = {};
+      links.forEach((l) => { map[l.product_color_and_more_id] = l; });
+      setLinkMap(map);
+    });
+  }, [projectId, variations.length]);
+
+  const saveLinkField = async (variationId, field, rawValue) => {
+    let value = rawValue;
+    if (field === "channels_of_trade") {
+      value = typeof rawValue === "string" ? rawValue.split(",").map((s) => s.trim()).filter(Boolean) : rawValue;
+    }
+    if (field === "forecasted_quantity") value = rawValue === "" ? null : Number(rawValue);
+
+    const existing = linkMap[variationId];
+    let updated;
+    if (existing) {
+      updated = { ...existing, [field]: value };
+      await base44.entities.ProductColorAndMoreProjectLink.update(existing.id, { [field]: value });
+    } else {
+      updated = await base44.entities.ProductColorAndMoreProjectLink.create({ product_color_and_more_id: variationId, project_id: projectId, [field]: value });
+    }
+    setLinkMap((prev) => ({ ...prev, [variationId]: updated }));
+  };
 
   const alreadyLinkedIds = useMemo(() => variations.map((v) => v.id), [variations]);
 
@@ -63,6 +132,8 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
       colorHex: !v.image_url && !prod?.images?.[0] ? cw?.color_hex : undefined,
     };
   }), [allVariations, colorways, products]);
+  const [search, setSearch] = useState("");
+  const [showLink, setShowLink] = useState(false);
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
@@ -135,6 +206,33 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     { id: "variant", label: "Variant", width: 110, sortKey: (v) => v.variant || "", render: (v) => <span className="text-xs">{v.variant || "—"}</span> },
     { id: "creation_project", label: "Creation Project", width: 160, sortKey: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "", render: (v) => { const p = projects.find((pr) => pr.id === v.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; } },
     { id: "linked_projects", label: "Linked Projects", width: 200, render: (v) => { const names = (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; } },
+    {
+      id: "link_forecasted_qty", label: "Fcst. Qty", width: 100,
+      render: (v) => <LinkCell value={linkMap[v.id]?.forecasted_quantity} type="number" onSave={(val) => saveLinkField(v.id, "forecasted_quantity", val)} />,
+    },
+    {
+      id: "link_channels", label: "Channels of Trade", width: 200,
+      render: (v) => (
+        <div className="flex flex-col gap-0.5 w-full">
+          <LinkCell value={(linkMap[v.id]?.channels_of_trade || []).join(", ")} onSave={(val) => saveLinkField(v.id, "channels_of_trade", val)} />
+          {(linkMap[v.id]?.channels_of_trade || []).length > 0 && (
+            <div className="flex flex-wrap gap-0.5">
+              {(linkMap[v.id].channels_of_trade).map((ch) => (
+                <span key={ch} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0 rounded-full">{ch}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "link_status", label: "Project Status", width: 130,
+      render: (v) => <LinkCell value={linkMap[v.id]?.status} options={LINK_STATUS_OPTIONS} onSave={(val) => saveLinkField(v.id, "status", val)} />,
+    },
+    {
+      id: "link_notes", label: "Project Notes", width: 200,
+      render: (v) => <LinkCell value={linkMap[v.id]?.notes} onSave={(val) => saveLinkField(v.id, "notes", val)} />,
+    },
     { id: "_unlink", label: "", width: 50, render: (v) => (
       <button type="button" onClick={() => handleUnlink(v)} title="Unlink from project" className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
         <X className="w-3.5 h-3.5" />
@@ -149,15 +247,15 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     { id: "creation_project", label: "Creation Project", getValue: (v) => projects.find((p) => p.id === v.creation_project_id)?.name },
   ];
 
+  const linkAllFields = [
+    { id: "link_forecasted_qty", label: "Fcst. Qty (Project)", getValue: (v) => linkMap[v.id]?.forecasted_quantity ?? "—", render: (v) => linkMap[v.id]?.forecasted_quantity ?? "—" },
+    { id: "link_channels", label: "Channels of Trade (Project)", getValue: (v) => (linkMap[v.id]?.channels_of_trade || []).join(", ") || "—", render: (v) => (linkMap[v.id]?.channels_of_trade || []).join(", ") || "—" },
+    { id: "link_status", label: "Project Status", getValue: (v) => linkMap[v.id]?.status || "—", render: (v) => linkMap[v.id]?.status || "—" },
+    { id: "link_notes", label: "Project Notes", getValue: (v) => linkMap[v.id]?.notes || "—", render: (v) => linkMap[v.id]?.notes || "—" },
+  ];
+
   const allFields = [
-    { id: "sequence", label: "Seq.", getValue: (v) => v.sequence || "—", render: (v) => v.sequence || "—" },
-    { id: "name", label: "Name", getValue: (v) => v.name || "—", render: (v) => v.name || "—" },
-    { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code || "—", render: (v) => v.pack_code || "—" },
-    { id: "variant", label: "Variant", getValue: (v) => v.variant || "—", render: (v) => v.variant || "—" },
-    { id: "style_sub_type", label: "Style: Sub-type", getValue: (v) => getProduct(v)?.sub_type || "—", render: (v) => getProduct(v)?.sub_type || "—" },
-    { id: "cw_color_name", label: "Colorway", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
-    { id: "style_name", label: "Style", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
-    { id: "creation_project", label: "Creation Project", getValue: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "—", render: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "—" },
+    ...linkAllFields,
     { id: "linked_projects", label: "Linked Projects", getValue: (v) => (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean).join(", ") || "—", render: (v) => (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean).join(", ") || "—" },
   ];
 
@@ -201,7 +299,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         <GalleryView
           pageKey="project_linked_variations"
           navigate={navigate}
-          allFields={allFields}
+          allFields={[...linkAllFields, ...allFields.filter((f) => !f.id.startsWith("link_"))]}
           filterableFields={filterableFields}
           rows={filtered}
           renderThumbnail={(v) => {

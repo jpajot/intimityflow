@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,84 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
   );
 }
 
+// Tiny inline-edit cell for link entity fields
+function LinkCell({ value, onSave, type = "text", options = null }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value ?? "");
+  const ref = useRef(null);
+
+  useEffect(() => { setVal(value ?? ""); }, [value]);
+  useEffect(() => { if (editing && ref.current) ref.current.focus(); }, [editing]);
+
+  const save = () => { setEditing(false); if (val !== (value ?? "")) onSave(val); };
+
+  if (!editing) {
+    const display = Array.isArray(value) ? (value.length ? value.join(", ") : "—") : (value || "—");
+    return (
+      <button type="button" onClick={() => setEditing(true)}
+        className="text-left text-xs w-full px-1 py-0.5 rounded hover:bg-primary/10 hover:text-primary transition-colors min-h-[20px] text-muted-foreground">
+        {display}
+      </button>
+    );
+  }
+
+  if (options) {
+    return (
+      <select ref={ref} value={val} onChange={(e) => setVal(e.target.value)}
+        onBlur={() => save()}
+        className="text-xs border border-input rounded px-1 py-0.5 bg-background w-full">
+        <option value="">—</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    );
+  }
+
+  return (
+    <input ref={ref} type={type === "number" ? "number" : "text"} value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setVal(value ?? ""); setEditing(false); } }}
+      className="text-xs border border-input rounded px-1 py-0.5 bg-background w-full" />
+  );
+}
+
+const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
+const CHANNELS_OPTIONS = ["Wholesale", "Retail", "E-commerce", "Outlet", "Travel Retail", "Franchise"];
+
 export default function LinkedColorwaysView({
   colorways, products, techColors, commColors, navigate,
   search, onSearchChange, view, onViewChange, activeColumns, onColumnsChange,
   projectId, allColorways = [], onLinked,
 }) {
   const [showLink, setShowLink] = useState(false);
+  const [linkMap, setLinkMap] = useState({}); // keyed by product_color_id
+
+  useEffect(() => {
+    if (!projectId) return;
+    base44.entities.ProductColorProjectLink.filter({ project_id: projectId }).then((links) => {
+      const map = {};
+      links.forEach((l) => { map[l.product_color_id] = l; });
+      setLinkMap(map);
+    });
+  }, [projectId, colorways.length]);
+
+  const saveLinkField = async (colorwayId, field, rawValue) => {
+    let value = rawValue;
+    if (field === "channels_of_trade") {
+      value = typeof rawValue === "string" ? rawValue.split(",").map((s) => s.trim()).filter(Boolean) : rawValue;
+    }
+    if (field === "forecasted_quantity") value = rawValue === "" ? null : Number(rawValue);
+
+    const existing = linkMap[colorwayId];
+    let updated;
+    if (existing) {
+      updated = await base44.entities.ProductColorProjectLink.update(existing.id, { [field]: value });
+      updated = { ...existing, [field]: value };
+    } else {
+      updated = await base44.entities.ProductColorProjectLink.create({ product_color_id: colorwayId, project_id: projectId, [field]: value });
+    }
+    setLinkMap((prev) => ({ ...prev, [colorwayId]: updated }));
+  };
 
   const alreadyLinkedIds = useMemo(() => colorways.map((cw) => cw.id), [colorways]);
 
@@ -203,6 +275,33 @@ export default function LinkedColorwaysView({
         );
       },
     },
+    {
+      id: "link_forecasted_qty", label: "Fcst. Qty", width: 100,
+      render: (cw) => <LinkCell value={linkMap[cw.id]?.forecasted_quantity} type="number" onSave={(v) => saveLinkField(cw.id, "forecasted_quantity", v)} />,
+    },
+    {
+      id: "link_channels", label: "Channels of Trade", width: 200,
+      render: (cw) => (
+        <div className="flex flex-col gap-0.5 w-full">
+          <LinkCell value={(linkMap[cw.id]?.channels_of_trade || []).join(", ")} onSave={(v) => saveLinkField(cw.id, "channels_of_trade", v)} />
+          {(linkMap[cw.id]?.channels_of_trade || []).length > 0 && (
+            <div className="flex flex-wrap gap-0.5">
+              {(linkMap[cw.id].channels_of_trade).map((ch) => (
+                <span key={ch} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0 rounded-full">{ch}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "link_status", label: "Project Status", width: 130,
+      render: (cw) => <LinkCell value={linkMap[cw.id]?.status} options={LINK_STATUS_OPTIONS} onSave={(v) => saveLinkField(cw.id, "status", v)} />,
+    },
+    {
+      id: "link_notes", label: "Project Notes", width: 200,
+      render: (cw) => <LinkCell value={linkMap[cw.id]?.notes} onSave={(v) => saveLinkField(cw.id, "notes", v)} />,
+    },
     { id: "_unlink", label: "", width: 50, render: (cw) => (
       <button type="button" onClick={() => handleUnlink(cw)} title="Unlink from project" className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
         <X className="w-3.5 h-3.5" />
@@ -211,6 +310,13 @@ export default function LinkedColorwaysView({
   ];
 
   const visibleColumns = activeColumns || columns;
+
+  const linkAllFields = [
+    { id: "link_forecasted_qty", label: "Fcst. Qty (Project)", getValue: (cw) => linkMap[cw.id]?.forecasted_quantity ?? "—", render: (cw) => linkMap[cw.id]?.forecasted_quantity ?? "—" },
+    { id: "link_channels", label: "Channels of Trade (Project)", getValue: (cw) => (linkMap[cw.id]?.channels_of_trade || []).join(", ") || "—", render: (cw) => (linkMap[cw.id]?.channels_of_trade || []).join(", ") || "—" },
+    { id: "link_status", label: "Project Status", getValue: (cw) => linkMap[cw.id]?.status || "—", render: (cw) => linkMap[cw.id]?.status || "—" },
+    { id: "link_notes", label: "Project Notes", getValue: (cw) => linkMap[cw.id]?.notes || "—", render: (cw) => linkMap[cw.id]?.notes || "—" },
+  ];
 
   if (colorways.length === 0) {
     return (
@@ -272,6 +378,7 @@ export default function LinkedColorwaysView({
         <GalleryView
           pageKey="project_linked_colorways"
           allFields={[
+            ...linkAllFields,
             { id: "style_name", label: "Style", getValue: (cw) => getProduct(cw)?.name || "—", render: (cw) => getProduct(cw)?.name || "—" },
             { id: "color_name", label: "Color", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
             { id: "codes", label: "Codes", getValue: (cw) => (getTechColor(cw)?.code || "") + (cw.colorway_code || ""), render: (cw) => {
