@@ -7,8 +7,15 @@ import { base44 } from "@/api/base44Client";
 import DataTable from "./DataTable";
 import ColorwayCard from "./ColorwayCard";
 
+const STORAGE_KEY = "colorway_section_view";
+
 export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAddFromLibrary }) {
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState(() => localStorage.getItem(STORAGE_KEY) || "grid");
+
+  const handleSetView = (v) => {
+    setView(v);
+    localStorage.setItem(STORAGE_KEY, v);
+  };
   const [techColors, setTechColors] = useState([]);
   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState("");
@@ -144,8 +151,8 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
               <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColor"]} />
             )}
             <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-              <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
+              <button type="button" onClick={() => handleSetView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
+              <button type="button" onClick={() => handleSetView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
             </div>
           </>
         )}

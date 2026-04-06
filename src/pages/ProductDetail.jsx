@@ -37,7 +37,16 @@ export default function ProductDetail() {
   const queryParams = new URLSearchParams(window.location.search);
   const typeFromQuery = queryParams.get("type") || "Product";
 
-  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(() => {
+    const saved = localStorage.getItem("product_detail_details_open");
+    return saved === null ? true : saved === "true";
+  });
+
+  const toggleDetails = (v) => {
+    const next = typeof v === "boolean" ? v : !detailsOpen;
+    setDetailsOpen(next);
+    localStorage.setItem("product_detail_details_open", String(next));
+  };
   const [product, setProduct] = useState({
     type: typeFromQuery, name: "", category: "", sub_category: "", customer_need: "",
     description: "", images: [], size_grid_id: "",
@@ -336,7 +345,7 @@ export default function ProductDetail() {
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <button
           type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
+          onClick={() => toggleDetails()}
           className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors"
         >
           <span className="text-sm font-semibold">{isNew ? `New ${product.type}` : "Details"}</span>
