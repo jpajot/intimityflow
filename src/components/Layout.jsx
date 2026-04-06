@@ -7,27 +7,27 @@ import { Shirt, SwatchBook, FolderOpen, Palette, Ruler, ListCollapse, Menu, Chev
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
 export function getPinnedItems() {
-  try { return JSON.parse(localStorage.getItem(PINNED_ITEMS_KEY) || "[]"); } catch { return []; }
+  try {return JSON.parse(localStorage.getItem(PINNED_ITEMS_KEY) || "[]");} catch {return [];}
 }
 export function setPinnedItems(items) {
   localStorage.setItem(PINNED_ITEMS_KEY, JSON.stringify(items));
 }
 
 const NAV_ITEMS = [
-  { path: "/list-view", label: "Styles Lists", icon: Shirt },
-  { path: "/materials", label: "Materials", icon: SwatchBook },
-  { path: "/projects", label: "Projects", icon: FolderOpen },
-];
+{ path: "/list-view", label: "Styles Lists", icon: Shirt },
+{ path: "/materials", label: "Materials", icon: SwatchBook },
+{ path: "/projects", label: "Projects", icon: FolderOpen }];
+
 
 
 
 const SIZE_STUDIO_ITEMS = [];
 
 const CONFIG_ITEMS = [
-  { path: "/translations", label: "Translations", icon: Languages },
-  { path: "/list-of-values", label: "List of Values", icon: ListCollapse },
-  { path: "/code-generators", label: "Code Generators", icon: Hash },
-];
+{ path: "/translations", label: "Translations", icon: Languages },
+{ path: "/list-of-values", label: "List of Values", icon: ListCollapse },
+{ path: "/code-generators", label: "Code Generators", icon: Hash }];
+
 
 export default function Layout() {
   const location = useLocation();
@@ -46,7 +46,7 @@ export default function Layout() {
     const handler = () => setPinnedItemsState(getPinnedItems());
     window.addEventListener("storage", handler);
     window.addEventListener("pinned-items-changed", handler);
-    return () => { window.removeEventListener("storage", handler); window.removeEventListener("pinned-items-changed", handler); };
+    return () => {window.removeEventListener("storage", handler);window.removeEventListener("pinned-items-changed", handler);};
   }, []);
 
   const toggleExpanded = () => {
@@ -69,46 +69,46 @@ export default function Layout() {
         onClick={onNavigate}
         title={!expanded ? item.label : undefined}
         className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
-          expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"
-        } ${
-          isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-        }`}
-      >
+        expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"} ${
+
+        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`
+        }>
+        
         <Icon className="w-4 h-4 shrink-0" />
         {expanded && <span>{item.label}</span>}
-      </Link>
-    );
+      </Link>);
+
   };
 
-  const GroupButton = ({ icon: Icon, label, open, onToggle, isActive, navPath }) => (
-    <button
-      onClick={() => {
-        if (!expanded) setExpanded(true);
-        if (navPath) navigate(navPath);
-        onToggle();
-      }}
-      title={!expanded ? label : undefined}
-      className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
-        expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"
-      } ${
-        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-      }`}
-    >
+  const GroupButton = ({ icon: Icon, label, open, onToggle, isActive, navPath }) =>
+  <button
+    onClick={() => {
+      if (!expanded) setExpanded(true);
+      if (navPath) navigate(navPath);
+      onToggle();
+    }}
+    title={!expanded ? label : undefined}
+    className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
+    expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"} ${
+
+    isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`
+    }>
+    
       <Icon className="w-4 h-4 shrink-0" />
-      {expanded && (
-        <>
+      {expanded &&
+    <>
           <span className="flex-1 text-left">{label}</span>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
         </>
-      )}
-    </button>
-  );
+    }
+    </button>;
 
-  const NavContent = ({ onNavigate = null }) => (
-    <nav className="space-y-0.5">
-      {NAV_ITEMS.map((item) => (
-        <NavItem key={item.path} item={item} onNavigate={onNavigate} isActive={location.pathname === item.path} />
-      ))}
+
+  const NavContent = ({ onNavigate = null }) =>
+  <nav className="space-y-0.5">
+      {NAV_ITEMS.map((item) =>
+    <NavItem key={item.path} item={item} onNavigate={onNavigate} isActive={location.pathname === item.path} />
+    )}
 
       <div className="my-2 border-t border-border" />
 
@@ -119,96 +119,96 @@ export default function Layout() {
       <NavItem item={{ path: "/size-grid-library", label: "Size Studio", icon: Ruler }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/size-grid-library")} />
 
       {/* Pinned Items */}
-      {pinnedItems.length > 0 && (
-        <>
+      {pinnedItems.length > 0 &&
+    <>
           <div className="my-2 border-t border-border" />
           {expanded && <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1 pb-0.5">Pinned</p>}
-          {pinnedItems.map((item) => (
-            <div key={item.path} className="group relative">
+          {pinnedItems.map((item) =>
+      <div key={item.path} className="group relative">
               <Link
-                to={item.path}
-                onClick={onNavigate}
-                title={!expanded ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
-                  expanded ? "px-3 py-2" : "px-0 py-2 justify-center"
-                } ${
-                  location.pathname === item.path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
+          to={item.path}
+          onClick={onNavigate}
+          title={!expanded ? item.label : undefined}
+          className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
+          expanded ? "px-3 py-2" : "px-0 py-2 justify-center"} ${
+
+          location.pathname === item.path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`
+          }>
+          
                 <Pin className="w-3.5 h-3.5 shrink-0" />
                 {expanded && <span className="flex-1 truncate">{item.label}</span>}
               </Link>
-              {expanded && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = pinnedItems.filter((p) => p.path !== item.path);
-                    setPinnedItems(updated);
-                    setPinnedItemsState(updated);
-                    window.dispatchEvent(new Event("pinned-items-changed"));
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive text-muted-foreground transition-opacity"
-                  title="Unpin"
-                >
+              {expanded &&
+        <button
+          type="button"
+          onClick={() => {
+            const updated = pinnedItems.filter((p) => p.path !== item.path);
+            setPinnedItems(updated);
+            setPinnedItemsState(updated);
+            window.dispatchEvent(new Event("pinned-items-changed"));
+          }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive text-muted-foreground transition-opacity"
+          title="Unpin">
+          
                   <PinOff className="w-3 h-3" />
                 </button>
-              )}
+        }
             </div>
-          ))}
-        </>
       )}
-    </nav>
-  );
+        </>
+    }
+    </nav>;
+
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop / Tablet sidebar — always visible */}
       <aside
         className={`hidden sm:flex flex-col border-r border-border bg-[hsl(var(--sidebar-background)/0.7)] transition-all duration-300 shrink-0 ${
-          expanded ? "w-56" : "w-14"
-        }`}
-      >
+        expanded ? "w-56" : "w-14"}`
+        }>
+        
         {/* Top: logo + toggle */}
         <div className={`flex items-center border-b border-border h-16 shrink-0 ${
-          expanded ? "px-3 gap-3" : "justify-center px-0"
-        }`}>
+        expanded ? "px-3 gap-3" : "justify-center px-0"}`
+        }>
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
               <Shirt className="w-4 h-4 text-primary-foreground" />
             </div>
             {expanded && <span className="font-display text-lg font-semibold tracking-tight">Linea</span>}
           </Link>
-          {expanded && (
-            <button
-              onClick={toggleExpanded}
-              className="ml-auto p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors"
-              title="Collapse sidebar"
-            >
+          {expanded &&
+          <button
+            onClick={toggleExpanded}
+            className="ml-auto p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+            title="Collapse sidebar">
+            
               <ChevronsLeft className="w-4 h-4" />
             </button>
-          )}
+          }
         </div>
 
         {/* Collapse toggle when icon-only */}
-        {!expanded && (
-          <button
-            onClick={toggleExpanded}
-            className="mx-auto mt-2 p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
-            title="Expand sidebar"
-          >
+        {!expanded &&
+        <button
+          onClick={toggleExpanded}
+          className="mx-auto mt-2 p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+          title="Expand sidebar">
+          
             <ChevronsRight className="w-4 h-4" />
           </button>
-        )}
+        }
 
         {/* Nav */}
         <div className={`flex-1 overflow-y-auto overflow-x-hidden py-3 ${
-          expanded ? "px-3" : "px-2"
-        }`}>
+        expanded ? "px-3" : "px-2"}`
+        }>
           <NavContent />
         </div>
 
         {/* Config at bottom */}
-        <div className={`shrink-0 border-t border-border py-3 ${ expanded ? "px-3" : "px-2" }`}>
+        <div className={`shrink-0 border-t border-border py-3 ${expanded ? "px-3" : "px-2"}`}>
           <NavItem item={{ path: "/config", label: "Settings", icon: Settings }} onNavigate={null} isActive={location.pathname.startsWith("/config") || isConfigActive} />
         </div>
       </aside>
@@ -244,10 +244,10 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="px-3 py-4 flex-1 overflow-y-auto sm:p-6">
           <Outlet />
         </main>
       </div>
-    </div>
-  );
+    </div>);
+
 }
