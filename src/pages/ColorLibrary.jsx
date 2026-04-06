@@ -23,7 +23,7 @@ export default function ColorLibrary({ hideTitle = false }) {
   const [editingTech, setEditingTech] = useState(null);
   const [editingComm, setEditingComm] = useState(null);
 
-  const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb: "", cmyk: "" });
+  const [techForm, setTechForm] = useState({ code: "", name: "", hex: "", rgb: "", cmyk: "", color_group: "", color_sub_group: "" });
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [commSearch, setCommSearch] = useState("");
@@ -34,16 +34,32 @@ export default function ColorLibrary({ hideTitle = false }) {
   const [commView, setCommView] = useState("table");
   const [visibleTechColumns, setVisibleTechColumns] = useState(null);
   const [visibleCommColumns, setVisibleCommColumns] = useState(null);
+  const [colorGroups, setColorGroups] = useState([]);
+  const [colorSubGroups, setColorSubGroups] = useState([]);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const [tech, comm] = await Promise.all([
+    const [tech, comm, groupTypes] = await Promise.all([
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.CommercialColor.list("code", 2000),
+      base44.entities.TypeOfLOV.filter({ code: "ColorGroup" }),
     ]);
     setTechnicalColors(tech);
     setCommercialColors(comm);
+    if (groupTypes.length > 0) {
+      const groupVals = await base44.entities.ListOfValues.filter({ type_of_lov_id: groupTypes[0].id });
+      setColorGroups(groupVals.map(v => v.name).sort());
+      const subGroupTypes = await base44.entities.TypeOfLOV.filter({ code: "ColorSubGroup" });
+      if (subGroupTypes.length > 0) {
+        const subVals = await base44.entities.ListOfValues.filter({ type_of_lov_id: subGroupTypes[0].id });
+        // Enrich with parent group name via depends_on_value_id
+        const allGroupVals = await base44.entities.ListOfValues.filter({ type_of_lov_id: groupTypes[0].id });
+        const groupIdToName = {};
+        allGroupVals.forEach(v => { groupIdToName[v.id] = v.name; });
+        setColorSubGroups(subVals.map(v => ({ name: v.name, group: groupIdToName[v.depends_on_value_id] || "" })));
+      }
+    }
     setLoading(false);
   };
 
@@ -60,12 +76,12 @@ export default function ColorLibrary({ hideTitle = false }) {
 
   const openNewTech = () => {
     setEditingTech(null);
-    setTechForm({ code: "", name: "", hex: "", rgb: "", cmyk: "" });
+    setTechForm({ code: "", name: "", hex: "", rgb: "", cmyk: "", color_group: "", color_sub_group: "" });
     setShowTechDialog(true);
   };
   const openEditTech = (c) => {
     setEditingTech(c);
-    setTechForm({ code: c.code, name: c.name, hex: c.hex || "", rgb: c.rgb || "", cmyk: c.cmyk || "" });
+    setTechForm({ code: c.code, name: c.name, hex: c.hex || "", rgb: c.rgb || "", cmyk: c.cmyk || "", color_group: c.color_group || "", color_sub_group: c.color_sub_group || "" });
     setShowTechDialog(true);
   };
 
@@ -197,6 +213,20 @@ export default function ColorLibrary({ hideTitle = false }) {
       width: 140,
       sortKey: (c) => c.cmyk || "",
       render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.cmyk || "—"}</span>,
+    },
+    {
+      id: "color_group",
+      label: "Color Group",
+      width: 130,
+      sortKey: (c) => c.color_group || "",
+      render: (c) => <span className="text-xs text-muted-foreground">{c.color_group || "—"}</span>,
+    },
+    {
+      id: "color_sub_group",
+      label: "Color Sub-Group",
+      width: 140,
+      sortKey: (c) => c.color_sub_group || "",
+      render: (c) => <span className="text-xs text-muted-foreground">{c.color_sub_group || "—"}</span>,
     },
     {
       id: "commercial",
@@ -469,6 +499,28 @@ export default function ColorLibrary({ hideTitle = false }) {
             <div className="space-y-1.5">
               <Label className="text-xs">CMYK (optional)</Label>
               <Input value={techForm.cmyk} onChange={(e) => setTechForm((f) => ({ ...f, cmyk: e.target.value }))} placeholder="e.g. 0,1,3,4" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Color Group</Label>
+                <Select value={techForm.color_group || "none"} onValueChange={(v) => setTechForm((f) => ({ ...f, color_group: v === "none" ? "" : v, color_sub_group: "" }))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select group…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {colorGroups.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Color Sub-Group</Label>
+                <Select value={techForm.color_sub_group || "none"} onValueChange={(v) => setTechForm((f) => ({ ...f, color_sub_group: v === "none" ? "" : v }))} disabled={!techForm.color_group}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select sub-group…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {colorSubGroups.filter((s) => s.group === techForm.color_group).map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowTechDialog(false)}>Cancel</Button>
