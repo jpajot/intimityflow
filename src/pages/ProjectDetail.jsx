@@ -314,9 +314,9 @@ export default function ProjectDetail() {
       <ItemSubNav
         items={[
         { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-        { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: StylesIcon },
-        { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
-        { id: "variations", label: "Linked Variations", count: linkedVariations.length, icon: Layers },
+        { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
+        { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
+        { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
         { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
         }
         activeId={activeSection}
