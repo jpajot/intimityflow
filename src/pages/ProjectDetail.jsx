@@ -82,16 +82,16 @@ export default function ProjectDetail() {
   const loadData = async () => {
     setLoading(true);
     const [proj, pals, palCols, tc, cc, docs, lovTypes, projs, sgs] = await Promise.all([
-      base44.entities.Project.filter({ id }),
-      base44.entities.ColorPalette.filter({ project_id: id }),
-      base44.entities.ColorPaletteColor.list("-created_date", 2000),
-      base44.entities.TechnicalColor.list("code", 2000),
-      base44.entities.CommercialColor.list("code", 2000),
-      base44.entities.UploadedDocument.filter({ project_id: id }),
-      base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
-      base44.entities.Project.list("name", 500),
-      base44.entities.SizeGrid.list("name", 200),
-    ]);
+    base44.entities.Project.filter({ id }),
+    base44.entities.ColorPalette.filter({ project_id: id }),
+    base44.entities.ColorPaletteColor.list("-created_date", 2000),
+    base44.entities.TechnicalColor.list("code", 2000),
+    base44.entities.CommercialColor.list("code", 2000),
+    base44.entities.UploadedDocument.filter({ project_id: id }),
+    base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
+    base44.entities.Project.list("name", 500),
+    base44.entities.SizeGrid.list("name", 200)]
+    );
     setAllProjects(projs);
     setSizeGrids(sgs);
     setProject(proj[0] || null);
@@ -102,10 +102,10 @@ export default function ProjectDetail() {
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
 
     const [allCws, allProducts, allVars] = await Promise.all([
-      base44.entities.ProductColor.list("-created_date", 5000),
-      base44.entities.Product.list("-created_date", 2000),
-      base44.entities.ProductColorAndMore.list("-created_date", 5000),
-    ]);
+    base44.entities.ProductColor.list("-created_date", 5000),
+    base44.entities.Product.list("-created_date", 2000),
+    base44.entities.ProductColorAndMore.list("-created_date", 5000)]
+    );
     const linked = allCws.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
     setAllColorways(allCws);
@@ -119,23 +119,23 @@ export default function ProjectDetail() {
 
     if (lovTypes.length > 0) {
       const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
-      setDocTypes(values.map(v => v.name));
+      setDocTypes(values.map((v) => v.name));
     }
     setLoading(false);
   };
 
   const getPaletteHexes = (paletteId) => {
-    return paletteColors
-      .filter((pc) => pc.palette_id === paletteId)
-      .map((e) => {
-        if (e.color_type === "technical") {
-          const t = techColors.find((c) => c.id === e.color_id);
-          return t?.hex || "#ccc";
-        }
-        const c = commColors.find((c) => c.id === e.color_id);
-        const t = techColors.find((t) => t.id === c?.main_technical_color_id);
+    return paletteColors.
+    filter((pc) => pc.palette_id === paletteId).
+    map((e) => {
+      if (e.color_type === "technical") {
+        const t = techColors.find((c) => c.id === e.color_id);
         return t?.hex || "#ccc";
-      });
+      }
+      const c = commColors.find((c) => c.id === e.color_id);
+      const t = techColors.find((t) => t.id === c?.main_technical_color_id);
+      return t?.hex || "#ccc";
+    });
   };
 
   const handleUpload = async () => {
@@ -151,7 +151,7 @@ export default function ProjectDetail() {
         file_url,
         original_filename: filename,
         upload_date: new Date().toISOString(),
-        status: "uploaded",
+        status: "uploaded"
       });
       setDocuments((prev) => [doc, ...prev]);
       setFile(null);
@@ -206,24 +206,24 @@ export default function ProjectDetail() {
     return (
       <div className="flex items-center justify-center py-32">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+      </div>);
+
   }
 
   if (!project) {
     return <div className="text-center py-20 text-muted-foreground">Project not found</div>;
   }
 
-  const filteredDocs = docSearch.trim()
-    ? documents.filter((d) =>
-        d.original_filename?.toLowerCase().includes(docSearch.toLowerCase()) ||
-        d.document_type?.toLowerCase().includes(docSearch.toLowerCase()) ||
-        d.collection_name?.toLowerCase().includes(docSearch.toLowerCase())
-      )
-    : documents;
+  const filteredDocs = docSearch.trim() ?
+  documents.filter((d) =>
+  d.original_filename?.toLowerCase().includes(docSearch.toLowerCase()) ||
+  d.document_type?.toLowerCase().includes(docSearch.toLowerCase()) ||
+  d.collection_name?.toLowerCase().includes(docSearch.toLowerCase())
+  ) :
+  documents;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate("/projects")}>
@@ -236,9 +236,9 @@ export default function ProjectDetail() {
         <button
           type="button"
           onClick={togglePin}
-          title={isPinned ? "Unpin from sidebar" : (getPinnedItems().length >= 3 ? "Max 3 pinned items" : "Pin to sidebar")}
-          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"} ${!isPinned && getPinnedItems().length >= 3 ? "opacity-40 cursor-not-allowed" : ""}`}
-        >
+          title={isPinned ? "Unpin from sidebar" : getPinnedItems().length >= 3 ? "Max 3 pinned items" : "Pin to sidebar"}
+          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"} ${!isPinned && getPinnedItems().length >= 3 ? "opacity-40 cursor-not-allowed" : ""}`}>
+          
           {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
         </button>
         <AlertDialog>
@@ -265,13 +265,13 @@ export default function ProjectDetail() {
         <button
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors"
-        >
+          className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors">
+          
           <span className="text-sm font-semibold">Details</span>
           <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${detailsOpen ? "" : "-rotate-90"}`} />
         </button>
-        {detailsOpen && (
-          <div className="px-5 pb-5 space-y-4">
+        {detailsOpen &&
+        <div className="px-5 pb-5 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs">Name</Label>
@@ -307,55 +307,55 @@ export default function ProjectDetail() {
               <Textarea value={project.description || ""} onChange={(e) => updateField("description", e.target.value)} rows={3} />
             </div>
           </div>
-        )}
+        }
       </div>
 
       {/* Sub-navigation */}
       <ItemSubNav
         items={[
-          { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-          { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
-          { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
-          { id: "variations", label: "Linked Variations", count: linkedVariations.length, icon: Layers },
-          { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
-        ]}
+        { id: "documents", label: "Documents", count: documents.length, icon: FileText },
+        { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
+        { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
+        { id: "variations", label: "Linked Variations", count: linkedVariations.length, icon: Layers },
+        { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
+        }
         activeId={activeSection}
-        onChange={setActiveSection}
-      >
-        {activeSection === "palettes" && (
-          <div className="space-y-4">
-            {palettes.length === 0 ? (
-              <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+        onChange={setActiveSection}>
+        
+        {activeSection === "palettes" &&
+        <div className="space-y-4">
+            {palettes.length === 0 ?
+          <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
                 <p className="text-sm text-muted-foreground">No color palettes yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              </div> :
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {palettes.map((palette) => {
-                  const hexes = getPaletteHexes(palette.id);
-                  const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
-                  return (
-                    <button key={palette.id} onClick={() => navigate(`/color-palettes/${palette.id}`)} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all text-left">
+              const hexes = getPaletteHexes(palette.id);
+              const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
+              return (
+                <button key={palette.id} onClick={() => navigate(`/color-palettes/${palette.id}`)} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all text-left">
                       <div className="h-12 flex">
-                        {hexes.length === 0 ? (
-                          <div className="flex-1 bg-muted" />
-                        ) : (
-                          hexes.slice(0, 10).map((hex, i) => <div key={i} className="flex-1" style={{ backgroundColor: hex }} />)
-                        )}
+                        {hexes.length === 0 ?
+                    <div className="flex-1 bg-muted" /> :
+
+                    hexes.slice(0, 10).map((hex, i) => <div key={i} className="flex-1" style={{ backgroundColor: hex }} />)
+                    }
                       </div>
                       <div className="px-4 py-2.5 flex items-center justify-between">
                         <span className="font-medium text-sm">{palette.name}</span>
                         <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    </button>);
 
-        {activeSection === "documents" && (
-          <div className="space-y-4">
+            })}
+              </div>
+          }
+          </div>
+        }
+
+        {activeSection === "documents" &&
+        <div className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -365,15 +365,15 @@ export default function ProjectDetail() {
                 <Upload className="w-4 h-4" /> Upload &amp; Parse
               </Button>
             </div>
-            {filteredDocs.length === 0 ? (
-              <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+            {filteredDocs.length === 0 ?
+          <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
                 <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredDocs.map((doc) => (
-                  <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+              </div> :
+
+          <div className="space-y-2">
+                {filteredDocs.map((doc) =>
+            <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
                     <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{doc.original_filename || "Document"}</p>
@@ -388,40 +388,40 @@ export default function ProjectDetail() {
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
-                ))}
-              </div>
             )}
+              </div>
+          }
           </div>
-        )}
+        }
 
-        {activeSection === "colorways" && (
-          <LinkedColorwaysView
-            colorways={linkedColorways}
-            products={linkedProducts}
-            techColors={techColors}
-            commColors={commColors}
-            navigate={navigate}
-            search={cwSearch}
-            onSearchChange={setCwSearch}
-            view={cwView}
-            onViewChange={setCwView}
-            activeColumns={cwActiveColumns}
-            onColumnsChange={setCwActiveColumns}
-            projectId={id}
-            allColorways={allColorways}
-            onLinked={loadData}
-          />
-        )}
-        {activeSection === "styles" && (
-          <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} />
-        )}
-        {activeSection === "variations" && (
-          <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
-        )}
+        {activeSection === "colorways" &&
+        <LinkedColorwaysView
+          colorways={linkedColorways}
+          products={linkedProducts}
+          techColors={techColors}
+          commColors={commColors}
+          navigate={navigate}
+          search={cwSearch}
+          onSearchChange={setCwSearch}
+          view={cwView}
+          onViewChange={setCwView}
+          activeColumns={cwActiveColumns}
+          onColumnsChange={setCwActiveColumns}
+          projectId={id}
+          allColorways={allColorways}
+          onLinked={loadData} />
+
+        }
+        {activeSection === "styles" &&
+        <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} />
+        }
+        {activeSection === "variations" &&
+        <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
+        }
       </ItemSubNav>
 
       {/* Upload Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={(o) => { if (!o) { setFile(null); setSelectedType(""); } setShowUploadDialog(o); }}>
+      <Dialog open={showUploadDialog} onOpenChange={(o) => {if (!o) {setFile(null);setSelectedType("");}setShowUploadDialog(o);}}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Upload &amp; Parse Document</DialogTitle>
@@ -432,9 +432,9 @@ export default function ProjectDetail() {
               <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
                 <SelectContent>
-                  {docTypes.length === 0
-                    ? <SelectItem value="__none" disabled>No types configured</SelectItem>
-                    : docTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)
+                  {docTypes.length === 0 ?
+                  <SelectItem value="__none" disabled>No types configured</SelectItem> :
+                  docTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)
                   }
                 </SelectContent>
               </Select>
@@ -444,7 +444,7 @@ export default function ProjectDetail() {
               <label className={`flex items-center gap-2 px-3 py-2 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
                 <Upload className="w-4 h-4 shrink-0" />
                 <span className="truncate">{file ? file.name : "Choose .pdf or .pptx…"}</span>
-                <input type="file" accept=".pdf,.pptx,.ppt" className="hidden" onChange={(e) => { setFile(e.target.files?.[0] || null); }} />
+                <input type="file" accept=".pdf,.pptx,.ppt" className="hidden" onChange={(e) => {setFile(e.target.files?.[0] || null);}} />
               </label>
             </div>
             <div className="flex gap-2 pt-1">
@@ -457,6 +457,6 @@ export default function ProjectDetail() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
