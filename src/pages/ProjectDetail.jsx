@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, ChevronDown, Shirt, Pin, PinOff } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, ChevronDown, Pin, PinOff } from "lucide-react";
+import StylesIcon from "../components/icons/StylesIcon";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
 import PresenceIndicator from "../components/PresenceIndicator";
 import { Textarea } from "@/components/ui/textarea";
@@ -313,7 +314,7 @@ export default function ProjectDetail() {
       <ItemSubNav
         items={[
         { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-        { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: Shirt },
+        { id: "styles", label: "Linked Styles", count: linkedStyles.length, icon: StylesIcon },
         { id: "colorways", label: "Linked Colorways", count: linkedColorways.length, icon: Palette },
         { id: "variations", label: "Linked Variations", count: linkedVariations.length, icon: Layers },
         { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
