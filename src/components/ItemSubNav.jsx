@@ -1,26 +1,23 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
 export default function ItemSubNav({ items, activeId, onChange, children }) {
   const [expanded, setExpanded] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
+  const storageKey = `itemnav_tab_${location.pathname}`;
 
-  // On mount: if URL has a valid ?tab=, fire onChange to restore it
+  // On mount: restore last active tab from localStorage
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabFromUrl = params.get("tab");
-    if (tabFromUrl && tabFromUrl !== activeId && items.some((i) => i.id === tabFromUrl)) {
-      onChange(tabFromUrl);
+    const saved = localStorage.getItem(storageKey);
+    if (saved && saved !== activeId && items.some((i) => i.id === saved)) {
+      onChange(saved);
     }
-  }, []);
+  }, [storageKey]);
 
   const handleChange = (id) => {
     onChange(id);
-    const params = new URLSearchParams(location.search);
-    params.set("tab", id);
-    navigate({ search: params.toString() }, { replace: true });
+    localStorage.setItem(storageKey, id);
   };
 
   return (

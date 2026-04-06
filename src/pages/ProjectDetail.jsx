@@ -39,10 +39,7 @@ export default function ProjectDetail() {
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeSection, setActiveSection] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "palettes";
-  });
+  const [activeSection, setActiveSection] = useState("palettes");
   const [cwSearch, setCwSearch] = useState("");
   const [cwView, setCwView] = useState("grid");
   const [cwActiveColumns, setCwActiveColumns] = useState(null);

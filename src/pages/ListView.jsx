@@ -517,10 +517,7 @@ export default function ListView() {
   const [sizeGrids, setSizeGrids] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "styles";
-  });
+  const [activeSection, setActiveSection] = useState("styles");
 
   useEffect(() => {
     Promise.all([
