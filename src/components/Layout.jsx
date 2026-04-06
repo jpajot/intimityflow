@@ -17,7 +17,7 @@ export function setPinnedItems(items) {
 }
 
 const NAV_ITEMS = [
-{ path: "/list-view", label: "Styles Lists", icon: StylesIcon },
+{ path: "/list-view", label: "Products Lists", icon: StylesIcon },
 { path: "/materials", label: "Materials Lists", icon: FabricRollIcon },
 { path: "/projects", label: "Projects", icon: ProjectsIcon }];
 

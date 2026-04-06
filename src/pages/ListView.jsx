@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Loader2, Shirt, Palette, Layers, Plus } from "lucide-react";
+import { LayoutGrid, List, Search, Loader2, Palette, Layers, Plus } from "lucide-react";
+import StylesIcon from "../components/icons/StylesIcon";
 import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
@@ -102,12 +103,12 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
           <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
           <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
         </div>
-        <Button size="sm" className="gap-1.5 h-8" onClick={() => navigate("/products/new")}><Plus className="w-3.5 h-3.5" /> New Style</Button>
+        <Button size="sm" className="gap-1.5 h-8" onClick={() => navigate("/products/new")}><Plus className="w-3.5 h-3.5" /> New Product</Button>
       </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">{products.length === 0 ? "No styles yet." : "No results match your search."}</p>
+          <p className="text-sm text-muted-foreground">{products.length === 0 ? "No products yet." : "No results match your search."}</p>
         </div>
       ) : view === "grid" ? (
         <GalleryView
@@ -553,13 +554,13 @@ export default function ListView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Styles Lists</h1>
-        <p className="text-muted-foreground mt-1">Browse and filter styles, colorways, and variations</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">Products Lists</h1>
+        <p className="text-muted-foreground mt-1">Browse and filter products, colorways, and variations</p>
       </div>
 
       <ItemSubNav
             items={[
-              { id: "styles", label: "Styles", count: products.length, icon: Shirt },
+              { id: "styles", label: "Products", count: products.length, icon: StylesIcon },
               { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
               { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
             ]}
