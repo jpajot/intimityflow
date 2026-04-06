@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Shirt, Scroll, SwatchBook, FolderOpen, Palette, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages, Settings, Pin, PinOff, ChevronDown } from "lucide-react";
+import FabricRollIcon from "./icons/FabricRollIcon";
+import { Shirt, SwatchBook, FolderOpen, Palette, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages, Settings, Pin, PinOff, ChevronDown } from "lucide-react";
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
 export function getPinnedItems() {
@@ -15,7 +16,7 @@ export function setPinnedItems(items) {
 
 const NAV_ITEMS = [
 { path: "/list-view", label: "Styles Lists", icon: Shirt },
-{ path: "/materials", label: "Materials Lists", icon: Scroll },
+{ path: "/materials", label: "Materials Lists", icon: FabricRollIcon },
 { path: "/projects", label: "Projects", icon: FolderOpen }];
 
 

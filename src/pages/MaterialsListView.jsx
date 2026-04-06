@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Loader2, Scroll, Palette, Layers, Plus } from "lucide-react";
+import { LayoutGrid, List, Search, Loader2, Palette, Layers, Plus } from "lucide-react";
+import FabricRollIcon from "../components/icons/FabricRollIcon";
 import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
 import DataTable from "../components/DataTable";
@@ -535,7 +536,7 @@ export default function MaterialsListView() {
 
       <ItemSubNav
         items={[
-          { id: "materials", label: "Materials", count: products.length, icon: Scroll },
+          { id: "materials", label: "Materials", count: products.length, icon: FabricRollIcon },
           { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
           { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
         ]}
