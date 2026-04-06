@@ -1,8 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
 export default function ItemSubNav({ items, activeId, onChange, children }) {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // On mount: if URL has a valid ?tab=, fire onChange to restore it
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabFromUrl = params.get("tab");
+    if (tabFromUrl && tabFromUrl !== activeId && items.some((i) => i.id === tabFromUrl)) {
+      onChange(tabFromUrl);
+    }
+  }, []);
+
+  const handleChange = (id) => {
+    onChange(id);
+    const params = new URLSearchParams(location.search);
+    params.set("tab", id);
+    navigate({ search: params.toString() }, { replace: true });
+  };
 
   return (
     <div className="flex rounded-xl border border-border overflow-hidden min-h-[400px]">
@@ -27,7 +46,7 @@ export default function ItemSubNav({ items, activeId, onChange, children }) {
             <button
               key={item.id}
               type="button"
-              onClick={() => onChange(item.id)}
+              onClick={() => handleChange(item.id)}
               title={!expanded ? item.label : undefined}
               className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors text-left ${
                 isActive
