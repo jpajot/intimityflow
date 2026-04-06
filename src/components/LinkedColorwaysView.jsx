@@ -169,6 +169,7 @@ export default function LinkedColorwaysView({
           <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
         ),
     },
+    { id: "style_sub_type", label: "Style: Sub-type", width: 130, sortKey: (cw) => getProduct(cw)?.sub_type || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_type || "—"}</span> },
     {
       id: "color_name",
       label: "Color Name",

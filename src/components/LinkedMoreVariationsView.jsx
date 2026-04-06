@@ -126,6 +126,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         );
       },
     },
+    { id: "style_sub_type", label: "Style: Sub-type", width: 130, sortKey: (v) => getProduct(v)?.sub_type || "", render: (v) => <span className="text-xs text-muted-foreground">{getProduct(v)?.sub_type || "—"}</span> },
     { id: "cw_color_name", label: "Colorway Name", width: 140, sortKey: (v) => getColorway(v)?.color_name || "", render: (v) => <span className="text-xs">{getColorway(v)?.color_name || "—"}</span> },
     { id: "cw_code", label: "Colorway Code", width: 120, sortKey: (v) => getColorway(v)?.colorway_code || "", render: (v) => <span className="font-mono text-xs text-muted-foreground">{getColorway(v)?.colorway_code || "—"}</span> },
     { id: "sequence", label: "Seq.", width: 80, sortKey: (v) => v.sequence || "", render: (v) => <span className="font-mono text-xs text-muted-foreground">{v.sequence || "—"}</span> },
@@ -153,6 +154,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     { id: "name", label: "Name", getValue: (v) => v.name || "—", render: (v) => v.name || "—" },
     { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code || "—", render: (v) => v.pack_code || "—" },
     { id: "variant", label: "Variant", getValue: (v) => v.variant || "—", render: (v) => v.variant || "—" },
+    { id: "style_sub_type", label: "Style: Sub-type", getValue: (v) => getProduct(v)?.sub_type || "—", render: (v) => getProduct(v)?.sub_type || "—" },
     { id: "cw_color_name", label: "Colorway", getValue: (v) => getColorway(v)?.color_name || "—", render: (v) => getColorway(v)?.color_name || "—" },
     { id: "style_name", label: "Style", getValue: (v) => getProduct(v)?.name || "—", render: (v) => getProduct(v)?.name || "—" },
     { id: "creation_project", label: "Creation Project", getValue: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "—", render: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "—" },

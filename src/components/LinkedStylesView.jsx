@@ -81,6 +81,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
     },
     { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
     { id: "type", label: "Type", width: 100, sortKey: (p) => p.type || "", render: (p) => <span className="text-xs text-muted-foreground">{p.type}</span> },
+    { id: "sub_type", label: "Sub-type", width: 130, sortKey: (p) => p.sub_type || "", render: (p) => <span className="text-xs">{p.sub_type || "—"}</span> },
     { id: "category", label: "Category", width: 140, sortKey: (p) => p.category || "", render: (p) => <span className="text-xs">{p.category || "—"}</span> },
     { id: "sub_category", label: "Sub-Category", width: 160, sortKey: (p) => p.sub_category || "", render: (p) => <span className="text-xs">{p.sub_category || "—"}</span> },
     { id: "customer_need", label: "Customer Need", width: 160, sortKey: (p) => p.customer_need || "", render: (p) => <span className="text-xs">{p.customer_need || "—"}</span> },
@@ -104,6 +105,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
 
   const allFields = [
     { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name || "—" },
+    { id: "sub_type", label: "Sub-type", getValue: (p) => p.sub_type || "—", render: (p) => p.sub_type || "—" },
     { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category || "—" },
     { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category || "—", render: (p) => p.sub_category || "—" },
     { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need || "—", render: (p) => p.customer_need || "—" },
