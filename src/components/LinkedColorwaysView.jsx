@@ -54,7 +54,7 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
   );
 }
 
-// Tiny inline-edit cell for link entity fields
+// Inline-edit cell for link entity fields
 function LinkCell({ value, onSave, type = "text", options = null }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value ?? "");
@@ -69,7 +69,7 @@ function LinkCell({ value, onSave, type = "text", options = null }) {
     const display = Array.isArray(value) ? (value.length ? value.join(", ") : "—") : (value || "—");
     return (
       <button type="button" onClick={() => setEditing(true)}
-        className="text-left text-xs w-full px-1 py-0.5 rounded hover:bg-primary/10 hover:text-primary transition-colors min-h-[20px] text-muted-foreground">
+        className="text-left text-xs w-full h-full block px-2 py-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground">
         {display}
       </button>
     );
@@ -79,7 +79,7 @@ function LinkCell({ value, onSave, type = "text", options = null }) {
     return (
       <select ref={ref} value={val} onChange={(e) => setVal(e.target.value)}
         onBlur={() => save()}
-        className="text-xs border border-input rounded px-1 py-0.5 bg-background w-full">
+        className="text-xs border-0 ring-1 ring-primary rounded px-2 py-1.5 bg-background w-full h-full outline-none">
         <option value="">—</option>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -91,7 +91,7 @@ function LinkCell({ value, onSave, type = "text", options = null }) {
       onChange={(e) => setVal(e.target.value)}
       onBlur={save}
       onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setVal(value ?? ""); setEditing(false); } }}
-      className="text-xs border border-input rounded px-1 py-0.5 bg-background w-full" />
+      className="text-xs border-0 ring-1 ring-primary rounded px-2 py-1.5 bg-background w-full h-full outline-none" />
   );
 }
 
