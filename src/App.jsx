@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Products from './pages/Products';
-import Materials from './pages/Materials';
+import MaterialsListView from './pages/MaterialsListView';
 import ProductDetail from './pages/ProductDetail';
 import ListView from './pages/ListView';
 import Projects from './pages/Projects';
@@ -55,7 +55,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/list-view" replace />} />
-        <Route path="/materials" element={<Materials />} />
+        <Route path="/materials" element={<MaterialsListView />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
