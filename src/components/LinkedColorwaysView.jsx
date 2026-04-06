@@ -54,6 +54,56 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
   );
 }
 
+// Multi-select dropdown for array fields
+function MultiSelectCell({ value = [], onSave, options = [] }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(value || []);
+  const ref = useRef(null);
+
+  useEffect(() => { setSelected(value || []); }, [JSON.stringify(value)]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); onSave(selected); } };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, selected]);
+
+  const toggle = (opt) => {
+    setSelected((prev) => prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]);
+  };
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)}
+        className="text-left text-xs w-full h-full block px-2 py-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground">
+        {selected.length ? selected.join(", ") : "—"}
+      </button>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative z-50">
+      <div className="absolute top-0 left-0 min-w-[160px] bg-popover border border-border rounded-lg shadow-lg p-1.5 flex flex-col gap-0.5">
+        {options.map((opt) => (
+          <button key={opt} type="button"
+            onClick={() => toggle(opt)}
+            className={`flex items-center gap-2 px-2 py-1 rounded text-xs text-left transition-colors ${
+              selected.includes(opt) ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            }`}>
+            <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${
+              selected.includes(opt) ? "bg-primary-foreground border-primary-foreground" : "border-muted-foreground"
+            }`}>{selected.includes(opt) && <span className="text-primary text-[10px] leading-none">✓</span>}</span>
+            {opt}
+          </button>
+        ))}
+        <button type="button" onClick={() => { setOpen(false); onSave(selected); }}
+          className="mt-1 text-[10px] text-center text-muted-foreground hover:text-foreground border-t border-border pt-1">Done</button>
+      </div>
+    </div>
+  );
+}
+
 // Inline-edit cell for link entity fields
 function LinkCell({ value, onSave, type = "text", options = null }) {
   const [editing, setEditing] = useState(false);
@@ -96,6 +146,7 @@ function LinkCell({ value, onSave, type = "text", options = null }) {
 }
 
 const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
+const CHANNEL_LOV_CODE = "ChannelOfTrade";
 const CHANNELS_OPTIONS = ["Wholesale", "Retail", "E-commerce", "Outlet", "Travel Retail", "Franchise"];
 
 export default function LinkedColorwaysView({
@@ -104,7 +155,17 @@ export default function LinkedColorwaysView({
   projectId, allColorways = [], onLinked,
 }) {
   const [showLink, setShowLink] = useState(false);
-  const [linkMap, setLinkMap] = useState({}); // keyed by product_color_id
+  const [linkMap, setLinkMap] = useState({});
+  const [channelOptions, setChannelOptions] = useState([]);
+
+  useEffect(() => {
+    base44.entities.TypeOfLOV.filter({ code: CHANNEL_LOV_CODE }).then((types) => {
+      if (types.length === 0) return;
+      base44.entities.ListOfValues.filter({ type_of_lov_id: types[0].id }).then((vals) => {
+        setChannelOptions(vals.map((v) => v.name));
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (!projectId) return;
@@ -282,16 +343,11 @@ export default function LinkedColorwaysView({
     {
       id: "link_channels", label: "Channels of Trade", width: 200,
       render: (cw) => (
-        <div className="flex flex-col gap-0.5 w-full">
-          <LinkCell value={(linkMap[cw.id]?.channels_of_trade || []).join(", ")} onSave={(v) => saveLinkField(cw.id, "channels_of_trade", v)} />
-          {(linkMap[cw.id]?.channels_of_trade || []).length > 0 && (
-            <div className="flex flex-wrap gap-0.5">
-              {(linkMap[cw.id].channels_of_trade).map((ch) => (
-                <span key={ch} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0 rounded-full">{ch}</span>
-              ))}
-            </div>
-          )}
-        </div>
+        <MultiSelectCell
+          value={linkMap[cw.id]?.channels_of_trade || []}
+          options={channelOptions}
+          onSave={(v) => saveLinkField(cw.id, "channels_of_trade", v)}
+        />
       ),
     },
     {
