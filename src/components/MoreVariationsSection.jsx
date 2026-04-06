@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Pencil, Loader2, X, Upload, Search } from "lucide-react";
+import ViewSelector from "./ViewSelector";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "./DataTable";
 
@@ -61,6 +62,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeColumns, setActiveColumns] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addColorwayIds, setAddColorwayIds] = useState([]);
   const [addPackCodes, setAddPackCodes] = useState([]);
@@ -298,6 +300,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-8 h-8 text-xs" />
         </div>
+        <ViewSelector pageKey="more_variations_product" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColorAndMore"]} />
         <Button variant="outline" size="sm" onClick={openAdd} className="gap-1.5 h-8 text-xs">
           <Plus className="w-3.5 h-3.5" /> Add Variations
         </Button>
@@ -309,7 +312,7 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
         </div>
       ) : (
         <DataTable
-          columns={columns}
+          columns={activeColumns || columns}
           rows={filteredVariations}
           fixedColumns={["sequence", "colorway"]}
           groupOptions={GROUP_OPTIONS}
