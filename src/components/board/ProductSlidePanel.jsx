@@ -19,6 +19,11 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lovData, setLovData] = useState({ subCategories: [], customerNeeds: [] });
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    base44.entities.Project.list("name", 500).then(setProjects);
+  }, []);
 
   // Load existing entity if editing
   useEffect(() => {
@@ -162,17 +167,33 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Creation Project ID</Label>
-                <Input value={form.creation_project_id || ""} onChange={(e) => set("creation_project_id", e.target.value)} placeholder="Project ID…" />
+                <Label className="text-xs">Creation Project</Label>
+                <Select value={form.creation_project_id || ""} onValueChange={(v) => set("creation_project_id", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select project…" /></SelectTrigger>
+                  <SelectContent>
+                    {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Linked Project IDs</Label>
-                <Input
-                  value={(form.project_ids || []).join(", ")}
-                  onChange={(e) => set("project_ids", e.target.value ? e.target.value.split(",").map((s) => s.trim()).filter(Boolean) : [])}
-                  placeholder="Comma-separated IDs…"
-                />
+                <Label className="text-xs">Linked Projects</Label>
+                <div className="flex flex-col gap-1.5">
+                  {projects.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(form.project_ids || []).includes(p.id)}
+                        onChange={(e) => {
+                          const ids = form.project_ids || [];
+                          set("project_ids", e.target.checked ? [...ids, p.id] : ids.filter((id) => id !== p.id));
+                        }}
+                        className="rounded border-border"
+                      />
+                      {p.name}
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}
