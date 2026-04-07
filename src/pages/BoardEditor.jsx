@@ -175,6 +175,7 @@ export default function BoardEditor() {
       linkedName: data.name,
       linkedCode: data.code,
       linkedImageUrl: data.imageUrl,
+      linkedHex: data.hex,
     };
     updateElements([...elements, el]);
   };
@@ -204,6 +205,7 @@ export default function BoardEditor() {
               linkedName: saved.name,
               linkedCode: saved.colorway_code || "",
               linkedImageUrl: saved.images?.[0] || "",
+              linkedHex: saved.hex || "",
             }
           : el
       ));
@@ -223,6 +225,7 @@ export default function BoardEditor() {
       linkedName: linkEntityType === "Product" ? entity?.name : entity?.color_name,
       linkedCode: entity?.colorway_code || entity?.code || "",
       linkedImageUrl: linkEntityType === "Product" ? entity?.images?.[0] : entity?.image_url || "",
+      linkedHex: entity?.hex || entity?.color_hex || "",
     };
     updateElements(elements.map((el) => el.id === linkDialog.elementId ? { ...el, ...updates } : el));
     // Ensure current project is in the entity's project_ids

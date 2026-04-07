@@ -26,7 +26,20 @@ export default function ProductPickerPanel({ open, onClose }) {
     else if (entityType === "ProductColor") loader = base44.entities.ProductColor.list("-created_date", 500);
     else if (entityType === "TechnicalColor") loader = base44.entities.TechnicalColor.list("name", 500);
     else loader = base44.entities.CommercialColor.list("name", 500);
-    loader.then((res) => { setItems(res); setLoading(false); });
+    loader.then(async (res) => {
+      // For CommercialColors, fetch linked technical colors to get hex values
+      if (entityType === "CommercialColor" && res.length > 0) {
+        const techColorIds = res.map((c) => c.main_technical_color_id).filter(Boolean);
+        if (techColorIds.length > 0) {
+          const techColors = await Promise.all(techColorIds.map((id) => base44.entities.TechnicalColor.filter({ id })));
+          const techMap = {};
+          techColors.forEach((arr) => { if (arr[0]) techMap[arr[0].id] = arr[0].hex; });
+          res = res.map((c) => ({ ...c, hex: techMap[c.main_technical_color_id] }));
+        }
+      }
+      setItems(res);
+      setLoading(false);
+    });
   }, [open, entityType]);
 
   if (!open) return null;
@@ -41,10 +54,10 @@ export default function ProductPickerPanel({ open, onClose }) {
   });
 
   const getDragData = (item) => {
-    if (entityType === "Product") return { entityType, id: item.id, name: item.name, code: "", imageUrl: item.images?.[0] || "" };
-    if (entityType === "ProductColor") return { entityType, id: item.id, name: item.color_name, code: item.colorway_code || "", imageUrl: item.image_url || "" };
-    if (entityType === "TechnicalColor") return { entityType, id: item.id, name: item.name, code: item.code || "", imageUrl: item.hex || "" };
-    return { entityType, id: item.id, name: item.color_name, code: item.code || "", imageUrl: "" };
+    if (entityType === "Product") return { entityType, id: item.id, name: item.name, code: "", imageUrl: item.images?.[0] || "", hex: "" };
+    if (entityType === "ProductColor") return { entityType, id: item.id, name: item.color_name, code: item.colorway_code || "", imageUrl: item.image_url || "", hex: item.color_hex || "" };
+    if (entityType === "TechnicalColor") return { entityType, id: item.id, name: item.name, code: item.code || "", imageUrl: "", hex: item.hex || "" };
+    return { entityType, id: item.id, name: item.color_name, code: item.code || "", imageUrl: "", hex: item.hex || "" };
   };
 
   const getLabel = (item) => {
@@ -56,9 +69,9 @@ export default function ProductPickerPanel({ open, onClose }) {
 
   const getImage = (item) => {
     if (entityType === "Product") return item.images?.[0];
-    if (entityType === "ProductColor") return item.image_url;
+    if (entityType === "ProductColor") return item.image_url || (item.color_hex ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='${item.color_hex}' width='100' height='100'/></svg>` : "");
     if (entityType === "TechnicalColor") return item.hex ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='${item.hex}' width='100' height='100'/></svg>` : "";
-    return "";
+    return item.hex ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='${item.hex}' width='100' height='100'/></svg>` : "";
   };
 
   return (

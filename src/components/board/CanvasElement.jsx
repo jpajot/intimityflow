@@ -188,6 +188,8 @@ function ElementContent({ el, onUpdate }) {
         <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: 'transparent' }}>
           {el.linkedImageUrl ? (
             <img src={el.linkedImageUrl} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }} draggable={false} />
+          ) : el.linkedHex ? (
+            <div style={{ width: '100%', height: '100%', backgroundColor: el.linkedHex }} />
           ) : (
             <div className="text-xs text-muted-foreground text-center px-2">
               <Link2 className="w-4 h-4 mx-auto mb-1 opacity-40" />
