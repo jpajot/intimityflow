@@ -10,10 +10,11 @@ import { X, Loader2, Save, ExternalLink } from "lucide-react";
 const PRODUCT_TYPES = ["Product", "Material"];
 const CATEGORIES = ["Tops", "Bottoms", "Outerwear", "Dresses", "Footwear", "Accessories", "Other"];
 
-export default function ProductSlidePanel({ open, mode, entityType, entityId, prefill, onClose, onSaved }) {
+export default function ProductSlidePanel({ open, mode, entityType, entityId, prefill, projectId, onClose, onSaved }) {
   const [form, setForm] = useState({
     type: "Product", name: "", category: "", sub_category: "",
     customer_need: "", description: "", images: [],
+    creation_project_id: "", project_ids: [],
   });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,8 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
         customer_need: "",
         description: prefill?.description || "",
         images: prefill?.imageUrl ? [prefill.imageUrl] : [],
+        creation_project_id: projectId || "",
+        project_ids: projectId ? [projectId] : [],
       });
     }
   }, [open, mode, entityId, prefill]);
@@ -61,6 +64,8 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
         customer_need: form.customer_need || "",
         description: form.description,
         images: form.images,
+        creation_project_id: form.creation_project_id || "",
+        project_ids: form.project_ids || [],
       });
     }
     setSaving(false);
@@ -154,6 +159,20 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
               <div className="space-y-1.5">
                 <Label className="text-xs">Image URL</Label>
                 <Input value={form.images?.[0] || ""} onChange={(e) => set("images", e.target.value ? [e.target.value] : [])} placeholder="https://…" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Creation Project ID</Label>
+                <Input value={form.creation_project_id || ""} onChange={(e) => set("creation_project_id", e.target.value)} placeholder="Project ID…" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Linked Project IDs</Label>
+                <Input
+                  value={(form.project_ids || []).join(", ")}
+                  onChange={(e) => set("project_ids", e.target.value ? e.target.value.split(",").map((s) => s.trim()).filter(Boolean) : [])}
+                  placeholder="Comma-separated IDs…"
+                />
               </div>
             </>
           )}

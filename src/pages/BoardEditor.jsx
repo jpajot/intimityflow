@@ -198,7 +198,7 @@ export default function BoardEditor() {
     base44.entities.Product.list("name", 500).then(setProducts);
   };
 
-  const handleLinkEntity = () => {
+  const handleLinkEntity = async () => {
     if (!linkDialog || !linkEntityId) return;
     const entity = linkEntityType === "Product"
       ? products.find((p) => p.id === linkEntityId)
@@ -211,6 +211,14 @@ export default function BoardEditor() {
       linkedImageUrl: linkEntityType === "Product" ? entity?.images?.[0] : entity?.image_url || "",
     };
     updateElements(elements.map((el) => el.id === linkDialog.elementId ? { ...el, ...updates } : el));
+    // Ensure current project is in the entity's project_ids
+    if (entity && projectId) {
+      const currentIds = entity.project_ids || [];
+      if (!currentIds.includes(projectId)) {
+        const entityStore = linkEntityType === "Product" ? base44.entities.Product : base44.entities.ProductColor;
+        await entityStore.update(linkEntityId, { project_ids: [...currentIds, projectId] });
+      }
+    }
     setLinkDialog(null);
     setLinkEntityId("");
   };
@@ -332,6 +340,7 @@ export default function BoardEditor() {
         entityType={slidePanel?.entityType}
         entityId={slidePanel?.entityId}
         prefill={slidePanel?.prefill}
+        projectId={projectId}
         onClose={() => setSlidePanel(null)}
         onSaved={handlePanelSaved}
       />
