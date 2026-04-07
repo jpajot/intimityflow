@@ -7,13 +7,25 @@ import Ribbon from "../components/board/Ribbon";
 import PagesPanel from "../components/board/PagesPanel";
 import CanvasStage, { CANVAS_W, CANVAS_H } from "../components/board/CanvasStage";
 import BoardContextMenu from "../components/board/BoardContextMenu";
+import ProductSlidePanel from "../components/board/ProductSlidePanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
+}
+
+// Extract prefill data from a set of selected elements
+function extractPrefill(elements, ids) {
+  const els = elements.filter((e) => ids.includes(e.id));
+  const imageEl = els.find((e) => e.type === "image" && e.content);
+  const textEls = els.filter((e) => e.type === "text" && e.content);
+  return {
+    imageUrl: imageEl?.content || "",
+    name: textEls[0]?.content || "",
+    description: textEls.slice(1).map((e) => e.content).join("\n") || "",
+  };
 }
 
 export default function BoardEditor() {
@@ -24,14 +36,16 @@ export default function BoardEditor() {
   const [pages, setPages] = useState([]);
   const [activePageId, setActivePageId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  const [contextMenu, setContextMenu] = useState(null); // { x, y, element }
-  const [linkDialog, setLinkDialog] = useState(null); // { elementId }
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, element, selectedIds }
+  const [linkDialog, setLinkDialog] = useState(null);
   const [products, setProducts] = useState([]);
   const [colorways, setColorways] = useState([]);
   const [linkEntityType, setLinkEntityType] = useState("Product");
   const [linkEntityId, setLinkEntityId] = useState("");
+
+  // Slide panel state
+  const [slidePanel, setSlidePanel] = useState(null); // { mode: 'create'|'edit', entityType, entityId, prefill, targetGroupId }
 
   const saveTimer = useRef(null);
 
@@ -53,12 +67,8 @@ export default function BoardEditor() {
 
     let sorted = pagesRes.sort((a, b) => a.page_number - b.page_number);
     if (sorted.length === 0) {
-      // Create first page
       const p = await base44.entities.BoardPage.create({
-        board_id: boardId,
-        page_number: 1,
-        name: "Slide 1",
-        elements: [],
+        board_id: boardId, page_number: 1, name: "Slide 1", elements: [],
       });
       sorted = [p];
     }
@@ -74,14 +84,13 @@ export default function BoardEditor() {
     setPages((prev) =>
       prev.map((p) => (p.id === activePageId ? { ...p, elements: newEls } : p))
     );
-    // Debounced save
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       await base44.entities.BoardPage.update(activePageId, { elements: newEls });
     }, 800);
   }, [activePageId]);
 
-  const handleInsert = (type) => {
+  const handleInsert = (type, extras = {}) => {
     const defaults = {
       image: { width: 280, height: 200, content: "" },
       text: { width: 240, height: 80, content: "Text block" },
@@ -94,6 +103,7 @@ export default function BoardEditor() {
       x: 80 + Math.random() * 200,
       y: 80 + Math.random() * 100,
       ...defaults[type],
+      ...extras,
     };
     updateElements([...elements, el]);
   };
@@ -101,10 +111,7 @@ export default function BoardEditor() {
   const handleAddPage = async () => {
     const num = pages.length + 1;
     const p = await base44.entities.BoardPage.create({
-      board_id: boardId,
-      page_number: num,
-      name: `Slide ${num}`,
-      elements: [],
+      board_id: boardId, page_number: num, name: `Slide ${num}`, elements: [],
     });
     setPages((prev) => [...prev, p]);
     setActivePageId(p.id);
@@ -117,15 +124,74 @@ export default function BoardEditor() {
     if (activePageId === pageId) setActivePageId(remaining[0]?.id || null);
   };
 
-  const handleDeleteSelected = () => {
-    if (!contextMenu?.element) return;
-    const id = contextMenu.element.id;
-    updateElements(elements.filter((e) => e.id !== id));
+  const handleContextMenu = (e, element, selectedIds) => {
+    setContextMenu({ x: e.clientX, y: e.clientY, element, selectedIds });
+  };
+
+  // Group selected elements into a bounding-box group element
+  const handleGroup = () => {
+    const { selectedIds } = contextMenu;
+    const sel = elements.filter((e) => selectedIds.includes(e.id));
+    const minX = Math.min(...sel.map((e) => e.x));
+    const minY = Math.min(...sel.map((e) => e.y));
+    const maxX = Math.max(...sel.map((e) => e.x + e.width));
+    const maxY = Math.max(...sel.map((e) => e.y + e.height));
+    const groupEl = {
+      id: generateId(),
+      type: "group",
+      x: minX - 8, y: minY - 8,
+      width: maxX - minX + 16,
+      height: maxY - minY + 16,
+      childIds: selectedIds,
+    };
+    updateElements([...elements, groupEl]);
     setContextMenu(null);
   };
 
-  const handleContextMenu = (e, element) => {
-    setContextMenu({ x: e.clientX, y: e.clientY, element });
+  const handleUngroup = () => {
+    const { element } = contextMenu;
+    updateElements(elements.filter((e) => e.id !== element.id));
+    setContextMenu(null);
+  };
+
+  const handleDeleteSelected = () => {
+    const ids = contextMenu?.selectedIds || (contextMenu?.element ? [contextMenu.element.id] : []);
+    updateElements(elements.filter((e) => !ids.includes(e.id)));
+    setContextMenu(null);
+  };
+
+  const handleCreateProduct = () => {
+    const { element, selectedIds } = contextMenu;
+    const prefill = extractPrefill(elements, selectedIds?.length > 1 ? selectedIds : [element.id]);
+    setSlidePanel({ mode: "create", entityType: "Product", prefill, targetElementId: element.id });
+    setContextMenu(null);
+  };
+
+  const handleEditLinked = () => {
+    const { element } = contextMenu;
+    setSlidePanel({ mode: "edit", entityType: element.linkedEntityType || "Product", entityId: element.linkedEntityId });
+    setContextMenu(null);
+  };
+
+  const handlePanelSaved = (saved) => {
+    // If creating, auto-link the element to the new entity
+    if (slidePanel?.mode === "create" && slidePanel?.targetElementId) {
+      updateElements(elements.map((el) =>
+        el.id === slidePanel.targetElementId
+          ? {
+              ...el,
+              type: "product_card",
+              linkedEntityType: slidePanel.entityType,
+              linkedEntityId: saved.id,
+              linkedName: saved.name,
+              linkedCode: saved.colorway_code || "",
+              linkedImageUrl: saved.images?.[0] || "",
+            }
+          : el
+      ));
+    }
+    // Refresh products list
+    base44.entities.Product.list("name", 500).then(setProducts);
   };
 
   const handleLinkEntity = () => {
@@ -145,17 +211,10 @@ export default function BoardEditor() {
     setLinkEntityId("");
   };
 
-  const handleEditLinked = (el) => {
-    if (!el.linkedEntityId) return;
-    if (el.linkedEntityType === "Product") navigate(`/products/${el.linkedEntityId}`);
-    setContextMenu(null);
-  };
-
   const handleExportPdf = async () => {
     const { default: jsPDF } = await import("jspdf");
     const { default: html2canvas } = await import("html2canvas");
     const doc = new jsPDF({ orientation: "landscape", unit: "px", format: [CANVAS_W, CANVAS_H] });
-    // Find all slide containers
     const slides = document.querySelectorAll("[data-board-slide]");
     let first = true;
     for (const slide of slides) {
@@ -187,20 +246,13 @@ export default function BoardEditor() {
           <p className="text-xs text-muted-foreground">Board</p>
           <p className="text-sm font-semibold leading-tight">{board?.name || "Untitled Board"}</p>
         </div>
-        {saving && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground ml-auto" />}
       </div>
 
       {/* Ribbon */}
-      <Ribbon
-        onInsert={handleInsert}
-        onExportPdf={handleExportPdf}
-        selectedElement={contextMenu?.element}
-        onDeleteElement={handleDeleteSelected}
-      />
+      <Ribbon onInsert={handleInsert} onExportPdf={handleExportPdf} />
 
       {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Pages panel */}
         <PagesPanel
           pages={pages}
           activePageId={activePageId}
@@ -208,8 +260,6 @@ export default function BoardEditor() {
           onAddPage={handleAddPage}
           onDeletePage={handleDeletePage}
         />
-
-        {/* Canvas */}
         <CanvasStage
           elements={elements}
           onUpdateElements={updateElements}
@@ -223,17 +273,15 @@ export default function BoardEditor() {
           x={contextMenu.x}
           y={contextMenu.y}
           element={contextMenu.element}
+          selectedIds={contextMenu.selectedIds || []}
+          elements={elements}
           onClose={() => setContextMenu(null)}
-          onDelete={() => {
-            updateElements(elements.filter((e) => e.id !== contextMenu.element.id));
-            setContextMenu(null);
-          }}
+          onDelete={handleDeleteSelected}
           onLink={() => { setLinkDialog({ elementId: contextMenu.element.id }); setContextMenu(null); }}
-          onEditLinked={() => handleEditLinked(contextMenu.element)}
-          onCreateProduct={async () => {
-            navigate(`/products/new?from_board=${boardId}&element_id=${contextMenu.element.id}`);
-            setContextMenu(null);
-          }}
+          onEditLinked={handleEditLinked}
+          onCreateProduct={handleCreateProduct}
+          onGroup={handleGroup}
+          onUngroup={handleUngroup}
         />
       )}
 
@@ -272,6 +320,17 @@ export default function BoardEditor() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Product slide panel */}
+      <ProductSlidePanel
+        open={!!slidePanel}
+        mode={slidePanel?.mode}
+        entityType={slidePanel?.entityType}
+        entityId={slidePanel?.entityId}
+        prefill={slidePanel?.prefill}
+        onClose={() => setSlidePanel(null)}
+        onSaved={handlePanelSaved}
+      />
     </div>
   );
 }

@@ -1,16 +1,13 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import CanvasElement from "./CanvasElement";
 
 const CANVAS_W = 1200;
 const CANVAS_H = 675; // 16:9
 
 export default function CanvasStage({ elements, onUpdateElements, onContextMenu }) {
-  const [selectedId, setSelectedId] = useState(null);
-  const containerRef = useRef(null);
-
-  // Fit canvas to container
-  const [scale, setScale] = useState(1);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const outerRef = useRef(null);
+  const [scale, setScale] = useState(1);
 
   const measureScale = useCallback((node) => {
     if (!node) return;
@@ -24,16 +21,35 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
   }, []);
 
   const handleUpdate = (id, changes) => {
+    // If element is in a group, move group members together when dragging group container
     onUpdateElements(elements.map((el) => (el.id === id ? { ...el, ...changes } : el)));
   };
 
+  const handleSelect = (id, ctrlHeld) => {
+    setSelectedIds((prev) => {
+      if (ctrlHeld) {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      }
+      return new Set([id]);
+    });
+  };
+
   const handleCanvasClick = (e) => {
-    if (e.target === containerRef.current || e.target === outerRef.current) {
-      setSelectedId(null);
+    if (e.target === outerRef.current || e.currentTarget === e.target) {
+      setSelectedIds(new Set());
     }
   };
 
-  const selectedEl = elements.find((e) => e.id === selectedId) || null;
+  const handleContextMenu = (e, element) => {
+    e.preventDefault();
+    // If multiple selected, pass all ids
+    const ids = selectedIds.has(element.id) ? [...selectedIds] : [element.id];
+    if (!selectedIds.has(element.id)) setSelectedIds(new Set([element.id]));
+    onContextMenu(e, element, ids);
+  };
 
   return (
     <div
@@ -53,7 +69,6 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
       >
         {/* White slide */}
         <div
-          ref={containerRef}
           style={{
             width: CANVAS_W,
             height: CANVAS_H,
@@ -62,16 +77,17 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
             position: "relative",
             overflow: "hidden",
           }}
+          data-board-slide
         >
           {elements.map((el) => (
             <CanvasElement
               key={el.id}
               el={el}
-              isSelected={el.id === selectedId}
+              isSelected={selectedIds.has(el.id)}
               scale={scale}
-              onSelect={setSelectedId}
+              onSelect={handleSelect}
               onUpdate={handleUpdate}
-              onContextMenu={onContextMenu}
+              onContextMenu={handleContextMenu}
             />
           ))}
         </div>

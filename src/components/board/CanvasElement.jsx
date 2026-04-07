@@ -1,23 +1,17 @@
-import { useState, useRef, useEffect } from "react";
-import { Link2, Edit2 } from "lucide-react";
+import { useRef } from "react";
+import { Link2 } from "lucide-react";
 
 const HANDLE_SIZE = 8;
 
 export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdate, onContextMenu }) {
-  const ref = useRef(null);
   const dragStart = useRef(null);
   const resizeStart = useRef(null);
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return;
     e.stopPropagation();
-    onSelect(el.id);
-    dragStart.current = {
-      mx: e.clientX,
-      my: e.clientY,
-      x: el.x,
-      y: el.y,
-    };
+    onSelect(el.id, e.ctrlKey || e.metaKey);
+    dragStart.current = { mx: e.clientX, my: e.clientY, x: el.x, y: el.y };
     window.addEventListener("mousemove", onDragMove);
     window.addEventListener("mouseup", onDragUp);
   };
@@ -38,13 +32,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
   const handleResizeDown = (e, corner) => {
     e.stopPropagation();
     e.preventDefault();
-    resizeStart.current = {
-      mx: e.clientX,
-      my: e.clientY,
-      x: el.x, y: el.y,
-      w: el.width, h: el.height,
-      corner,
-    };
+    resizeStart.current = { mx: e.clientX, my: e.clientY, x: el.x, y: el.y, w: el.width, h: el.height, corner };
     window.addEventListener("mousemove", onResizeMove);
     window.addEventListener("mouseup", onResizeUp);
   };
@@ -76,30 +64,26 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
     }
   };
 
-  const style = {
-    position: "absolute",
-    left: el.x,
-    top: el.y,
-    width: el.width,
-    height: el.height,
-    cursor: "move",
-    userSelect: "none",
-    boxSizing: "border-box",
-    outline: isSelected ? "2px solid hsl(var(--primary))" : "none",
-    outlineOffset: "1px",
-  };
-
   return (
     <div
-      ref={ref}
-      style={style}
+      style={{
+        position: "absolute",
+        left: el.x,
+        top: el.y,
+        width: el.width,
+        height: el.height,
+        cursor: "move",
+        userSelect: "none",
+        boxSizing: "border-box",
+        outline: isSelected ? "2px solid hsl(var(--primary))" : "none",
+        outlineOffset: "1px",
+      }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onSelect(el.id); onContextMenu(e, el); }}
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, el); }}
     >
-      <ElementContent el={el} />
+      <ElementContent el={el} onUpdate={onUpdate} />
 
-      {/* Resize handles */}
       {isSelected && (
         <>
           {[["nw", 0, 0], ["ne", "100%", 0], ["sw", 0, "100%"], ["se", "100%", "100%"]].map(([corner, l, t]) => (
@@ -112,8 +96,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
                 right: l === "100%" ? -HANDLE_SIZE / 2 : undefined,
                 top: typeof t === "number" ? t - HANDLE_SIZE / 2 : undefined,
                 bottom: t === "100%" ? -HANDLE_SIZE / 2 : undefined,
-                width: HANDLE_SIZE,
-                height: HANDLE_SIZE,
+                width: HANDLE_SIZE, height: HANDLE_SIZE,
                 background: "hsl(var(--primary))",
                 border: "1.5px solid white",
                 borderRadius: 2,
@@ -128,14 +111,43 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
   );
 }
 
-function ElementContent({ el }) {
+function ElementContent({ el, onUpdate }) {
+  const fileRef = useRef(null);
+
+  const handleImageClick = () => {
+    if (!el.content) fileRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const { file_url } = await base44Import(file);
+    onUpdate(el.id, { content: file_url });
+  };
+
   if (el.type === "image") {
-    return el.content ? (
-      <img src={el.content} alt="" className="w-full h-full object-contain" draggable={false} />
-    ) : (
-      <div className="w-full h-full border-2 border-dashed border-border rounded bg-muted/40 flex items-center justify-center text-xs text-muted-foreground">
-        Double-click to set URL
-      </div>
+    return (
+      <>
+        {/* Hidden file input */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        {el.content ? (
+          <img src={el.content} alt="" className="w-full h-full object-contain" draggable={false} />
+        ) : (
+          <div
+            className="w-full h-full border-2 border-dashed border-border rounded bg-muted/40 flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors"
+            onClick={handleImageClick}
+          >
+            <span className="text-2xl">🖼</span>
+            <span>Click to upload image</span>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -160,7 +172,7 @@ function ElementContent({ el }) {
   if (el.type === "rect") {
     return (
       <div
-        className="w-full h-full rounded"
+        className="w-full h-full"
         style={{
           backgroundColor: el.style?.fill || "hsl(var(--muted))",
           border: `${el.style?.borderWidth || 1}px solid ${el.style?.borderColor || "hsl(var(--border))"}`,
@@ -173,7 +185,7 @@ function ElementContent({ el }) {
   if (el.type === "product_card") {
     return (
       <div className="w-full h-full border border-border rounded-lg bg-card flex flex-col overflow-hidden">
-        <div className="flex-1 bg-muted/40 flex items-center justify-center">
+        <div className="flex-1 bg-muted/40 flex items-center justify-center overflow-hidden">
           {el.linkedImageUrl ? (
             <img src={el.linkedImageUrl} alt="" className="w-full h-full object-contain" draggable={false} />
           ) : (
@@ -191,5 +203,25 @@ function ElementContent({ el }) {
     );
   }
 
+  if (el.type === "group") {
+    return (
+      <div
+        className="w-full h-full rounded"
+        style={{
+          border: "1.5px dashed hsl(var(--primary)/0.5)",
+          backgroundColor: "hsl(var(--primary)/0.03)",
+        }}
+      >
+        <span className="absolute top-1 left-2 text-[9px] text-primary/50 font-semibold uppercase tracking-wider">Group</span>
+      </div>
+    );
+  }
+
   return null;
+}
+
+// Lazy import base44 to avoid circular issues inside ElementContent
+async function base44Import(file) {
+  const { base44 } = await import("@/api/base44Client");
+  return base44.integrations.Core.UploadFile({ file });
 }

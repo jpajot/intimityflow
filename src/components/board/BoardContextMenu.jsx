@@ -1,30 +1,33 @@
 import { useEffect, useRef } from "react";
-import { Trash2, Link2, ExternalLink, Plus } from "lucide-react";
+import { Trash2, Link2, ExternalLink, Plus, BoxSelect, Maximize2 } from "lucide-react";
 
-export default function BoardContextMenu({ x, y, element, onClose, onDelete, onLink, onEditLinked, onCreateProduct }) {
+export default function BoardContextMenu({ x, y, element, selectedIds = [], elements = [], onClose, onDelete, onLink, onEditLinked, onCreateProduct, onGroup, onUngroup }) {
   const ref = useRef(null);
+  const isGroup = element?.type === "group";
+  const multiSelected = selectedIds.length > 1;
+  const hasLinked = !!element?.linkedEntityId;
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    };
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
 
   const items = [
-    { label: "Link to existing entity", icon: Link2, action: onLink },
-    ...(element?.linkedEntityId ? [{ label: "Open linked record", icon: ExternalLink, action: onEditLinked }] : []),
-    { label: "Create Product from this", icon: Plus, action: onCreateProduct },
-    null, // separator
-    { label: "Delete element", icon: Trash2, action: onDelete, danger: true },
-  ];
+    !isGroup && { label: "Link to existing entity", icon: Link2, action: onLink },
+    hasLinked && { label: "Open / edit linked record", icon: ExternalLink, action: onEditLinked },
+    !hasLinked && !isGroup && { label: "Create product from this", icon: Plus, action: onCreateProduct },
+    multiSelected && !isGroup && { label: `Group ${selectedIds.length} elements`, icon: BoxSelect, action: onGroup },
+    isGroup && { label: "Ungroup", icon: Maximize2, action: onUngroup },
+    null,
+    { label: isGroup ? "Delete group" : "Delete element", icon: Trash2, action: onDelete, danger: true },
+  ].filter(Boolean);
 
   return (
     <div
       ref={ref}
       style={{ position: "fixed", left: x, top: y, zIndex: 1000 }}
-      className="bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[200px]"
+      className="bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[210px]"
     >
       {items.map((item, i) =>
         item === null ? (
