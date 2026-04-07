@@ -9,12 +9,17 @@ export default function CameraCapture({ onCapture, onClose }) {
   const [error, setError] = useState(null);
   const [facingMode, setFacingMode] = useState("environment");
 
-  const startCamera = (mode) => {
+  useEffect(() => {
+    let cancelled = false;
     setReady(false);
     setError(null);
+    // Stop existing tracks first
     streamRef.current?.getTracks().forEach((t) => t.stop());
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: mode }, audio: false })
+    streamRef.current = null;
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: false })
       .then((stream) => {
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -22,18 +27,16 @@ export default function CameraCapture({ onCapture, onClose }) {
           setReady(true);
         }
       })
-      .catch((err) => setError(err.message));
-  };
+      .catch((err) => { if (!cancelled) setError(err.message); });
 
-  useEffect(() => {
-    startCamera(facingMode);
-    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
-  }, []);
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, [facingMode]);
 
   const handleFlip = () => {
-    const next = facingMode === "environment" ? "user" : "environment";
-    setFacingMode(next);
-    startCamera(next);
+    setFacingMode((prev) => prev === "environment" ? "user" : "environment");
   };
 
   const handleCapture = () => {
