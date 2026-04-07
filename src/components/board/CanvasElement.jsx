@@ -184,7 +184,7 @@ function ElementContent({ el, onUpdate }) {
 
   if (el.type === "product_card") {
     return (
-      <div className="w-full h-full border border-border rounded-lg flex flex-col overflow-hidden" style={{ background: 'transparent' }}>
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: 'transparent' }}>
         <div className="flex-1 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
           {el.linkedImageUrl ? (
             <img src={el.linkedImageUrl} alt="" className="w-full h-full object-contain" draggable={false} />
