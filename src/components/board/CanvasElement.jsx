@@ -137,7 +137,7 @@ function ElementContent({ el, onUpdate }) {
           onChange={handleFileChange}
         />
         {el.content ? (
-          <img src={el.content} alt="" className="w-full h-full object-contain" draggable={false} />
+          <img src={el.content} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} draggable={false} />
         ) : (
           <div
             className="w-full h-full border-2 border-dashed border-border rounded bg-muted/40 flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors"
@@ -187,7 +187,7 @@ function ElementContent({ el, onUpdate }) {
       <div className="w-full h-full flex flex-col" style={{ background: 'transparent', overflow: 'hidden' }}>
         <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
           {el.linkedImageUrl ? (
-            <img src={el.linkedImageUrl} alt="" className="w-full h-full object-contain" draggable={false} />
+            <img src={el.linkedImageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} draggable={false} />
           ) : (
             <div className="text-xs text-muted-foreground text-center px-2">
               <Link2 className="w-4 h-4 mx-auto mb-1 opacity-40" />
