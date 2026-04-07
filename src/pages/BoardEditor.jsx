@@ -241,10 +241,17 @@ export default function BoardEditor() {
     const { default: jsPDF } = await import("jspdf");
     const { default: html2canvas } = await import("html2canvas");
     const doc = new jsPDF({ orientation: "landscape", unit: "px", format: [CANVAS_W, CANVAS_H] });
-    const slides = document.querySelectorAll("[data-board-slide]");
+    const originalPageId = activePageId;
     let first = true;
-    for (const slide of slides) {
-      // Temporarily remove CSS scale so html2canvas captures at native resolution
+
+    for (const page of pages) {
+      // Switch to this page and wait for React to render it
+      setActivePageId(page.id);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      const slide = document.querySelector("[data-board-slide]");
+      if (!slide) continue;
+
       const wrapper = slide.closest("[data-scale-wrapper]");
       const prevTransform = wrapper?.style.transform || "";
       const prevOrigin = wrapper?.style.transformOrigin || "";
@@ -270,6 +277,9 @@ export default function BoardEditor() {
       doc.addImage(imgData, "PNG", 0, 0, CANVAS_W, CANVAS_H);
       first = false;
     }
+
+    // Restore original page
+    setActivePageId(originalPageId);
     doc.save(`${board?.name || "board"}.pdf`);
   };
 
