@@ -195,7 +195,7 @@ function ElementContent({ el, onUpdate }) {
             </div>
           )}
         </div>
-        <div style={{ flexShrink: 0, padding: '5px 8px', borderTop: '1px solid hsl(var(--border))', backgroundColor: 'rgba(255,255,255,0.8)' }}>
+        <div style={{ flexShrink: 0, padding: '6px 8px 10px 8px', borderTop: '1px solid hsl(var(--border))', backgroundColor: 'rgba(255,255,255,0.8)' }}>
           <p style={{ fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '1.6' }}>{el.linkedName || el.content || "Product Card"}</p>
           {el.linkedCode && <p style={{ fontSize: '10px', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '1.6', color: 'hsl(var(--muted-foreground))' }}>{el.linkedCode}</p>}
         </div>
