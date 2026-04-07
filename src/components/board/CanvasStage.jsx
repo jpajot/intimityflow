@@ -50,10 +50,8 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
     });
   };
 
-  const handleCanvasClick = (e) => {
-    if (e.target === outerRef.current || e.currentTarget === e.target) {
-      setSelectedIds(new Set());
-    }
+  const handleCanvasClick = () => {
+    setSelectedIds(new Set());
   };
 
   const handleContextMenu = (e, element) => {
