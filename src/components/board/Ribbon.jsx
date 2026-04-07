@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown, Image, Camera, Type, Square, Link2, Download, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function Ribbon({ onInsert, onExportPdf }) {
+export default function Ribbon({ onInsert, onExportPdf, onOpenProductPicker }) {
   const [collapsed, setCollapsed] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
@@ -61,7 +61,7 @@ export default function Ribbon({ onInsert, onExportPdf }) {
           <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onInsert("rect")}>
             <Square className="w-3.5 h-3.5" /> Shape
           </Button>
-          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onInsert("product_card")}>
+          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={onOpenProductPicker}>
             <Link2 className="w-3.5 h-3.5" /> Product Card
           </Button>
 

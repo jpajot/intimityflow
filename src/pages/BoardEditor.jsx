@@ -8,6 +8,7 @@ import PagesPanel from "../components/board/PagesPanel";
 import CanvasStage, { CANVAS_W, CANVAS_H } from "../components/board/CanvasStage";
 import BoardContextMenu from "../components/board/BoardContextMenu";
 import ProductSlidePanel from "../components/board/ProductSlidePanel";
+import ProductPickerPanel from "../components/board/ProductPickerPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +47,7 @@ export default function BoardEditor() {
 
   // Slide panel state
   const [slidePanel, setSlidePanel] = useState(null); // { mode: 'create'|'edit', entityType, entityId, prefill, targetGroupId }
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const saveTimer = useRef(null);
 
@@ -160,18 +162,24 @@ export default function BoardEditor() {
     setContextMenu(null);
   };
 
-  const handleCreateProduct = () => {
-    const { element, selectedIds } = contextMenu;
-    // For groups, use the child element ids for prefill
-    const idsForPrefill = element?.type === "group" && element?.childIds?.length
-      ? element.childIds
-      : (selectedIds?.length > 1 ? selectedIds : [element.id]);
-    const prefill = extractPrefill(elements, idsForPrefill);
-    setSlidePanel({ mode: "create", entityType: "Product", prefill, targetElementId: element.id });
-    setContextMenu(null);
+  const handleDropProductCard = (data) => {
+    const el = {
+      id: generateId(),
+      type: "product_card",
+      x: data.x,
+      y: data.y,
+      width: 200,
+      height: 240,
+      linkedEntityType: data.entityType,
+      linkedEntityId: data.id,
+      linkedName: data.name,
+      linkedCode: data.code,
+      linkedImageUrl: data.imageUrl,
+    };
+    updateElements([...elements, el]);
   };
 
-  const handleEditLinked = () => {
+  const handleCreateProduct = () => {
     const { element } = contextMenu;
     setSlidePanel({ mode: "edit", entityType: element.linkedEntityType || "Product", entityId: element.linkedEntityId });
     setContextMenu(null);
@@ -261,7 +269,7 @@ export default function BoardEditor() {
       </div>
 
       {/* Ribbon */}
-      <Ribbon onInsert={handleInsert} onExportPdf={handleExportPdf} />
+      <Ribbon onInsert={handleInsert} onExportPdf={handleExportPdf} onOpenProductPicker={() => setPickerOpen(true)} />
 
       {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
@@ -276,6 +284,7 @@ export default function BoardEditor() {
           elements={elements}
           onUpdateElements={updateElements}
           onContextMenu={handleContextMenu}
+          onDropProductCard={handleDropProductCard}
         />
       </div>
 
@@ -332,6 +341,9 @@ export default function BoardEditor() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Product picker panel */}
+      <ProductPickerPanel open={pickerOpen} onClose={() => setPickerOpen(false)} />
 
       {/* Product slide panel */}
       <ProductSlidePanel

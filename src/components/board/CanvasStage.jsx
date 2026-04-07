@@ -4,7 +4,7 @@ import CanvasElement from "./CanvasElement";
 const CANVAS_W = 1200;
 const CANVAS_H = 675; // 16:9
 
-export default function CanvasStage({ elements, onUpdateElements, onContextMenu }) {
+export default function CanvasStage({ elements, onUpdateElements, onContextMenu, onDropProductCard }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const outerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -59,10 +59,31 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
 
   const handleContextMenu = (e, element) => {
     e.preventDefault();
-    // If multiple selected, pass all ids
     const ids = selectedIds.has(element.id) ? [...selectedIds] : [element.id];
     if (!selectedIds.has(element.id)) setSelectedIds(new Set([element.id]));
     onContextMenu(e, element, ids);
+  };
+
+  const handleDragOver = (e) => {
+    if (e.dataTransfer.types.includes("application/product-card")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDrop = (e) => {
+    const raw = e.dataTransfer.getData("application/product-card");
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    // Convert client coords to canvas coords
+    const outerRect = outerRef.current?.getBoundingClientRect();
+    const canvasW = CANVAS_W * scale;
+    const canvasH = CANVAS_H * scale;
+    const offsetX = outerRect ? (outerRect.width - canvasW) / 2 : 0;
+    const offsetY = outerRect ? (outerRect.height - canvasH) / 2 : 0;
+    const x = (e.clientX - (outerRect?.left || 0) - offsetX) / scale;
+    const y = (e.clientY - (outerRect?.top || 0) - offsetY) / scale;
+    onDropProductCard({ ...data, x: Math.max(0, x - 100), y: Math.max(0, y - 120) });
   };
 
   return (
@@ -70,6 +91,8 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
       ref={measureScale}
       className="flex-1 overflow-auto bg-muted/50 flex items-center justify-center"
       onMouseDown={handleCanvasMouseDown}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div
         style={{
