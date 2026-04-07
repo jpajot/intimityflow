@@ -195,9 +195,9 @@ function ElementContent({ el, onUpdate }) {
             </div>
           )}
         </div>
-        <div className="px-2 border-t border-border bg-white/80" style={{ flexShrink: 0, paddingTop: 5, paddingBottom: 6 }}>
-          <p className="text-xs font-medium truncate leading-snug">{el.linkedName || el.content || "Product Card"}</p>
-          {el.linkedCode && <p className="text-[10px] text-muted-foreground font-mono truncate leading-snug">{el.linkedCode}</p>}
+        <div className="px-2 border-t border-border bg-white/80" style={{ flexShrink: 0, paddingTop: 5, paddingBottom: 8, overflow: 'visible' }}>
+          <p className="text-xs font-medium truncate" style={{ lineHeight: '1.6', overflow: 'visible' }}>{el.linkedName || el.content || "Product Card"}</p>
+          {el.linkedCode && <p className="text-[10px] text-muted-foreground font-mono truncate" style={{ lineHeight: '1.6', overflow: 'visible' }}>{el.linkedCode}</p>}
         </div>
       </div>
     );
