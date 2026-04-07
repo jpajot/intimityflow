@@ -263,14 +263,17 @@ export default function BoardEditor() {
       const origSrcs = imgs.map((img) => img.src);
       const dataSrcs = await Promise.all(origSrcs.map(proxyToDataUrl));
 
+      // Blank 1x1 transparent PNG for failed proxies
+      const BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
       // Set and wait for load
       await Promise.all(
         imgs.map((img, i) =>
           new Promise((resolve) => {
-            if (!dataSrcs[i]) { resolve(); return; }
+            const src = dataSrcs[i] || BLANK;
             img.onload = resolve;
             img.onerror = resolve;
-            img.src = dataSrcs[i];
+            img.src = src;
           })
         )
       );
@@ -288,7 +291,7 @@ export default function BoardEditor() {
       const canvas = await html2canvas(slide, {
         scale: 2,
         useCORS: false,
-        allowTaint: true,
+        allowTaint: false,
         width: CANVAS_W,
         height: CANVAS_H,
         scrollX: 0,
