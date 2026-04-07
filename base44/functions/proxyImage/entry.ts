@@ -9,9 +9,19 @@ Deno.serve(async (req) => {
   if (!url) return Response.json({ error: 'Missing url' }, { status: 400 });
 
   const res = await fetch(url);
-  const buffer = await res.arrayBuffer();
+  if (!res.ok) return Response.json({ error: `Fetch failed: ${res.status}` }, { status: 502 });
+
   const contentType = res.headers.get('content-type') || 'image/png';
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const buffer = await res.arrayBuffer();
+  const uint8 = new Uint8Array(buffer);
+
+  // Encode in chunks to avoid stack overflow on large images
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < uint8.length; i += chunkSize) {
+    binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+  }
+  const base64 = btoa(binary);
   const dataUrl = `data:${contentType};base64,${base64}`;
 
   return Response.json({ dataUrl });
