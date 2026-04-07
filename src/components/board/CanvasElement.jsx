@@ -184,10 +184,10 @@ function ElementContent({ el, onUpdate }) {
 
   if (el.type === "product_card") {
     return (
-      <div className="w-full h-full flex flex-col" style={{ background: 'transparent', overflow: 'hidden' }}>
-        <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: 'transparent', overflow: 'hidden' }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: 'transparent' }}>
           {el.linkedImageUrl ? (
-            <img src={el.linkedImageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} draggable={false} />
+            <img src={el.linkedImageUrl} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }} draggable={false} />
           ) : (
             <div className="text-xs text-muted-foreground text-center px-2">
               <Link2 className="w-4 h-4 mx-auto mb-1 opacity-40" />
@@ -195,9 +195,9 @@ function ElementContent({ el, onUpdate }) {
             </div>
           )}
         </div>
-        <div className="px-2 border-t border-border bg-white/80" style={{ flexShrink: 0, paddingTop: 5, paddingBottom: 8, overflow: 'visible' }}>
-          <p className="text-xs font-medium truncate" style={{ lineHeight: '1.6', overflow: 'visible' }}>{el.linkedName || el.content || "Product Card"}</p>
-          {el.linkedCode && <p className="text-[10px] text-muted-foreground font-mono truncate" style={{ lineHeight: '1.6', overflow: 'visible' }}>{el.linkedCode}</p>}
+        <div style={{ flexShrink: 0, padding: '5px 8px', borderTop: '1px solid hsl(var(--border))', backgroundColor: 'rgba(255,255,255,0.8)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '1.6' }}>{el.linkedName || el.content || "Product Card"}</p>
+          {el.linkedCode && <p style={{ fontSize: '10px', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '1.6', color: 'hsl(var(--muted-foreground))' }}>{el.linkedCode}</p>}
         </div>
       </div>
     );
