@@ -2,12 +2,13 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown, Image, Camera, Type, Square, Link2, Download, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import CameraCapture from "./CameraCapture";
 
 export default function Ribbon({ onInsert, onExportPdf, onOpenProductPicker }) {
   const [collapsed, setCollapsed] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const fileRef = useRef(null);
-  const cameraRef = useRef(null);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -19,14 +20,12 @@ export default function Ribbon({ onInsert, onExportPdf, onOpenProductPicker }) {
     e.target.value = "";
   };
 
-  const handleCameraCapture = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleCameraCapture = async (file) => {
+    setShowCamera(false);
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setUploading(false);
     onInsert("image", { content: file_url });
-    e.target.value = "";
   };
 
   return (
@@ -50,10 +49,10 @@ export default function Ribbon({ onInsert, onExportPdf, onOpenProductPicker }) {
           </Button>
 
           {/* Camera capture */}
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCameraCapture} />
-          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => cameraRef.current?.click()} disabled={uploading}>
+          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => setShowCamera(true)} disabled={uploading}>
             <Camera className="w-3.5 h-3.5" /> Camera
           </Button>
+          {showCamera && <CameraCapture onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} />}
 
           <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => onInsert("text")}>
             <Type className="w-3.5 h-3.5" /> Text
