@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
 import LinkedStylesView from "../components/LinkedStylesView";
+import ProjectBoards from "./ProjectBoards";
+import BoardIcon from "../components/icons/BoardIcon";
 import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
 import ItemSubNav from "../components/ItemSubNav";
 
@@ -320,6 +322,7 @@ export default function ProjectDetail() {
       {/* Sub-navigation */}
       <ItemSubNav
         items={[
+        { id: "boards", label: "Boards", icon: BoardIcon },
         { id: "documents", label: "Documents", count: documents.length, icon: FileText },
         { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
         { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
@@ -329,6 +332,8 @@ export default function ProjectDetail() {
         activeId={activeSection}
         onChange={setActiveSection}>
         
+        {activeSection === "boards" && <ProjectBoards projectId={id} />}
+
         {activeSection === "palettes" &&
         <div className="space-y-4">
             {palettes.length === 0 ?

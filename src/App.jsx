@@ -24,6 +24,7 @@ import Config from './pages/Config';
 import ProjectDocuments from './pages/ProjectDocuments';
 import DocumentStaging from './pages/DocumentStaging';
 import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
+import BoardEditor from './pages/BoardEditor';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -73,6 +74,7 @@ const AuthenticatedApp = () => {
         <Route path="/translations" element={<Translations />} />
         <Route path="/config" element={<Config />} />
         <Route path="/document-parsing-schemes" element={<DocumentParsingSchemes />} />
+        <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
