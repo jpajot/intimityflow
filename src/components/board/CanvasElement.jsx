@@ -184,8 +184,8 @@ function ElementContent({ el, onUpdate }) {
 
   if (el.type === "product_card") {
     return (
-      <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: 'transparent' }}>
-        <div className="flex-1 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+      <div className="w-full h-full flex flex-col" style={{ background: 'transparent', overflow: 'hidden' }}>
+        <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
           {el.linkedImageUrl ? (
             <img src={el.linkedImageUrl} alt="" className="w-full h-full object-contain" draggable={false} />
           ) : (
@@ -195,9 +195,9 @@ function ElementContent({ el, onUpdate }) {
             </div>
           )}
         </div>
-        <div className="px-2 py-1.5 border-t border-border shrink-0 bg-white/80">
-          <p className="text-xs font-medium truncate">{el.linkedName || el.content || "Product Card"}</p>
-          {el.linkedCode && <p className="text-[10px] text-muted-foreground font-mono truncate">{el.linkedCode}</p>}
+        <div className="px-2 border-t border-border bg-white/80" style={{ flexShrink: 0, paddingTop: 5, paddingBottom: 6 }}>
+          <p className="text-xs font-medium truncate leading-snug">{el.linkedName || el.content || "Product Card"}</p>
+          {el.linkedCode && <p className="text-[10px] text-muted-foreground font-mono truncate leading-snug">{el.linkedCode}</p>}
         </div>
       </div>
     );
