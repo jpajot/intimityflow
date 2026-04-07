@@ -244,36 +244,48 @@ export default function BoardEditor() {
     const originalPageId = activePageId;
     let first = true;
 
-    const toDataUrl = async (url) => {
-      try {
-        const res = await fetch(url, { mode: "cors" });
-        const blob = await res.blob();
-        return await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      } catch {
-        return null;
-      }
-    };
+    const toDataUrl = (url) =>
+      new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const c = document.createElement("canvas");
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          c.getContext("2d").drawImage(img, 0, 0);
+          resolve(c.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(null);
+        img.src = url + (url.includes("?") ? "&" : "?") + "_t=" + Date.now();
+      });
 
     for (const page of pages) {
       setActivePageId(page.id);
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       const slide = document.querySelector("[data-board-slide]");
       if (!slide) continue;
 
-      // Pre-load all images as base64 to bypass CORS
+      // Convert all images to base64 and wait for them to load
       const imgs = Array.from(slide.querySelectorAll("img"));
       const origSrcs = imgs.map((img) => img.src);
+      const dataSrcs = await Promise.all(origSrcs.map(toDataUrl));
+
+      // Apply data URLs and wait for browser to render them
       await Promise.all(
-        imgs.map(async (img) => {
-          const dataUrl = await toDataUrl(img.src);
-          if (dataUrl) img.src = dataUrl;
-        })
+        imgs.map(
+          (img, i) =>
+            new Promise((resolve) => {
+              if (!dataSrcs[i]) { resolve(); return; }
+              img.onload = resolve;
+              img.onerror = resolve;
+              img.src = dataSrcs[i];
+            })
+        )
       );
+
+      // Small extra settle time
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const wrapper = slide.closest("[data-scale-wrapper]");
       const prevTransform = wrapper?.style.transform || "";
@@ -291,9 +303,10 @@ export default function BoardEditor() {
         height: CANVAS_H,
         scrollX: 0,
         scrollY: 0,
+        logging: false,
       });
 
-      // Restore original srcs
+      // Restore
       imgs.forEach((img, i) => { img.src = origSrcs[i]; });
       if (wrapper) {
         wrapper.style.transform = prevTransform;
