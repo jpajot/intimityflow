@@ -178,22 +178,33 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
 
               <div className="space-y-1.5">
                 <Label className="text-xs">Linked Projects</Label>
-                <div className="flex flex-col gap-1.5">
-                  {projects.map((p) => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(form.project_ids || []).includes(p.id)}
-                        onChange={(e) => {
-                          const ids = form.project_ids || [];
-                          set("project_ids", e.target.checked ? [...ids, p.id] : ids.filter((id) => id !== p.id));
-                        }}
-                        className="rounded border-border"
-                      />
-                      {p.name}
-                    </label>
-                  ))}
-                </div>
+                <Select
+                  value=""
+                  onValueChange={(v) => {
+                    const ids = form.project_ids || [];
+                    if (!ids.includes(v)) set("project_ids", [...ids, v]);
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Add project…" /></SelectTrigger>
+                  <SelectContent>
+                    {projects.filter((p) => !(form.project_ids || []).includes(p.id)).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {(form.project_ids || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {(form.project_ids || []).map((id) => {
+                      const proj = projects.find((p) => p.id === id);
+                      return (
+                        <span key={id} className="inline-flex items-center gap-1 bg-muted text-xs px-2 py-0.5 rounded-full">
+                          {proj?.name || id}
+                          <button type="button" onClick={() => set("project_ids", (form.project_ids || []).filter((x) => x !== id))} className="text-muted-foreground hover:text-destructive">×</button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </>
           )}
