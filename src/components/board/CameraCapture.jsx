@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Loader2 } from "lucide-react";
+import { Camera, X, Loader2, RefreshCw } from "lucide-react";
 
 export default function CameraCapture({ onCapture, onClose }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
+  const [facingMode, setFacingMode] = useState("environment");
 
-  useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+  const startCamera = (mode) => {
+    setReady(false);
+    setError(null);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: mode }, audio: false })
       .then((stream) => {
         streamRef.current = stream;
         if (videoRef.current) {
@@ -19,11 +23,18 @@ export default function CameraCapture({ onCapture, onClose }) {
         }
       })
       .catch((err) => setError(err.message));
+  };
 
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
+  useEffect(() => {
+    startCamera(facingMode);
+    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
   }, []);
+
+  const handleFlip = () => {
+    const next = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(next);
+    startCamera(next);
+  };
 
   const handleCapture = () => {
     const video = videoRef.current;
@@ -57,7 +68,10 @@ export default function CameraCapture({ onCapture, onClose }) {
             </>
           )}
         </div>
-        <div className="px-4 py-3 flex justify-center">
+        <div className="px-4 py-3 flex items-center justify-center gap-3">
+          <Button variant="outline" size="icon" onClick={handleFlip} disabled={!ready} title="Flip camera">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
           <Button onClick={handleCapture} disabled={!ready} className="gap-2">
             <Camera className="w-4 h-4" /> Capture
           </Button>
