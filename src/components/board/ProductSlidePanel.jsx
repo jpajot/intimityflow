@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Loader2, Save, ExternalLink } from "lucide-react";
+import { X, Loader2, Save, ExternalLink, Upload } from "lucide-react";
 
 const PRODUCT_TYPES = ["Product", "Material"];
-const CATEGORIES = ["Tops", "Bottoms", "Outerwear", "Dresses", "Footwear", "Accessories", "Other"];
 
 export default function ProductSlidePanel({ open, mode, entityType, entityId, prefill, projectId, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -18,11 +17,29 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
   });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [lovData, setLovData] = useState({ subCategories: [], customerNeeds: [] });
+  const [uploading, setUploading] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [customerNeeds, setCustomerNeeds] = useState([]);
+  const fileRef = useRef(null);
 
   useEffect(() => {
     base44.entities.Project.list("name", 500).then(setProjects);
+    // Load LOV data
+    base44.entities.TypeOfLOV.list("code", 200).then(async (types) => {
+      const catType = types.find((t) => t.code === "Category");
+      const subCatType = types.find((t) => t.code === "SubCategory" || t.code === "Sub-Types");
+      const cnType = types.find((t) => t.code === "CustomerNeed" || t.code === "Customer Need");
+      const [cats, subs, cns] = await Promise.all([
+        catType ? base44.entities.ListOfValues.filter({ type_of_lov_id: catType.id }) : Promise.resolve([]),
+        subCatType ? base44.entities.ListOfValues.filter({ type_of_lov_id: subCatType.id }) : Promise.resolve([]),
+        cnType ? base44.entities.ListOfValues.filter({ type_of_lov_id: cnType.id }) : Promise.resolve([]),
+      ]);
+      setCategories(cats.map((c) => c.name));
+      setSubCategories(subs);
+      setCustomerNeeds(cns.map((c) => c.name));
+    });
   }, []);
 
   // Load existing entity if editing
@@ -137,23 +154,43 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Category</Label>
-                <Select value={form.category || ""} onValueChange={(v) => set("category", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+               <Label className="text-xs">Category</Label>
+               <Select value={form.category || ""} onValueChange={(v) => { set("category", v); set("sub_category", ""); }}>
+                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                 <SelectContent>
+                   {(categories.length > 0 ? categories : ["Tops","Bottoms","Outerwear","Dresses","Footwear","Accessories","Other"]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                 </SelectContent>
+               </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Sub-category</Label>
-                <Input value={form.sub_category || ""} onChange={(e) => set("sub_category", e.target.value)} placeholder="e.g. Lightweight" />
+               <Label className="text-xs">Sub-category</Label>
+               {subCategories.length > 0 ? (
+                 <Select value={form.sub_category || ""} onValueChange={(v) => set("sub_category", v)}>
+                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                   <SelectContent>
+                     {subCategories
+                       .filter((s) => !s.depends_on_value_id || !form.category || true)
+                       .map((s) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                   </SelectContent>
+                 </Select>
+               ) : (
+                 <Input value={form.sub_category || ""} onChange={(e) => set("sub_category", e.target.value)} placeholder="e.g. Lightweight" />
+               )}
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Customer Need</Label>
-                <Input value={form.customer_need || ""} onChange={(e) => set("customer_need", e.target.value)} placeholder="e.g. Casual everyday" />
+               <Label className="text-xs">Customer Need</Label>
+               {customerNeeds.length > 0 ? (
+                 <Select value={form.customer_need || ""} onValueChange={(v) => set("customer_need", v)}>
+                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                   <SelectContent>
+                     {customerNeeds.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                   </SelectContent>
+                 </Select>
+               ) : (
+                 <Input value={form.customer_need || ""} onChange={(e) => set("customer_need", e.target.value)} placeholder="e.g. Casual everyday" />
+               )}
               </div>
 
               <div className="space-y-1.5">
@@ -162,8 +199,21 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Image URL</Label>
-                <Input value={form.images?.[0] || ""} onChange={(e) => set("images", e.target.value ? [e.target.value] : [])} placeholder="https://…" />
+                <Label className="text-xs">Image</Label>
+                <div className="flex gap-2">
+                  <Input value={form.images?.[0] || ""} onChange={(e) => set("images", e.target.value ? [e.target.value] : [])} placeholder="https://…" className="flex-1" />
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setUploading(true);
+                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                    set("images", [file_url]);
+                    setUploading(false);
+                    e.target.value = "";
+                  }} />
+                  <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                    {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-1.5">
