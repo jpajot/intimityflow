@@ -244,19 +244,27 @@ export default function BoardEditor() {
     const slides = document.querySelectorAll("[data-board-slide]");
     let first = true;
     for (const slide of slides) {
+      // Temporarily remove CSS scale so html2canvas captures at native resolution
+      const wrapper = slide.closest("[data-scale-wrapper]");
+      const prevTransform = wrapper?.style.transform || "";
+      const prevOrigin = wrapper?.style.transformOrigin || "";
+      if (wrapper) {
+        wrapper.style.transform = "none";
+        wrapper.style.transformOrigin = "top left";
+      }
       const canvas = await html2canvas(slide, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         width: CANVAS_W,
         height: CANVAS_H,
-        windowWidth: CANVAS_W,
-        windowHeight: CANVAS_H,
         scrollX: 0,
         scrollY: 0,
-        x: 0,
-        y: 0,
       });
+      if (wrapper) {
+        wrapper.style.transform = prevTransform;
+        wrapper.style.transformOrigin = prevOrigin;
+      }
       const imgData = canvas.toDataURL("image/png");
       if (!first) doc.addPage();
       doc.addImage(imgData, "PNG", 0, 0, CANVAS_W, CANVAS_H);

@@ -95,6 +95,7 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
       onDrop={handleDrop}
     >
       <div
+        data-scale-wrapper
         style={{
           width: CANVAS_W,
           height: CANVAS_H,
