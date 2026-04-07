@@ -244,13 +244,36 @@ export default function BoardEditor() {
     const originalPageId = activePageId;
     let first = true;
 
+    const toDataUrl = async (url) => {
+      try {
+        const res = await fetch(url, { mode: "cors" });
+        const blob = await res.blob();
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return null;
+      }
+    };
+
     for (const page of pages) {
-      // Switch to this page and wait for React to render it
       setActivePageId(page.id);
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       const slide = document.querySelector("[data-board-slide]");
       if (!slide) continue;
+
+      // Pre-load all images as base64 to bypass CORS
+      const imgs = Array.from(slide.querySelectorAll("img"));
+      const origSrcs = imgs.map((img) => img.src);
+      await Promise.all(
+        imgs.map(async (img) => {
+          const dataUrl = await toDataUrl(img.src);
+          if (dataUrl) img.src = dataUrl;
+        })
+      );
 
       const wrapper = slide.closest("[data-scale-wrapper]");
       const prevTransform = wrapper?.style.transform || "";
@@ -259,6 +282,7 @@ export default function BoardEditor() {
         wrapper.style.transform = "none";
         wrapper.style.transformOrigin = "top left";
       }
+
       const canvas = await html2canvas(slide, {
         scale: 2,
         useCORS: true,
@@ -268,17 +292,20 @@ export default function BoardEditor() {
         scrollX: 0,
         scrollY: 0,
       });
+
+      // Restore original srcs
+      imgs.forEach((img, i) => { img.src = origSrcs[i]; });
       if (wrapper) {
         wrapper.style.transform = prevTransform;
         wrapper.style.transformOrigin = prevOrigin;
       }
+
       const imgData = canvas.toDataURL("image/png");
       if (!first) doc.addPage();
       doc.addImage(imgData, "PNG", 0, 0, CANVAS_W, CANVAS_H);
       first = false;
     }
 
-    // Restore original page
     setActivePageId(originalPageId);
     doc.save(`${board?.name || "board"}.pdf`);
   };
