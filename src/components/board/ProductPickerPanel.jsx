@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 const ENTITY_TYPES = [
   { value: "Product", label: "Products / Styles" },
   { value: "ProductColor", label: "Colorways" },
+  { value: "TechnicalColor", label: "Technical Colors" },
+  { value: "CommercialColor", label: "Commercial Colors" },
 ];
 
 export default function ProductPickerPanel({ open, onClose }) {
@@ -19,9 +21,11 @@ export default function ProductPickerPanel({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    const loader = entityType === "Product"
-      ? base44.entities.Product.list("name", 500)
-      : base44.entities.ProductColor.list("-created_date", 500);
+    let loader;
+    if (entityType === "Product") loader = base44.entities.Product.list("name", 500);
+    else if (entityType === "ProductColor") loader = base44.entities.ProductColor.list("-created_date", 500);
+    else if (entityType === "TechnicalColor") loader = base44.entities.TechnicalColor.list("name", 500);
+    else loader = base44.entities.CommercialColor.list("name", 500);
     loader.then((res) => { setItems(res); setLoading(false); });
   }, [open, entityType]);
 
@@ -31,22 +35,31 @@ export default function ProductPickerPanel({ open, onClose }) {
     const q = search.toLowerCase();
     if (!q) return true;
     if (entityType === "Product") return (item.name || "").toLowerCase().includes(q);
-    return (item.color_name || "").toLowerCase().includes(q) || (item.colorway_code || "").toLowerCase().includes(q);
+    if (entityType === "ProductColor") return (item.color_name || "").toLowerCase().includes(q) || (item.colorway_code || "").toLowerCase().includes(q);
+    if (entityType === "TechnicalColor") return (item.name || "").toLowerCase().includes(q) || (item.code || "").toLowerCase().includes(q);
+    return (item.color_name || "").toLowerCase().includes(q) || (item.code || "").toLowerCase().includes(q);
   });
 
-  const getDragData = (item) => ({
-    entityType,
-    id: item.id,
-    name: entityType === "Product" ? item.name : item.color_name,
-    code: entityType === "Product" ? (item.code || "") : (item.colorway_code || ""),
-    imageUrl: entityType === "Product" ? (item.images?.[0] || "") : (item.image_url || ""),
-  });
+  const getDragData = (item) => {
+    if (entityType === "Product") return { entityType, id: item.id, name: item.name, code: "", imageUrl: item.images?.[0] || "" };
+    if (entityType === "ProductColor") return { entityType, id: item.id, name: item.color_name, code: item.colorway_code || "", imageUrl: item.image_url || "" };
+    if (entityType === "TechnicalColor") return { entityType, id: item.id, name: item.name, code: item.code || "", imageUrl: item.hex || "" };
+    return { entityType, id: item.id, name: item.color_name, code: item.code || "", imageUrl: "" };
+  };
 
-  const getLabel = (item) =>
-    entityType === "Product" ? item.name : `${item.color_name}${item.colorway_code ? ` (${item.colorway_code})` : ""}`;
+  const getLabel = (item) => {
+    if (entityType === "Product") return item.name;
+    if (entityType === "ProductColor") return `${item.color_name}${item.colorway_code ? ` (${item.colorway_code})` : ""}`;
+    if (entityType === "TechnicalColor") return `${item.name} (${item.code || ""})`.trim();
+    return `${item.color_name}${item.code ? ` (${item.code})` : ""}`;
+  };
 
-  const getImage = (item) =>
-    entityType === "Product" ? item.images?.[0] : item.image_url;
+  const getImage = (item) => {
+    if (entityType === "Product") return item.images?.[0];
+    if (entityType === "ProductColor") return item.image_url;
+    if (entityType === "TechnicalColor") return item.hex ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='${item.hex}' width='100' height='100'/></svg>` : "";
+    return "";
+  };
 
   return (
     <div className="fixed top-0 right-0 h-full w-[320px] z-50 bg-background border-l border-border shadow-2xl flex flex-col">

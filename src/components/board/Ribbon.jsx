@@ -61,7 +61,7 @@ export default function Ribbon({ onInsert, onExportPdf, onOpenProductPicker }) {
             <Square className="w-3.5 h-3.5" /> Shape
           </Button>
           <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={onOpenProductPicker}>
-            <Link2 className="w-3.5 h-3.5" /> Product Card
+            <Link2 className="w-3.5 h-3.5" /> Cards
           </Button>
 
           <div className="ml-auto">
