@@ -21,8 +21,21 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
   }, []);
 
   const handleUpdate = (id, changes) => {
-    // If element is in a group, move group members together when dragging group container
-    onUpdateElements(elements.map((el) => (el.id === id ? { ...el, ...changes } : el)));
+    const el = elements.find((e) => e.id === id);
+    // If moving a group, also move all child elements by the same delta
+    if (el?.type === "group" && changes.x !== undefined && changes.y !== undefined) {
+      const dx = changes.x - el.x;
+      const dy = changes.y - el.y;
+      onUpdateElements(
+        elements.map((e) => {
+          if (e.id === id) return { ...e, ...changes };
+          if (el.childIds?.includes(e.id)) return { ...e, x: e.x + dx, y: e.y + dy };
+          return e;
+        })
+      );
+    } else {
+      onUpdateElements(elements.map((e) => (e.id === id ? { ...e, ...changes } : e)));
+    }
   };
 
   const handleSelect = (id, ctrlHeld) => {
