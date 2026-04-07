@@ -1,23 +1,55 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Loader2, RefreshCw } from "lucide-react";
+import { Camera, X, Loader2, FlipHorizontal } from "lucide-react";
 
 export default function CameraCapture({ onCapture, onClose }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
-  const [facingMode, setFacingMode] = useState("environment");
+  const [devices, setDevices] = useState([]); // list of video input devices
+  const [deviceIndex, setDeviceIndex] = useState(0); // current device index
 
+  // Enumerate cameras once on mount
   useEffect(() => {
+    // Request permission first, then enumerate
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((tempStream) => {
+        tempStream.getTracks().forEach((t) => t.stop());
+        return navigator.mediaDevices.enumerateDevices();
+      })
+      .then((all) => {
+        const videoDevices = all.filter((d) => d.kind === "videoinput");
+        setDevices(videoDevices);
+        // Try to default to rear camera (label contains "back" or "rear", or last device)
+        const rearIdx = videoDevices.findIndex((d) =>
+          /back|rear|environment/i.test(d.label)
+        );
+        setDeviceIndex(rearIdx >= 0 ? rearIdx : videoDevices.length - 1);
+      })
+      .catch((err) => setError(err.message));
+
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  // Start stream whenever deviceIndex or devices change
+  useEffect(() => {
+    if (devices.length === 0) return;
     let cancelled = false;
+
     setReady(false);
     setError(null);
-    // Stop existing tracks first
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: false })
+    const deviceId = devices[deviceIndex]?.deviceId;
+    const constraints = deviceId
+      ? { video: { deviceId: { exact: deviceId } }, audio: false }
+      : { video: true, audio: false };
+
+    navigator.mediaDevices.getUserMedia(constraints)
       .then((stream) => {
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
@@ -33,10 +65,10 @@ export default function CameraCapture({ onCapture, onClose }) {
       cancelled = true;
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, [facingMode]);
+  }, [devices, deviceIndex]);
 
   const handleFlip = () => {
-    setFacingMode((prev) => prev === "environment" ? "user" : "environment");
+    setDeviceIndex((prev) => (prev + 1) % devices.length);
   };
 
   const handleCapture = () => {
@@ -72,9 +104,11 @@ export default function CameraCapture({ onCapture, onClose }) {
           )}
         </div>
         <div className="px-4 py-3 flex items-center justify-center gap-3">
-          <Button variant="outline" size="icon" onClick={handleFlip} disabled={!ready} title="Flip camera">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
+          {devices.length > 1 && (
+            <Button variant="outline" size="icon" onClick={handleFlip} disabled={!ready} title="Switch camera">
+              <FlipHorizontal className="w-4 h-4" />
+            </Button>
+          )}
           <Button onClick={handleCapture} disabled={!ready} className="gap-2">
             <Camera className="w-4 h-4" /> Capture
           </Button>
