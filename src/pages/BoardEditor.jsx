@@ -244,20 +244,12 @@ export default function BoardEditor() {
     const originalPageId = activePageId;
     let first = true;
 
-    const toDataUrl = (url) =>
-      new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          const c = document.createElement("canvas");
-          c.width = img.naturalWidth;
-          c.height = img.naturalHeight;
-          c.getContext("2d").drawImage(img, 0, 0);
-          resolve(c.toDataURL("image/png"));
-        };
-        img.onerror = () => resolve(null);
-        img.src = url + (url.includes("?") ? "&" : "?") + "_t=" + Date.now();
-      });
+    // Fetch image as base64 via backend proxy to avoid CORS
+    const proxyToDataUrl = async (url) => {
+      if (!url || url.startsWith("data:")) return url;
+      const res = await base44.functions.invoke("proxyImage", { url });
+      return res.data?.dataUrl || null;
+    };
 
     for (const page of pages) {
       setActivePageId(page.id);
@@ -266,25 +258,23 @@ export default function BoardEditor() {
       const slide = document.querySelector("[data-board-slide]");
       if (!slide) continue;
 
-      // Convert all images to base64 and wait for them to load
+      // Replace all img srcs with proxied base64
       const imgs = Array.from(slide.querySelectorAll("img"));
       const origSrcs = imgs.map((img) => img.src);
-      const dataSrcs = await Promise.all(origSrcs.map(toDataUrl));
+      const dataSrcs = await Promise.all(origSrcs.map(proxyToDataUrl));
 
-      // Apply data URLs and wait for browser to render them
+      // Set and wait for load
       await Promise.all(
-        imgs.map(
-          (img, i) =>
-            new Promise((resolve) => {
-              if (!dataSrcs[i]) { resolve(); return; }
-              img.onload = resolve;
-              img.onerror = resolve;
-              img.src = dataSrcs[i];
-            })
+        imgs.map((img, i) =>
+          new Promise((resolve) => {
+            if (!dataSrcs[i]) { resolve(); return; }
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = dataSrcs[i];
+          })
         )
       );
 
-      // Small extra settle time
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const wrapper = slide.closest("[data-scale-wrapper]");
@@ -297,7 +287,7 @@ export default function BoardEditor() {
 
       const canvas = await html2canvas(slide, {
         scale: 2,
-        useCORS: true,
+        useCORS: false,
         allowTaint: true,
         width: CANVAS_W,
         height: CANVAS_H,
@@ -306,7 +296,6 @@ export default function BoardEditor() {
         logging: false,
       });
 
-      // Restore
       imgs.forEach((img, i) => { img.src = origSrcs[i]; });
       if (wrapper) {
         wrapper.style.transform = prevTransform;
