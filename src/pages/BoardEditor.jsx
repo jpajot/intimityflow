@@ -162,7 +162,11 @@ export default function BoardEditor() {
 
   const handleCreateProduct = () => {
     const { element, selectedIds } = contextMenu;
-    const prefill = extractPrefill(elements, selectedIds?.length > 1 ? selectedIds : [element.id]);
+    // For groups, use the child element ids for prefill
+    const idsForPrefill = element?.type === "group" && element?.childIds?.length
+      ? element.childIds
+      : (selectedIds?.length > 1 ? selectedIds : [element.id]);
+    const prefill = extractPrefill(elements, idsForPrefill);
     setSlidePanel({ mode: "create", entityType: "Product", prefill, targetElementId: element.id });
     setContextMenu(null);
   };

@@ -50,8 +50,11 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
     });
   };
 
-  const handleCanvasClick = () => {
-    setSelectedIds(new Set());
+  const handleCanvasMouseDown = (e) => {
+    // Only deselect if clicking directly on the canvas background (not on a child element)
+    if (e.target === e.currentTarget) {
+      setSelectedIds(new Set());
+    }
   };
 
   const handleContextMenu = (e, element) => {
@@ -66,7 +69,7 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu 
     <div
       ref={measureScale}
       className="flex-1 overflow-auto bg-muted/50 flex items-center justify-center"
-      onClick={handleCanvasClick}
+      onMouseDown={handleCanvasMouseDown}
     >
       <div
         style={{

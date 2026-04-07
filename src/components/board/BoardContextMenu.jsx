@@ -16,7 +16,7 @@ export default function BoardContextMenu({ x, y, element, selectedIds = [], elem
   const items = [
     !isGroup && { label: "Link to existing entity", icon: Link2, action: onLink },
     hasLinked && { label: "Open / edit linked record", icon: ExternalLink, action: onEditLinked },
-    !hasLinked && !isGroup && { label: "Create product from this", icon: Plus, action: onCreateProduct },
+    !hasLinked && { label: "Create product from this", icon: Plus, action: onCreateProduct },
     multiSelected && !isGroup && { label: `Group ${selectedIds.length} elements`, icon: BoxSelect, action: onGroup },
     isGroup && { label: "Ungroup", icon: Maximize2, action: onUngroup },
     null,
