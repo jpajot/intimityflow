@@ -132,7 +132,9 @@ export default function ProductPickerPanel({ open, onClose }) {
                 className="cursor-grab active:cursor-grabbing rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all overflow-hidden select-none"
               >
                 <div className="aspect-square bg-muted/40 flex items-center justify-center overflow-hidden">
-                  {getImage(item) ? (
+                  {(entityType === "TechnicalColor" || entityType === "CommercialColor") && item.hex ? (
+                    <div className="w-full h-full" style={{ backgroundColor: item.hex }} />
+                  ) : getImage(item) ? (
                     <img src={getImage(item)} alt="" className="w-full h-full object-contain" draggable={false} />
                   ) : (
                     <div className="text-2xl">🖼</div>
