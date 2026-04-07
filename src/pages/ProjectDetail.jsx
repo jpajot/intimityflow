@@ -81,31 +81,42 @@ export default function ProjectDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [proj, pals, palCols, tc, cc, docs, lovTypes, projs, sgs] = await Promise.all([
-    base44.entities.Project.filter({ id }),
-    base44.entities.ColorPalette.filter({ project_id: id }),
-    base44.entities.ColorPaletteColor.list("-created_date", 2000),
-    base44.entities.TechnicalColor.list("code", 2000),
-    base44.entities.CommercialColor.list("code", 2000),
-    base44.entities.UploadedDocument.filter({ project_id: id }),
-    base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
-    base44.entities.Project.list("name", 500),
-    base44.entities.SizeGrid.list("name", 200)]
-    );
+
+    // Batch 1: project-specific data (lightweight)
+    const [proj, pals, docs, lovTypes, projs, sgs] = await Promise.all([
+      base44.entities.Project.filter({ id }),
+      base44.entities.ColorPalette.filter({ project_id: id }),
+      base44.entities.UploadedDocument.filter({ project_id: id }),
+      base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
+      base44.entities.Project.list("name", 500),
+      base44.entities.SizeGrid.list("name", 200),
+    ]);
     setAllProjects(projs);
     setSizeGrids(sgs);
     setProject(proj[0] || null);
     setPalettes(pals);
-    setPaletteColors(palCols);
+    setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
+    if (lovTypes.length > 0) {
+      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
+      setDocTypes(values.map((v) => v.name));
+    }
+
+    // Batch 2: color library data
+    const [tc, cc, palCols] = await Promise.all([
+      base44.entities.TechnicalColor.list("code", 2000),
+      base44.entities.CommercialColor.list("code", 2000),
+      base44.entities.ColorPaletteColor.list("-created_date", 2000),
+    ]);
     setTechColors(tc);
     setCommColors(cc);
-    setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
+    setPaletteColors(palCols);
 
+    // Batch 3: product/colorway data
     const [allCws, allProducts, allVars] = await Promise.all([
-    base44.entities.ProductColor.list("-created_date", 5000),
-    base44.entities.Product.list("-created_date", 2000),
-    base44.entities.ProductColorAndMore.list("-created_date", 5000)]
-    );
+      base44.entities.ProductColor.list("-created_date", 5000),
+      base44.entities.Product.list("-created_date", 2000),
+      base44.entities.ProductColorAndMore.list("-created_date", 5000),
+    ]);
     const linked = allCws.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
     setAllColorways(allCws);
@@ -117,10 +128,6 @@ export default function ProjectDetail() {
     setAllVariations(allVars);
     setLinkedVariations(allVars.filter((v) => (v.project_ids || []).includes(id)));
 
-    if (lovTypes.length > 0) {
-      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
-      setDocTypes(values.map((v) => v.name));
-    }
     setLoading(false);
   };
 
