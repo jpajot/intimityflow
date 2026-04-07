@@ -254,37 +254,25 @@ export default function BoardEditor() {
     };
 
     for (const page of pages) {
-      // 1. Pre-fetch all image URLs from page element data (not DOM)
-      const imageUrls = [];
-      for (const el of (page.elements || [])) {
-        if (el.type === 'image' && el.content) imageUrls.push(el.content);
-        if (el.type === 'product_card' && el.linkedImageUrl) imageUrls.push(el.linkedImageUrl);
-      }
-      const uniqueUrls = [...new Set(imageUrls)];
-      const proxiedMap = {};
-      await Promise.all(uniqueUrls.map(async (url) => {
-        proxiedMap[url] = await proxyToDataUrl(url);
-      }));
-
-      // 2. Switch to this page and wait for React to render
+      // 1. Switch to this page and wait for React to render
       setActivePageId(page.id);
       await new Promise((resolve) => setTimeout(resolve, 400));
 
       const slide = document.querySelector('[data-board-slide]');
       if (!slide) continue;
 
-      // 3. Replace img srcs with pre-fetched proxied data URLs
+      // 2. Collect DOM img srcs and proxy them all
       const imgs = Array.from(slide.querySelectorAll('img'));
-      const origSrcs = imgs.map((img) => img.getAttribute('src') || img.src);
+      const origSrcs = imgs.map((img) => img.src);
+      const proxiedSrcs = await Promise.all(origSrcs.map(proxyToDataUrl));
 
+      // 3. Inject proxied srcs and wait for load
       await Promise.all(
         imgs.map((img, i) =>
           new Promise((resolve) => {
-            const proxied = proxiedMap[origSrcs[i]] || BLANK;
-            if (img.src === proxied) { resolve(); return; }
             img.onload = resolve;
             img.onerror = resolve;
-            img.src = proxied;
+            img.src = proxiedSrcs[i];
           })
         )
       );
