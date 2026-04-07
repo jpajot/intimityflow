@@ -181,6 +181,12 @@ export default function BoardEditor() {
 
   const handleCreateProduct = () => {
     const { element } = contextMenu;
+    setSlidePanel({ mode: "create", entityType: "Product", prefill: { name: element.content }, targetElementId: element.id });
+    setContextMenu(null);
+  };
+
+  const handleEditLinked = () => {
+    const { element } = contextMenu;
     setSlidePanel({ mode: "edit", entityType: element.linkedEntityType || "Product", entityId: element.linkedEntityId });
     setContextMenu(null);
   };
