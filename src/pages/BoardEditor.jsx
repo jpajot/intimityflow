@@ -244,48 +244,60 @@ export default function BoardEditor() {
     const originalPageId = activePageId;
     let first = true;
 
-    // Fetch image as base64 via backend proxy to avoid CORS
+    const BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+    // Proxy a URL to a base64 data URL
     const proxyToDataUrl = async (url) => {
-      if (!url || url.startsWith("data:")) return url;
-      const res = await base44.functions.invoke("proxyImage", { url });
-      return res.data?.dataUrl || null;
+      if (!url || url.startsWith('data:')) return url;
+      const res = await base44.functions.invoke('proxyImage', { url });
+      return res.data?.dataUrl || BLANK;
     };
 
     for (const page of pages) {
-      setActivePageId(page.id);
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      // 1. Pre-fetch all image URLs from page element data (not DOM)
+      const imageUrls = [];
+      for (const el of (page.elements || [])) {
+        if (el.type === 'image' && el.content) imageUrls.push(el.content);
+        if (el.type === 'product_card' && el.linkedImageUrl) imageUrls.push(el.linkedImageUrl);
+      }
+      const uniqueUrls = [...new Set(imageUrls)];
+      const proxiedMap = {};
+      await Promise.all(uniqueUrls.map(async (url) => {
+        proxiedMap[url] = await proxyToDataUrl(url);
+      }));
 
-      const slide = document.querySelector("[data-board-slide]");
+      // 2. Switch to this page and wait for React to render
+      setActivePageId(page.id);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      const slide = document.querySelector('[data-board-slide]');
       if (!slide) continue;
 
-      // Replace all img srcs with proxied base64
-      const imgs = Array.from(slide.querySelectorAll("img"));
-      const origSrcs = imgs.map((img) => img.src);
-      const dataSrcs = await Promise.all(origSrcs.map(proxyToDataUrl));
+      // 3. Replace img srcs with pre-fetched proxied data URLs
+      const imgs = Array.from(slide.querySelectorAll('img'));
+      const origSrcs = imgs.map((img) => img.getAttribute('src') || img.src);
 
-      // Blank 1x1 transparent PNG for failed proxies
-      const BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-
-      // Set and wait for load
       await Promise.all(
         imgs.map((img, i) =>
           new Promise((resolve) => {
-            const src = dataSrcs[i] || BLANK;
+            const proxied = proxiedMap[origSrcs[i]] || BLANK;
+            if (img.src === proxied) { resolve(); return; }
             img.onload = resolve;
             img.onerror = resolve;
-            img.src = src;
+            img.src = proxied;
           })
         )
       );
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const wrapper = slide.closest("[data-scale-wrapper]");
-      const prevTransform = wrapper?.style.transform || "";
-      const prevOrigin = wrapper?.style.transformOrigin || "";
+      // 4. Temporarily remove scale transform for accurate capture
+      const wrapper = slide.closest('[data-scale-wrapper]');
+      const prevTransform = wrapper?.style.transform || '';
+      const prevOrigin = wrapper?.style.transformOrigin || '';
       if (wrapper) {
-        wrapper.style.transform = "none";
-        wrapper.style.transformOrigin = "top left";
+        wrapper.style.transform = 'none';
+        wrapper.style.transformOrigin = 'top left';
       }
 
       const canvas = await html2canvas(slide, {
@@ -299,20 +311,21 @@ export default function BoardEditor() {
         logging: false,
       });
 
+      // 5. Restore
       imgs.forEach((img, i) => { img.src = origSrcs[i]; });
       if (wrapper) {
         wrapper.style.transform = prevTransform;
         wrapper.style.transformOrigin = prevOrigin;
       }
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL('image/png');
       if (!first) doc.addPage();
-      doc.addImage(imgData, "PNG", 0, 0, CANVAS_W, CANVAS_H);
+      doc.addImage(imgData, 'PNG', 0, 0, CANVAS_W, CANVAS_H);
       first = false;
     }
 
     setActivePageId(originalPageId);
-    doc.save(`${board?.name || "board"}.pdf`);
+    doc.save(`${board?.name || 'board'}.pdf`);
   };
 
   if (loading) {

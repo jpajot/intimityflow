@@ -12,11 +12,13 @@ Deno.serve(async (req) => {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
     });
-    if (!res.ok) return Response.json({ dataUrl: null });
+    if (!res.ok) {
+      console.log(`[proxyImage] fetch failed: ${res.status} for ${url}`);
+      return Response.json({ dataUrl: null });
+    }
 
     const contentType = res.headers.get('content-type') || 'image/png';
-    // Only handle image responses
-    if (!contentType.startsWith('image/')) return Response.json({ dataUrl: null });
+    console.log(`[proxyImage] contentType=${contentType} url=${url.slice(0, 80)}`);
 
     const buffer = await res.arrayBuffer();
     const uint8 = new Uint8Array(buffer);
@@ -28,11 +30,14 @@ Deno.serve(async (req) => {
       binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
     }
     const base64 = btoa(binary);
-    const dataUrl = `data:${contentType};base64,${base64}`;
+
+    // Use image/png as fallback mime type if not an image content-type
+    const mime = contentType.startsWith('image/') ? contentType.split(';')[0] : 'image/png';
+    const dataUrl = `data:${mime};base64,${base64}`;
 
     return Response.json({ dataUrl });
   } catch (e) {
-    // Return null gracefully so export continues without this image
+    console.log(`[proxyImage] error: ${e.message}`);
     return Response.json({ dataUrl: null });
   }
 });
