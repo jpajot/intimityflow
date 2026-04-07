@@ -19,28 +19,47 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [projects, setProjects] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
-  const [customerNeeds, setCustomerNeeds] = useState([]);
+  const [lovTypes, setLovTypes] = useState({});
+  const [lovValues, setLovValues] = useState([]);
   const fileRef = useRef(null);
 
   useEffect(() => {
     base44.entities.Project.list("name", 500).then(setProjects);
-    // Load LOV data
-    base44.entities.TypeOfLOV.list("code", 200).then(async (types) => {
-      const catType = types.find((t) => t.code === "Category");
-      const subCatType = types.find((t) => t.code === "SubCategory" || t.code === "Sub-Types");
-      const cnType = types.find((t) => t.code === "CustomerNeed" || t.code === "Customer Need");
-      const [cats, subs, cns] = await Promise.all([
-        catType ? base44.entities.ListOfValues.filter({ type_of_lov_id: catType.id }) : Promise.resolve([]),
-        subCatType ? base44.entities.ListOfValues.filter({ type_of_lov_id: subCatType.id }) : Promise.resolve([]),
-        cnType ? base44.entities.ListOfValues.filter({ type_of_lov_id: cnType.id }) : Promise.resolve([]),
-      ]);
-      setCategories(cats.map((c) => c.name));
-      setSubCategories(subs);
-      setCustomerNeeds(cns.map((c) => c.name));
+    Promise.all([
+      base44.entities.TypeOfLOV.list("code", 500),
+      base44.entities.ListOfValues.list("name", 5000),
+    ]).then(([types, values]) => {
+      const typeMap = {};
+      types.forEach((t) => (typeMap[t.code] = t.id));
+      setLovTypes(typeMap);
+      setLovValues(values);
     });
   }, []);
+
+  const getCategories = () => {
+    const id = lovTypes["Category"];
+    if (!id) return [];
+    return lovValues.filter((v) => v.type_of_lov_id === id);
+  };
+
+  const getSubCategories = () => {
+    const id = lovTypes["Sub-Category"];
+    if (!id || !form.category) return [];
+    const catVal = lovValues.find((v) => v.type_of_lov_id === lovTypes["Category"] && v.name === form.category);
+    if (!catVal) return [];
+    return lovValues.filter((v) => v.type_of_lov_id === id && v.depends_on_value_id === catVal.id);
+  };
+
+  const getCustomerNeeds = () => {
+    const id = lovTypes["Customer Need"];
+    if (!id) return [];
+    const all = lovValues.filter((v) => v.type_of_lov_id === id);
+    if (!all.some((v) => v.depends_on_value_id)) return all.map((v) => v.name);
+    if (!form.sub_category) return all.map((v) => v.name);
+    const subVal = lovValues.find((v) => v.type_of_lov_id === lovTypes["Sub-Category"] && v.name === form.sub_category);
+    if (!subVal) return all.map((v) => v.name);
+    return all.filter((v) => v.depends_on_value_id === subVal.id).map((v) => v.name);
+  };
 
   // Load existing entity if editing
   useEffect(() => {
@@ -155,42 +174,32 @@ export default function ProductSlidePanel({ open, mode, entityType, entityId, pr
 
               <div className="space-y-1.5">
                <Label className="text-xs">Category</Label>
-               <Select value={form.category || ""} onValueChange={(v) => { set("category", v); set("sub_category", ""); }}>
+               <Select value={form.category || ""} onValueChange={(v) => { set("category", v); set("sub_category", ""); set("customer_need", ""); }}>
                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                  <SelectContent>
-                   {(categories.length > 0 ? categories : ["Tops","Bottoms","Outerwear","Dresses","Footwear","Accessories","Other"]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                   {getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                  </SelectContent>
                </Select>
               </div>
 
               <div className="space-y-1.5">
                <Label className="text-xs">Sub-category</Label>
-               {subCategories.length > 0 ? (
-                 <Select value={form.sub_category || ""} onValueChange={(v) => set("sub_category", v)}>
-                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                   <SelectContent>
-                     {subCategories
-                       .filter((s) => !s.depends_on_value_id || !form.category || true)
-                       .map((s) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
-                   </SelectContent>
-                 </Select>
-               ) : (
-                 <Input value={form.sub_category || ""} onChange={(e) => set("sub_category", e.target.value)} placeholder="e.g. Lightweight" />
-               )}
+               <Select value={form.sub_category || ""} onValueChange={(v) => { set("sub_category", v); set("customer_need", ""); }} disabled={!form.category}>
+                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                 <SelectContent>
+                   {getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                 </SelectContent>
+               </Select>
               </div>
 
               <div className="space-y-1.5">
                <Label className="text-xs">Customer Need</Label>
-               {customerNeeds.length > 0 ? (
-                 <Select value={form.customer_need || ""} onValueChange={(v) => set("customer_need", v)}>
-                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                   <SelectContent>
-                     {customerNeeds.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                   </SelectContent>
-                 </Select>
-               ) : (
-                 <Input value={form.customer_need || ""} onChange={(e) => set("customer_need", e.target.value)} placeholder="e.g. Casual everyday" />
-               )}
+               <Select value={form.customer_need || ""} onValueChange={(v) => set("customer_need", v)}>
+                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                 <SelectContent>
+                   {getCustomerNeeds().map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                 </SelectContent>
+               </Select>
               </div>
 
               <div className="space-y-1.5">
