@@ -5,26 +5,43 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
-const CONFIGURABLE_ENTITIES = [
-  { name: "Product", lovEntity: "Product", fields: ["type", "name", "category", "sub_category", "customer_need", "description", "images", "size_grid_id", "creation_project_id", "project_ids"] },
-  { name: "TechnicalColor", lovEntity: "TechnicalColor", fields: ["code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group"] },
-  { name: "CommercialColor", lovEntity: "CommercialColor", fields: ["sub_type", "code", "color_name", "main_technical_color_id", "linked_technical_color_ids"] },
-];
+const FIELD_DEFINITIONS = {
+  Product: ["type", "name", "category", "sub_category", "customer_need", "description", "images", "size_grid_id", "creation_project_id", "project_ids"],
+  TechnicalColor: ["code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group"],
+  CommercialColor: ["sub_type", "code", "color_name", "main_technical_color_id", "linked_technical_color_ids"],
+};
 
 export default function EntityFieldConfigMatrix() {
   const [selectedEntity, setSelectedEntity] = useState("Product");
   const [configs, setConfigs] = useState([]);
   const [entityTypes, setEntityTypes] = useState([]);
+  const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadConfigs();
+    loadEntities();
   }, []);
 
   useEffect(() => {
     loadEntityTypes();
   }, [selectedEntity]);
+
+  const loadEntities = async () => {
+    const [types, values] = await Promise.all([
+      base44.entities.TypeOfLOV.list("code", 500),
+      base44.entities.ListOfValues.list("name", 5000),
+    ]);
+    const entitiesLov = types.find((t) => t.code === "Entities");
+    if (entitiesLov) {
+      const entityValues = values.filter((v) => v.type_of_lov_id === entitiesLov.id);
+      setEntities(entityValues.map((v) => v.name));
+      if (entityValues.length > 0 && !entityValues.find((e) => e.name === selectedEntity)) {
+        setSelectedEntity(entityValues[0].name);
+      }
+    }
+  };
 
   const loadConfigs = async () => {
     setLoading(true);
@@ -41,9 +58,7 @@ export default function EntityFieldConfigMatrix() {
     const entitiesLov = types.find((t) => t.code === "Entities");
     const entityTypesLov = types.find((t) => t.code === "EntityTypes");
     if (!entitiesLov || !entityTypesLov) return;
-    const selectedEntityDef = CONFIGURABLE_ENTITIES.find((e) => e.name === selectedEntity);
-    if (!selectedEntityDef) return;
-    const parentEntity = values.find((v) => v.type_of_lov_id === entitiesLov.id && v.name === selectedEntityDef.lovEntity);
+    const parentEntity = values.find((v) => v.type_of_lov_id === entitiesLov.id && v.name === selectedEntity);
     if (!parentEntity) return;
     const typeValues = values.filter((v) => v.type_of_lov_id === entityTypesLov.id && v.depends_on_value_id === parentEntity.id);
     setEntityTypes(typeValues.map((v) => v.name));
@@ -72,8 +87,7 @@ export default function EntityFieldConfigMatrix() {
     setSaving(false);
   };
 
-  const entityDef = CONFIGURABLE_ENTITIES.find((e) => e.name === selectedEntity);
-  const fieldsForEntity = entityDef?.fields || [];
+  const fieldsForEntity = FIELD_DEFINITIONS[selectedEntity] || [];
 
   return (
     <div className="space-y-4">
@@ -84,9 +98,9 @@ export default function EntityFieldConfigMatrix() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CONFIGURABLE_ENTITIES.map((e) => (
-              <SelectItem key={e.name} value={e.name}>
-                {e.name}
+            {entities.map((e) => (
+              <SelectItem key={e} value={e}>
+                {e}
               </SelectItem>
             ))}
           </SelectContent>
