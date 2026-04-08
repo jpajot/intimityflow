@@ -101,34 +101,28 @@ export default function MatrixRenderer({ config, projectId }) {
     );
   }
 
-  const syncScroll = (source) => {
-    if (source === 'header' && dataRef.current && headerRef.current) {
-      dataRef.current.scrollLeft = headerRef.current.scrollLeft;
-    } else if (source === 'data' && headerRef.current && dataRef.current) {
-      headerRef.current.scrollLeft = dataRef.current.scrollLeft;
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-background rounded-lg border border-border">
       {/* Column header - fixed */}
-      <div ref={headerRef} onScroll={() => syncScroll('header')} className="overflow-x-auto border-b border-border shrink-0">
-        <div className="flex">
-          <div className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
-          {columns.map(col => (
-            <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
-              <ItemCell 
-                item={col} 
-                fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
-                size={config.thumbnail_size}
-              />
-            </div>
-          ))}
+      <div className="border-b border-border shrink-0 overflow-hidden">
+        <div className="overflow-x-auto" ref={headerRef} onScroll={() => { if (dataRef.current) dataRef.current.scrollLeft = headerRef.current.scrollLeft; }}>
+          <div className="flex">
+            <div className="sticky left-0 z-40 w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
+            {columns.map(col => (
+              <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
+                <ItemCell 
+                  item={col} 
+                  fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
+                  size={config.thumbnail_size}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Data rows - scrollable */}
-      <div ref={dataRef} onScroll={() => syncScroll('data')} className="overflow-x-auto overflow-y-auto flex-1">
+      <div ref={dataRef} onScroll={() => { if (headerRef.current) headerRef.current.scrollLeft = dataRef.current.scrollLeft; }} className="overflow-x-auto overflow-y-auto flex-1">
         {rows.map(row => (
           <div key={row.id} className="flex border-b border-border last:border-b-0">
             <div className="sticky left-0 w-32 shrink-0 p-3 bg-muted/20 border-r border-border z-30">
@@ -153,6 +147,6 @@ export default function MatrixRenderer({ config, projectId }) {
           </div>
         ))}
       </div>
-      </div>
-      );
-      }
+    </div>
+  );
+}
