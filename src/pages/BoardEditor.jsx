@@ -165,7 +165,7 @@ export default function BoardEditor() {
     setContextMenu(null);
   };
 
-  const handleDropProductCard = (data) => {
+  const handleDropProductCard = async (data) => {
     const el = {
       id: generateId(),
       type: "product_card",
@@ -181,6 +181,17 @@ export default function BoardEditor() {
       linkedHex: data.hex,
     };
     updateElements([...elements, el]);
+    // Auto-link product to current project if not already linked
+    if (data.entityType === "Product" && data.id && projectId) {
+      const prod = products.find((p) => p.id === data.id);
+      if (prod) {
+        const currentIds = prod.project_ids || [];
+        if (!currentIds.includes(projectId)) {
+          await base44.entities.Product.update(data.id, { project_ids: [...currentIds, projectId] });
+          setProducts((prev) => prev.map((p) => p.id === data.id ? { ...p, project_ids: [...currentIds, projectId] } : p));
+        }
+      }
+    }
   };
 
   const handleCreateProduct = () => {
