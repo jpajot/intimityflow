@@ -58,7 +58,7 @@ function NumStepper({ label, value, onChange, min = 1, max = 200, suffix }) {
             const v = parseInt(e.target.value, 10);
             if (!isNaN(v)) onChange(v);
           }}
-          className={`h-7 text-xs text-center border border-border rounded bg-background outline-none focus:ring-1 focus:ring-ring ${suffix ? "w-14 pr-5 pl-1" : "w-14 px-1"}`}
+          className={`h-7 text-xs text-center border border-border rounded bg-background outline-none focus:ring-1 focus:ring-ring ${suffix ? "w-16 pr-5 pl-1" : "w-14 px-1"}`}
         />
         {suffix && <span className="absolute right-1.5 text-[10px] text-muted-foreground pointer-events-none">{suffix}</span>}
       </div>
