@@ -74,6 +74,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
         boxSizing: "border-box",
         outline: isSelected ? "2px solid hsl(var(--primary))" : "none",
         outlineOffset: "1px",
+        pointerEvents: el.type === "group" && !isSelected ? "none" : "auto",
       }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
