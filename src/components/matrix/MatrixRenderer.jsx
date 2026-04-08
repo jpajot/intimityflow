@@ -107,9 +107,9 @@ export default function MatrixRenderer({ config, projectId }) {
       <div className="inline-block min-w-full">
         {/* Header row (columns) */}
         <div className="flex border-b border-border">
-          <div className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
+          <div className="sticky top-0 left-0 w-32 shrink-0 p-3 bg-muted/40 border-r border-border z-50" />
           {columns.map(col => (
-            <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
+            <div key={col.id} className="sticky top-0 w-32 shrink-0 p-3 bg-muted/40 border-r border-border z-40">
               <ItemCell 
                 item={col} 
                 fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
@@ -122,7 +122,7 @@ export default function MatrixRenderer({ config, projectId }) {
         {/* Data rows */}
         {rows.map(row => (
           <div key={row.id} className="flex border-b border-border last:border-b-0">
-            <div className="w-32 shrink-0 p-3 bg-muted/20 border-r border-border">
+            <div className="sticky left-0 w-32 shrink-0 p-3 bg-muted/20 border-r border-border z-30">
               <ItemCell 
                 item={row} 
                 fields={config.row_fields && config.row_fields.length > 0 ? config.row_fields : undefined}
