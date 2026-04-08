@@ -113,11 +113,9 @@ export default function ProductDetail() {
     const all = lovValues.filter((v) => v.type_of_lov_id === categoryTypeId);
     const anyHasDep = all.some((v) => !!v.depends_on_value_id);
     if (!anyHasDep) return all;
-    // Dynamically resolve the parent LOV type from a sample dependent category
-    const sampleDep = all.find((v) => !!v.depends_on_value_id);
-    const parentVal = sampleDep ? lovValues.find((v) => v.id === sampleDep.depends_on_value_id) : null;
-    if (!parentVal) return all;
-    const matchingTypeVal = lovValues.find((v) => v.type_of_lov_id === parentVal.type_of_lov_id && v.name === product.type);
+    // Find which parent value IDs are referenced by categories, then match by current type name
+    const categoryDepIds = new Set(all.map((v) => v.depends_on_value_id).filter(Boolean));
+    const matchingTypeVal = lovValues.find((v) => categoryDepIds.has(v.id) && v.name === product.type);
     if (!matchingTypeVal) return all.filter((v) => !v.depends_on_value_id);
     return all.filter((v) => v.depends_on_value_id === matchingTypeVal.id);
   };

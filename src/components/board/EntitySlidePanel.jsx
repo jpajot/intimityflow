@@ -59,12 +59,8 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode, pro
     const all = lovValues.filter((v) => v.type_of_lov_id === lovTypes["Category"]);
     const anyHasDep = all.some((v) => !!v.depends_on_value_id);
     if (!anyHasDep) return all;
-    // Find the parent LOV type by inspecting a dependent category's parent value
-    const sampleDep = all.find((v) => !!v.depends_on_value_id);
-    const parentVal = sampleDep ? lovValues.find((v) => v.id === sampleDep.depends_on_value_id) : null;
-    if (!parentVal) return all;
-    // Find the value in the same parent LOV type matching current form.type
-    const matchingTypeVal = lovValues.find((v) => v.type_of_lov_id === parentVal.type_of_lov_id && v.name === form.type);
+    const categoryDepIds = new Set(all.map((v) => v.depends_on_value_id).filter(Boolean));
+    const matchingTypeVal = lovValues.find((v) => categoryDepIds.has(v.id) && v.name === form.type);
     if (!matchingTypeVal) return all.filter((v) => !v.depends_on_value_id);
     return all.filter((v) => v.depends_on_value_id === matchingTypeVal.id);
   };
