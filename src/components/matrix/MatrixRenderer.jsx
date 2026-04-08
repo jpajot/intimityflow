@@ -104,10 +104,10 @@ export default function MatrixRenderer({ config, projectId }) {
   return (
     <div className="flex flex-col h-screen bg-background rounded-lg border border-border">
       {/* Column header - fixed */}
-      <div className="border-b border-border shrink-0 overflow-hidden">
-        <div className="overflow-x-auto" ref={headerRef} onScroll={() => { if (dataRef.current) dataRef.current.scrollLeft = headerRef.current.scrollLeft; }}>
+      <div className="flex border-b border-border shrink-0">
+        <div className="w-32 shrink-0" />
+        <div className="overflow-x-auto flex-1" ref={headerRef} onScroll={() => { if (dataRef.current) dataRef.current.scrollLeft = headerRef.current.scrollLeft; }}>
           <div className="flex">
-            <div className="sticky left-0 z-40 w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
             {columns.map(col => (
               <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
                 <ItemCell 
@@ -122,30 +122,36 @@ export default function MatrixRenderer({ config, projectId }) {
       </div>
 
       {/* Data rows - scrollable */}
-      <div ref={dataRef} onScroll={() => { if (headerRef.current) headerRef.current.scrollLeft = dataRef.current.scrollLeft; }} className="overflow-x-auto overflow-y-auto flex-1">
-        {rows.map(row => (
-          <div key={row.id} className="flex border-b border-border last:border-b-0">
-            <div className="sticky left-0 w-32 shrink-0 p-3 bg-muted/20 border-r border-border z-30">
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-32 shrink-0 overflow-y-auto border-r border-border bg-muted/10">
+          {rows.map(row => (
+            <div key={row.id} className="w-32 p-3 border-b border-border">
               <ItemCell 
                 item={row} 
                 fields={config.row_fields && config.row_fields.length > 0 ? config.row_fields : undefined}
                 size={config.thumbnail_size}
               />
             </div>
-            {columns.map(col => {
-              const key = `${row.id}_${col.id}`;
-              const junction = junctionMap[key];
-              return (
-                <div key={`${row.id}_${col.id}`} className="w-32 shrink-0 p-3 border-r border-border last:border-r-0">
-                  <MatrixCell 
-                    junctionRecord={junction}
-                    config={config}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ))}
+          ))}
+        </div>
+        <div ref={dataRef} onScroll={() => { if (headerRef.current) headerRef.current.scrollLeft = dataRef.current.scrollLeft; }} className="overflow-x-auto overflow-y-auto flex-1">
+          {rows.map(row => (
+            <div key={`data-${row.id}`} className="flex border-b border-border last:border-b-0">
+              {columns.map(col => {
+                const key = `${row.id}_${col.id}`;
+                const junction = junctionMap[key];
+                return (
+                  <div key={`${row.id}_${col.id}`} className="w-32 shrink-0 p-3 border-r border-border last:border-r-0">
+                    <MatrixCell 
+                      junctionRecord={junction}
+                      config={config}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
