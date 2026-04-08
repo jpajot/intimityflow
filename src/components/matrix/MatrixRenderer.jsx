@@ -47,9 +47,12 @@ function MatrixCell({ junctionRecord, config }) {
 
   return (
     <div className="p-3 bg-card border border-border rounded-lg aspect-square overflow-y-auto">
-      <div className="text-[11px] space-y-1">
+      <div className="text-[11px] space-y-1.5">
         {(config.junction_fields || []).map(field => (
-          <p key={field} className="truncate">{junctionRecord[field] || "—"}</p>
+          <div key={field}>
+            <span className="font-semibold text-muted-foreground">{field}</span>
+            <p className="truncate">{junctionRecord[field] || "—"}</p>
+          </div>
         ))}
       </div>
     </div>
@@ -119,7 +122,7 @@ export default function MatrixRenderer({ config, projectId }) {
 
       {/* Data rows - scrollable */}
       <div className="overflow-x-auto overflow-y-auto flex-1">
-        {rows.map(row => (
+          {rows.map(row => (
           <div key={row.id} className="flex border-b border-border last:border-b-0">
             <div className="sticky left-0 w-32 shrink-0 p-3 bg-muted/20 border-r border-border z-30">
               <ItemCell 
@@ -144,5 +147,4 @@ export default function MatrixRenderer({ config, projectId }) {
             ))}
             </div>
             );
-            }
             }
