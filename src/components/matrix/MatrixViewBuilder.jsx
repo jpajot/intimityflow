@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 const MATRIX_ELIGIBLE_ENTITIES = ["Product", "TechnicalColor", "CommercialColor", "ProductColor", "ProductColorProjectLink", "ProductColorAndMore", "ProductColorAndMoreProjectLink"];
 
 export default function MatrixViewBuilder({ projectId, onSave, onCancel, initialConfig }) {
-  const [config, setConfig] = useState(initialConfig || {
+  const defaults = {
     name: "",
     row_entity: "Product",
     row_fields: [],
@@ -22,7 +22,10 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     row_fk_field: "product_id",
     column_fk_field: "linked_tech_color_id",
     thumbnail_size: "md",
-  });
+    cell_display_size: "normal",
+  };
+  
+  const [config, setConfig] = useState(initialConfig ? { ...defaults, ...initialConfig } : defaults);
   
   const [entitySchemas, setEntitySchemas] = useState({});
   const [loading, setLoading] = useState(true);
