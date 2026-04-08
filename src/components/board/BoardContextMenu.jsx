@@ -10,6 +10,8 @@ import ElementFormatPanel from "./ElementFormatPanel";
 function ClassicMenu({ x, y, element, selectedIds = [], elements = [], onClose, onDelete, onLink, onEditLinked, onCreateProduct, onGroup, onUngroup }) {
   const ref = useRef(null);
   const isGroup = element?.type === "group";
+  const isText = element?.type === "text";
+  const isRect = element?.type === "rect";
   const multiSelected = selectedIds.length > 1;
   const hasLinked = !!element?.linkedEntityId;
 
@@ -20,7 +22,7 @@ function ClassicMenu({ x, y, element, selectedIds = [], elements = [], onClose, 
   }, [onClose]);
 
   const items = [
-    !isGroup && { label: "Link to existing entity", icon: Link2, action: onLink },
+    !isGroup && !isText && !isRect && { label: "Link to existing entity", icon: Link2, action: onLink },
     hasLinked && { label: "Open / edit linked record", icon: ExternalLink, action: onEditLinked },
     !hasLinked && { label: "Create product from this", icon: Plus, action: onCreateProduct },
     multiSelected && !isGroup && { label: `Group ${selectedIds.length} elements`, icon: BoxSelect, action: onGroup },
