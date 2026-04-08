@@ -285,13 +285,22 @@ function RectContent({ el, onUpdate }) {
             fontSize: el.style?.fontSize || 14,
             color: el.style?.color || "inherit",
             borderRadius: el.style?.radius || 4,
+            fontWeight: el.style?.bold ? "bold" : "normal",
+            fontStyle: el.style?.italic ? "italic" : "normal",
+            textDecoration: el.style?.underline ? "underline" : "none",
           }}
         />
       ) : (
         el.style?.text && (
           <p
             className="text-center px-2 w-full break-words pointer-events-none select-none"
-            style={{ fontSize: el.style?.fontSize || 14, color: el.style?.color || "inherit" }}
+            style={{
+              fontSize: el.style?.fontSize || 14,
+              color: el.style?.color || "inherit",
+              fontWeight: el.style?.bold ? "bold" : "normal",
+              fontStyle: el.style?.italic ? "italic" : "normal",
+              textDecoration: el.style?.underline ? "underline" : "none",
+            }}
           >
             {el.style.text}
           </p>

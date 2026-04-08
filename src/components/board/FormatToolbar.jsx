@@ -1,4 +1,4 @@
-import { AlignLeft, AlignCenter, AlignRight, Bold } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TEXT_PRESETS = [
@@ -120,7 +120,51 @@ function TextToolbar({ el, onUpdate }) {
 }
 
 // ── Rect toolbar ─────────────────────────────────────────────────────────────
-const BORDER_STYLES = ["solid", "dashed", "dotted"];
+const BORDER_STYLE_OPTIONS = [
+  { value: "solid",  label: "Solid",  dash: "none" },
+  { value: "dashed", label: "Dashed", dash: "8 4" },
+  { value: "dotted", label: "Dotted", dash: "2 4" },
+];
+
+function BorderStylePicker({ value, onChange }) {
+  const current = BORDER_STYLE_OPTIONS.find((o) => o.value === (value || "solid")) || BORDER_STYLE_OPTIONS[0];
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] text-muted-foreground">Style</span>
+      <Select value={current.value} onValueChange={onChange}>
+        <SelectTrigger className="h-7 w-28 text-xs">
+          <SelectValue>
+            <BorderLine dash={current.dash} />
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {BORDER_STYLE_OPTIONS.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              <div className="flex items-center gap-2">
+                <BorderLine dash={o.dash} />
+                <span className="text-xs">{o.label}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function BorderLine({ dash }) {
+  return (
+    <svg width="40" height="10" viewBox="0 0 40 10">
+      <line
+        x1="2" y1="5" x2="38" y2="5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeDasharray={dash === "none" ? undefined : dash}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 function RectToolbar({ el, onUpdate }) {
   const s = el.style || {};
@@ -140,23 +184,7 @@ function RectToolbar({ el, onUpdate }) {
 
       <NumStepper label="Width" value={s.borderWidth ?? 1} onChange={(v) => set("borderWidth", v)} min={0} max={20} />
 
-      {/* Border style */}
-      <div className="flex items-center gap-1 ml-1">
-        {BORDER_STYLES.map((bs) => (
-          <button
-            key={bs}
-            type="button"
-            onClick={() => set("borderStyle", bs)}
-            className={`px-2 h-7 rounded border text-[11px] capitalize transition-colors ${
-              (s.borderStyle || "solid") === bs
-                ? "border-primary bg-primary/10 text-primary font-medium"
-                : "border-border hover:bg-muted"
-            }`}
-          >
-            {bs}
-          </button>
-        ))}
-      </div>
+      <BorderStylePicker value={s.borderStyle || "solid"} onChange={(v) => set("borderStyle", v)} />
 
       <SEP />
 
@@ -165,6 +193,15 @@ function RectToolbar({ el, onUpdate }) {
       <SEP />
 
       <NumStepper label="Text size" value={s.fontSize || 14} onChange={(v) => set("fontSize", v)} min={6} max={200} />
+      <IconBtn active={!!s.bold} onClick={() => set("bold", !s.bold)} title="Bold">
+        <Bold className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={!!s.italic} onClick={() => set("italic", !s.italic)} title="Italic">
+        <Italic className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={!!s.underline} onClick={() => set("underline", !s.underline)} title="Underline">
+        <Underline className="w-3.5 h-3.5" />
+      </IconBtn>
       <ColorSwatch label="Text" value={s.color || "#000000"} onChange={(v) => set("color", v)} />
     </>
   );
