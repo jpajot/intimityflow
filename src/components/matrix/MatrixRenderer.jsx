@@ -36,22 +36,39 @@ function ItemCell({ item, fields, size }) {
   );
 }
 
-function MatrixCell({ junctionRecord, config }) {
-  if (!junctionRecord) {
+function MatrixCell({ junctionRecords, config }) {
+  const records = Array.isArray(junctionRecords) ? junctionRecords : (junctionRecords ? [junctionRecords] : []);
+  const sizeClass = config.cell_display_size === "compact" ? "w-24 h-24" : config.cell_display_size === "large" ? "w-40 h-40" : "w-32 h-32";
+  
+  if (records.length === 0) {
     return (
-      <div className="p-3 bg-muted/30 border border-border rounded-lg aspect-square flex items-center justify-center">
+      <div className={`${sizeClass} p-2 bg-muted/30 border border-border rounded-lg flex items-center justify-center`}>
         <span className="text-xs text-muted-foreground">—</span>
       </div>
     );
   }
 
   return (
-    <div className="p-3 bg-card border border-border rounded-lg aspect-square overflow-y-auto">
-      <div className="text-[11px] space-y-1.5">
-        {(config.junction_fields || []).map(field => (
-          <p key={field} className="truncate">{junctionRecord[field] || "—"}</p>
-        ))}
-      </div>
+    <div className={`${sizeClass} flex flex-col gap-1 overflow-y-auto`}>
+      {records.map((record, idx) => {
+        const imageUrl = record.image_url || record.images?.[0];
+        const hasImage = imageUrl && !imageUrl.startsWith("#") && !imageUrl.startsWith("hsl");
+        
+        return (
+          <div key={idx} className="p-2 bg-card border border-border rounded text-[10px] space-y-1 flex-shrink-0">
+            {hasImage && (
+              <div className="w-full h-12 rounded overflow-hidden border border-border bg-muted/20 flex items-center justify-center mb-1">
+                <img src={imageUrl} alt={record.color_name || record.name} className="max-w-full max-h-full object-contain" />
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {(config.junction_fields || []).map(field => (
+                <p key={field} className="truncate text-foreground">{record[field] || "—"}</p>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -79,12 +96,13 @@ export default function MatrixRenderer({ config, projectId }) {
       const colData = await base44.entities[config.column_entity].list("name", 500);
       setColumns(colData);
 
-      // Fetch junction records and build lookup
-      const junctionData = await base44.entities[config.junction_entity].list("-created_date", 1000);
+      // Fetch junction records and build lookup (support 1-to-many)
+      const junctionData = await base44.entities[config.junction_entity].list("-created_date", 5000);
       const map = {};
       junctionData.forEach(record => {
         const key = `${record[config.row_fk_field]}_${record[config.column_fk_field]}`;
-        if (!map[key]) map[key] = record;
+        if (!map[key]) map[key] = [];
+        map[key].push(record);
       });
       setJunctionMap(map);
     } catch (err) {
@@ -134,11 +152,12 @@ export default function MatrixRenderer({ config, projectId }) {
             </div>
             {columns.map(col => {
               const key = `${row.id}_${col.id}`;
-              const junction = junctionMap[key];
+              const junctionRecords = junctionMap[key] || [];
+              const sizeClass = config.cell_display_size === "compact" ? "w-28" : config.cell_display_size === "large" ? "w-44" : "w-36";
               return (
-                <div key={`${row.id}_${col.id}`} className="w-32 shrink-0 p-3 border-r border-border last:border-r-0">
+                <div key={`${row.id}_${col.id}`} className={`${sizeClass} shrink-0 p-2 border-r border-border last:border-r-0`}>
                   <MatrixCell 
-                    junctionRecord={junction}
+                    junctionRecords={junctionRecords}
                     config={config}
                   />
                 </div>

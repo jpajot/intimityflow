@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
-const MATRIX_ELIGIBLE_ENTITIES = ["Product", "TechnicalColor", "CommercialColor", "ProductColor"];
+const MATRIX_ELIGIBLE_ENTITIES = ["Product", "TechnicalColor", "CommercialColor", "ProductColor", "ProductColorProjectLink", "ProductColorAndMore", "ProductColorAndMoreProjectLink"];
 
 export default function MatrixViewBuilder({ projectId, onSave, onCancel, initialConfig }) {
   const [config, setConfig] = useState(initialConfig || {
@@ -36,10 +36,10 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     const schemas = {};
     for (const entity of MATRIX_ELIGIBLE_ENTITIES) {
       try {
-        const sample = await base44.entities[entity].list("name", 1);
+        const sample = await base44.entities[entity].list("-created_date", 1);
         if (sample.length > 0) {
           const fields = Object.keys(sample[0]).filter(k => !["id", "created_date", "updated_date", "created_by"].includes(k));
-          schemas[entity] = fields;
+          schemas[entity] = fields.sort();
         }
       } catch (err) {
         schemas[entity] = [];
@@ -167,7 +167,7 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
           </div>
         </TabsContent>
 
-        <TabsContent value="cells" className="space-y-3">
+        <TabsContent value="cells" className="space-y-4">
           <p className="text-xs text-muted-foreground">Select fields to display in cells ({config.junction_entity})</p>
           <div className="space-y-2">
             {(entitySchemas[config.junction_entity] || []).map(field => (
@@ -179,6 +179,17 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
                 <span className="text-sm">{field}</span>
               </div>
             ))}
+          </div>
+          <div className="pt-3 border-t space-y-2">
+            <Label className="text-xs">Cell Display Size</Label>
+            <Select value={config.cell_display_size || "normal"} onValueChange={(v) => updateConfig("cell_display_size", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="compact">Compact</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="large">Large</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </TabsContent>
       </Tabs>
