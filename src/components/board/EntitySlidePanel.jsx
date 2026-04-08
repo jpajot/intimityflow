@@ -406,7 +406,7 @@ function Field({ label, required, children }) {
 
 // ─── Entity config map ───────────────────────────────────────────────────────
 const ENTITY_CONFIG = {
-  Product: { label: "Product / Style", externalPath: (id) => `/products/${id}` },
+  Product: { label: "Product", externalPath: (id) => `/products/${id}` },
   TechnicalColor: { label: "Technical Color", externalPath: null },
   CommercialColor: { label: "Commercial Color", externalPath: null },
 };
