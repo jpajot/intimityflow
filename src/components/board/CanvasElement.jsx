@@ -266,8 +266,9 @@ function RectContent({ el, onUpdate }) {
       className="w-full h-full relative flex items-center justify-center"
       style={{
         backgroundColor: el.style?.fill || "hsl(var(--muted))",
-        border: `${el.style?.borderWidth || 1}px solid ${el.style?.borderColor || "hsl(var(--border))"}`,
-        borderRadius: el.style?.radius || 4,
+        border: `${el.style?.borderWidth ?? 1}px ${el.style?.borderStyle || "solid"} ${el.style?.borderColor || "hsl(var(--border))"}`,
+        borderRadius: el.style?.radius ?? 4,
+        opacity: el.style?.opacity !== undefined ? el.style.opacity / 100 : 1,
       }}
       onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
     >

@@ -375,6 +375,7 @@ export default function BoardEditor() {
           onCreateProduct={handleCreateProduct}
           onGroup={handleGroup}
           onUngroup={handleUngroup}
+          onUpdate={(id, changes) => { updateElements(elements.map((el) => el.id === id ? { ...el, ...changes } : el)); }}
         />
       )}
 
