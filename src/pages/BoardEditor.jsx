@@ -7,7 +7,7 @@ import Ribbon from "../components/board/Ribbon";
 import PagesPanel from "../components/board/PagesPanel";
 import CanvasStage, { CANVAS_W, CANVAS_H } from "../components/board/CanvasStage";
 import BoardContextMenu from "../components/board/BoardContextMenu";
-import ProductSlidePanel from "../components/board/ProductSlidePanel";
+import EntitySlidePanel from "../components/board/EntitySlidePanel";
 import ProductPickerPanel from "../components/board/ProductPickerPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -417,8 +417,8 @@ export default function BoardEditor() {
       {/* Product picker panel */}
       <ProductPickerPanel open={pickerOpen} onClose={() => setPickerOpen(false)} />
 
-      {/* Product slide panel */}
-      <ProductSlidePanel
+      {/* Entity slide panel */}
+      <EntitySlidePanel
         open={!!slidePanel}
         mode={slidePanel?.mode}
         entityType={slidePanel?.entityType}
