@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Loader2, Save, ExternalLink, Upload } from "lucide-react";
 
 // ─── Product Form ────────────────────────────────────────────────────────────
-function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode }) {
+function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode, productType }) {
   const [form, setForm] = useState({
     type: "Product", name: "", category: "", sub_category: "",
     customer_need: "", description: "", images: [],
@@ -44,7 +44,7 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode }) {
       });
     } else {
       setForm({
-        type: "Product", name: prefill?.name || "", category: "", sub_category: "",
+        type: productType || "Product", name: prefill?.name || "", category: "", sub_category: "",
         customer_need: "", description: prefill?.description || "",
         images: prefill?.imageUrl ? [prefill.imageUrl] : [],
         creation_project_id: projectId || "",
@@ -123,12 +123,14 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode }) {
           <SelectContent>{getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
         </Select>
       </Field>
-      <Field label="Customer Need">
-        <Select value={form.customer_need || ""} onValueChange={(v) => set("customer_need", v)}>
-          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-          <SelectContent>{getCustomerNeeds().map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-        </Select>
-      </Field>
+      {form.type !== "Material" && (
+        <Field label="Customer Need">
+          <Select value={form.customer_need || ""} onValueChange={(v) => set("customer_need", v)}>
+            <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectContent>{getCustomerNeeds().map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+      )}
       <Field label="Description">
         <Textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={3} />
       </Field>
@@ -410,7 +412,7 @@ const ENTITY_CONFIG = {
 };
 
 // ─── Main EntitySlidePanel ───────────────────────────────────────────────────
-export default function EntitySlidePanel({ open, mode, entityType, entityId, prefill, projectId, onClose, onSaved }) {
+export default function EntitySlidePanel({ open, mode, entityType, entityId, prefill, projectId, productType, onClose, onSaved }) {
   if (!open) return null;
 
   const config = ENTITY_CONFIG[entityType] || { label: entityType, externalPath: null };
@@ -441,7 +443,7 @@ export default function EntitySlidePanel({ open, mode, entityType, entityId, pre
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {entityType === "Product" && (
-            <ProductForm entityId={entityId} mode={mode} prefill={prefill} projectId={projectId} onSaved={onSaved} onClose={onClose} />
+            <ProductForm entityId={entityId} mode={mode} prefill={prefill} projectId={projectId} productType={productType} onSaved={onSaved} onClose={onClose} />
           )}
           {entityType === "TechnicalColor" && (
             <TechnicalColorForm entityId={entityId} mode={mode} onSaved={onSaved} onClose={onClose} />
