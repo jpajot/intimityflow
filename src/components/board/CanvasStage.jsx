@@ -44,7 +44,7 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
         ? (() => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; })()
         : new Set([id]);
       const arr = [...next];
-      onSelectionChange?.(arr.length === 1 ? arr[0] : null);
+      onSelectionChange?.(arr.length === 1 ? arr[0] : null, arr);
       return next;
     });
   };
@@ -55,7 +55,7 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
     const isSlide = e.target.hasAttribute && e.target.hasAttribute('data-board-slide');
     if (isOuterBg || isSlide) {
       setSelectedIds(new Set());
-      onSelectionChange?.(null);
+      onSelectionChange?.(null, []);
     }
   };
 

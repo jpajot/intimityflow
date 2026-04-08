@@ -1,4 +1,4 @@
-import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignStartVertical, AlignCenterVertical, AlignEndVertical, Strikethrough } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignStartVertical, AlignCenterVertical, AlignEndVertical, Strikethrough, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, AlignHorizontalJustifyStart, AlignHorizontalJustifyEnd, AlignVerticalJustifyStart, AlignVerticalJustifyEnd, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TEXT_PRESETS = [
@@ -244,9 +244,65 @@ function RectToolbar({ el, onUpdate }) {
   );
 }
 
+// ── Multi-select alignment toolbar ───────────────────────────────────────────
+function MultiSelectToolbar({ elements, selectedIds, onUpdateElements }) {
+  const sel = elements.filter((e) => selectedIds.includes(e.id));
+  if (sel.length < 2) return null;
+
+  const minX = Math.min(...sel.map((e) => e.x));
+  const maxX = Math.max(...sel.map((e) => e.x + e.width));
+  const minY = Math.min(...sel.map((e) => e.y));
+  const maxY = Math.max(...sel.map((e) => e.y + e.height));
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+
+  const align = (fn) => {
+    const updated = sel.reduce((acc, e) => ({ ...acc, [e.id]: fn(e) }), {});
+    onUpdateElements(elements.map((e) => updated[e.id] ? { ...e, ...updated[e.id] } : e));
+  };
+
+  const distribute = (axis) => {
+    const sorted = [...sel].sort((a, b) => a[axis] - b[axis]);
+    const totalSpan = (axis === "x" ? maxX - minX : maxY - minY);
+    const totalSize = sorted.reduce((s, e) => s + (axis === "x" ? e.width : e.height), 0);
+    const gap = (totalSpan - totalSize) / (sorted.length - 1);
+    let pos = axis === "x" ? minX : minY;
+    const updated = {};
+    sorted.forEach((e) => {
+      updated[e.id] = { [axis]: pos };
+      pos += (axis === "x" ? e.width : e.height) + gap;
+    });
+    onUpdateElements(elements.map((e) => updated[e.id] ? { ...e, ...updated[e.id] } : e));
+  };
+
+  return (
+    <div className="border-b border-border bg-card shrink-0 px-3 py-1.5 flex items-center gap-2 overflow-x-auto">
+      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0 mr-1">
+        Align ({sel.length})
+      </span>
+      <IconBtn onClick={() => align((e) => ({ x: minX }))} title="Align Left"><AlignHorizontalJustifyStart className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn onClick={() => align((e) => ({ x: centerX - e.width / 2 }))} title="Align Center"><AlignHorizontalJustifyCenter className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn onClick={() => align((e) => ({ x: maxX - e.width }))} title="Align Right"><AlignHorizontalJustifyEnd className="w-3.5 h-3.5" /></IconBtn>
+      <SEP />
+      <IconBtn onClick={() => align((e) => ({ y: minY }))} title="Align Top"><AlignVerticalJustifyStart className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn onClick={() => align((e) => ({ y: centerY - e.height / 2 }))} title="Align Middle"><AlignVerticalJustifyCenter className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn onClick={() => align((e) => ({ y: maxY - e.height }))} title="Align Bottom"><AlignVerticalJustifyEnd className="w-3.5 h-3.5" /></IconBtn>
+      <SEP />
+      <IconBtn onClick={() => distribute("x")} title="Distribute Horizontally"><AlignHorizontalDistributeCenter className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn onClick={() => distribute("y")} title="Distribute Vertically"><AlignVerticalDistributeCenter className="w-3.5 h-3.5" /></IconBtn>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
-export default function FormatToolbar({ elements, selectedId, onUpdate }) {
+export default function FormatToolbar({ elements, selectedId, selectedIds = [], onUpdate, onUpdateElements }) {
+  const multiSelect = selectedIds.length > 1;
   const el = elements.find((e) => e.id === selectedId);
+
+  if (multiSelect) {
+    return <MultiSelectToolbar elements={elements} selectedIds={selectedIds} onUpdateElements={onUpdateElements} />;
+  }
+
   if (!el || (el.type !== "text" && el.type !== "rect")) return null;
 
   return (

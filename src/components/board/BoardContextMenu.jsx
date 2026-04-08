@@ -2,25 +2,6 @@ import { useEffect, useRef } from "react";
 import { Trash2, Link2, ExternalLink, Plus, BoxSelect, Maximize2 } from "lucide-react";
 
 export default function BoardContextMenu({ x, y, element, selectedIds = [], elements = [], onClose, onDelete, onLink, onEditLinked, onCreateProduct, onGroup, onUngroup, onUpdate }) {
-  const isText = element?.type === "text";
-  const isRect = element?.type === "rect";
-  const isFormatTarget = isText || isRect;
-
-  if (isFormatTarget) {
-    return (
-      <ElementFormatPanel
-        x={x} y={y}
-        element={element}
-        selectedIds={selectedIds}
-        onClose={onClose}
-        onDelete={onDelete}
-        onUpdate={onUpdate}
-        onCreateProduct={onCreateProduct}
-      />
-    );
-  }
-
-  // Classic menu for other element types
   return <ClassicMenu x={x} y={y} element={element} selectedIds={selectedIds} elements={elements} onClose={onClose} onDelete={onDelete} onLink={onLink} onEditLinked={onEditLinked} onCreateProduct={onCreateProduct} onGroup={onGroup} onUngroup={onUngroup} />;
 }
 

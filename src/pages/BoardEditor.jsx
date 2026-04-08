@@ -50,6 +50,7 @@ export default function BoardEditor() {
   const [slidePanel, setSlidePanel] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const saveTimer = useRef(null);
 
@@ -346,7 +347,7 @@ export default function BoardEditor() {
       <Ribbon onInsert={handleInsert} onExportPdf={handleExportPdf} onOpenProductPicker={() => setPickerOpen(true)} />
 
       {/* Format toolbar — shown when a text or rect is selected */}
-      <FormatToolbar elements={elements} selectedId={selectedId} onUpdate={(id, changes) => updateElements(elements.map((el) => el.id === id ? { ...el, ...changes } : el))} />
+      <FormatToolbar elements={elements} selectedId={selectedId} selectedIds={selectedIds} onUpdate={(id, changes) => updateElements(elements.map((el) => el.id === id ? { ...el, ...changes } : el))} onUpdateElements={updateElements} />
 
       {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
@@ -362,7 +363,7 @@ export default function BoardEditor() {
           onUpdateElements={updateElements}
           onContextMenu={handleContextMenu}
           onDropProductCard={handleDropProductCard}
-          onSelectionChange={setSelectedId}
+          onSelectionChange={(id, ids) => { setSelectedId(id); setSelectedIds(ids || []); }}
         />
       </div>
 
