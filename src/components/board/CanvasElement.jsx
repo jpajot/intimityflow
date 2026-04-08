@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link2 } from "lucide-react";
 
 const HANDLE_SIZE = 8;
@@ -62,6 +62,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
       const newText = prompt("Edit text:", el.content || "");
       if (newText !== null) onUpdate(el.id, { content: newText });
     }
+    // rect inline editing is handled inside ElementContent
   };
 
   return (
@@ -170,16 +171,7 @@ function ElementContent({ el, onUpdate }) {
   }
 
   if (el.type === "rect") {
-    return (
-      <div
-        className="w-full h-full"
-        style={{
-          backgroundColor: el.style?.fill || "hsl(var(--muted))",
-          border: `${el.style?.borderWidth || 1}px solid ${el.style?.borderColor || "hsl(var(--border))"}`,
-          borderRadius: el.style?.radius || 4,
-        }}
-      />
-    );
+    return <RectContent el={el} onUpdate={onUpdate} />;
   }
 
   if (el.type === "product_card") {
@@ -220,6 +212,56 @@ function ElementContent({ el, onUpdate }) {
   }
 
   return null;
+}
+
+function RectContent({ el, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const textareaRef = useRef(null);
+
+  const startEdit = () => {
+    setEditing(true);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const stopEdit = () => setEditing(false);
+
+  return (
+    <div
+      className="w-full h-full relative flex items-center justify-center"
+      style={{
+        backgroundColor: el.style?.fill || "hsl(var(--muted))",
+        border: `${el.style?.borderWidth || 1}px solid ${el.style?.borderColor || "hsl(var(--border))"}`,
+        borderRadius: el.style?.radius || 4,
+      }}
+      onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
+    >
+      {editing ? (
+        <textarea
+          ref={textareaRef}
+          value={el.style?.text || ""}
+          onChange={(e) => onUpdate(el.id, { style: { ...el.style, text: e.target.value } })}
+          onBlur={stopEdit}
+          onKeyDown={(e) => { if (e.key === "Escape") stopEdit(); e.stopPropagation(); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full h-full bg-transparent resize-none outline-none text-center p-2"
+          style={{
+            fontSize: el.style?.fontSize || 14,
+            color: el.style?.color || "inherit",
+            borderRadius: el.style?.radius || 4,
+          }}
+        />
+      ) : (
+        el.style?.text && (
+          <p
+            className="text-center px-2 w-full break-words pointer-events-none select-none"
+            style={{ fontSize: el.style?.fontSize || 14, color: el.style?.color || "inherit" }}
+          >
+            {el.style.text}
+          </p>
+        )
+      )}
+    </div>
+  );
 }
 
 // Lazy import base44 to avoid circular issues inside ElementContent
