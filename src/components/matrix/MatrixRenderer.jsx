@@ -49,10 +49,7 @@ function MatrixCell({ junctionRecord, config }) {
     <div className="p-3 bg-card border border-border rounded-lg aspect-square overflow-y-auto">
       <div className="text-[11px] space-y-1.5">
         {(config.junction_fields || []).map(field => (
-          <div key={field}>
-            <span className="font-semibold text-muted-foreground">{field}</span>
-            <p className="truncate">{junctionRecord[field] || "—"}</p>
-          </div>
+          <p key={field} className="truncate">{junctionRecord[field] || "—"}</p>
         ))}
       </div>
     </div>
