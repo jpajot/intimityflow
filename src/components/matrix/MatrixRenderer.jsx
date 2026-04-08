@@ -26,12 +26,9 @@ function ItemCell({ item, fields, size }) {
         </div>
       )}
       {fields && fields.length > 0 && (
-        <div className="space-y-1 overflow-y-auto flex-1">
+        <div className="space-y-0.5 overflow-y-auto flex-1">
           {fields.map(field => (
-            <div key={field} className="truncate">
-              <span className="font-semibold text-muted-foreground text-[10px]">{field}:</span>
-              <p className="truncate text-foreground text-xs">{item[field] || "—"}</p>
-            </div>
+            <p key={field} className="truncate text-foreground text-xs">{item[field] || "—"}</p>
           ))}
         </div>
       )}
