@@ -58,11 +58,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
 
   const handleDoubleClick = (e) => {
     e.stopPropagation();
-    if (el.type === "text") {
-      const newText = prompt("Edit text:", el.content || "");
-      if (newText !== null) onUpdate(el.id, { content: newText });
-    }
-    // rect inline editing is handled inside ElementContent
+    // inline editing handled inside TextContent / RectContent
   };
 
   return (
@@ -153,21 +149,7 @@ function ElementContent({ el, onUpdate }) {
   }
 
   if (el.type === "text") {
-    return (
-      <div
-        className="w-full h-full overflow-hidden"
-        style={{
-          fontSize: el.style?.fontSize || 14,
-          fontWeight: el.style?.bold ? "bold" : "normal",
-          color: el.style?.color || "inherit",
-          textAlign: el.style?.align || "left",
-          padding: 6,
-          lineHeight: 1.4,
-        }}
-      >
-        {el.content || <span className="text-muted-foreground italic text-xs">Double-click to edit</span>}
-      </div>
-    );
+    return <TextContent el={el} onUpdate={onUpdate} />;
   }
 
   if (el.type === "rect") {
@@ -212,6 +194,57 @@ function ElementContent({ el, onUpdate }) {
   }
 
   return null;
+}
+
+function TextContent({ el, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const textareaRef = useRef(null);
+
+  const startEdit = () => {
+    setEditing(true);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const stopEdit = () => setEditing(false);
+
+  return (
+    <div
+      className="w-full h-full overflow-hidden"
+      style={{ padding: editing ? 0 : 6 }}
+      onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
+    >
+      {editing ? (
+        <textarea
+          ref={textareaRef}
+          value={el.content || ""}
+          onChange={(e) => onUpdate(el.id, { content: e.target.value })}
+          onBlur={stopEdit}
+          onKeyDown={(e) => { if (e.key === "Escape") stopEdit(); e.stopPropagation(); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full h-full bg-transparent resize-none outline-none p-1.5"
+          style={{
+            fontSize: el.style?.fontSize || 14,
+            fontWeight: el.style?.bold ? "bold" : "normal",
+            color: el.style?.color || "inherit",
+            textAlign: el.style?.align || "left",
+            lineHeight: 1.4,
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            fontSize: el.style?.fontSize || 14,
+            fontWeight: el.style?.bold ? "bold" : "normal",
+            color: el.style?.color || "inherit",
+            textAlign: el.style?.align || "left",
+            lineHeight: 1.4,
+          }}
+        >
+          {el.content || <span className="text-muted-foreground italic text-xs">Double-click to edit</span>}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function RectContent({ el, onUpdate }) {
