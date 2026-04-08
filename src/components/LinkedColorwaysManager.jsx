@@ -154,12 +154,14 @@ export default function LinkedColorwaysManager({
           <DialogHeader>
             <DialogTitle>{showMatrixBuilder?.id ? "Edit Matrix View" : "Create Matrix View"}</DialogTitle>
           </DialogHeader>
-          <MatrixViewBuilder
-            projectId={projectId}
-            onSave={handleSaveView}
-            onCancel={() => setShowMatrixBuilder(false)}
-            initialConfig={typeof showMatrixBuilder === "object" ? showMatrixBuilder : undefined}
-          />
+          {showMatrixBuilder && (
+            <MatrixViewBuilder
+              projectId={projectId}
+              onSave={handleSaveView}
+              onCancel={() => setShowMatrixBuilder(false)}
+              initialConfig={typeof showMatrixBuilder === "object" && showMatrixBuilder.id ? showMatrixBuilder : undefined}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
