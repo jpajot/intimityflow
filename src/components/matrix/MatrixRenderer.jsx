@@ -103,9 +103,9 @@ export default function MatrixRenderer({ config, projectId }) {
   }
 
   return (
-    <div className="space-y-0 bg-background rounded-lg border border-border">
+    <div className="flex flex-col h-screen bg-background rounded-lg border border-border">
       {/* Column header - fixed */}
-      <div className="overflow-x-auto border-b border-border">
+      <div className="overflow-x-auto border-b border-border shrink-0">
         <div className="flex">
           <div className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
           {columns.map(col => (
@@ -121,7 +121,7 @@ export default function MatrixRenderer({ config, projectId }) {
       </div>
 
       {/* Data rows - scrollable */}
-      <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-350px)]">
+      <div className="overflow-x-auto overflow-y-auto flex-1">
           {rows.map(row => (
           <div key={row.id} className="flex border-b border-border last:border-b-0">
             <div className="sticky left-0 w-32 shrink-0 p-3 bg-muted/20 border-r border-border z-30">
