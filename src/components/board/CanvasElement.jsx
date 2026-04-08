@@ -48,6 +48,13 @@ export default function CanvasElement({ el, isSelected, scale, isGrouped, onSele
     else if (corner === "sw") { nx = x + dx; nw = Math.max(60, w - dx); nh = Math.max(30, h + dy); }
     else if (corner === "ne") { ny = y + dy; nw = Math.max(60, w + dx); nh = Math.max(30, h - dy); }
     else if (corner === "nw") { nx = x + dx; ny = y + dy; nw = Math.max(60, w - dx); nh = Math.max(30, h - dy); }
+    // Shift = lock aspect ratio
+    if (e.shiftKey) {
+      const ratio = w / h;
+      if (corner === "se" || corner === "sw") { nh = nw / ratio; }
+      else if (corner === "ne") { nw = nh * ratio; nx = x + w - nw; }
+      else if (corner === "nw") { nh = nw / ratio; ny = y + h - nh; }
+    }
     onUpdate(el.id, { x: nx, y: ny, width: nw, height: nh });
   };
 
