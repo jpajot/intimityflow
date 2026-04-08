@@ -17,11 +17,11 @@ function ItemCell({ item, fields, size }) {
   return (
     <div className="space-y-2 text-xs h-full flex flex-col">
       {hasImage && (
-        <div className="w-12 h-12 rounded-md overflow-hidden border border-border bg-muted/20 flex items-center justify-center shrink-0">
+        <div className="max-w-12 max-h-12 rounded-md overflow-hidden border border-border bg-muted/20 flex items-center justify-center shrink-0">
           {imageUrl?.startsWith("#") || imageUrl?.startsWith("hsl") ? (
-            <div className="w-full h-full" style={{ backgroundColor: imageUrl }} />
+            <div className="w-12 h-12" style={{ backgroundColor: imageUrl }} />
           ) : (
-            <img src={imageUrl} alt={item.name || item.color_name} className="w-full h-full object-cover" />
+            <img src={imageUrl} alt={item.name || item.color_name} className="max-w-full max-h-full object-contain" />
           )}
         </div>
       )}
