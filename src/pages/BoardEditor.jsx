@@ -10,6 +10,7 @@ import CanvasStage, { CANVAS_W, CANVAS_H } from "../components/board/CanvasStage
 import BoardContextMenu from "../components/board/BoardContextMenu";
 import EntitySlidePanel from "../components/board/EntitySlidePanel";
 import ProductPickerPanel from "../components/board/ProductPickerPanel";
+import CreateItemPanel from "../components/board/CreateItemPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,6 +50,7 @@ export default function BoardEditor() {
   // Slide panel state
   const [slidePanel, setSlidePanel] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [createItemDialog, setCreateItemDialog] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -217,9 +219,21 @@ export default function BoardEditor() {
 
   const handleCreateProduct = () => {
     const { element } = contextMenu;
-    const isImage = element.type === "image";
-    setSlidePanel({ mode: "create", entityType: "Product", prefill: { name: isImage ? "" : element.content, imageUrl: isImage ? element.content : "" }, targetElementId: element.id });
+    setCreateItemDialog({ element });
     setContextMenu(null);
+  };
+
+  const handleCreateItemSelect = (opt) => {
+    const { element } = createItemDialog;
+    const isImage = element.type === "image";
+    setCreateItemDialog(null);
+    setSlidePanel({
+      mode: "create",
+      entityType: opt.entityType,
+      productType: opt.productType || null,
+      prefill: { name: isImage ? "" : element.content, imageUrl: isImage ? element.content : "" },
+      targetElementId: element.id,
+    });
   };
 
   const handleEditLinked = () => {
@@ -455,6 +469,13 @@ export default function BoardEditor() {
         </DialogContent>
       </Dialog>
 
+      {/* Create item type picker panel */}
+      <CreateItemPanel
+        open={!!createItemDialog}
+        onSelect={handleCreateItemSelect}
+        onClose={() => setCreateItemDialog(null)}
+      />
+
       {/* Product picker panel */}
       <ProductPickerPanel open={pickerOpen} onClose={() => setPickerOpen(false)} />
 
@@ -463,6 +484,7 @@ export default function BoardEditor() {
         open={!!slidePanel}
         mode={slidePanel?.mode}
         entityType={slidePanel?.entityType}
+        productType={slidePanel?.productType}
         entityId={slidePanel?.entityId}
         prefill={slidePanel?.prefill}
         projectId={projectId}
