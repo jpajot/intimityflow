@@ -546,19 +546,18 @@ export default function ProductDetail() {
                       <Label className="text-xs">Description</Label>
                       <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={4} />
                     </div>
-                  )}
-                  </div>
+                    )}
+                    </div>
 
-                  {isNew && (
-                  <Button onClick={handleSave} disabled={saving} className="gap-2">
+                    {isNew && (
+                    <Button onClick={handleSave} disabled={saving} className="gap-2">
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     Create
-                  </Button>
-                  )}
-                  </div>
-                  </div>
-                  )}
-      </div>
+                    </Button>
+                    )}
+                    </div>
+                    </div>
+                    )}
 
       {!isNew && (
         <ItemSubNav
