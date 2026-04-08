@@ -264,35 +264,34 @@ function TechnicalColorForm({ entityId, mode, onSaved, onClose }) {
 function CommercialColorForm({ entityId, mode, onSaved, onClose }) {
   const [form, setForm] = useState({ sub_type: "Solid", code: "", color_name: "", main_technical_color_id: "", linked_technical_color_ids: [] });
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [techColors, setTechColors] = useState([]);
   const [hex, setHex] = useState("");
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       const allTechColors = await base44.entities.TechnicalColor.list("name", 500);
-      setTechColors(allTechColors);
+      let finalTechColors = allTechColors;
 
       if (mode === "edit" && entityId) {
-        setLoading(true);
         const res = await base44.entities.CommercialColor.filter({ id: entityId });
         if (res[0]) {
           setForm({ ...res[0] });
-          // Ensure all linked colors are in the list (in case they exceed 500)
           const linkedIds = res[0].linked_technical_color_ids || [];
           const missingIds = linkedIds.filter((id) => !allTechColors.find((c) => c.id === id));
           if (missingIds.length > 0) {
             const extras = await Promise.all(missingIds.map((id) => base44.entities.TechnicalColor.filter({ id })));
-            setTechColors((prev) => [...prev, ...extras.flat()]);
+            finalTechColors = [...allTechColors, ...extras.flat()];
           }
           if (res[0].main_technical_color_id) {
-            const tc = allTechColors.find((c) => c.id === res[0].main_technical_color_id)
-              || (await base44.entities.TechnicalColor.filter({ id: res[0].main_technical_color_id }))[0];
+            const tc = finalTechColors.find((c) => c.id === res[0].main_technical_color_id);
             if (tc) setHex(tc.hex || "");
           }
         }
-        setLoading(false);
       }
+      setTechColors(finalTechColors);
+      setLoading(false);
     };
     init();
   }, [entityId, mode]);
