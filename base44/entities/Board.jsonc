@@ -9,6 +9,10 @@
     "project_id": {
       "type": "string",
       "description": "Linked Project ID"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "URL of the first slide thumbnail"
     }
   },
   "required": [

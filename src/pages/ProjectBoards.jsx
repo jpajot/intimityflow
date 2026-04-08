@@ -91,8 +91,12 @@ export default function ProjectBoards({ projectId }) {
               className="group text-left bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:border-primary/30 transition-all"
             >
               {/* Preview area */}
-              <div className="aspect-video bg-muted/40 flex items-center justify-center">
-                <BoardIcon className="w-10 h-10 text-muted-foreground/30" />
+              <div className="aspect-video bg-muted/40 flex items-center justify-center overflow-hidden">
+                {board.thumbnail_url ? (
+                  <img src={board.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <BoardIcon className="w-10 h-10 text-muted-foreground/30" />
+                )}
               </div>
               <div className="px-3 py-2.5 flex items-center justify-between">
                 <p className="text-sm font-medium truncate flex-1">{board.name}</p>

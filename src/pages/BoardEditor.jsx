@@ -85,6 +85,21 @@ export default function BoardEditor() {
   const activePage = pages.find((p) => p.id === activePageId);
   const elements = activePage?.elements || [];
 
+  const captureThumbnail = useCallback(async () => {
+    const firstPage = pages[0];
+    if (!firstPage || firstPage.id !== activePageId) return;
+    const slide = document.querySelector('[data-board-slide]');
+    if (!slide) return;
+    const { default: html2canvas } = await import('html2canvas');
+    const canvas = await html2canvas(slide, { scale: 0.3, useCORS: false, allowTaint: false, logging: false, width: CANVAS_W, height: CANVAS_H });
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], 'thumb.png', { type: 'image/png' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.entities.Board.update(boardId, { thumbnail_url: file_url });
+    }, 'image/png', 0.7);
+  }, [activePageId, pages, boardId]);
+
   const updateElements = useCallback((newEls) => {
     setPages((prev) =>
       prev.map((p) => (p.id === activePageId ? { ...p, elements: newEls } : p))
@@ -92,8 +107,10 @@ export default function BoardEditor() {
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       await base44.entities.BoardPage.update(activePageId, { elements: newEls });
+      // Update thumbnail if this is the first page
+      setTimeout(captureThumbnail, 300);
     }, 800);
-  }, [activePageId]);
+  }, [activePageId, captureThumbnail]);
 
   const handleInsert = (type, extras = {}) => {
     const defaults = {
