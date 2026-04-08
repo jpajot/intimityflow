@@ -22,6 +22,8 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     row_fk_field: "product_id",
     column_fk_field: "linked_tech_color_id",
     thumbnail_size: "md",
+    row_width: 128,
+    column_width: 128,
   });
   
   const [entitySchemas, setEntitySchemas] = useState({});
@@ -88,11 +90,12 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
       </div>
 
       <Tabs defaultValue="structure" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="structure">Structure</TabsTrigger>
           <TabsTrigger value="rows">Rows</TabsTrigger>
           <TabsTrigger value="columns">Columns</TabsTrigger>
           <TabsTrigger value="cells">Cells</TabsTrigger>
+          <TabsTrigger value="display">Display</TabsTrigger>
         </TabsList>
 
         <TabsContent value="structure" className="space-y-4">
@@ -179,6 +182,44 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
                 <span className="text-sm">{field}</span>
               </div>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="display" className="space-y-4">
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Row Width (px)</Label>
+              <Input 
+                type="number" 
+                value={config.row_width || 128} 
+                onChange={(e) => updateConfig("row_width", parseInt(e.target.value) || 128)}
+                min="80"
+                max="400"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Column Width (px)</Label>
+              <Input 
+                type="number" 
+                value={config.column_width || 128} 
+                onChange={(e) => updateConfig("column_width", parseInt(e.target.value) || 128)}
+                min="80"
+                max="400"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Thumbnail Size</Label>
+              <Select value={config.thumbnail_size || "md"} onValueChange={(v) => updateConfig("thumbnail_size", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Small</SelectItem>
+                  <SelectItem value="md">Medium</SelectItem>
+                  <SelectItem value="lg">Large</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

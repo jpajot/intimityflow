@@ -67,7 +67,7 @@ export default function LinkedColorwaysManager({
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => setSelectedMatrixView(null)}>← Back to Views</Button>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowMatrixBuilder(selectedMatrixView)}>Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => { setShowMatrixBuilder(selectedMatrixView); setSelectedMatrixView(null); }}>Edit</Button>
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteView(selectedMatrixView.id)}>Delete</Button>
           </div>
         </div>
