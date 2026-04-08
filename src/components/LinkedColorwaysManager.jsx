@@ -63,16 +63,33 @@ export default function LinkedColorwaysManager({
   // Show matrix view if selected
   if (selectedMatrixView) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => setSelectedMatrixView(null)}>← Back to Views</Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowMatrixBuilder(selectedMatrixView)}>Edit</Button>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteView(selectedMatrixView.id)}>Delete</Button>
+      <>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Button variant="outline" onClick={() => setSelectedMatrixView(null)}>← Back to Views</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowMatrixBuilder(selectedMatrixView)}>Edit</Button>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteView(selectedMatrixView.id)}>Delete</Button>
+            </div>
           </div>
+          <MatrixRenderer config={selectedMatrixView} projectId={projectId} />
         </div>
-        <MatrixRenderer config={selectedMatrixView} projectId={projectId} />
-      </div>
+        <Dialog open={!!showMatrixBuilder} onOpenChange={(open) => { if (!open) setShowMatrixBuilder(false); }}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{showMatrixBuilder?.id ? "Edit Matrix View" : "Create Matrix View"}</DialogTitle>
+            </DialogHeader>
+            {showMatrixBuilder && (
+              <MatrixViewBuilder
+                projectId={projectId}
+                onSave={handleSaveView}
+                onCancel={() => setShowMatrixBuilder(false)}
+                initialConfig={typeof showMatrixBuilder === "object" && showMatrixBuilder.id ? showMatrixBuilder : undefined}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
