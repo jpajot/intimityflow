@@ -31,7 +31,7 @@ function IconBtn({ active, onClick, title, children }) {
 function ColorSwatch({ label, value, onChange }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      {label && <span className="text-[11px] text-muted-foreground">{label}</span>}
       <div className="relative w-7 h-7 rounded border border-border overflow-hidden cursor-pointer shrink-0">
         <div className="absolute inset-0" style={{ backgroundColor: value || "#ffffff" }} />
         <input
@@ -45,20 +45,23 @@ function ColorSwatch({ label, value, onChange }) {
   );
 }
 
-function NumStepper({ label, value, onChange, min = 1, max = 200 }) {
+function NumStepper({ label, value, onChange, min = 1, max = 200, suffix }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-      <input
-        type="number"
-        value={value ?? ""}
-        min={min} max={max}
-        onChange={(e) => {
-          const v = parseInt(e.target.value, 10);
-          if (!isNaN(v)) onChange(v);
-        }}
-        className="w-14 h-7 text-xs text-center border border-border rounded bg-background px-1 outline-none focus:ring-1 focus:ring-ring"
-      />
+      {label && <span className="text-[11px] text-muted-foreground">{label}</span>}
+      <div className="relative flex items-center">
+        <input
+          type="number"
+          value={value ?? ""}
+          min={min} max={max}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            if (!isNaN(v)) onChange(v);
+          }}
+          className={`h-7 text-xs text-center border border-border rounded bg-background outline-none focus:ring-1 focus:ring-ring ${suffix ? "w-14 pr-5 pl-1" : "w-14 px-1"}`}
+        />
+        {suffix && <span className="absolute right-1.5 text-[10px] text-muted-foreground pointer-events-none">{suffix}</span>}
+      </div>
     </div>
   );
 }
@@ -129,26 +132,21 @@ const BORDER_STYLE_OPTIONS = [
 function BorderStylePicker({ value, onChange }) {
   const current = BORDER_STYLE_OPTIONS.find((o) => o.value === (value || "solid")) || BORDER_STYLE_OPTIONS[0];
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-muted-foreground">Style</span>
-      <Select value={current.value} onValueChange={onChange}>
-        <SelectTrigger className="h-7 w-28 text-xs">
-          <SelectValue>
-            <BorderLine dash={current.dash} />
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {BORDER_STYLE_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              <div className="flex items-center gap-2">
-                <BorderLine dash={o.dash} />
-                <span className="text-xs">{o.label}</span>
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={current.value} onValueChange={onChange}>
+      <SelectTrigger className="h-7 w-10 px-1 text-xs flex items-center justify-center">
+        <BorderLine dash={current.dash} />
+      </SelectTrigger>
+      <SelectContent>
+        {BORDER_STYLE_OPTIONS.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            <div className="flex items-center gap-2">
+              <BorderLine dash={o.dash} />
+              <span className="text-xs">{o.label}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -176,13 +174,13 @@ function RectToolbar({ el, onUpdate }) {
 
       <SEP />
 
-      <NumStepper label="Opacity%" value={s.opacity ?? 100} onChange={(v) => set("opacity", v)} min={0} max={100} />
+      <NumStepper value={s.opacity ?? 100} onChange={(v) => set("opacity", v)} min={0} max={100} suffix="%" />
 
       <SEP />
 
       <ColorSwatch label="Border" value={s.borderColor || "#cbd5e1"} onChange={(v) => set("borderColor", v)} />
 
-      <NumStepper label="Width" value={s.borderWidth ?? 1} onChange={(v) => set("borderWidth", v)} min={0} max={20} />
+      <NumStepper value={s.borderWidth ?? 1} onChange={(v) => set("borderWidth", v)} min={0} max={20} />
 
       <BorderStylePicker value={s.borderStyle || "solid"} onChange={(v) => set("borderStyle", v)} />
 
@@ -202,7 +200,7 @@ function RectToolbar({ el, onUpdate }) {
       <IconBtn active={!!s.underline} onClick={() => set("underline", !s.underline)} title="Underline">
         <Underline className="w-3.5 h-3.5" />
       </IconBtn>
-      <ColorSwatch label="Text" value={s.color || "#000000"} onChange={(v) => set("color", v)} />
+      <ColorSwatch value={s.color || "#000000"} onChange={(v) => set("color", v)} />
     </>
   );
 }
