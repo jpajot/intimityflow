@@ -5,17 +5,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
-const FIELD_DEFINITIONS = {
-  Product: ["type", "name", "category", "sub_category", "customer_need", "description", "images", "size_grid_id", "creation_project_id", "project_ids"],
-  TechnicalColor: ["code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group"],
-  CommercialColor: ["sub_type", "code", "color_name", "main_technical_color_id", "linked_technical_color_ids"],
-};
+
 
 export default function EntityFieldConfigMatrix() {
   const [selectedEntity, setSelectedEntity] = useState("Product");
   const [configs, setConfigs] = useState([]);
   const [entityTypes, setEntityTypes] = useState([]);
   const [entities, setEntities] = useState([]);
+  const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -26,6 +23,7 @@ export default function EntityFieldConfigMatrix() {
 
   useEffect(() => {
     loadEntityTypes();
+    loadFields(selectedEntity);
   }, [selectedEntity]);
 
   const loadEntities = async () => {
@@ -40,6 +38,17 @@ export default function EntityFieldConfigMatrix() {
       if (entityValues.length > 0 && !entityValues.find((e) => e.name === selectedEntity)) {
         setSelectedEntity(entityValues[0].name);
       }
+    }
+  };
+
+  const loadFields = async (entityName) => {
+    try {
+      const schema = await base44.entities[entityName].schema();
+      if (schema && schema.properties) {
+        setFields(Object.keys(schema.properties));
+      }
+    } catch (err) {
+      setFields([]);
     }
   };
 
@@ -87,7 +96,7 @@ export default function EntityFieldConfigMatrix() {
     setSaving(false);
   };
 
-  const fieldsForEntity = FIELD_DEFINITIONS[selectedEntity] || [];
+
 
   return (
     <div className="space-y-4">
@@ -125,7 +134,7 @@ export default function EntityFieldConfigMatrix() {
               </tr>
             </thead>
             <tbody>
-              {fieldsForEntity.map((field) => {
+              {fields.map((field) => {
                 const config = configs.find((c) => c.entity_name === selectedEntity && c.field_name === field);
                 return (
                   <tr key={field} className="border-b border-border hover:bg-muted/20">
@@ -149,3 +158,5 @@ export default function EntityFieldConfigMatrix() {
     </div>
   );
 }
+
+EntityFieldConfigMatrix.displayName = "EntityFieldConfigMatrix";
