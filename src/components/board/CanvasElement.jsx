@@ -180,17 +180,7 @@ function ElementContent({ el, onUpdate }) {
   }
 
   if (el.type === "group") {
-    return (
-      <div
-        className="w-full h-full rounded"
-        style={{
-          border: "1.5px dashed hsl(var(--primary)/0.5)",
-          backgroundColor: "hsl(var(--primary)/0.03)",
-        }}
-      >
-        <span className="absolute top-1 left-2 text-[9px] text-primary/50 font-semibold uppercase tracking-wider">Group</span>
-      </div>
-    );
+    return null;
   }
 
   return null;
