@@ -42,11 +42,13 @@ export default function LinkedColorwaysManager({
 
   const handleSaveView = async (viewConfig) => {
     if (viewConfig.id) {
-      // Update existing
-      await base44.entities.MatrixView.update(viewConfig.id, viewConfig);
+      // Update existing - exclude id and system fields
+      const { id, created_date, updated_date, created_by, ...dataToSave } = viewConfig;
+      await base44.entities.MatrixView.update(viewConfig.id, dataToSave);
     } else {
       // Create new
-      await base44.entities.MatrixView.create(viewConfig);
+      const { id, created_date, updated_date, created_by, ...dataToSave } = viewConfig;
+      await base44.entities.MatrixView.create(dataToSave);
     }
     setShowMatrixBuilder(false);
     await loadMatrixViews();
