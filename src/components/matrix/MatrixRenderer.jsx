@@ -12,32 +12,29 @@ function ItemCell({ item, fields, size }) {
   const sizeClass = SIZE_CLASSES[size || "md"];
   const imageUrl = item.images?.[0] || item.image_url || item.hex;
   
-  // If image URL exists and fields not explicitly provided, show image
-  if (!fields || fields.length === 0) {
-    if (imageUrl) {
-      return (
-        <div className={`${sizeClass} rounded-lg overflow-hidden border border-border bg-muted/20 flex items-center justify-center`}>
+  const hasImage = imageUrl && (imageUrl.startsWith("#") || imageUrl.startsWith("hsl") || !imageUrl.includes("://") || imageUrl.includes("://"));
+  
+  return (
+    <div className="space-y-2 text-xs h-full flex flex-col">
+      {hasImage && (
+        <div className="w-12 h-12 rounded-md overflow-hidden border border-border bg-muted/20 flex items-center justify-center shrink-0">
           {imageUrl?.startsWith("#") || imageUrl?.startsWith("hsl") ? (
             <div className="w-full h-full" style={{ backgroundColor: imageUrl }} />
           ) : (
             <img src={imageUrl} alt={item.name || item.color_name} className="w-full h-full object-cover" />
           )}
         </div>
-      );
-    }
-    return (
-      <div className="p-2 text-xs text-muted-foreground">—</div>
-    );
-  }
-
-  return (
-    <div className="text-xs space-y-1.5">
-      {fields.map(field => (
-        <div key={field} className="truncate">
-          <span className="font-semibold text-muted-foreground text-[10px]">{field}:</span>
-          <p className="truncate text-foreground">{item[field] || "—"}</p>
+      )}
+      {fields && fields.length > 0 && (
+        <div className="space-y-1 overflow-y-auto flex-1">
+          {fields.map(field => (
+            <div key={field} className="truncate">
+              <span className="font-semibold text-muted-foreground text-[10px]">{field}:</span>
+              <p className="truncate text-foreground text-xs">{item[field] || "—"}</p>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
