@@ -515,9 +515,9 @@ export default function ProductDetail() {
                     </div>
                   )}
 
-                {/* Linked Projects */}
-                {visibleFields.includes("project_ids") && (
-                  <div className="space-y-2">
+                  {/* Linked Projects */}
+                  {visibleFields.includes("project_ids") && (
+                    <div className="space-y-2">
                     <Label className="text-xs">Linked Projects</Label>
                     <div className="flex flex-wrap gap-2 p-2 rounded-md border border-input min-h-[36px]">
                       {(product.project_ids || []).map((pid) => {
