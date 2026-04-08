@@ -103,13 +103,13 @@ export default function MatrixRenderer({ config, projectId }) {
   }
 
   return (
-    <div className="overflow-x-auto bg-background rounded-lg border border-border">
-      <div className="inline-block min-w-full">
-        {/* Header row (columns) */}
-        <div className="flex border-b border-border">
-          <div className="sticky top-0 left-0 w-32 shrink-0 p-3 bg-muted/40 border-r border-border z-50" />
+    <div className="space-y-0 bg-background rounded-lg border border-border">
+      {/* Column header - fixed */}
+      <div className="overflow-x-auto border-b border-border">
+        <div className="flex">
+          <div className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
           {columns.map(col => (
-            <div key={col.id} className="sticky top-0 w-32 shrink-0 p-3 bg-muted/40 border-r border-border z-40">
+            <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
               <ItemCell 
                 item={col} 
                 fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
@@ -118,9 +118,11 @@ export default function MatrixRenderer({ config, projectId }) {
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Data rows */}
-        {rows.map(row => (
+      {/* Data rows - scrollable */}
+      <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-350px)]">
+          {rows.map(row => (
           <div key={row.id} className="flex border-b border-border last:border-b-0">
             <div className="sticky left-0 w-32 shrink-0 p-3 bg-muted/20 border-r border-border z-30">
               <ItemCell 
@@ -141,9 +143,8 @@ export default function MatrixRenderer({ config, projectId }) {
                 </div>
               );
             })}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+            </div>
+            ))}
+            </div>
+            );
+            }
