@@ -1,4 +1,4 @@
-import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignStartVertical, AlignCenterVertical, AlignEndVertical, Strikethrough, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, AlignHorizontalJustifyStart, AlignHorizontalJustifyEnd, AlignVerticalJustifyStart, AlignVerticalJustifyEnd, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Strikethrough, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, AlignHorizontalJustifyStart, AlignHorizontalJustifyEnd, AlignHorizontalJustifyCenter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TEXT_PRESETS = [
@@ -125,13 +125,13 @@ function TextToolbar({ el, onUpdate }) {
       <SEP />
 
       <IconBtn active={!s.verticalAlign || s.verticalAlign === "top"} onClick={() => set("verticalAlign", "top")} title="Align Top">
-        <AlignStartVertical className="w-3.5 h-3.5" />
+        <AlignVerticalJustifyStart className="w-3.5 h-3.5" />
       </IconBtn>
       <IconBtn active={s.verticalAlign === "middle"} onClick={() => set("verticalAlign", "middle")} title="Align Middle">
-        <AlignCenterVertical className="w-3.5 h-3.5" />
+        <AlignVerticalJustifyCenter className="w-3.5 h-3.5" />
       </IconBtn>
       <IconBtn active={s.verticalAlign === "bottom"} onClick={() => set("verticalAlign", "bottom")} title="Align Bottom">
-        <AlignEndVertical className="w-3.5 h-3.5" />
+        <AlignVerticalJustifyEnd className="w-3.5 h-3.5" />
       </IconBtn>
 
       <SEP />
@@ -231,13 +231,13 @@ function RectToolbar({ el, onUpdate }) {
       </IconBtn>
       <SEP />
       <IconBtn active={!s.textVerticalAlign || s.textVerticalAlign === "top"} onClick={() => set("textVerticalAlign", "top")} title="Align Top">
-        <AlignStartVertical className="w-3.5 h-3.5" />
+        <AlignVerticalJustifyStart className="w-3.5 h-3.5" />
       </IconBtn>
       <IconBtn active={s.textVerticalAlign === "middle"} onClick={() => set("textVerticalAlign", "middle")} title="Align Middle">
-        <AlignCenterVertical className="w-3.5 h-3.5" />
+        <AlignVerticalJustifyCenter className="w-3.5 h-3.5" />
       </IconBtn>
       <IconBtn active={s.textVerticalAlign === "bottom"} onClick={() => set("textVerticalAlign", "bottom")} title="Align Bottom">
-        <AlignEndVertical className="w-3.5 h-3.5" />
+        <AlignVerticalJustifyEnd className="w-3.5 h-3.5" />
       </IconBtn>
       <ColorSwatch value={s.color || "#000000"} onChange={(v) => set("color", v)} />
     </>
