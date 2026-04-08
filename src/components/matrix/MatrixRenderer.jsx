@@ -121,8 +121,9 @@ export default function MatrixRenderer({ config, projectId }) {
         </div>
       </div>
 
-      {/* Data rows - scrollable */}
+      {/* Unified scrollable area with row headers + data */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Row headers - fixed left, scrolls vertically with data */}
         <div className="w-32 shrink-0 overflow-y-auto border-r border-border bg-muted/10">
           {rows.map(row => (
             <div key={row.id} className="w-32 p-3 border-b border-border">
@@ -134,23 +135,26 @@ export default function MatrixRenderer({ config, projectId }) {
             </div>
           ))}
         </div>
+        {/* Data cells - scrolls both horizontally and vertically */}
         <div ref={dataRef} onScroll={() => { if (headerRef.current) headerRef.current.scrollLeft = dataRef.current.scrollLeft; }} className="overflow-x-auto overflow-y-auto flex-1">
-          {rows.map(row => (
-            <div key={`data-${row.id}`} className="flex border-b border-border last:border-b-0">
-              {columns.map(col => {
-                const key = `${row.id}_${col.id}`;
-                const junction = junctionMap[key];
-                return (
-                  <div key={`${row.id}_${col.id}`} className="w-32 shrink-0 p-3 border-r border-border last:border-r-0">
-                    <MatrixCell 
-                      junctionRecord={junction}
-                      config={config}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+          <div className="flex flex-col">
+            {rows.map(row => (
+              <div key={`data-${row.id}`} className="flex border-b border-border last:border-b-0">
+                {columns.map(col => {
+                  const key = `${row.id}_${col.id}`;
+                  const junction = junctionMap[key];
+                  return (
+                    <div key={`${row.id}_${col.id}`} className="w-32 shrink-0 p-3 border-r border-border last:border-r-0">
+                      <MatrixCell 
+                        junctionRecord={junction}
+                        config={config}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
