@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
 const CONFIGURABLE_ENTITIES = [
-  { name: "Product", fields: ["type", "name", "category", "sub_category", "customer_need", "description", "images", "size_grid_id", "creation_project_id", "project_ids"] },
-  { name: "TechnicalColor", fields: ["code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group"] },
-  { name: "CommercialColor", fields: ["sub_type", "code", "color_name", "main_technical_color_id", "linked_technical_color_ids"] },
+  { name: "Product", lovEntity: "Product", fields: ["type", "name", "category", "sub_category", "customer_need", "description", "images", "size_grid_id", "creation_project_id", "project_ids"] },
+  { name: "TechnicalColor", lovEntity: "TechnicalColor", fields: ["code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group"] },
+  { name: "CommercialColor", lovEntity: "CommercialColor", fields: ["sub_type", "code", "color_name", "main_technical_color_id", "linked_technical_color_ids"] },
 ];
 
 export default function EntityFieldConfigMatrix() {
@@ -20,8 +20,11 @@ export default function EntityFieldConfigMatrix() {
 
   useEffect(() => {
     loadConfigs();
-    loadEntityTypes();
   }, []);
+
+  useEffect(() => {
+    loadEntityTypes();
+  }, [selectedEntity]);
 
   const loadConfigs = async () => {
     setLoading(true);
@@ -31,16 +34,19 @@ export default function EntityFieldConfigMatrix() {
   };
 
   const loadEntityTypes = async () => {
-    const types = await base44.entities.TypeOfLOV.list("code", 500);
+    const [types, values] = await Promise.all([
+      base44.entities.TypeOfLOV.list("code", 500),
+      base44.entities.ListOfValues.list("name", 5000),
+    ]);
+    const entitiesLov = types.find((t) => t.code === "Entities");
     const entityTypesLov = types.find((t) => t.code === "EntityTypes");
-    const values = await base44.entities.ListOfValues.list("name", 5000);
-    if (entityTypesLov) {
-      const productEntity = values.find((v) => v.type_of_lov_id === types.find((t) => t.code === "Entities")?.id && v.name === "Product");
-      if (productEntity) {
-        const typeValues = values.filter((v) => v.type_of_lov_id === entityTypesLov.id && v.depends_on_value_id === productEntity.id);
-        setEntityTypes(typeValues.map((v) => v.name));
-      }
-    }
+    if (!entitiesLov || !entityTypesLov) return;
+    const selectedEntityDef = CONFIGURABLE_ENTITIES.find((e) => e.name === selectedEntity);
+    if (!selectedEntityDef) return;
+    const parentEntity = values.find((v) => v.type_of_lov_id === entitiesLov.id && v.name === selectedEntityDef.lovEntity);
+    if (!parentEntity) return;
+    const typeValues = values.filter((v) => v.type_of_lov_id === entityTypesLov.id && v.depends_on_value_id === parentEntity.id);
+    setEntityTypes(typeValues.map((v) => v.name));
   };
 
   const handleToggle = async (field, entityType) => {
