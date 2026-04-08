@@ -14,6 +14,7 @@ import PresenceIndicator from "../components/PresenceIndicator";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
+import LinkedColorwaysManager from "../components/LinkedColorwaysManager";
 import LinkedStylesView from "../components/LinkedStylesView";
 import ProjectBoards from "./ProjectBoards";
 import BoardIcon from "../components/icons/BoardIcon";
@@ -407,7 +408,7 @@ export default function ProjectDetail() {
         }
 
         {activeSection === "colorways" &&
-        <LinkedColorwaysView
+        <LinkedColorwaysManager
           colorways={linkedColorways}
           products={linkedProducts}
           techColors={techColors}

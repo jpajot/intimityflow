@@ -1,0 +1,84 @@
+{
+  "name": "MatrixView",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "Parent Project ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "View name"
+    },
+    "row_entity": {
+      "type": "string",
+      "description": "Entity name for rows (e.g. Product)"
+    },
+    "row_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fields to display for row entity"
+    },
+    "row_filters": {
+      "type": "object",
+      "description": "Filter config for row entity"
+    },
+    "column_entity": {
+      "type": "string",
+      "description": "Entity name for columns (e.g. TechnicalColor)"
+    },
+    "column_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fields to display for column entity"
+    },
+    "column_filters": {
+      "type": "object",
+      "description": "Filter config for column entity"
+    },
+    "junction_entity": {
+      "type": "string",
+      "description": "Junction entity (e.g. ProductColor)"
+    },
+    "junction_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fields to display in cells"
+    },
+    "junction_filters": {
+      "type": "object",
+      "description": "Filter config for junction entity"
+    },
+    "row_fk_field": {
+      "type": "string",
+      "description": "FK field in junction entity pointing to row (e.g. product_id)"
+    },
+    "column_fk_field": {
+      "type": "string",
+      "description": "FK field in junction entity pointing to column (e.g. linked_tech_color_id)"
+    },
+    "thumbnail_size": {
+      "type": "string",
+      "enum": [
+        "sm",
+        "md",
+        "lg"
+      ],
+      "default": "md",
+      "description": "Thumbnail size for row/column display"
+    }
+  },
+  "required": [
+    "project_id",
+    "name",
+    "row_entity",
+    "column_entity",
+    "junction_entity"
+  ]
+}
