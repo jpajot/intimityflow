@@ -1,4 +1,4 @@
-import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Strikethrough, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, AlignHorizontalJustifyStart, AlignHorizontalJustifyEnd, AlignHorizontalJustifyCenter } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Strikethrough, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, AlignHorizontalJustifyStart, AlignHorizontalJustifyEnd, AlignHorizontalJustifyCenter, PaintBucket, Square, Radius, Type } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TEXT_PRESETS = [
@@ -93,7 +93,7 @@ function TextToolbar({ el, onUpdate }) {
 
       <SEP />
 
-      <NumStepper label="Size" value={s.fontSize || 14} onChange={(v) => set("fontSize", v)} min={6} max={200} />
+      <NumStepper value={s.fontSize || 14} onChange={(v) => set("fontSize", v)} min={6} max={200} />
 
       <SEP />
 
@@ -136,7 +136,7 @@ function TextToolbar({ el, onUpdate }) {
 
       <SEP />
 
-      <ColorSwatch label="Color" value={s.color || "#000000"} onChange={(v) => set("color", v)} />
+      <ColorSwatch value={s.color || "#000000"} onChange={(v) => set("color", v)} />
     </>
   );
 }
@@ -189,7 +189,10 @@ function RectToolbar({ el, onUpdate }) {
 
   return (
     <>
-      <ColorSwatch label="Fill" value={s.fill?.slice(0, 7) || "#e2e8f0"} onChange={(v) => set("fill", v)} />
+      <div className="flex items-center gap-1" title="Fill color">
+        <PaintBucket className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <ColorSwatch value={s.fill?.slice(0, 7) || "#e2e8f0"} onChange={(v) => set("fill", v)} />
+      </div>
 
       <SEP />
 
@@ -197,7 +200,10 @@ function RectToolbar({ el, onUpdate }) {
 
       <SEP />
 
-      <ColorSwatch label="Border" value={s.borderColor || "#cbd5e1"} onChange={(v) => set("borderColor", v)} />
+      <div className="flex items-center gap-1" title="Border color">
+        <Square className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <ColorSwatch value={s.borderColor || "#cbd5e1"} onChange={(v) => set("borderColor", v)} />
+      </div>
 
       <NumStepper value={s.borderWidth ?? 1} onChange={(v) => set("borderWidth", v)} min={0} max={20} />
 
@@ -205,11 +211,17 @@ function RectToolbar({ el, onUpdate }) {
 
       <SEP />
 
-      <NumStepper label="Radius" value={s.radius ?? 4} onChange={(v) => set("radius", v)} min={0} max={200} />
+      <div className="flex items-center gap-1" title="Corner radius">
+        <Radius className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <NumStepper value={s.radius ?? 4} onChange={(v) => set("radius", v)} min={0} max={200} />
+      </div>
 
       <SEP />
 
-      <NumStepper label="Text size" value={s.fontSize || 14} onChange={(v) => set("fontSize", v)} min={6} max={200} />
+      <div className="flex items-center gap-1" title="Text size">
+        <Type className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <NumStepper value={s.fontSize || 14} onChange={(v) => set("fontSize", v)} min={6} max={200} />
+      </div>
       <IconBtn active={!!s.bold} onClick={() => set("bold", !s.bold)} title="Bold">
         <Bold className="w-3.5 h-3.5" />
       </IconBtn>
