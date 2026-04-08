@@ -182,15 +182,7 @@ function ElementContent({ el, onUpdate }) {
   }
 
   if (el.type === "group") {
-    return (
-      <div
-        className="w-full h-full rounded"
-        style={{
-          border: "1.5px dashed rgba(0,0,0,0.12)",
-          backgroundColor: "transparent",
-        }}
-      />
-    );
+    return <div className="w-full h-full rounded" />;
   }
 
   return null;
