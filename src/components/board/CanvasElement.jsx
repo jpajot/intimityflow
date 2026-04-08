@@ -212,8 +212,11 @@ function TextContent({ el, onUpdate }) {
 
   return (
     <div
-      className="w-full h-full overflow-hidden"
-      style={{ padding: editing ? 0 : 6 }}
+      className="w-full h-full overflow-hidden flex flex-col"
+      style={{
+        padding: editing ? 0 : 6,
+        justifyContent: el.style?.verticalAlign === "bottom" ? "flex-end" : el.style?.verticalAlign === "middle" ? "center" : "flex-start",
+      }}
       onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
     >
       {editing ? (
@@ -228,6 +231,8 @@ function TextContent({ el, onUpdate }) {
           style={{
             fontSize: el.style?.fontSize || 14,
             fontWeight: el.style?.bold ? "bold" : "normal",
+            fontStyle: el.style?.italic ? "italic" : "normal",
+            textDecoration: [el.style?.underline && "underline", el.style?.strikethrough && "line-through"].filter(Boolean).join(" ") || "none",
             color: el.style?.color || "inherit",
             textAlign: el.style?.align || "left",
             lineHeight: 1.4,
@@ -238,6 +243,8 @@ function TextContent({ el, onUpdate }) {
           style={{
             fontSize: el.style?.fontSize || 14,
             fontWeight: el.style?.bold ? "bold" : "normal",
+            fontStyle: el.style?.italic ? "italic" : "normal",
+            textDecoration: [el.style?.underline && "underline", el.style?.strikethrough && "line-through"].filter(Boolean).join(" ") || "none",
             color: el.style?.color || "inherit",
             textAlign: el.style?.align || "left",
             lineHeight: 1.4,
@@ -263,12 +270,14 @@ function RectContent({ el, onUpdate }) {
 
   return (
     <div
-      className="w-full h-full relative flex items-center justify-center"
+      className="w-full h-full relative flex"
       style={{
         backgroundColor: el.style?.fill || "hsl(var(--muted))",
         border: `${el.style?.borderWidth ?? 1}px ${el.style?.borderStyle || "solid"} ${el.style?.borderColor || "hsl(var(--border))"}`,
         borderRadius: el.style?.radius ?? 4,
         opacity: el.style?.opacity !== undefined ? el.style.opacity / 100 : 1,
+        alignItems: el.style?.textVerticalAlign === "top" ? "flex-start" : el.style?.textVerticalAlign === "bottom" ? "flex-end" : "center",
+        justifyContent: el.style?.textAlign === "right" ? "flex-end" : el.style?.textAlign === "center" ? "center" : "flex-start",
       }}
       onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
     >
@@ -280,26 +289,28 @@ function RectContent({ el, onUpdate }) {
           onBlur={stopEdit}
           onKeyDown={(e) => { if (e.key === "Escape") stopEdit(); e.stopPropagation(); }}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full h-full bg-transparent resize-none outline-none text-center p-2"
+          className="w-full h-full bg-transparent resize-none outline-none p-2"
           style={{
             fontSize: el.style?.fontSize || 14,
             color: el.style?.color || "inherit",
             borderRadius: el.style?.radius || 4,
             fontWeight: el.style?.bold ? "bold" : "normal",
             fontStyle: el.style?.italic ? "italic" : "normal",
-            textDecoration: el.style?.underline ? "underline" : "none",
+            textDecoration: [el.style?.underline && "underline", el.style?.strikethrough && "line-through"].filter(Boolean).join(" ") || "none",
+            textAlign: el.style?.textAlign || "left",
           }}
         />
       ) : (
         el.style?.text && (
           <p
-            className="text-center px-2 w-full break-words pointer-events-none select-none"
+            className="px-2 w-full break-words pointer-events-none select-none"
             style={{
               fontSize: el.style?.fontSize || 14,
               color: el.style?.color || "inherit",
               fontWeight: el.style?.bold ? "bold" : "normal",
               fontStyle: el.style?.italic ? "italic" : "normal",
-              textDecoration: el.style?.underline ? "underline" : "none",
+              textDecoration: [el.style?.underline && "underline", el.style?.strikethrough && "line-through"].filter(Boolean).join(" ") || "none",
+              textAlign: el.style?.textAlign || "left",
             }}
           >
             {el.style.text}

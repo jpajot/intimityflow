@@ -1,4 +1,4 @@
-import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, AlignStartVertical, AlignCenterVertical, AlignEndVertical, Strikethrough } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TEXT_PRESETS = [
@@ -97,22 +97,41 @@ function TextToolbar({ el, onUpdate }) {
 
       <SEP />
 
-      {/* Bold */}
       <IconBtn active={!!s.bold} onClick={() => set("bold", !s.bold)} title="Bold">
         <Bold className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={!!s.italic} onClick={() => set("italic", !s.italic)} title="Italic">
+        <Italic className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={!!s.underline} onClick={() => set("underline", !s.underline)} title="Underline">
+        <Underline className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={!!s.strikethrough} onClick={() => set("strikethrough", !s.strikethrough)} title="Strikethrough">
+        <Strikethrough className="w-3.5 h-3.5" />
       </IconBtn>
 
       <SEP />
 
-      {/* Alignment */}
-      <IconBtn active={!s.align || s.align === "left"} onClick={() => set("align", "left")} title="Left">
+      <IconBtn active={!s.align || s.align === "left"} onClick={() => set("align", "left")} title="Align Left">
         <AlignLeft className="w-3.5 h-3.5" />
       </IconBtn>
-      <IconBtn active={s.align === "center"} onClick={() => set("align", "center")} title="Center">
+      <IconBtn active={s.align === "center"} onClick={() => set("align", "center")} title="Align Center">
         <AlignCenter className="w-3.5 h-3.5" />
       </IconBtn>
-      <IconBtn active={s.align === "right"} onClick={() => set("align", "right")} title="Right">
+      <IconBtn active={s.align === "right"} onClick={() => set("align", "right")} title="Align Right">
         <AlignRight className="w-3.5 h-3.5" />
+      </IconBtn>
+
+      <SEP />
+
+      <IconBtn active={!s.verticalAlign || s.verticalAlign === "top"} onClick={() => set("verticalAlign", "top")} title="Align Top">
+        <AlignStartVertical className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={s.verticalAlign === "middle"} onClick={() => set("verticalAlign", "middle")} title="Align Middle">
+        <AlignCenterVertical className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={s.verticalAlign === "bottom"} onClick={() => set("verticalAlign", "bottom")} title="Align Bottom">
+        <AlignEndVertical className="w-3.5 h-3.5" />
       </IconBtn>
 
       <SEP />
@@ -199,6 +218,26 @@ function RectToolbar({ el, onUpdate }) {
       </IconBtn>
       <IconBtn active={!!s.underline} onClick={() => set("underline", !s.underline)} title="Underline">
         <Underline className="w-3.5 h-3.5" />
+      </IconBtn>
+      <SEP />
+      <IconBtn active={!s.textAlign || s.textAlign === "left"} onClick={() => set("textAlign", "left")} title="Align Left">
+        <AlignLeft className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={s.textAlign === "center"} onClick={() => set("textAlign", "center")} title="Align Center">
+        <AlignCenter className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={s.textAlign === "right"} onClick={() => set("textAlign", "right")} title="Align Right">
+        <AlignRight className="w-3.5 h-3.5" />
+      </IconBtn>
+      <SEP />
+      <IconBtn active={!s.textVerticalAlign || s.textVerticalAlign === "top"} onClick={() => set("textVerticalAlign", "top")} title="Align Top">
+        <AlignStartVertical className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={s.textVerticalAlign === "middle"} onClick={() => set("textVerticalAlign", "middle")} title="Align Middle">
+        <AlignCenterVertical className="w-3.5 h-3.5" />
+      </IconBtn>
+      <IconBtn active={s.textVerticalAlign === "bottom"} onClick={() => set("textVerticalAlign", "bottom")} title="Align Bottom">
+        <AlignEndVertical className="w-3.5 h-3.5" />
       </IconBtn>
       <ColorSwatch value={s.color || "#000000"} onChange={(v) => set("color", v)} />
     </>
