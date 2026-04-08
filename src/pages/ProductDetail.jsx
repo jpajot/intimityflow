@@ -420,22 +420,21 @@ export default function ProductDetail() {
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
 
+                  {/* Type */}
+                  {visibleFields.includes("type") && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">Type</Label>
+                      <Select value={product.type || "Product"} onValueChange={(v) => updateField("type", v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Product">Product</SelectItem>
+                          <SelectItem value="Material">Material</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-                   {/* Type */}
-                   {visibleFields.includes("type") && (
-                     <div className="space-y-2">
-                       <Label className="text-xs">Type</Label>
-                       <Select value={product.type || "Product"} onValueChange={(v) => updateField("type", v)}>
-                         <SelectTrigger><SelectValue /></SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="Product">Product</SelectItem>
-                           <SelectItem value="Material">Material</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
-                   )}
-
-                   {/* Category */}
+                  {/* Category */}
                   {visibleFields.includes("category") && (
                     <div className="space-y-2">
                       <Label className="text-xs">Category</Label>
@@ -519,45 +518,46 @@ export default function ProductDetail() {
                   {/* Linked Projects */}
                   {visibleFields.includes("project_ids") && (
                     <div className="space-y-2">
-                    <Label className="text-xs">Linked Projects</Label>
-                    <div className="flex flex-wrap gap-2 p-2 rounded-md border border-input min-h-[36px]">
-                      {(product.project_ids || []).map((pid) => {
-                        const proj = projects.find((p) => p.id === pid);
-                        return proj ? (
-                          <span key={pid} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
-                            {proj.name}
-                            <button type="button" onClick={() => updateField("project_ids", (product.project_ids || []).filter((x) => x !== pid))} className="ml-1 hover:text-destructive">&times;</button>
-                          </span>
-                        ) : null;
-                      })}
-                      <Select value="none" onValueChange={(v) => { if (v !== "none" && !(product.project_ids || []).includes(v)) updateField("project_ids", [...(product.project_ids || []), v]); }}>
-                        <SelectTrigger className="h-6 text-xs border-dashed w-auto min-w-[120px] border-0 shadow-none p-0 pl-1"><SelectValue placeholder="+ Add project" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">+ Add project</SelectItem>
-                          {projects.filter((p) => !(product.project_ids || []).includes(p.id)).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs">Linked Projects</Label>
+                      <div className="flex flex-wrap gap-2 p-2 rounded-md border border-input min-h-[36px]">
+                        {(product.project_ids || []).map((pid) => {
+                          const proj = projects.find((p) => p.id === pid);
+                          return proj ? (
+                            <span key={pid} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
+                              {proj.name}
+                              <button type="button" onClick={() => updateField("project_ids", (product.project_ids || []).filter((x) => x !== pid))} className="ml-1 hover:text-destructive">&times;</button>
+                            </span>
+                          ) : null;
+                        })}
+                        <Select value="none" onValueChange={(v) => { if (v !== "none" && !(product.project_ids || []).includes(v)) updateField("project_ids", [...(product.project_ids || []), v]); }}>
+                          <SelectTrigger className="h-6 text-xs border-dashed w-auto min-w-[120px] border-0 shadow-none p-0 pl-1"><SelectValue placeholder="+ Add project" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">+ Add project</SelectItem>
+                            {projects.filter((p) => !(product.project_ids || []).includes(p.id)).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    </div>
-                    )}
+                  )}
 
-                    {/* Description — full width */}
-                {visibleFields.includes("description") && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">Description</Label>
-                    <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={4} />
+                  {/* Description — full width */}
+                  {visibleFields.includes("description") && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">Description</Label>
+                      <Textarea value={product.description} onChange={(e) => updateField("description", e.target.value)} rows={4} />
+                    </div>
+                  )}
                   </div>
-                )}
 
-                {isNew && (
+                  {isNew && (
                   <Button onClick={handleSave} disabled={saving} className="gap-2">
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     Create
                   </Button>
-                )}
-              </div>
-            </div>
-        )}
+                  )}
+                  </div>
+                  </div>
+                  )}
       </div>
 
       {!isNew && (
