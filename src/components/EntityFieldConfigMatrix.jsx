@@ -47,12 +47,24 @@ export default function EntityFieldConfigMatrix() {
         setFields([]);
         return;
       }
-      const schema = await base44.entities[entityName].schema();
-      if (schema?.properties) {
-        setFields(Object.keys(schema.properties));
+      const entity = base44.entities[entityName];
+      let fieldList = [];
+      
+      // Try to get schema
+      if (typeof entity.schema === 'function') {
+        const schema = await entity.schema();
+        if (schema?.properties) {
+          fieldList = Object.keys(schema.properties);
+        }
       } else {
-        setFields([]);
+        // Fallback: try to fetch a sample record and infer fields
+        const sample = await entity.list('name', 1);
+        if (sample.length > 0) {
+          fieldList = Object.keys(sample[0]).filter(k => !['id', 'created_date', 'updated_date', 'created_by'].includes(k));
+        }
       }
+      
+      setFields(fieldList);
     } catch (err) {
       console.error(`Failed to load fields for ${entityName}:`, err);
       setFields([]);
