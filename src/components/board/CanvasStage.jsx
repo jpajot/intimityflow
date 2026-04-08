@@ -119,7 +119,7 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
           }}
           data-board-slide
         >
-          {elements.map((el) => (
+          {[...elements].sort((a, b) => a.type === "group" ? -1 : 1).map((el) => (
             <CanvasElement
               key={el.id}
               el={el}
