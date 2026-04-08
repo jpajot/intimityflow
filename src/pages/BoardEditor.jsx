@@ -86,18 +86,22 @@ export default function BoardEditor() {
   const elements = activePage?.elements || [];
 
   const captureThumbnail = useCallback(async () => {
-    const firstPage = pages[0];
-    if (!firstPage || firstPage.id !== activePageId) return;
-    const slide = document.querySelector('[data-board-slide]');
-    if (!slide) return;
-    const { default: html2canvas } = await import('html2canvas');
-    const canvas = await html2canvas(slide, { scale: 0.3, useCORS: false, allowTaint: false, logging: false, width: CANVAS_W, height: CANVAS_H });
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      const file = new File([blob], 'thumb.png', { type: 'image/png' });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.Board.update(boardId, { thumbnail_url: file_url });
-    }, 'image/png', 0.7);
+    try {
+      const firstPage = pages[0];
+      if (!firstPage || firstPage.id !== activePageId) return;
+      const slide = document.querySelector('[data-board-slide]');
+      if (!slide) return;
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(slide, { scale: 0.3, useCORS: false, allowTaint: false, logging: false, width: CANVAS_W, height: CANVAS_H });
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'thumb.png', { type: 'image/png' });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        await base44.entities.Board.update(boardId, { thumbnail_url: file_url });
+      }, 'image/png', 0.7);
+    } catch (e) {
+      // Thumbnail capture failed silently — non-critical
+    }
   }, [activePageId, pages, boardId]);
 
   const updateElements = useCallback((newEls) => {
