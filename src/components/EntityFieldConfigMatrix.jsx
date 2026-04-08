@@ -43,11 +43,18 @@ export default function EntityFieldConfigMatrix() {
 
   const loadFields = async (entityName) => {
     try {
+      if (!entityName || !base44.entities[entityName]) {
+        setFields([]);
+        return;
+      }
       const schema = await base44.entities[entityName].schema();
-      if (schema && schema.properties) {
+      if (schema?.properties) {
         setFields(Object.keys(schema.properties));
+      } else {
+        setFields([]);
       }
     } catch (err) {
+      console.error(`Failed to load fields for ${entityName}:`, err);
       setFields([]);
     }
   };
