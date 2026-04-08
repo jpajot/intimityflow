@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Ribbon from "../components/board/Ribbon";
+import FormatToolbar from "../components/board/FormatToolbar";
 import PagesPanel from "../components/board/PagesPanel";
 import CanvasStage, { CANVAS_W, CANVAS_H } from "../components/board/CanvasStage";
 import BoardContextMenu from "../components/board/BoardContextMenu";
@@ -46,8 +47,9 @@ export default function BoardEditor() {
   const [linkEntityId, setLinkEntityId] = useState("");
 
   // Slide panel state
-  const [slidePanel, setSlidePanel] = useState(null); // { mode: 'create'|'edit', entityType, entityId, prefill, targetGroupId }
+  const [slidePanel, setSlidePanel] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const saveTimer = useRef(null);
 
@@ -343,6 +345,9 @@ export default function BoardEditor() {
       {/* Ribbon */}
       <Ribbon onInsert={handleInsert} onExportPdf={handleExportPdf} onOpenProductPicker={() => setPickerOpen(true)} />
 
+      {/* Format toolbar — shown when a text or rect is selected */}
+      <FormatToolbar elements={elements} selectedId={selectedId} onUpdate={(id, changes) => updateElements(elements.map((el) => el.id === id ? { ...el, ...changes } : el))} />
+
       {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
         <PagesPanel
@@ -357,6 +362,7 @@ export default function BoardEditor() {
           onUpdateElements={updateElements}
           onContextMenu={handleContextMenu}
           onDropProductCard={handleDropProductCard}
+          onSelectionChange={setSelectedId}
         />
       </div>
 
@@ -375,7 +381,7 @@ export default function BoardEditor() {
           onCreateProduct={handleCreateProduct}
           onGroup={handleGroup}
           onUngroup={handleUngroup}
-          onUpdate={(id, changes) => { updateElements(elements.map((el) => el.id === id ? { ...el, ...changes } : el)); }}
+          onUpdate={null}
         />
       )}
 

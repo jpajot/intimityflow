@@ -4,7 +4,7 @@ import CanvasElement from "./CanvasElement";
 const CANVAS_W = 1200;
 const CANVAS_H = 675; // 16:9
 
-export default function CanvasStage({ elements, onUpdateElements, onContextMenu, onDropProductCard }) {
+export default function CanvasStage({ elements, onUpdateElements, onContextMenu, onDropProductCard, onSelectionChange }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const outerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -40,13 +40,12 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
 
   const handleSelect = (id, ctrlHeld) => {
     setSelectedIds((prev) => {
-      if (ctrlHeld) {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      }
-      return new Set([id]);
+      const next = ctrlHeld
+        ? (() => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; })()
+        : new Set([id]);
+      const arr = [...next];
+      onSelectionChange?.(arr.length === 1 ? arr[0] : null);
+      return next;
     });
   };
 
@@ -56,6 +55,7 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
     const isSlide = e.target.hasAttribute && e.target.hasAttribute('data-board-slide');
     if (isOuterBg || isSlide) {
       setSelectedIds(new Set());
+      onSelectionChange?.(null);
     }
   };
 
