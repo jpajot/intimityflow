@@ -420,21 +420,22 @@ export default function ProductDetail() {
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
 
-                  {/* Type */}
+
+                   {/* Type */}
                    {visibleFields.includes("type") && (
                      <div className="space-y-2">
                        <Label className="text-xs">Type</Label>
-                      )}
+                       <Select value={product.type || "Product"} onValueChange={(v) => updateField("type", v)}>
+                         <SelectTrigger><SelectValue /></SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="Product">Product</SelectItem>
+                           <SelectItem value="Material">Material</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   )}
 
-                      {/* Name */}
-                  {visibleFields.includes("name") && (
-                    <div className="space-y-2">
-                      <Label className="text-xs">Name</Label>
-                      <Input value={product.name} onChange={(e) => updateField("name", e.target.value)} required />
-                    </div>
-                  )}
-
-                  {/* Category */}
+                   {/* Category */}
                   {visibleFields.includes("category") && (
                     <div className="space-y-2">
                       <Label className="text-xs">Category</Label>
@@ -537,10 +538,10 @@ export default function ProductDetail() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                )}
+                    </div>
+                    )}
 
-                {/* Description — full width */}
+                    {/* Description — full width */}
                 {visibleFields.includes("description") && (
                   <div className="space-y-2">
                     <Label className="text-xs">Description</Label>
@@ -556,7 +557,6 @@ export default function ProductDetail() {
                 )}
               </div>
             </div>
-          </div>
         )}
       </div>
 
