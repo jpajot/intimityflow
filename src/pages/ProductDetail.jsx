@@ -515,8 +515,6 @@ export default function ProductDetail() {
                     </div>
                   )}
 
-                </div>
-
                 {/* Linked Projects */}
                 {visibleFields.includes("project_ids") && (
                   <div className="space-y-2">
@@ -527,7 +525,7 @@ export default function ProductDetail() {
                         return proj ? (
                           <span key={pid} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
                             {proj.name}
-                            <button type="button" onClick={() => updateField("project_ids", (product.project_ids || []).filter((x) => x !== pid))} className="ml-1 hover:text-destructive">×</button>
+                            <button type="button" onClick={() => updateField("project_ids", (product.project_ids || []).filter((x) => x !== pid))} className="ml-1 hover:text-destructive">&times;</button>
                           </span>
                         ) : null;
                       })}
