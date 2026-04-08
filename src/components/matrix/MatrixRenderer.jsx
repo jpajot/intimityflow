@@ -8,35 +8,41 @@ const SIZE_CLASSES = {
   lg: "w-24 h-24",
 };
 
-function ItemCell({ item, fields, size, isImage, isColor }) {
+function ItemCell({ item, fields, size }) {
   const sizeClass = SIZE_CLASSES[size || "md"];
+  const imageUrl = item.images?.[0] || item.image_url || item.hex;
   
-  if (isImage) {
-    const imageUrl = item.images?.[0] || item.image_url || item.hex;
+  // If image URL exists and fields not explicitly provided, show image
+  if (!fields || fields.length === 0) {
+    if (imageUrl) {
+      return (
+        <div className={`${sizeClass} rounded-lg overflow-hidden border border-border bg-muted/20 flex items-center justify-center`}>
+          {imageUrl?.startsWith("#") || imageUrl?.startsWith("hsl") ? (
+            <div className="w-full h-full" style={{ backgroundColor: imageUrl }} />
+          ) : (
+            <img src={imageUrl} alt={item.name || item.color_name} className="w-full h-full object-cover" />
+          )}
+        </div>
+      );
+    }
     return (
-      <div className={`${sizeClass} rounded-lg overflow-hidden border border-border bg-muted/20 flex items-center justify-center`}>
-        {imageUrl?.startsWith("#") || imageUrl?.startsWith("hsl") ? (
-          <div className="w-full h-full" style={{ backgroundColor: imageUrl }} />
-        ) : (
-          <img src={imageUrl} alt={item.name || item.color_name} className="w-full h-full object-cover" />
-        )}
-      </div>
+      <div className="p-2 text-xs text-muted-foreground">—</div>
     );
   }
 
   return (
-    <div className="text-xs space-y-1">
-      {fields.slice(0, 2).map(field => (
-        <div key={field} className="text-muted-foreground">
-          <span className="font-mono text-[10px] text-muted-foreground/70">{field}:</span>
-          <p className="truncate">{item[field] || "—"}</p>
+    <div className="text-xs space-y-1.5">
+      {fields.map(field => (
+        <div key={field} className="truncate">
+          <span className="font-semibold text-muted-foreground text-[10px]">{field}:</span>
+          <p className="truncate text-foreground">{item[field] || "—"}</p>
         </div>
       ))}
     </div>
   );
 }
 
-function MatrixCell({ rowItem, colItem, junctionRecord, config, size }) {
+function MatrixCell({ junctionRecord, config }) {
   if (!junctionRecord) {
     return (
       <div className="p-3 bg-muted/30 border border-border rounded-lg aspect-square flex items-center justify-center">
@@ -112,9 +118,8 @@ export default function MatrixRenderer({ config, projectId }) {
             <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
               <ItemCell 
                 item={col} 
-                fields={config.column_fields} 
+                fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
                 size={config.thumbnail_size}
-                isImage={["Product", "TechnicalColor"].includes(config.column_entity)}
               />
             </div>
           ))}
@@ -126,9 +131,8 @@ export default function MatrixRenderer({ config, projectId }) {
             <div className="w-32 shrink-0 p-3 bg-muted/20 border-r border-border">
               <ItemCell 
                 item={row} 
-                fields={config.row_fields} 
+                fields={config.row_fields && config.row_fields.length > 0 ? config.row_fields : undefined}
                 size={config.thumbnail_size}
-                isImage={["Product"].includes(config.row_entity)}
               />
             </div>
             {columns.map(col => {
@@ -137,11 +141,8 @@ export default function MatrixRenderer({ config, projectId }) {
               return (
                 <div key={`${row.id}_${col.id}`} className="w-32 shrink-0 p-3 border-r border-border last:border-r-0">
                   <MatrixCell 
-                    rowItem={row} 
-                    colItem={col} 
                     junctionRecord={junction}
                     config={config}
-                    size={config.thumbnail_size}
                   />
                 </div>
               );

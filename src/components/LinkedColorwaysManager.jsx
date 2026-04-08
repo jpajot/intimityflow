@@ -67,7 +67,7 @@ export default function LinkedColorwaysManager({
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => setSelectedMatrixView(null)}>← Back to Views</Button>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setSelectedMatrixView(null); setShowMatrixBuilder(selectedMatrixView); }}>Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowMatrixBuilder(selectedMatrixView)}>Edit</Button>
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteView(selectedMatrixView.id)}>Delete</Button>
           </div>
         </div>
@@ -149,16 +149,16 @@ export default function LinkedColorwaysManager({
         />
       )}
 
-      <Dialog open={showMatrixBuilder} onOpenChange={setShowMatrixBuilder}>
+      <Dialog open={!!showMatrixBuilder} onOpenChange={(open) => { if (!open) setShowMatrixBuilder(false); }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Matrix View</DialogTitle>
+            <DialogTitle>{showMatrixBuilder?.id ? "Edit Matrix View" : "Create Matrix View"}</DialogTitle>
           </DialogHeader>
           <MatrixViewBuilder
             projectId={projectId}
             onSave={handleSaveView}
             onCancel={() => setShowMatrixBuilder(false)}
-            initialConfig={undefined}
+            initialConfig={typeof showMatrixBuilder === "object" ? showMatrixBuilder : undefined}
           />
         </DialogContent>
       </Dialog>
