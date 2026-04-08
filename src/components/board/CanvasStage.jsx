@@ -51,8 +51,10 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
   };
 
   const handleCanvasMouseDown = (e) => {
-    // Only deselect if clicking directly on the canvas background (not on a child element)
-    if (e.target === e.currentTarget) {
+    // Deselect when clicking on the outer container or directly on the white slide
+    const isOuterBg = e.target === e.currentTarget;
+    const isSlide = e.target.hasAttribute && e.target.hasAttribute('data-board-slide');
+    if (isOuterBg || isSlide) {
       setSelectedIds(new Set());
     }
   };
