@@ -22,14 +22,40 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
 
   const handleUpdate = (id, changes) => {
     const el = elements.find((e) => e.id === id);
-    // If moving a group, also move all child elements by the same delta
-    if (el?.type === "group" && changes.x !== undefined && changes.y !== undefined) {
-      const dx = changes.x - el.x;
-      const dy = changes.y - el.y;
+    if (el?.type === "group" && el.childIds?.length) {
+      const isResize = changes.width !== undefined || changes.height !== undefined;
+      if (isResize) {
+        // Compute scale factors relative to old group bounds
+        const newX = changes.x ?? el.x;
+        const newY = changes.y ?? el.y;
+        const newW = changes.width ?? el.width;
+        const newH = changes.height ?? el.height;
+        const scaleX = newW / el.width;
+        const scaleY = newH / el.height;
+        onUpdateElements(
+          elements.map((e) => {
+            if (e.id === id) return { ...e, ...changes };
+            if (el.childIds.includes(e.id)) {
+              return {
+                ...e,
+                x: newX + (e.x - el.x) * scaleX,
+                y: newY + (e.y - el.y) * scaleY,
+                width: e.width * scaleX,
+                height: e.height * scaleY,
+              };
+            }
+            return e;
+          })
+        );
+        return;
+      }
+      // Move: translate children by delta
+      const dx = (changes.x ?? el.x) - el.x;
+      const dy = (changes.y ?? el.y) - el.y;
       onUpdateElements(
         elements.map((e) => {
           if (e.id === id) return { ...e, ...changes };
-          if (el.childIds?.includes(e.id)) return { ...e, x: e.x + dx, y: e.y + dy };
+          if (el.childIds.includes(e.id)) return { ...e, x: e.x + dx, y: e.y + dy };
           return e;
         })
       );
