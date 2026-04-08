@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { getVisibleFields } from "@/lib/fieldVisibility";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,13 +20,7 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode, pro
   const [projects, setProjects] = useState([]);
   const [lovTypes, setLovTypes] = useState({});
   const [lovValues, setLovValues] = useState([]);
-  const [visibleFields, setVisibleFields] = useState([]);
   const fileRef = useRef(null);
-
-  useEffect(() => {
-    getVisibleFields("Product", form.type, ["type", "name", "category", "sub_category", "customer_need", "description", "images", "creation_project_id", "project_ids"])
-      .then(setVisibleFields);
-  }, [form.type]);
 
   useEffect(() => {
     base44.entities.Project.list("name", 500).then(setProjects);
@@ -115,38 +108,30 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode, pro
           <img src={form.images[0]} alt="" className="w-full h-full object-contain" />
         </div>
       )}
-      {visibleFields.includes("type") && (
-        <Field label="Type">
-          <Select value={form.type || "Product"} onValueChange={(v) => set("type", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {["Product", "Material"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Field>
-      )}
-      {visibleFields.includes("name") && (
-        <Field label="Name" required>
-          <Input value={form.name || ""} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Summer Jacket" />
-        </Field>
-      )}
-      {visibleFields.includes("category") && (
-        <Field label="Category">
-          <Select value={form.category || ""} onValueChange={(v) => { set("category", v); set("sub_category", ""); set("customer_need", ""); }}>
-            <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-            <SelectContent>{getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </Field>
-      )}
-      {visibleFields.includes("sub_category") && (
-        <Field label="Sub-category">
-          <Select value={form.sub_category || ""} onValueChange={(v) => { set("sub_category", v); set("customer_need", ""); }} disabled={!form.category}>
-            <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-            <SelectContent>{getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </Field>
-      )}
-      {visibleFields.includes("customer_need") && form.type !== "Material" && (
+      <Field label="Type">
+        <Select value={form.type || "Product"} onValueChange={(v) => set("type", v)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {["Product", "Material"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Name" required>
+        <Input value={form.name || ""} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Summer Jacket" />
+      </Field>
+      <Field label="Category">
+        <Select value={form.category || ""} onValueChange={(v) => { set("category", v); set("sub_category", ""); set("customer_need", ""); }}>
+          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+          <SelectContent>{getCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </Field>
+      <Field label="Sub-category">
+        <Select value={form.sub_category || ""} onValueChange={(v) => { set("sub_category", v); set("customer_need", ""); }} disabled={!form.category}>
+          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+          <SelectContent>{getSubCategories().map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </Field>
+      {form.type !== "Material" && (
         <Field label="Customer Need">
           <Select value={form.customer_need || ""} onValueChange={(v) => set("customer_need", v)}>
             <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
@@ -154,34 +139,28 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode, pro
           </Select>
         </Field>
       )}
-      {visibleFields.includes("description") && (
-        <Field label="Description">
-          <Textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={3} />
-        </Field>
-      )}
-      {visibleFields.includes("images") && (
-        <Field label="Image">
-          <div className="flex gap-2">
-            <Input value={form.images?.[0] || ""} onChange={(e) => set("images", e.target.value ? [e.target.value] : [])} placeholder="https://…" className="flex-1" />
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
-              const file = e.target.files?.[0]; if (!file) return;
-              const { file_url } = await base44.integrations.Core.UploadFile({ file });
-              set("images", [file_url]); e.target.value = "";
-            }} />
-            <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => fileRef.current?.click()}>
-              <Upload className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </Field>
-      )}
-      {visibleFields.includes("creation_project_id") && (
-        <Field label="Creation Project">
-          <Select value={form.creation_project_id || ""} onValueChange={(v) => set("creation_project_id", v)}>
-            <SelectTrigger><SelectValue placeholder="Select project…" /></SelectTrigger>
-            <SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </Field>
-      )}
+      <Field label="Description">
+        <Textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={3} />
+      </Field>
+      <Field label="Image">
+        <div className="flex gap-2">
+          <Input value={form.images?.[0] || ""} onChange={(e) => set("images", e.target.value ? [e.target.value] : [])} placeholder="https://…" className="flex-1" />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+            const file = e.target.files?.[0]; if (!file) return;
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            set("images", [file_url]); e.target.value = "";
+          }} />
+          <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => fileRef.current?.click()}>
+            <Upload className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </Field>
+      <Field label="Creation Project">
+        <Select value={form.creation_project_id || ""} onValueChange={(v) => set("creation_project_id", v)}>
+          <SelectTrigger><SelectValue placeholder="Select project…" /></SelectTrigger>
+          <SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </Field>
       <div className="pt-2">
         <Button onClick={handleSave} disabled={!form.name || saving} className="w-full gap-2">
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
