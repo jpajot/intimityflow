@@ -269,20 +269,32 @@ function CommercialColorForm({ entityId, mode, onSaved, onClose }) {
   const [hex, setHex] = useState("");
 
   useEffect(() => {
-    base44.entities.TechnicalColor.list("name", 500).then(setTechColors);
-    if (mode === "edit" && entityId) {
-      setLoading(true);
-      base44.entities.CommercialColor.filter({ id: entityId }).then(async (res) => {
+    const init = async () => {
+      const allTechColors = await base44.entities.TechnicalColor.list("name", 500);
+      setTechColors(allTechColors);
+
+      if (mode === "edit" && entityId) {
+        setLoading(true);
+        const res = await base44.entities.CommercialColor.filter({ id: entityId });
         if (res[0]) {
           setForm({ ...res[0] });
+          // Ensure all linked colors are in the list (in case they exceed 500)
+          const linkedIds = res[0].linked_technical_color_ids || [];
+          const missingIds = linkedIds.filter((id) => !allTechColors.find((c) => c.id === id));
+          if (missingIds.length > 0) {
+            const extras = await Promise.all(missingIds.map((id) => base44.entities.TechnicalColor.filter({ id })));
+            setTechColors((prev) => [...prev, ...extras.flat()]);
+          }
           if (res[0].main_technical_color_id) {
-            const tc = await base44.entities.TechnicalColor.filter({ id: res[0].main_technical_color_id });
-            if (tc[0]) setHex(tc[0].hex || "");
+            const tc = allTechColors.find((c) => c.id === res[0].main_technical_color_id)
+              || (await base44.entities.TechnicalColor.filter({ id: res[0].main_technical_color_id }))[0];
+            if (tc) setHex(tc.hex || "");
           }
         }
         setLoading(false);
-      });
-    }
+      }
+    };
+    init();
   }, [entityId, mode]);
 
   const set = (f, v) => setForm((p) => ({ ...p, [f]: v }));
