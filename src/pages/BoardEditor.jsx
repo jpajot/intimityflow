@@ -185,7 +185,8 @@ export default function BoardEditor() {
 
   const handleCreateProduct = () => {
     const { element } = contextMenu;
-    setSlidePanel({ mode: "create", entityType: "Product", prefill: { name: element.content }, targetElementId: element.id });
+    const isImage = element.type === "image";
+    setSlidePanel({ mode: "create", entityType: "Product", prefill: { name: isImage ? "" : element.content, imageUrl: isImage ? element.content : "" }, targetElementId: element.id });
     setContextMenu(null);
   };
 

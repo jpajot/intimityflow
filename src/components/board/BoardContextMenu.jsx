@@ -22,7 +22,7 @@ function ClassicMenu({ x, y, element, selectedIds = [], elements = [], onClose, 
   }, [onClose]);
 
   const items = [
-    !isGroup && !isText && !isRect && { label: "Link to existing entity", icon: Link2, action: onLink },
+    !isGroup && !isText && !isRect && element?.type !== "image" && { label: "Link to existing entity", icon: Link2, action: onLink },
     hasLinked && { label: "Open / edit linked record", icon: ExternalLink, action: onEditLinked },
     !hasLinked && { label: "Create product from this", icon: Plus, action: onCreateProduct },
     multiSelected && !isGroup && { label: `Group ${selectedIds.length} elements`, icon: BoxSelect, action: onGroup },
