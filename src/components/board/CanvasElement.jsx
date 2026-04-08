@@ -3,7 +3,7 @@ import { Link2 } from "lucide-react";
 
 const HANDLE_SIZE = 8;
 
-export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdate, onContextMenu }) {
+export default function CanvasElement({ el, isSelected, scale, isGrouped, onSelect, onUpdate, onContextMenu }) {
   const dragStart = useRef(null);
   const resizeStart = useRef(null);
 
@@ -11,6 +11,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
     if (e.button !== 0) return;
     e.stopPropagation();
     onSelect(el.id, e.ctrlKey || e.metaKey);
+    if (isGrouped) return; // don't drag grouped children
     dragStart.current = { mx: e.clientX, my: e.clientY, x: el.x, y: el.y };
     window.addEventListener("mousemove", onDragMove);
     window.addEventListener("mouseup", onDragUp);
@@ -74,7 +75,7 @@ export default function CanvasElement({ el, isSelected, scale, onSelect, onUpdat
         boxSizing: "border-box",
         outline: isSelected ? "2px solid hsl(var(--primary))" : "none",
         outlineOffset: "1px",
-        cursor: el.type === "group" ? "move" : "move",
+        cursor: isGrouped ? "default" : "move",
       }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}

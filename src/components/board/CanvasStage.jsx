@@ -119,17 +119,21 @@ export default function CanvasStage({ elements, onUpdateElements, onContextMenu,
           }}
           data-board-slide
         >
-          {[...elements].sort((a, b) => a.type === "group" ? -1 : 1).map((el) => (
-            <CanvasElement
-              key={el.id}
-              el={el}
-              isSelected={selectedIds.has(el.id)}
-              scale={scale}
-              onSelect={handleSelect}
-              onUpdate={handleUpdate}
-              onContextMenu={handleContextMenu}
-            />
-          ))}
+          {[...elements].sort((a, b) => a.type === "group" ? -1 : 1).map((el) => {
+            const isGrouped = elements.some((g) => g.type === "group" && g.childIds?.includes(el.id));
+            return (
+              <CanvasElement
+                key={el.id}
+                el={el}
+                isSelected={selectedIds.has(el.id)}
+                scale={scale}
+                isGrouped={isGrouped}
+                onSelect={handleSelect}
+                onUpdate={handleUpdate}
+                onContextMenu={handleContextMenu}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
