@@ -1,0 +1,25 @@
+{
+  "name": "EntityFieldConfig",
+  "type": "object",
+  "properties": {
+    "entity_name": {
+      "type": "string",
+      "description": "Entity name (e.g. Product, TechnicalColor)"
+    },
+    "field_name": {
+      "type": "string",
+      "description": "Field name (e.g. category, customer_need)"
+    },
+    "visible_for_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of entity types where this field is visible (e.g. [Product, Material])"
+    }
+  },
+  "required": [
+    "entity_name",
+    "field_name"
+  ]
+}

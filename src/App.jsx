@@ -21,6 +21,7 @@ import ListOfValuesLibrary from './pages/ListOfValuesLibrary';
 import SystemCodeGeneratorLibrary from './pages/SystemCodeGeneratorLibrary';
 import Translations from './pages/Translations';
 import Config from './pages/Config';
+import EntityFieldConfigPage from './pages/EntityFieldConfig';
 import ProjectDocuments from './pages/ProjectDocuments';
 import DocumentStaging from './pages/DocumentStaging';
 import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
@@ -74,6 +75,7 @@ const AuthenticatedApp = () => {
         <Route path="/translations" element={<Translations />} />
         <Route path="/config" element={<Config />} />
         <Route path="/document-parsing-schemes" element={<DocumentParsingSchemes />} />
+        <Route path="/entity-field-config" element={<EntityFieldConfigPage />} />
         <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>

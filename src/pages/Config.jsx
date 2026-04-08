@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson } from "lucide-react";
+import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const CONFIG_ITEMS = [
+  {
+    path: "/entity-field-config",
+    label: "Entity Field Configuration",
+    description: "Control which fields appear for each entity type",
+    icon: Grid3x3,
+  },
   {
     path: "/translations",
     label: "Translations",
