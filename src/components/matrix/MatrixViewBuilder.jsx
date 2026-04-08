@@ -36,12 +36,20 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     const schemas = {};
     for (const entity of MATRIX_ELIGIBLE_ENTITIES) {
       try {
+        // Check if entity exists in base44
+        if (!base44.entities[entity]) {
+          schemas[entity] = [];
+          continue;
+        }
         const sample = await base44.entities[entity].list("-created_date", 1);
         if (sample.length > 0) {
           const fields = Object.keys(sample[0]).filter(k => !["id", "created_date", "updated_date", "created_by"].includes(k));
           schemas[entity] = fields.sort();
+        } else {
+          schemas[entity] = [];
         }
       } catch (err) {
+        console.warn(`Failed to load schema for ${entity}:`, err.message);
         schemas[entity] = [];
       }
     }
@@ -55,7 +63,21 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
       return;
     }
     setSaving(true);
-    await onSave({ ...config, project_id: projectId });
+    const configToSave = {
+      ...config,
+      project_id: projectId,
+      row_entity: config.row_entity,
+      row_fields: config.row_fields || [],
+      column_entity: config.column_entity,
+      column_fields: config.column_fields || [],
+      junction_entity: config.junction_entity,
+      junction_fields: config.junction_fields || [],
+      row_fk_field: config.row_fk_field,
+      column_fk_field: config.column_fk_field,
+      thumbnail_size: config.thumbnail_size || "md",
+      cell_display_size: config.cell_display_size || "normal"
+    };
+    await onSave(configToSave);
     setSaving(false);
   };
 
