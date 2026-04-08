@@ -6,7 +6,6 @@ export default function BoardContextMenu({ x, y, element, selectedIds = [], elem
   const isRect = element?.type === "rect";
   const isFormatTarget = isText || isRect;
 
-  // For text/rect show inline format panel; for others show classic menu
   if (isFormatTarget) {
     return (
       <ElementFormatPanel
@@ -16,6 +15,7 @@ export default function BoardContextMenu({ x, y, element, selectedIds = [], elem
         onClose={onClose}
         onDelete={onDelete}
         onUpdate={onUpdate}
+        onCreateProduct={onCreateProduct}
       />
     );
   }

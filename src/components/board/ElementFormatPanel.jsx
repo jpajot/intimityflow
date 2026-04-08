@@ -204,7 +204,7 @@ function RectFormatSection({ el, onUpdate }) {
 }
 
 // ── Main panel ───────────────────────────────────────────────────────────────
-export default function ElementFormatPanel({ x, y, element, selectedIds = [], onClose, onDelete, onUpdate }) {
+export default function ElementFormatPanel({ x, y, element, selectedIds = [], onClose, onDelete, onUpdate, onCreateProduct }) {
   const ref = useRef(null);
   const isText = element?.type === "text";
   const isRect = element?.type === "rect";
@@ -235,6 +235,17 @@ export default function ElementFormatPanel({ x, y, element, selectedIds = [], on
         </>
       )}
 
+      {onCreateProduct && (
+        <button
+          type="button"
+          onClick={onCreateProduct}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-muted transition-colors"
+        >
+          <Type className="w-3.5 h-3.5 shrink-0" />
+          Create product from this
+        </button>
+      )}
+      <div className="mx-3 border-t border-border" />
       <button
         type="button"
         onClick={onDelete}
