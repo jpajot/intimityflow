@@ -200,7 +200,10 @@ function TextContent({ el, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef(null);
 
+  const DEFAULT_TEXT = "Text block";
+
   const startEdit = () => {
+    if (el.content === DEFAULT_TEXT) onUpdate(el.id, { content: "" });
     setEditing(true);
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
