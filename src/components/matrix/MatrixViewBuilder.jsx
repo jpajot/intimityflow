@@ -29,6 +29,7 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
   const [config, setConfig] = useState(initialConfig ? { ...defaults, ...initialConfig } : defaults);
   
   const [entitySchemas, setEntitySchemas] = useState({});
+  const [fkWarnings, setFkWarnings] = useState({ row: null, col: null });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -36,15 +37,39 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     loadSchemas();
   }, []);
 
+  // Auto-detect FK fields whenever junction/row/column entity changes
+  useEffect(() => {
+    if (!loading) detectFKFields(config.row_entity, config.column_entity, config.junction_entity, entitySchemas);
+  }, [config.row_entity, config.column_entity, config.junction_entity, entitySchemas]);
+
+  const toSnakeCase = (str) => str.replace(/([A-Z])/g, (m, l, i) => i === 0 ? l.toLowerCase() : '_' + l.toLowerCase());
+
+  const detectFKFields = (rowEntity, colEntity, junctionEntity, schemas) => {
+    const jFields = schemas[junctionEntity] || [];
+    if (jFields.length === 0) return;
+    const rowSnake = toSnakeCase(rowEntity);
+    const colSnake = toSnakeCase(colEntity);
+    const rowMatch = jFields.find(f => f === `${rowSnake}_id`) || jFields.find(f => f.endsWith(`_${rowSnake}_id`)) || jFields.find(f => f.includes(rowSnake));
+    const colMatch = jFields.find(f => f === `${colSnake}_id`) || jFields.find(f => f.endsWith(`_${colSnake}_id`)) || jFields.find(f => f.includes(colSnake));
+    const warnings = { row: null, col: null };
+    if (rowMatch) {
+      setConfig(prev => ({ ...prev, row_fk_field: rowMatch }));
+    } else {
+      warnings.row = `Could not auto-detect FK for "${rowEntity}" in "${junctionEntity}". Fields: ${jFields.join(', ')}`;
+    }
+    if (colMatch) {
+      setConfig(prev => ({ ...prev, column_fk_field: colMatch }));
+    } else {
+      warnings.col = `Could not auto-detect FK for "${colEntity}" in "${junctionEntity}". Fields: ${jFields.join(', ')}`;
+    }
+    setFkWarnings(warnings);
+  };
+
   const loadSchemas = async () => {
     const schemas = {};
     for (const entity of MATRIX_ELIGIBLE_ENTITIES) {
       try {
-        if (!base44.entities[entity]) {
-          schemas[entity] = [];
-          continue;
-        }
-        // Try schema() first (doesn't require existing records)
+        if (!base44.entities[entity]) { schemas[entity] = []; continue; }
         if (typeof base44.entities[entity].schema === 'function') {
           const schema = await base44.entities[entity].schema();
           if (schema?.properties && Object.keys(schema.properties).length > 0) {
@@ -52,16 +77,13 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
             continue;
           }
         }
-        // Fallback to sample record
         const sample = await base44.entities[entity].list("-created_date", 1);
         if (sample.length > 0) {
-          const fields = Object.keys(sample[0]).filter(k => !["id", "created_date", "updated_date", "created_by"].includes(k));
-          schemas[entity] = fields.sort();
+          schemas[entity] = Object.keys(sample[0]).filter(k => !["id","created_date","updated_date","created_by"].includes(k)).sort();
         } else {
           schemas[entity] = [];
         }
       } catch (err) {
-        console.warn(`Failed to load schema for ${entity}:`, err.message);
         schemas[entity] = [];
       }
     }
@@ -163,11 +185,23 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div>
               <Label className="text-xs">Row FK Field</Label>
-              <Input value={config.row_fk_field} onChange={(e) => updateConfig("row_fk_field", e.target.value)} placeholder="e.g. product_id" />
+              <Input
+                value={config.row_fk_field}
+                onChange={(e) => { updateConfig("row_fk_field", e.target.value); setFkWarnings(prev => ({ ...prev, row: null })); }}
+                placeholder="e.g. product_id"
+                className={fkWarnings.row ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {fkWarnings.row && <p className="text-xs text-red-500 mt-1">{fkWarnings.row}</p>}
             </div>
             <div>
               <Label className="text-xs">Column FK Field</Label>
-              <Input value={config.column_fk_field} onChange={(e) => updateConfig("column_fk_field", e.target.value)} placeholder="e.g. linked_tech_color_id" />
+              <Input
+                value={config.column_fk_field}
+                onChange={(e) => { updateConfig("column_fk_field", e.target.value); setFkWarnings(prev => ({ ...prev, col: null })); }}
+                placeholder="e.g. linked_tech_color_id"
+                className={fkWarnings.col ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {fkWarnings.col && <p className="text-xs text-red-500 mt-1">{fkWarnings.col}</p>}
             </div>
           </div>
         </TabsContent>
