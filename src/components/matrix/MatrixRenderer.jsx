@@ -67,20 +67,14 @@ function MatrixCell({ junctionRecords, config, linkMap = {} }) {
               ))}
             </div>
             {/* ProductColorProjectLink overlay */}
-            {linkMap[record.id] && (
+            {linkMap[record.id] && (config.junction_link_fields || []).length > 0 && (
               <div className="mt-1 pt-1 border-t border-border/50 space-y-0.5">
-                {linkMap[record.id].status && (
-                  <p className="truncate text-[9px] font-medium text-primary">{linkMap[record.id].status}</p>
-                )}
-                {linkMap[record.id].forecasted_quantity != null && (
-                  <p className="truncate text-[9px] text-muted-foreground">Qty: {linkMap[record.id].forecasted_quantity}</p>
-                )}
-                {(linkMap[record.id].channels_of_trade || []).length > 0 && (
-                  <p className="truncate text-[9px] text-muted-foreground">{linkMap[record.id].channels_of_trade.join(", ")}</p>
-                )}
-                {linkMap[record.id].notes && (
-                  <p className="truncate text-[9px] text-muted-foreground italic">{linkMap[record.id].notes}</p>
-                )}
+                {(config.junction_link_fields || []).map(field => {
+                  const val = linkMap[record.id][field];
+                  if (val == null || val === "") return null;
+                  const display = Array.isArray(val) ? val.join(", ") : String(val);
+                  return <p key={field} className="truncate text-[9px] text-muted-foreground">{display}</p>;
+                })}
               </div>
             )}
           </div>

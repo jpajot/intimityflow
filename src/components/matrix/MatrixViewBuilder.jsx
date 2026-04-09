@@ -19,6 +19,7 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     column_fields: [],
     junction_entity: "ProductColor",
     junction_fields: [],
+    junction_link_fields: [],
     row_fk_field: "product_id",
     column_fk_field: "linked_tech_color_id",
     thumbnail_size: "md",
@@ -83,6 +84,7 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
       column_fields: config.column_fields || [],
       junction_entity: config.junction_entity,
       junction_fields: config.junction_fields || [],
+      junction_link_fields: config.junction_link_fields || [],
       row_fk_field: config.row_fk_field,
       column_fk_field: config.column_fk_field,
       thumbnail_size: config.thumbnail_size || "md",
@@ -213,6 +215,34 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
               </div>
             ))}
           </div>
+
+          {config.junction_entity === "ProductColor" && (entitySchemas["ProductColorProjectLink"] || []).length > 0 && (
+            <div className="pt-3 border-t space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Project-specific fields (ProductColorProjectLink)</p>
+              <div className="space-y-2">
+                {(entitySchemas["ProductColorProjectLink"] || []).map(field => (
+                  <div key={field} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={(config.junction_link_fields || []).includes(field)}
+                      onCheckedChange={() => {
+                        setConfig(prev => {
+                          const fields = prev.junction_link_fields || [];
+                          return {
+                            ...prev,
+                            junction_link_fields: fields.includes(field)
+                              ? fields.filter(f => f !== field)
+                              : [...fields, field]
+                          };
+                        });
+                      }}
+                    />
+                    <span className="text-sm">{field}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="pt-3 border-t space-y-2">
             <Label className="text-xs">Cell Display Size</Label>
             <Select value={config.cell_display_size || "normal"} onValueChange={(v) => updateConfig("cell_display_size", v)}>

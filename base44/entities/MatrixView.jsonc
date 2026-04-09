@@ -51,6 +51,13 @@
       },
       "description": "Fields to display in cells"
     },
+    "junction_link_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fields from ProductColorProjectLink to display in cells (overlay)"
+    },
     "junction_filters": {
       "type": "object",
       "description": "Filter config for junction entity"
