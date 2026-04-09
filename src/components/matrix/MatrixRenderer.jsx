@@ -36,7 +36,7 @@ function ItemCell({ item, fields, size }) {
   );
 }
 
-function MatrixCell({ junctionRecords, config }) {
+function MatrixCell({ junctionRecords, config, linkMap = {} }) {
   const records = Array.isArray(junctionRecords) ? junctionRecords : (junctionRecords ? [junctionRecords] : []);
   const sizeClass = config.cell_display_size === "compact" ? "w-24 h-24" : config.cell_display_size === "large" ? "w-40 h-40" : "w-32 h-32";
   
@@ -66,6 +66,23 @@ function MatrixCell({ junctionRecords, config }) {
                 <p key={field} className="truncate text-foreground">{record[field] || "—"}</p>
               ))}
             </div>
+            {/* ProductColorProjectLink overlay */}
+            {linkMap[record.id] && (
+              <div className="mt-1 pt-1 border-t border-border/50 space-y-0.5">
+                {linkMap[record.id].status && (
+                  <p className="truncate text-[9px] font-medium text-primary">{linkMap[record.id].status}</p>
+                )}
+                {linkMap[record.id].forecasted_quantity != null && (
+                  <p className="truncate text-[9px] text-muted-foreground">Qty: {linkMap[record.id].forecasted_quantity}</p>
+                )}
+                {(linkMap[record.id].channels_of_trade || []).length > 0 && (
+                  <p className="truncate text-[9px] text-muted-foreground">{linkMap[record.id].channels_of_trade.join(", ")}</p>
+                )}
+                {linkMap[record.id].notes && (
+                  <p className="truncate text-[9px] text-muted-foreground italic">{linkMap[record.id].notes}</p>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
@@ -77,6 +94,7 @@ export default function MatrixRenderer({ config, projectId }) {
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [junctionMap, setJunctionMap] = useState({});
+  const [linkMap, setLinkMap] = useState({});
   const [loading, setLoading] = useState(true);
   const headerRef = useRef(null);
   const dataRef = useRef(null);
@@ -105,6 +123,16 @@ export default function MatrixRenderer({ config, projectId }) {
         map[key].push(record);
       });
       setJunctionMap(map);
+
+      // Fetch ProductColorProjectLink overlay data if applicable
+      if (config.junction_entity === "ProductColor" && projectId && base44.entities.ProductColorProjectLink) {
+        const links = await base44.entities.ProductColorProjectLink.filter({ project_id: projectId });
+        const lMap = {};
+        links.forEach(l => { lMap[l.product_color_id] = l; });
+        setLinkMap(lMap);
+      } else {
+        setLinkMap({});
+      }
     } catch (err) {
       console.error("Failed to load matrix data:", err);
     }
@@ -159,6 +187,7 @@ export default function MatrixRenderer({ config, projectId }) {
                   <MatrixCell 
                     junctionRecords={junctionRecords}
                     config={config}
+                    linkMap={linkMap}
                   />
                 </div>
               );
