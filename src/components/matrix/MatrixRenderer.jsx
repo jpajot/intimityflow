@@ -36,50 +36,122 @@ function ItemCell({ item, fields, size }) {
   );
 }
 
+const STATUS_COLORS = {
+  active: "bg-green-100 text-green-800",
+  approved: "bg-green-100 text-green-800",
+  confirmed: "bg-blue-100 text-blue-800",
+  pending: "bg-yellow-100 text-yellow-800",
+  draft: "bg-slate-100 text-slate-600",
+  cancelled: "bg-red-100 text-red-700",
+  archived: "bg-slate-100 text-slate-500",
+};
+
+function getStatusColor(val) {
+  if (!val) return "bg-muted text-muted-foreground";
+  return STATUS_COLORS[val.toLowerCase()] || "bg-primary/10 text-primary";
+}
+
+function JunctionCard({ record, config, linkData }) {
+  const imageUrl = record.image_url || record.images?.[0];
+  const colorHex = record.color_hex || record.hex;
+  const hasImage = imageUrl && !imageUrl.startsWith("#") && !imageUrl.startsWith("hsl");
+  const hasColor = colorHex;
+  const title = record.color_name || record.name || record.colorway_code;
+  const junctionFields = config.junction_fields || [];
+  const linkFields = config.junction_link_fields || [];
+
+  return (
+    <div className="group flex flex-col bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 hover:shadow-md transition-all cursor-default">
+      {/* Image / color swatch header */}
+      {(hasImage || hasColor) && (
+        <div className="relative w-full h-16 bg-muted/30 overflow-hidden flex-shrink-0">
+          {hasImage ? (
+            <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full" style={{ backgroundColor: colorHex }} />
+          )}
+        </div>
+      )}
+
+      <div className="p-2 space-y-1.5 flex-1">
+        {/* Title */}
+        {title && (
+          <p className="text-[10px] font-semibold text-foreground truncate leading-tight">{title}</p>
+        )}
+
+        {/* Junction fields */}
+        {junctionFields.filter(f => f !== "color_name" && f !== "name" && f !== "image_url" && f !== "color_hex").map(field => {
+          const val = record[field];
+          if (val == null || val === "") return null;
+          const display = Array.isArray(val) ? val.join(", ") : String(val);
+          return (
+            <div key={field} className="flex items-center gap-1">
+              <span className="text-[8px] uppercase tracking-wide text-muted-foreground font-medium shrink-0">{field.replace(/_/g, " ")}</span>
+              <span className="text-[9px] text-foreground truncate">{display}</span>
+            </div>
+          );
+        })}
+
+        {/* Link overlay fields (project-specific) */}
+        {linkData && linkFields.length > 0 && (
+          <div className="pt-1 mt-1 border-t border-border/40 flex flex-wrap gap-1">
+            {linkFields.map(field => {
+              const val = linkData[field];
+              if (val == null || val === "") return null;
+              const display = Array.isArray(val) ? val.join(", ") : String(val);
+              // Render status-like fields as colored badges
+              const isStatus = field === "status" || field.endsWith("_status");
+              if (isStatus) {
+                return (
+                  <span key={field} className={`text-[8px] px-1.5 py-0.5 rounded-full font-medium ${getStatusColor(display)}`}>{display}</span>
+                );
+              }
+              // Render numeric fields
+              const isNumeric = typeof val === "number";
+              if (isNumeric) {
+                return (
+                  <div key={field} className="flex items-center gap-0.5">
+                    <span className="text-[8px] text-muted-foreground">{field.replace(/_/g, " ")}:</span>
+                    <span className="text-[9px] font-medium text-foreground">{display}</span>
+                  </div>
+                );
+              }
+              return (
+                <div key={field} className="flex items-center gap-0.5 w-full">
+                  <span className="text-[8px] text-muted-foreground truncate">{field.replace(/_/g, " ")}:</span>
+                  <span className="text-[9px] text-foreground truncate flex-1">{display}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MatrixCell({ junctionRecords, config, linkMap = {} }) {
   const records = Array.isArray(junctionRecords) ? junctionRecords : (junctionRecords ? [junctionRecords] : []);
-  const sizeClass = config.cell_display_size === "compact" ? "w-24 h-24" : config.cell_display_size === "large" ? "w-40 h-40" : "w-32 h-32";
-  
+  const cellW = config.cell_display_size === "compact" ? "w-28" : config.cell_display_size === "large" ? "w-44" : "w-36";
+
   if (records.length === 0) {
     return (
-      <div className={`${sizeClass} p-2 bg-muted/30 border border-border rounded-lg flex items-center justify-center`}>
-        <span className="text-xs text-muted-foreground">—</span>
+      <div className={`${cellW} h-full min-h-[40px] flex items-center justify-center`}>
+        <div className="w-2 h-2 rounded-full bg-border" />
       </div>
     );
   }
 
   return (
-    <div className={`${sizeClass} flex flex-col gap-1 overflow-y-auto`}>
-      {records.map((record, idx) => {
-        const imageUrl = record.image_url || record.images?.[0];
-        const hasImage = imageUrl && !imageUrl.startsWith("#") && !imageUrl.startsWith("hsl");
-        
-        return (
-          <div key={idx} className="p-2 bg-card border border-border rounded text-[10px] space-y-1 flex-shrink-0">
-            {hasImage && (
-              <div className="w-full h-12 rounded overflow-hidden border border-border bg-muted/20 flex items-center justify-center mb-1">
-                <img src={imageUrl} alt={record.color_name || record.name} className="max-w-full max-h-full object-contain" />
-              </div>
-            )}
-            <div className="space-y-0.5">
-              {(config.junction_fields || []).map(field => (
-                <p key={field} className="truncate text-foreground">{record[field] || "—"}</p>
-              ))}
-            </div>
-            {/* ProductColorProjectLink overlay */}
-            {linkMap[record.id] && (config.junction_link_fields || []).length > 0 && (
-              <div className="mt-1 pt-1 border-t border-border/50 space-y-0.5">
-                {(config.junction_link_fields || []).map(field => {
-                  const val = linkMap[record.id][field];
-                  if (val == null || val === "") return null;
-                  const display = Array.isArray(val) ? val.join(", ") : String(val);
-                  return <p key={field} className="truncate text-[9px] text-muted-foreground">{display}</p>;
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
+    <div className={`${cellW} flex flex-col gap-1.5 py-1`}>
+      {records.map((record, idx) => (
+        <JunctionCard
+          key={idx}
+          record={record}
+          config={config}
+          linkData={linkMap[record.id] || null}
+        />
+      ))}
     </div>
   );
 }
@@ -175,10 +247,10 @@ export default function MatrixRenderer({ config, projectId }) {
             {columns.map(col => {
               const key = `${row.id}_${col.id}`;
               const junctionRecords = junctionMap[key] || [];
-              const sizeClass = config.cell_display_size === "compact" ? "w-28" : config.cell_display_size === "large" ? "w-44" : "w-36";
+              const cellW = config.cell_display_size === "compact" ? "w-28" : config.cell_display_size === "large" ? "w-44" : "w-36";
               return (
-                <div key={`${row.id}_${col.id}`} className={`${sizeClass} shrink-0 p-2 border-r border-border last:border-r-0`}>
-                  <MatrixCell 
+                <div key={`${row.id}_${col.id}`} className={`${cellW} shrink-0 px-1.5 py-1 border-r border-border last:border-r-0 align-top`}>
+                  <MatrixCell
                     junctionRecords={junctionRecords}
                     config={config}
                     linkMap={linkMap}
