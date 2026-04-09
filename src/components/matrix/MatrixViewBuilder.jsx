@@ -127,7 +127,7 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
           <TabsTrigger value="structure">Structure</TabsTrigger>
           <TabsTrigger value="rows">Rows</TabsTrigger>
           <TabsTrigger value="columns">Columns</TabsTrigger>
-          <TabsTrigger value="cells">Cells</TabsTrigger>
+          <TabsTrigger value="cells">Cards</TabsTrigger>
         </TabsList>
 
         <TabsContent value="structure" className="space-y-4">

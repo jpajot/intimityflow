@@ -85,10 +85,7 @@ function JunctionCard({ record, config, linkData }) {
           if (val == null || val === "") return null;
           const display = Array.isArray(val) ? val.join(", ") : String(val);
           return (
-            <div key={field} className="flex items-center gap-1">
-              <span className="text-[8px] uppercase tracking-wide text-muted-foreground font-medium shrink-0">{field.replace(/_/g, " ")}</span>
-              <span className="text-[9px] text-foreground truncate">{display}</span>
-            </div>
+            <p key={field} className="text-[9px] text-foreground truncate">{display}</p>
           );
         })}
 
@@ -109,19 +106,9 @@ function JunctionCard({ record, config, linkData }) {
               // Render numeric fields
               const isNumeric = typeof val === "number";
               if (isNumeric) {
-                return (
-                  <div key={field} className="flex items-center gap-0.5">
-                    <span className="text-[8px] text-muted-foreground">{field.replace(/_/g, " ")}:</span>
-                    <span className="text-[9px] font-medium text-foreground">{display}</span>
-                  </div>
-                );
+                return <span key={field} className="text-[9px] font-medium text-foreground">{display}</span>;
               }
-              return (
-                <div key={field} className="flex items-center gap-0.5 w-full">
-                  <span className="text-[8px] text-muted-foreground truncate">{field.replace(/_/g, " ")}:</span>
-                  <span className="text-[9px] text-foreground truncate flex-1">{display}</span>
-                </div>
-              );
+              return <p key={field} className="text-[9px] text-foreground truncate w-full">{display}</p>;
             })}
           </div>
         )}
@@ -132,18 +119,17 @@ function JunctionCard({ record, config, linkData }) {
 
 function MatrixCell({ junctionRecords, config, linkMap = {} }) {
   const records = Array.isArray(junctionRecords) ? junctionRecords : (junctionRecords ? [junctionRecords] : []);
-  const cellW = config.cell_display_size === "compact" ? "w-28" : config.cell_display_size === "large" ? "w-44" : "w-36";
 
   if (records.length === 0) {
     return (
-      <div className={`${cellW} h-full min-h-[40px] flex items-center justify-center`}>
+      <div className="h-full min-h-[40px] flex items-center justify-center">
         <div className="w-2 h-2 rounded-full bg-border" />
       </div>
     );
   }
 
   return (
-    <div className={`${cellW} flex flex-col gap-1.5 py-1`}>
+    <div className="flex flex-col gap-1.5 py-1 w-full">
       {records.map((record, idx) => (
         <JunctionCard
           key={idx}
@@ -220,15 +206,18 @@ export default function MatrixRenderer({ config, projectId }) {
         <div className="overflow-x-auto" ref={headerRef} onScroll={() => { if (dataRef.current) dataRef.current.scrollLeft = headerRef.current.scrollLeft; }}>
           <div className="flex">
             <div className="sticky left-0 z-40 w-32 shrink-0 p-3 bg-muted/40 border-r border-border" />
-            {columns.map(col => (
-              <div key={col.id} className="w-32 shrink-0 p-3 bg-muted/40 border-r border-border">
-                <ItemCell 
-                  item={col} 
-                  fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
-                  size={config.thumbnail_size}
-                />
-              </div>
-            ))}
+            {columns.map(col => {
+              const colW = config.cell_display_size === "compact" ? "w-28" : config.cell_display_size === "large" ? "w-44" : "w-36";
+              return (
+                <div key={col.id} className={`${colW} shrink-0 px-1.5 py-2 bg-muted/40 border-r border-border`}>
+                  <ItemCell
+                    item={col}
+                    fields={config.column_fields && config.column_fields.length > 0 ? config.column_fields : undefined}
+                    size={config.thumbnail_size}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
