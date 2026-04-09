@@ -39,11 +39,19 @@ export default function MatrixViewBuilder({ projectId, onSave, onCancel, initial
     const schemas = {};
     for (const entity of MATRIX_ELIGIBLE_ENTITIES) {
       try {
-        // Check if entity exists in base44
         if (!base44.entities[entity]) {
           schemas[entity] = [];
           continue;
         }
+        // Try schema() first (doesn't require existing records)
+        if (typeof base44.entities[entity].schema === 'function') {
+          const schema = await base44.entities[entity].schema();
+          if (schema?.properties && Object.keys(schema.properties).length > 0) {
+            schemas[entity] = Object.keys(schema.properties).sort();
+            continue;
+          }
+        }
+        // Fallback to sample record
         const sample = await base44.entities[entity].list("-created_date", 1);
         if (sample.length > 0) {
           const fields = Object.keys(sample[0]).filter(k => !["id", "created_date", "updated_date", "created_by"].includes(k));
