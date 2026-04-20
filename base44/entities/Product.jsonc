@@ -2,6 +2,10 @@
   "name": "Product",
   "type": "object",
   "properties": {
+    "code": {
+      "type": "string",
+      "description": "Product code (e.g. STY00001)"
+    },
     "type": {
       "type": "string",
       "description": "Product type (Product or Material) - linked to Product Type LOV"

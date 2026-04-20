@@ -413,6 +413,12 @@ export default function ProductDetail() {
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
 
+                  {/* Code */}
+                  <div className="space-y-2">
+                    <Label className="text-xs">Code</Label>
+                    <Input value={product.code || ""} onChange={(e) => updateField("code", e.target.value)} placeholder="e.g. STY00001" />
+                  </div>
+
                   {/* Type */}
                   <div className="space-y-2">
                     <Label className="text-xs">Type</Label>
