@@ -7,14 +7,25 @@ import LinkToProjectModal from "./LinkToProjectModal";
 import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
-import ColorwayThumbnail from "./ColorwayThumbnail.jsx";
 
 function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
+  const styleImage = product?.images?.[0];
+
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-      {/* Colorway thumbnail */}
+      {/* Style image as thumbnail */}
       <div className="aspect-square bg-muted relative">
-        <ColorwayThumbnail cw={cw} product={product} techColor={techColor} className="w-full h-full" />
+        {styleImage ? (
+          <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
+        ) : cw.image_url ? (
+          <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+          </div>
+        )}
+        {/* Colorway swatch overlay */}
+        <div className="absolute bottom-2 right-2 w-8 h-8 rounded-md border-2 border-white shadow" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
       </div>
       <div className="p-3 space-y-1.5">
         {/* Style name */}
@@ -282,11 +293,14 @@ export default function LinkedColorwaysView({
       id: "cw_image",
       label: "Colorway",
       width: 70,
-      render: (cw) => (
-        <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted">
-          <ColorwayThumbnail cw={cw} product={getProduct(cw)} techColor={getTechColor(cw)} />
-        </div>
-      ),
+      render: (cw) =>
+        cw.image_url ? (
+          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+            <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+        ),
     },
     { id: "style_sub_type", label: "Style: Sub-type", width: 130, sortKey: (cw) => getProduct(cw)?.sub_type || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_type || "—"}</span> },
     {
@@ -446,14 +460,24 @@ export default function LinkedColorwaysView({
             } },
           ]}
           rows={filtered}
-          renderThumbnail={(cw) => (
-            <div className="relative w-full h-full">
-              <ColorwayThumbnail cw={cw} product={getProduct(cw)} techColor={getTechColor(cw)} />
-              {!cw.linked_color_id && (
-                <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
-              )}
-            </div>
-          )}
+          renderThumbnail={(cw) => {
+            const product = getProduct(cw);
+            const styleImage = product?.images?.[0];
+            return (
+              <div className="relative w-full h-full">
+                {styleImage ? (
+                  <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
+                ) : cw.image_url ? (
+                  <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                )}
+                {!cw.linked_color_id && (
+                  <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
+                )}
+              </div>
+            );
+          }}
           onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}
         />
       ) : (
