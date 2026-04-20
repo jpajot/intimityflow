@@ -49,30 +49,52 @@ function DiffRow({ label, current, incoming, isImage }) {
 function UpdateDiffModal({ open, onClose, onConfirm, existingProduct, parsedRow, saving }) {
   if (!open || !existingProduct) return null;
   const incomingImage = parsedRow?.image_url || "";
-  const incomingDesc = parsedRow?.["Style Description"] || "";
-  const hasDiffs =
-    (incomingImage && incomingImage !== (existingProduct.images?.[0] || "")) ||
-    (incomingDesc && incomingDesc !== (existingProduct.description || ""));
+  const incomingName = parsedRow?.["Style Description"] || "";
+  const currentImage = existingProduct.images?.[0] || "";
+  const currentName = existingProduct.name || "";
+
+  const imageDiffers = incomingImage && incomingImage !== currentImage;
+  const nameDiffers = incomingName && incomingName !== currentName;
+  const hasDiffs = imageDiffers || nameDiffers;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Update existing style</DialogTitle>
+          <DialogTitle>Style already exists</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Style code <span className="font-mono font-semibold">{existingProduct.code}</span> already exists
+          Style code <span className="font-mono font-semibold">{existingProduct.code}</span> is already in the database
           as <span className="font-semibold">{existingProduct.name}</span>.
         </p>
         {hasDiffs ? (
           <div className="space-y-3 mt-1">
-            <p className="text-xs text-muted-foreground font-medium">Fields that will be updated (current → new):</p>
-            <DiffRow label="Image" current={existingProduct.images?.[0] || ""} incoming={incomingImage} isImage />
-            <DiffRow label="Description" current={existingProduct.description || ""} incoming={incomingDesc} />
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fields that will be updated</p>
+            <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground font-medium">
+              <span>Field</span><span>Current (DB)</span><span>Incoming (parsed)</span>
+            </div>
+            {nameDiffers && (
+              <div className="grid grid-cols-3 gap-2 items-start">
+                <span className="text-xs font-medium pt-1">Name</span>
+                <div className="bg-muted rounded p-2 text-xs">{currentName || "—"}</div>
+                <div className="bg-green-50 border border-green-200 rounded p-2 text-xs font-medium">{incomingName}</div>
+              </div>
+            )}
+            {imageDiffers && (
+              <div className="grid grid-cols-3 gap-2 items-start">
+                <span className="text-xs font-medium pt-1">Image</span>
+                <div className="bg-muted rounded p-2">
+                  {currentImage ? <img src={currentImage} className="w-16 h-16 object-contain" alt="current" /> : <span className="text-xs text-muted-foreground">No image</span>}
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded p-2">
+                  <img src={incomingImage} className="w-16 h-16 object-contain" alt="incoming" />
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <p className="text-sm text-green-700 flex items-center gap-1.5 mt-1">
-            <Check className="w-4 h-4" /> No field changes detected — only colorways will be processed.
+          <p className="text-sm text-green-700 flex items-center gap-1.5 mt-2">
+            <Check className="w-4 h-4" /> Name and image are identical — only new colorways will be added.
           </p>
         )}
         <DialogFooter>
@@ -201,8 +223,8 @@ export default function DocumentStaging() {
       if (incomingImage && incomingImage !== (existingProduct.images?.[0] || "")) {
         updates.images = [incomingImage];
       }
-      if (styleName && styleName !== existingProduct.description) {
-        updates.description = styleName;
+      if (styleName && styleName !== existingProduct.name) {
+        updates.name = styleName;
       }
       // ensure project link
       const projectIds = existingProduct.project_ids || [];
@@ -472,6 +494,12 @@ export default function DocumentStaging() {
     );
   };
 
+  const existingCount = useMemo(
+    () => allRows.filter(r => r["Style Code"] && findExistingProduct(r["Style Code"])).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allRows, existingProducts]
+  );
+
   // ── render ───────────────────────────────────────────────────────────────────
   if (loading) return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   if (!doc) return <div className="text-center py-32 text-muted-foreground">Document not found.</div>;
@@ -479,7 +507,6 @@ export default function DocumentStaging() {
   const allCodes = (data?.slides || []).flatMap(s => s.table?.rows || []).flatMap(r => r["Style Technical Color Codes"] || []);
   const unmatchedCount = allCodes.filter(code => !techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim())).length;
   const totalStyles = (data?.slides || []).reduce((sum, s) => sum + (s.table?.rows?.length || 0), 0);
-  const existingCount = allRows.filter(r => findExistingProduct(r["Style Code"])).length;
   const isProcessed = doc.status === "processed";
 
   return (
