@@ -68,14 +68,14 @@ export default function PresenceIndicator({ entityType, entityId }) {
       // Heartbeat every 30s
       intervalId = setInterval(async () => {
         if (recordIdRef.current) {
-          await base44.entities.UserPresence.update(recordIdRef.current, { last_seen: new Date().toISOString() });
-          await refreshOthers(me.email);
+          await base44.entities.UserPresence.update(recordIdRef.current, { last_seen: new Date().toISOString() }).catch(() => {});
+          await refreshOthers(me.email).catch(() => {});
         }
       }, 30_000);
 
       // Subscribe to changes
       unsubscribe = base44.entities.UserPresence.subscribe(async () => {
-        if (meRef.current) await refreshOthers(meRef.current.email);
+        if (meRef.current) await refreshOthers(meRef.current.email).catch(() => {});
       });
     };
 
@@ -91,7 +91,7 @@ export default function PresenceIndicator({ entityType, entityId }) {
       setOthers(active);
     };
 
-    register();
+    register().catch(() => {});
 
     return () => {
       clearInterval(intervalId);
