@@ -147,6 +147,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
             { id: "creation_project", label: "Creation Project", getValue: (p) => projects.find((pr) => pr.id === p.creation_project_id)?.name || "—", render: (p) => projects.find((pr) => pr.id === p.creation_project_id)?.name || "—" },
             { id: "linked_projects", label: "Linked Projects", getValue: (p) => (p.project_ids || []).map((pid) => projects.find((pr) => pr.id === pid)?.name).filter(Boolean).join(", ") || "—", render: (p) => (p.project_ids || []).map((pid) => projects.find((pr) => pr.id === pid)?.name).filter(Boolean).join(", ") || "—" },
           ]}
+          entityNames={["Product"]}
           filterableFields={filterableFields}
           rows={filtered}
           renderThumbnail={(product) => {

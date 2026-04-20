@@ -160,9 +160,14 @@ function countLeaves(groups) {
   return groups.reduce((s, g) => s + (g.items ? g.items.length : countLeaves(g.children || [])), 0);
 }
 
+function formatFieldLabel(key) {
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ─── Main GalleryView ─────────────────────────────────────────────────────────
 export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [], toolbarExtra, navigate }) {
   const [views, setViews] = useState([]);
+  const [schemaFields, setSchemaFields] = useState([]);
   const [activeViewId, setActiveViewId] = useState(() => localStorage.getItem(STORAGE_KEY(pageKey)) || "default");
   const [activeFieldIds, setActiveFieldIds] = useState(() => allFields.map((f) => f.id));
   const [activeFiltersConfig, setActiveFiltersConfig] = useState(DEFAULT_FILTERS);
@@ -193,19 +198,56 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
     });
   }, [pageKey]);
 
+  // Auto-discover extra fields from entity schemas
+  useEffect(() => {
+    if (entityNames.length === 0) return;
+    const existingIds = new Set(allFields.map((f) => f.id));
+    const SKIP = new Set(["id", "created_date", "updated_date", "created_by"]);
+    Promise.all(
+      entityNames.map((name) => base44.entities[name]?.list("-created_date", 1).catch(() => []))
+    ).then((results) => {
+      const extra = [];
+      const seen = new Set(existingIds);
+      for (const records of results) {
+        if (!records || records.length === 0) continue;
+        for (const key of Object.keys(records[0])) {
+          if (SKIP.has(key) || seen.has(key) || key.endsWith("_id")) continue;
+          seen.add(key);
+          extra.push({
+            id: key,
+            label: formatFieldLabel(key),
+            getValue: (row) => row[key] ?? "—",
+            render: (row) => {
+              const val = row[key];
+              if (val == null || val === "") return "—";
+              if (Array.isArray(val)) return val.join(", ") || "—";
+              return String(val);
+            },
+          });
+        }
+      }
+      setSchemaFields(extra);
+    });
+  }, [entityNames.join(","), allFields]);
+
+  const mergedFields = useMemo(() => {
+    const existingIds = new Set(allFields.map((f) => f.id));
+    return [...allFields, ...schemaFields.filter((f) => !existingIds.has(f.id))];
+  }, [allFields, schemaFields]);
+
   const applyView = useCallback((viewId, viewList) => {
     const list = viewList || views;
     if (viewId === "default") {
-      setActiveFieldIds(allFields.map((f) => f.id));
+      setActiveFieldIds(mergedFields.map((f) => f.id));
       setActiveFiltersConfig(DEFAULT_FILTERS);
     } else {
       const view = list.find((v) => v.id === viewId);
       if (view) {
-        setActiveFieldIds(view.column_ids || allFields.map((f) => f.id));
+        setActiveFieldIds(view.column_ids || mergedFields.map((f) => f.id));
         setActiveFiltersConfig(view.filters_config || DEFAULT_FILTERS);
       }
     }
-  }, [views, allFields]);
+  }, [views, mergedFields]);
 
   useEffect(() => {
     if (!loading) applyView(activeViewId);
@@ -218,8 +260,8 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
 
   const groups = useMemo(() => {
     if (!groupCols.length) return null;
-    return buildGroups(filteredRows, groupCols, allFields);
-  }, [filteredRows, groupCols, allFields]);
+    return buildGroups(filteredRows, groupCols, mergedFields);
+  }, [filteredRows, groupCols, mergedFields]);
 
   const switchView = (viewId) => {
     setActiveViewId(viewId);
@@ -235,7 +277,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
 
   const openNew = () => {
     setFormName("");
-    setFormFieldIds(allFields.map((f) => f.id));
+    setFormFieldIds(mergedFields.map((f) => f.id));
     setFormFilters(DEFAULT_FILTERS);
     setFormRoles([]);
     setEditingView(null);
@@ -245,7 +287,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
 
   const openEdit = (view) => {
     setFormName(view.name);
-    setFormFieldIds(view.column_ids || allFields.map((f) => f.id));
+    setFormFieldIds(view.column_ids || mergedFields.map((f) => f.id));
     setFormFilters(view.filters_config || DEFAULT_FILTERS);
     setFormRoles(view.allowed_roles || []);
     setEditingView(view);
@@ -368,7 +410,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground flex items-center gap-1"><Layers className="w-3.5 h-3.5" /> Grouped by:</span>
           {groupCols.map((id, idx) => {
-            const field = allFields.find((f) => f.id === id);
+            const field = mergedFields.find((f) => f.id === id);
             return (
               <div key={id} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
                 {idx > 0 && <span className="text-muted-foreground mr-1">›</span>}
@@ -397,7 +439,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
       {groups ? (
         <div className="space-y-3">
           {groups.map((group) => (
-            <GroupSection key={group.key} group={group} allFields={allFields} activeFields={activeFieldIds}
+            <GroupSection key={group.key} group={group} allFields={mergedFields} activeFields={activeFieldIds}
               thumbSize={thumbSize} renderThumbnail={renderThumbnail} onClickItem={onClickItem}
               onFieldRightClick={(e, field) => setContextMenu({ x: e.clientX, y: e.clientY, field })}
               expandedGroups={expandedGroups} toggleGroup={toggleGroup} groupCols={groupCols} />
@@ -406,7 +448,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
       ) : (
         <div className={`grid ${ts.cols} gap-3`}>
           {filteredRows.map((row) => (
-            <GalleryCard key={row.id} row={row} activeFields={activeFieldIds} allFields={allFields}
+            <GalleryCard key={row.id} row={row} activeFields={activeFieldIds} allFields={mergedFields}
               thumbSize={thumbSize} renderThumbnail={renderThumbnail} onClickItem={onClickItem}
               onFieldRightClick={(e, field) => setContextMenu({ x: e.clientX, y: e.clientY, field })} />
           ))}
@@ -496,8 +538,8 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
                   <Input value={fieldSearch} onChange={(e) => setFieldSearch(e.target.value)} placeholder="Search fields…" className="h-7 text-xs mb-2" />
                   {(() => {
                     const q = fieldSearch.toLowerCase();
-                    const checked = formFieldIds.map((id) => allFields.find((f) => f.id === id)).filter(Boolean);
-                    const unchecked = allFields.filter((f) => !formFieldIds.includes(f.id));
+                    const checked = formFieldIds.map((id) => mergedFields.find((f) => f.id === id)).filter(Boolean);
+                    const unchecked = mergedFields.filter((f) => !formFieldIds.includes(f.id));
                     const filteredChecked = q ? checked.filter((f) => f.label.toLowerCase().includes(q)) : checked;
                     const filteredUnchecked = q ? unchecked.filter((f) => f.label.toLowerCase().includes(q)) : unchecked;
                     const handleDragEnd = (result) => {
