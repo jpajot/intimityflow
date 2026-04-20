@@ -285,13 +285,7 @@ export default function DocumentStaging() {
       await base44.entities.UploadedDocument.update(docId, { staged_data: data });
       const createdProductIds = [];
 
-      let cachedCode = null;
-      const getNextCode = async () => {
-        try {
-          const res = await base44.functions.invoke("generateCode", { entity_name: "Product", entity_type: "Product" });
-          return res.data?.code || "";
-        } catch (_) { return ""; }
-      };
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
       for (const slide of (data.slides || [])) {
         const rows = slide.table?.rows || [];
@@ -299,7 +293,12 @@ export default function DocumentStaging() {
           const styleName = row["Style Description"];
           if (!styleName) continue;
 
-          const code = await getNextCode();
+          let code = "";
+          try {
+            const res = await base44.functions.invoke("generateCode", { entity_name: "Product", entity_type: "Product" });
+            code = res.data?.code || "";
+          } catch (_) {}
+          await sleep(300);
           const product = await base44.entities.Product.create({
             type: "Product",
             name: styleName,
@@ -313,12 +312,12 @@ export default function DocumentStaging() {
           });
           createdProductIds.push(product.id);
 
-          for (const code of (row["Style Technical Color Codes"] || [])) {
-            const tc = techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim());
+          for (const colorCode of (row["Style Technical Color Codes"] || [])) {
+            const tc = techColors.find(t => t.code?.toLowerCase().trim() === colorCode?.toLowerCase().trim());
             await base44.entities.ProductColor.create({
               product_id: product.id,
-              color_name: tc?.name || code,
-              colorway_code: code,
+              color_name: tc?.name || colorCode,
+              colorway_code: colorCode,
               color_hex: tc?.hex || "",
               linked_tech_color_id: tc?.id || "",
               linked_color_type: "",
@@ -326,6 +325,7 @@ export default function DocumentStaging() {
               creation_project_id: id,
               project_ids: [id],
             });
+            await sleep(200);
           }
         }
       }
@@ -384,12 +384,12 @@ export default function DocumentStaging() {
         project_ids: [id],
       });
 
-      for (const code of (row["Style Technical Color Codes"] || [])) {
-        const tc = techColors.find((t) => t.code?.toLowerCase().trim() === code?.toLowerCase().trim());
+      for (const colorCode of (row["Style Technical Color Codes"] || [])) {
+        const tc = techColors.find((t) => t.code?.toLowerCase().trim() === colorCode?.toLowerCase().trim());
         await base44.entities.ProductColor.create({
           product_id: product.id,
-          color_name: tc?.name || code,
-          colorway_code: code,
+          color_name: tc?.name || colorCode,
+          colorway_code: colorCode,
           color_hex: tc?.hex || "",
           linked_tech_color_id: tc?.id || "",
           linked_color_type: "",
