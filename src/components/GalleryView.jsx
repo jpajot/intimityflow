@@ -204,17 +204,17 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
     const existingIds = new Set(allFields.map((f) => f.id));
     const SKIP = new Set(["id", "created_date", "updated_date", "created_by"]);
     Promise.all(
-      entityNames.map((name) => {
-        const entity = base44.entities[name];
-        if (!entity || typeof entity.schema !== 'function') return Promise.resolve(null);
-        return entity.schema().catch(() => null);
-      })
-    ).then((schemas) => {
+      entityNames.map((name) =>
+        base44.entities[name]?.list("-created_date", 50).catch(() => [])
+      )
+    ).then((results) => {
       const extra = [];
       const seen = new Set(existingIds);
-      for (const schema of schemas) {
-        if (!schema?.properties) continue;
-        for (const key of Object.keys(schema.properties)) {
+      // Collect all keys across all records to handle sparse fields
+      for (const records of results) {
+        if (!records?.length) continue;
+        const allKeys = new Set(records.flatMap((r) => Object.keys(r)));
+        for (const key of allKeys) {
           if (SKIP.has(key) || seen.has(key) || key.endsWith("_id") || key.endsWith("_ids")) continue;
           seen.add(key);
           extra.push({
