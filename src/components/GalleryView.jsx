@@ -204,7 +204,11 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
     const existingIds = new Set(allFields.map((f) => f.id));
     const SKIP = new Set(["id", "created_date", "updated_date", "created_by"]);
     Promise.all(
-      entityNames.map((name) => base44.entities[name]?.schema().catch(() => null))
+      entityNames.map((name) => {
+        const entity = base44.entities[name];
+        if (!entity || typeof entity.schema !== 'function') return Promise.resolve(null);
+        return entity.schema().catch(() => null);
+      })
     ).then((schemas) => {
       const extra = [];
       const seen = new Set(existingIds);

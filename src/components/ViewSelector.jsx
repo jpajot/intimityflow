@@ -82,9 +82,11 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
   useEffect(() => {
     if (entityNames.length === 0) return;
     Promise.all(
-      entityNames.map((name) =>
-        base44.entities[name]?.schema().catch(() => null)
-      )
+      entityNames.map((name) => {
+        const entity = base44.entities[name];
+        if (!entity || typeof entity.schema !== 'function') return Promise.resolve(null);
+        return entity.schema().catch(() => null);
+      })
     ).then((schemas) => {
       const existingIds = new Set(allColumns.map((c) => c.id));
       const SKIP = new Set(["id", "created_date", "updated_date", "created_by"]);
