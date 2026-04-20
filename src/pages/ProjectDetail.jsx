@@ -161,7 +161,7 @@ export default function ProjectDetail() {
         file_url,
         original_filename: filename,
         upload_date: new Date().toISOString(),
-        status: "uploaded"
+        status: "processing"
       });
       setDocuments((prev) => [doc, ...prev]);
       setFile(null);
