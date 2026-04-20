@@ -131,7 +131,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
           </Button>
         )}
         {view === "list" && (
-          <ViewSelector pageKey="project_linked_styles" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={styles} entityNames={["Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
+          <ViewSelector pageKey="project_linked_styles" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={styles} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
