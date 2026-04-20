@@ -79,6 +79,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
         </div>
       ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />,
     },
+    { id: "code", label: "Code", width: 120, sortKey: (p) => p.code || "", render: (p) => <span className="font-mono text-xs text-muted-foreground">{p.code || "—"}</span> },
     { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
     { id: "type", label: "Type", width: 100, sortKey: (p) => p.type || "", render: (p) => <span className="text-xs text-muted-foreground">{p.type}</span> },
     { id: "sub_type", label: "Sub-type", width: 130, sortKey: (p) => p.sub_type || "", render: (p) => <span className="text-xs">{p.sub_type || "—"}</span> },
@@ -104,6 +105,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
   ];
 
   const allFields = [
+    { id: "code", label: "Code", getValue: (p) => p.code || "—", render: (p) => p.code || "—" },
     { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name || "—" },
     { id: "sub_type", label: "Sub-type", getValue: (p) => p.sub_type || "—", render: (p) => p.sub_type || "—" },
     { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category || "—" },
