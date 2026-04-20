@@ -76,8 +76,11 @@ function UpdateDiffModal({ open, onClose, onConfirm, existingProduct, parsedRow,
             {nameDiffers && (
               <div className="grid grid-cols-3 gap-2 items-start">
                 <span className="text-xs font-medium pt-1">Name</span>
-                <div className="bg-muted rounded p-2 text-xs">{currentName || "—"}</div>
-                <div className="bg-green-50 border border-green-200 rounded p-2 text-xs font-medium">{incomingName}</div>
+                <div className="bg-muted rounded p-2 text-xs text-muted-foreground line-through">{currentName || "—"}</div>
+                <div className="bg-green-50 border border-green-200 rounded p-2 text-xs font-medium text-green-800">
+                  {incomingName}
+                  <div className="text-[10px] font-normal text-amber-600 mt-0.5 no-underline">was: {currentName || "—"}</div>
+                </div>
               </div>
             )}
             {imageDiffers && (
@@ -306,6 +309,9 @@ export default function DocumentStaging() {
     setDiffSaving(true);
     const product = await applyRowToDatabase(diffModal.row, diffModal.existingProduct);
     setExistingProducts(prev => prev.map(p => p.id === product.id ? product : p));
+    // refresh colorways so green checkmarks update
+    const freshColorways = await base44.entities.ProductColor.list("-created_date", 5000);
+    setExistingColorways(freshColorways);
     setCreatedRowIds(prev => new Set([...prev, diffModal.row.id]));
     setResult({ success: true, count: 1, action: "updated" });
     setDiffSaving(false);
