@@ -472,12 +472,7 @@ export default function DocumentStaging() {
           <p className="text-xs text-muted-foreground">{doc.document_type} · {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ""}</p>
           <h1 className="font-display text-2xl font-semibold tracking-tight truncate">{doc.original_filename || "Document"}</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={handleReparse} disabled={reparsing || isProcessed} className="gap-1.5 shrink-0">
-          {reparsing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Re-parse
-        </Button>
       </div>
-
 
       {/* Stats Bar */}
       {data && (
