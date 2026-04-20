@@ -372,9 +372,21 @@ export default function DocumentStaging() {
     {
       id: "style_name",
       label: "Style Name",
-      width: 180,
+      width: 200,
       sortKey: (r) => r["Style Description"] || "",
-      render: (r) => <span className="font-medium text-sm">{r["Style Description"] || "—"}</span>,
+      render: (r) => {
+        const parsedName = r["Style Description"] || "—";
+        const existing = findExistingProduct(r["Style Code"]);
+        const nameDiffers = existing && existing.name && existing.name !== parsedName;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-medium text-sm">{parsedName}</span>
+            {nameDiffers && (
+              <span className="text-[10px] text-amber-600 font-normal">was: {existing.name}</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       id: "image",
