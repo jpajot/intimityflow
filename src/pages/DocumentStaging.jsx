@@ -382,7 +382,7 @@ export default function DocumentStaging() {
           <div className="flex flex-col gap-0.5">
             <span className="font-medium text-sm">{parsedName}</span>
             {nameDiffers && (
-              <span className="text-[10px] text-amber-600 font-normal">was: {existing.name}</span>
+              <span className="text-[10px] text-amber-600 font-normal">current: {existing.name}</span>
             )}
           </div>
         );
