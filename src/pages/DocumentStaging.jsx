@@ -285,15 +285,25 @@ export default function DocumentStaging() {
       await base44.entities.UploadedDocument.update(docId, { staged_data: data });
       const createdProductIds = [];
 
+      let cachedCode = null;
+      const getNextCode = async () => {
+        try {
+          const res = await base44.functions.invoke("generateCode", { entity_name: "Product", entity_type: "Product" });
+          return res.data?.code || "";
+        } catch (_) { return ""; }
+      };
+
       for (const slide of (data.slides || [])) {
         const rows = slide.table?.rows || [];
         for (const row of rows) {
           const styleName = row["Style Description"];
           if (!styleName) continue;
 
+          const code = await getNextCode();
           const product = await base44.entities.Product.create({
             type: "Product",
             name: styleName,
+            code,
             category: "",
             sub_category: "",
             customer_need: "",
@@ -356,9 +366,16 @@ export default function DocumentStaging() {
     }
 
     try {
+      let autoCode = "";
+      try {
+        const res = await base44.functions.invoke("generateCode", { entity_name: "Product", entity_type: "Product" });
+        autoCode = res.data?.code || "";
+      } catch (_) {}
+
       const product = await base44.entities.Product.create({
         type: "Product",
         name: styleName,
+        code: autoCode,
         category: "",
         sub_category: "",
         customer_need: "",

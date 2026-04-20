@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, ChevronDown, Hash } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, ChevronDown } from "lucide-react";
 import ItemSubNav from "../components/ItemSubNav";
 
 import MoreVariationsSection from "../components/MoreVariationsSection";
@@ -58,7 +58,6 @@ export default function ProductDetail() {
   const [lovTypesArray, setLovTypesArray] = useState([]);
   const [lovValues, setLovValues] = useState([]);
   const [productTypeOptions, setProductTypeOptions] = useState([]);
-  const [generatingCode, setGeneratingCode] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
   const [loading, setLoading] = useState(!isNew);
@@ -177,7 +176,18 @@ export default function ProductDetail() {
     try {
       let productId = product.id;
       if (isNew) {
-        const created = await base44.entities.Product.create({ ...product, type: product.type || typeFromQuery });
+        // Auto-generate code if not already set
+        let code = product.code || "";
+        if (!code) {
+          try {
+            const res = await base44.functions.invoke("generateCode", {
+              entity_name: "Product",
+              entity_type: product.type || typeFromQuery,
+            });
+            code = res.data?.code || "";
+          } catch (_) { /* no generator configured, skip */ }
+        }
+        const created = await base44.entities.Product.create({ ...product, type: product.type || typeFromQuery, code });
         productId = created.id;
       } else {
         const { id: _, created_date, updated_date, created_by, ...data } = product;
@@ -301,20 +311,6 @@ export default function ProductDetail() {
     await base44.entities.Product.update(data.id, fields);
   };
 
-  const handleGenerateCode = async () => {
-    if (!product.type) return;
-    setGeneratingCode(true);
-    try {
-      const res = await base44.functions.invoke("generateCode", {
-        entity_name: "Product",
-        entity_type: product.type,
-      });
-      updateField("code", res.data.code);
-    } finally {
-      setGeneratingCode(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -431,21 +427,7 @@ export default function ProductDetail() {
                   {/* Code */}
                   <div className="space-y-2">
                     <Label className="text-xs">Code</Label>
-                    <div className="flex gap-2">
-                      <Input value={product.code || ""} onChange={(e) => updateField("code", e.target.value)} placeholder="Auto-generated or manual" className="flex-1" />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateCode}
-                        disabled={generatingCode || !product.type}
-                        className="shrink-0 gap-1.5"
-                        title="Generate code from the configured generator for this product type"
-                      >
-                        {generatingCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Hash className="w-3.5 h-3.5" />}
-                        Generate
-                      </Button>
-                    </div>
+                    <Input value={product.code || ""} onChange={(e) => updateField("code", e.target.value)} placeholder="Auto-generated on creation" />
                   </div>
 
                   {/* Type */}

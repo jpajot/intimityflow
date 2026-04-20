@@ -86,8 +86,13 @@ function ProductForm({ entityId, prefill, projectId, onSaved, onClose, mode, pro
       await base44.entities.Product.update(entityId, data);
       saved = { ...form, id: entityId };
     } else {
+      let autoCode = "";
+      try {
+        const res = await base44.functions.invoke("generateCode", { entity_name: "Product", entity_type: form.type || "Product" });
+        autoCode = res.data?.code || "";
+      } catch (_) {}
       saved = await base44.entities.Product.create({
-        type: form.type, name: form.name,
+        type: form.type, name: form.name, code: autoCode,
         category: form.category || "Other", sub_category: form.sub_category || "",
         customer_need: form.customer_need || "", description: form.description,
         images: form.images, creation_project_id: form.creation_project_id || "",
