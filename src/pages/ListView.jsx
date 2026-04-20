@@ -70,7 +70,12 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
         return (
           <div className="flex gap-1 flex-wrap">
             {cvs.slice(0, 6).map((cv) => (
-              <div key={cv.id} className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
+              <div key={cv.id} className="relative">
+                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
+                {!cv.linked_color_id && (
+                  <div title="No commercial color linked" className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 border border-white" />
+                )}
+              </div>
             ))}
             {cvs.length > 6 && <span className="text-xs text-muted-foreground">+{cvs.length - 6}</span>}
           </div>
@@ -236,6 +241,10 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
     },
     { id: "color_name", label: "Color Name", width: 150, sortKey: (cw) => cw.color_name || "", render: (cw) => <span className="font-medium">{cw.color_name}</span> },
     { id: "colorway_code", label: "Colorway Code", width: 130, sortKey: (cw) => cw.colorway_code || "", render: (cw) => <span className="font-mono text-xs text-muted-foreground">{cw.colorway_code || "—"}</span> },
+    { id: "comm_color_status", label: "Commercial Color", width: 150, sortKey: (cw) => cw.linked_color_id ? "linked" : "", render: (cw) => cw.linked_color_id
+      ? <span className="text-xs font-mono text-muted-foreground">{cw.linked_color_id}</span>
+      : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>
+    },
     {
       id: "color_hex", label: "Hex", width: 110,
       render: (cw) => cw.color_hex ? (
@@ -320,12 +329,19 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
           renderThumbnail={(cw) => {
             const prod = getProduct(cw);
             const img = prod?.images?.[0];
-            return img ? (
-              <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
-            ) : cw.image_url ? (
-              <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+            return (
+              <div className="relative w-full h-full">
+                {img ? (
+                  <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
+                ) : cw.image_url ? (
+                  <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                )}
+                {!cw.linked_color_id && (
+                  <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
+                )}
+              </div>
             );
           }}
           onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}

@@ -85,6 +85,15 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
         ) : "—",
     },
     {
+      id: "comm_color",
+      label: "Commercial Color",
+      width: 160,
+      sortKey: (cv) => cv.linked_color_id ? "linked" : "",
+      render: (cv) => cv.linked_color_id
+        ? <span className="text-xs text-muted-foreground font-mono">{cv.linked_color_id}</span>
+        : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>,
+    },
+    {
       id: "tech_color",
       label: "Technical Color",
       width: 160,

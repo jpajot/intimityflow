@@ -14,6 +14,9 @@ export default function ColorwayCard({ variant, techColor, onEdit }) {
           <div className="w-full h-full" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
         )}
         <div className="absolute top-2 right-2 flex gap-1.5">
+          {!variant.linked_color_id && (
+            <div title="No commercial color linked" className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
+          )}
           {variant.linked_color_id && (
             <Badge variant="secondary" className="text-[10px] bg-background/80 backdrop-blur-sm px-1.5">
               {variant.linked_color_type === "technical" ? "TCX" : "COM"}

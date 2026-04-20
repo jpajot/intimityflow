@@ -321,6 +321,18 @@ export default function LinkedColorwaysView({
       },
     },
     {
+      id: "comm_color_status",
+      label: "Commercial Color",
+      width: 150,
+      sortKey: (cw) => cw.linked_color_id ? "linked" : "",
+      render: (cw) => {
+        const cc = getCommColor(cw);
+        return cc
+          ? <span className="text-xs font-mono text-muted-foreground">{cc.code || cc.color_name}</span>
+          : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>;
+      },
+    },
+    {
       id: "tech_code",
       label: "Technical Code",
       width: 160,
@@ -451,13 +463,18 @@ export default function LinkedColorwaysView({
           renderThumbnail={(cw) => {
             const product = getProduct(cw);
             const styleImage = product?.images?.[0];
-            return styleImage ? (
-              <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
-            ) : cw.image_url ? (
-              <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }}>
-                <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+            return (
+              <div className="relative w-full h-full">
+                {styleImage ? (
+                  <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
+                ) : cw.image_url ? (
+                  <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                )}
+                {!cw.linked_color_id && (
+                  <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
+                )}
               </div>
             );
           }}
