@@ -543,8 +543,18 @@ export default function DocumentStaging() {
   if (!doc) return <div className="text-center py-32 text-muted-foreground">Document not found.</div>;
 
   const allCodes = (data?.slides || []).flatMap(s => s.table?.rows || []).flatMap(r => r["Style Technical Color Codes"] || []);
-  const unmatchedCount = allCodes.filter(code => !techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim())).length;
+  const uniqueUnmatchedCodes = new Set(
+    allCodes
+      .filter(code => !techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim()))
+      .map(c => c?.toLowerCase().trim())
+  );
+  const unmatchedCount = uniqueUnmatchedCodes.size;
   const totalStyles = (data?.slides || []).reduce((sum, s) => sum + (s.table?.rows?.length || 0), 0);
+  const alreadyExistingColorwaysCount = allRows.reduce((sum, row) => {
+    const existing = findExistingProduct(row["Style Code"]);
+    if (!existing) return sum;
+    return sum + (row["Style Technical Color Codes"] || []).filter(code => tcxAlreadyOnProduct(existing.id, code)).length;
+  }, 0);
   const isProcessed = doc.status === "processed";
 
   const subNavItems = [
@@ -583,22 +593,17 @@ export default function DocumentStaging() {
           <div className="w-px h-8 bg-border" />
           <div className="text-center">
             <p className="text-2xl font-semibold">{totalStyles}</p>
-            <p className="text-xs text-muted-foreground">Styles</p>
+            <p className="text-xs text-muted-foreground">
+              Styles{existingCount > 0 && <span className="text-amber-600 ml-1">/ {existingCount} exist</span>}
+            </p>
           </div>
           <div className="w-px h-8 bg-border" />
           <div className="text-center">
             <p className="text-2xl font-semibold">{allCodes.length}</p>
-            <p className="text-xs text-muted-foreground">Colorways</p>
+            <p className="text-xs text-muted-foreground">
+              Colorways{alreadyExistingColorwaysCount > 0 && <span className="text-amber-600 ml-1">/ {alreadyExistingColorwaysCount} exist</span>}
+            </p>
           </div>
-          {existingCount > 0 && (
-            <>
-              <div className="w-px h-8 bg-border" />
-              <div className="text-center">
-                <p className="text-2xl font-semibold text-amber-600">{existingCount}</p>
-                <p className="text-xs text-amber-600">Already exist</p>
-              </div>
-            </>
-          )}
           {unmatchedCount > 0 && (
             <>
               <div className="w-px h-8 bg-border" />
