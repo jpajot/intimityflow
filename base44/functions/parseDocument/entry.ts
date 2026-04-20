@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // Fallback hardcoded scheme (used only if no active scheme found for the document type)
 const FALLBACK_PROMPT = `Extract product data from document. For each table row/style, extract:
@@ -86,6 +86,40 @@ Deno.serve(async (req) => {
 
     const contentSlides = extracted.slides.filter(s => s.table?.rows?.length);
     const collectionName = contentSlides[0]?.title || 'Collection';
+
+    // Resolve SharePoint image URLs → re-upload to Base44 public storage
+    let spAccessToken = null;
+    try {
+      const conn = await base44.asServiceRole.connectors.getConnection('share_point');
+      spAccessToken = conn?.accessToken || null;
+    } catch (_) {
+      // SharePoint not connected, skip image resolution
+    }
+
+    if (spAccessToken) {
+      for (const slide of contentSlides) {
+        for (const row of (slide.table?.rows || [])) {
+          const url = row.image_url;
+          if (!url || !url.includes('sharepoint.com')) continue;
+          try {
+            // Fetch the image from SharePoint using the access token
+            const imgRes = await fetch(url, {
+              headers: { Authorization: `Bearer ${spAccessToken}` }
+            });
+            if (!imgRes.ok) continue;
+            const blob = await imgRes.blob();
+            const ext = url.split('.').pop().split('?')[0] || 'png';
+            const file = new File([blob], `sketch.${ext}`, { type: blob.type || 'image/png' });
+            const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+            if (uploaded?.file_url) {
+              row.image_url = uploaded.file_url;
+            }
+          } catch (_) {
+            // If image resolution fails, keep original URL (will be broken but non-blocking)
+          }
+        }
+      }
+    }
 
     await base44.asServiceRole.entities.UploadedDocument.update(document_id, {
       status: 'staged',

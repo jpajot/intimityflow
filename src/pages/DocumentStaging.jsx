@@ -343,6 +343,7 @@ export default function DocumentStaging() {
   const unmatchedCount = allCodes.filter(code => !techColors.find(t => t.code?.toLowerCase().trim() === code?.toLowerCase().trim())).length;
   const totalStyles = (data?.slides || []).reduce((sum, s) => sum + (s.table?.rows?.length || 0), 0);
   const isProcessed = doc.status === "processed";
+  const hasSharePointImages = (data?.slides || []).some(s => (s.table?.rows || []).some(r => r.image_url?.includes("sharepoint.com")));
 
   const createStyleFromRow = async (row) => {
     const styleName = row["Style Description"];
@@ -477,6 +478,20 @@ export default function DocumentStaging() {
           Re-parse
         </Button>
       </div>
+
+      {/* SharePoint image warning */}
+      {hasSharePointImages && !isProcessed && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-800 flex-1">
+            Images are stored as SharePoint links and may not display. <strong>Re-parse</strong> the document to migrate them to permanent image storage.
+          </p>
+          <Button variant="outline" size="sm" onClick={handleReparse} disabled={reparsing} className="gap-1.5 shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100">
+            {reparsing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Re-parse now
+          </Button>
+        </div>
+      )}
 
       {/* Stats Bar */}
       {data && (
