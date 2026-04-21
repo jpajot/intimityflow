@@ -183,12 +183,13 @@ export default function ColorPalettes() {
     return entries.map((e) => {
       if (e.color_type === "technical") {
         const t = techColors.find((c) => c.id === e.color_id);
-        return { id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "" };
+        const comm = commColors.find((c) => c.main_technical_color_id === e.color_id);
+        return { id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "", commCode: comm?.code || null };
       } else {
         const c = commColors.find((c) => c.id === e.color_id);
-        if (!c) return { id: e.id, hex: "#ccc", name: "", code: "" };
+        if (!c) return { id: e.id, hex: "#ccc", name: "", code: "", commCode: null };
         const t = techColors.find((t) => t.id === c.main_technical_color_id);
-        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "" };
+        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null };
       }
     });
   };
@@ -399,6 +400,7 @@ export default function ColorPalettes() {
                             <p className="text-xs font-medium truncate">{s.name || "—"}</p>
                             {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
                             <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
+                            {s.commCode && <p className="text-[10px] font-mono text-muted-foreground truncate border-t border-border pt-0.5 mt-0.5">{s.commCode}</p>}
                           </div>
                         </div>
                       ))}
