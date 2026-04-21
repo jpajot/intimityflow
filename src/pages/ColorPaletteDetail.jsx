@@ -139,6 +139,12 @@ export default function ColorPaletteDetail() {
     return null;
   };
 
+  // For technical color entries: find the commercial color linked to that technical color
+  const getLinkedCommColor = (entry) => {
+    if (entry.color_type !== "technical") return null;
+    return commColors.find((c) => c.main_technical_color_id === entry.color_id) || null;
+  };
+
   const filteredTech = techColors.filter((t) => {
     const key = `technical:${t.id}`;
     if (linkedColorIds.has(key)) return false;
@@ -212,6 +218,7 @@ export default function ColorPaletteDetail() {
         getColorLabel={getColorLabel}
         getColorCode={getColorCode}
         getColorSubType={getColorSubType}
+        getLinkedCommColor={getLinkedCommColor}
         onRemove={handleRemove}
         view={colorView}
         onViewChange={setColorView}

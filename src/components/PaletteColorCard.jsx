@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 
-export default function PaletteColorCard({ entry, hex, label, code, onRemove }) {
+export default function PaletteColorCard({ entry, hex, label, code, commColor, onRemove }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
       <div className="aspect-square bg-muted flex items-center justify-center relative">
@@ -16,6 +16,11 @@ export default function PaletteColorCard({ entry, hex, label, code, onRemove }) 
       <div className="p-3 space-y-1">
         <p className="text-xs font-medium truncate">{label}</p>
         {code && <p className="text-xs font-mono text-muted-foreground truncate">{code}</p>}
+        {commColor && (
+          <p className="text-xs font-mono text-muted-foreground truncate" title={`Commercial: ${commColor.code} – ${commColor.color_name}`}>
+            {commColor.code} – {commColor.color_name}
+          </p>
+        )}
       </div>
     </div>
   );
