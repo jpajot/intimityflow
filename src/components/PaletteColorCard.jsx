@@ -17,7 +17,7 @@ export default function PaletteColorCard({ entry, hex, label, code, commColor, o
         <p className="text-xs font-medium truncate">{label}</p>
         {code && <p className="text-xs font-mono text-muted-foreground truncate">{code}</p>}
         {commColor && (
-          <p className="text-xs font-mono text-muted-foreground truncate" title={`Commercial: ${commColor.code} – ${commColor.color_name}`}>
+          <p className="text-[10px] font-mono text-muted-foreground truncate mt-1 border-t border-border pt-1" title={`Commercial: ${commColor.code} – ${commColor.color_name}`}>
             {commColor.code} – {commColor.color_name}
           </p>
         )}
