@@ -285,7 +285,13 @@ export default function ColorPaletteDetail() {
 
             {addTab === "commercial" && !showNewComm && (
               <>
-                <Button type="button" variant="outline" size="sm" className="w-full gap-1.5" onClick={() => setShowNewComm(true)}>
+                <Button type="button" variant="outline" size="sm" className="w-full gap-1.5" onClick={async () => {
+                  setShowNewComm(true);
+                  try {
+                    const res = await base44.functions.invoke("generateCode", { entity_name: "CommercialColor", entity_type: "" });
+                    setCommForm((f) => ({ ...f, code: res.data.code }));
+                  } catch {}
+                }}>
                   <Plus className="w-3.5 h-3.5" /> Create New Commercial Color
                 </Button>
                 <div className="space-y-0.5">

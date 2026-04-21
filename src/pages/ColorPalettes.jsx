@@ -110,11 +110,15 @@ export default function ColorPalettes() {
     setShowTechDialog(true);
   };
 
-  const openNewComm = () => {
+  const openNewComm = async () => {
     setCommForm({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
     setTechSearch("");
     setLinkedTechSearch("");
     setShowCommDialog(true);
+    try {
+      const res = await base44.functions.invoke("generateCode", { entity_name: "CommercialColor", entity_type: "" });
+      setCommForm((f) => ({ ...f, code: res.data.code }));
+    } catch {}
   };
 
   const handleTechSelectForComm = (techId) => {
