@@ -13,12 +13,13 @@ export default function PaletteColorCard({ entry, hex, label, code, commColor, o
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-      <div className="p-3 space-y-1">
+      <div className="p-3 space-y-0.5">
         <p className="text-xs font-medium truncate">{label}</p>
         {code && <p className="text-xs font-mono text-muted-foreground truncate">{code}</p>}
+        {hex && <p className="text-xs font-mono text-muted-foreground truncate">{hex}</p>}
         {commColor && (
-          <p className="text-[10px] font-mono text-muted-foreground truncate mt-1 border-t border-border pt-1" title={`Commercial: ${commColor.code} – ${commColor.color_name}`}>
-            {commColor.code} – {commColor.color_name}
+          <p className="text-xs font-mono text-muted-foreground truncate" title={`Commercial: ${commColor.code} – ${commColor.color_name}`}>
+            {commColor.code}
           </p>
         )}
       </div>
