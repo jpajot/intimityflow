@@ -263,7 +263,7 @@ export default function ColorLibrary({ hideTitle = false }) {
             <div className="w-8 h-8 rounded-md border border-border overflow-hidden flex">
               {linkedIds.map((id, i) => {
                 const t = technicalColors.find((t) => t.id === id);
-                return <div key={i} className="flex-1 h-full" style={{ backgroundColor: t ? colorToHex(t) : "#ccc" }} />;
+                return <div key={i} className="flex-1" style={{ backgroundColor: t ? colorToHex(t) : "#ccc" }} />;
               })}
             </div>
           );
@@ -459,14 +459,14 @@ export default function ColorLibrary({ hideTitle = false }) {
                 return (
                   <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
                     {linkedIds ? (
-                      <div className="aspect-square flex overflow-hidden">
+                      <div className="aspect-square flex">
                         {linkedIds.map((id, i) => {
                           const t = technicalColors.find((t) => t.id === id);
-                          return <div key={i} className="flex-1 h-full" style={{ backgroundColor: t ? colorToHex(t) : "#ccc" }} />;
+                          return <div key={i} className="flex-1" style={{ backgroundColor: t ? colorToHex(t) : "#ccc" }} />;
                         })}
                       </div>
                     ) : (
-                      <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: hex }} />
+                      <div className="aspect-square" style={{ backgroundColor: hex }} />
                     )}
                     <div className="p-3 space-y-1">
                       <p className="text-xs font-mono font-medium truncate">{c.code}</p>
