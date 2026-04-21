@@ -98,11 +98,18 @@ export default function ColorPalettes() {
     if (selectedPaletteId === palette.id) setSelectedPaletteId(null);
   };
 
-  const openColorPicker = () => {
+  const openColorPicker = async () => {
     setSelectedColorIds(new Set());
     setColorSearch("");
     setColorTab("technical");
     setShowColorPicker(true);
+    // Refresh colors in case new ones were added in Color Library
+    const [tc, cc] = await Promise.all([
+      base44.entities.TechnicalColor.list("code", 2000),
+      base44.entities.CommercialColor.list("code", 2000),
+    ]);
+    setTechColors(tc);
+    setCommColors(cc);
   };
 
   const openNewTech = () => {
