@@ -145,6 +145,14 @@ export default function ColorPaletteDetail() {
     return commColors.find((c) => c.main_technical_color_id === entry.color_id) || null;
   };
 
+  // For commercial color entries: return array of hexes from all linked technical colors (for Combined type)
+  const getLinkedHexes = (entry) => {
+    if (entry.color_type !== "commercial") return null;
+    const c = commColors.find((c) => c.id === entry.color_id);
+    if (!c || !c.linked_technical_color_ids || c.linked_technical_color_ids.length <= 1) return null;
+    return c.linked_technical_color_ids.map((id) => { const t = techColors.find((t) => t.id === id); return t ? colorToHex(t) : "#ccc"; });
+  };
+
   const filteredTech = techColors.filter((t) => {
     const key = `technical:${t.id}`;
     if (linkedColorIds.has(key)) return false;
@@ -219,6 +227,7 @@ export default function ColorPaletteDetail() {
         getColorCode={getColorCode}
         getColorSubType={getColorSubType}
         getLinkedCommColor={getLinkedCommColor}
+        getLinkedHexes={getLinkedHexes}
         onRemove={handleRemove}
         view={colorView}
         onViewChange={setColorView}

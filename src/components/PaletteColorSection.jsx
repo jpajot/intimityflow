@@ -3,7 +3,7 @@ import { X, LayoutGrid, List } from "lucide-react";
 import DataTable from "./DataTable";
 import PaletteColorCard from "./PaletteColorCard";
 
-export default function PaletteColorSection({ paletteColors, getColorHex, getColorLabel, getColorCode, getColorSubType, getLinkedCommColor, onRemove, view, onViewChange }) {
+export default function PaletteColorSection({ paletteColors, getColorHex, getColorLabel, getColorCode, getColorSubType, getLinkedCommColor, getLinkedHexes, onRemove, view, onViewChange }) {
   if (paletteColors.length === 0) {
     return (
       <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -120,6 +120,7 @@ export default function PaletteColorSection({ paletteColors, getColorHex, getCol
               label={getColorLabel(entry)}
               code={getColorCode(entry)}
               commColor={getLinkedCommColor ? getLinkedCommColor(entry) : null}
+              linkedHexes={getLinkedHexes ? getLinkedHexes(entry) : null}
               onRemove={() => onRemove(entry.id)}
             />
           ))}

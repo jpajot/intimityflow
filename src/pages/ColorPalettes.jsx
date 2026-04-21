@@ -193,7 +193,10 @@ export default function ColorPalettes() {
         const c = commColors.find((c) => c.id === e.color_id);
         if (!c) return { id: e.id, hex: "#ccc", name: "", code: "", commCode: null };
         const t = techColors.find((t) => t.id === c.main_technical_color_id);
-        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null };
+        const linkedHexes = c.linked_technical_color_ids?.length > 1
+          ? c.linked_technical_color_ids.map((id) => { const lt = techColors.find((t) => t.id === id); return lt?.hex || "#ccc"; })
+          : null;
+        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null, linkedHexes };
       }
     });
   };
@@ -392,7 +395,15 @@ export default function ColorPalettes() {
                     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                       {selectedSwatches.map((s, i) => (
                         <div key={i} className="rounded-lg border border-border overflow-hidden group/color relative">
-                          <div className="aspect-square" style={{ backgroundColor: s.hex }} />
+                          {s.linkedHexes?.length > 1 ? (
+                            <div className="aspect-square flex overflow-hidden">
+                              {s.linkedHexes.map((h, j) => (
+                                <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="aspect-square" style={{ backgroundColor: s.hex }} />
+                          )}
                           <button
                             type="button"
                             onClick={() => handleRemoveColor({ id: s.id })}

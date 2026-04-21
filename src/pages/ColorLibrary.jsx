@@ -257,6 +257,17 @@ export default function ColorLibrary({ hideTitle = false }) {
       label: "Color",
       width: 80,
       render: (c) => {
+        const linkedIds = c.linked_technical_color_ids?.length > 1 ? c.linked_technical_color_ids : null;
+        if (linkedIds) {
+          return (
+            <div className="w-8 h-8 rounded-md border border-border overflow-hidden flex">
+              {linkedIds.map((id, i) => {
+                const t = technicalColors.find((t) => t.id === id);
+                return <div key={i} className="flex-1 h-full" style={{ backgroundColor: t ? colorToHex(t) : "#ccc" }} />;
+              })}
+            </div>
+          );
+        }
         const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
         const hex = tech ? colorToHex(tech) : "#cccccc";
         return <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: hex }} />;
@@ -442,11 +453,21 @@ export default function ColorLibrary({ hideTitle = false }) {
                 c.color_name?.toLowerCase().includes(commSearch.toLowerCase()) ||
                 c.sub_type?.toLowerCase().includes(commSearch.toLowerCase())
               ).map((c) => {
+                const linkedIds = c.linked_technical_color_ids?.length > 1 ? c.linked_technical_color_ids : null;
                 const tech = technicalColors.find((t) => t.id === c.main_technical_color_id);
                 const hex = tech ? colorToHex(tech) : "#ccc";
                 return (
                   <div key={c.id} className="rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow group/card bg-card">
-                    <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: hex }} />
+                    {linkedIds ? (
+                      <div className="aspect-square flex overflow-hidden">
+                        {linkedIds.map((id, i) => {
+                          const t = technicalColors.find((t) => t.id === id);
+                          return <div key={i} className="flex-1 h-full" style={{ backgroundColor: t ? colorToHex(t) : "#ccc" }} />;
+                        })}
+                      </div>
+                    ) : (
+                      <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: hex }} />
+                    )}
                     <div className="p-3 space-y-1">
                       <p className="text-xs font-mono font-medium truncate">{c.code}</p>
                       <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
