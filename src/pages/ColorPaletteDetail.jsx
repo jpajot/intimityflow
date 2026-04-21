@@ -45,7 +45,7 @@ export default function ColorPaletteDetail() {
       base44.entities.ColorPaletteColor.filter({ palette_id: id }),
       base44.entities.Project.list("name", 200),
       base44.entities.TechnicalColor.list("code", 2000),
-      base44.entities.CommercialColor.list("code", 2000),
+      base44.entities.CommercialColor.list("-created_date", 2000),
     ]);
     setPalette(pal[0] || null);
     setPaletteColors(pc);
