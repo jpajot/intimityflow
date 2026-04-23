@@ -270,7 +270,7 @@ export default function LinkedColorwaysView({
         const prod = getProduct(cw);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(img)}>
+          <div className="w-10 h-10 rounded-md overflow-hidden cursor-zoom-in bg-transparent" onClick={() => setTableLightbox(img)}>
             <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
           </div>
         ) : (

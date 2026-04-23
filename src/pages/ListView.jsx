@@ -47,7 +47,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
     {
       id: "image", label: "Image", width: 70,
       render: (p) => p.images?.[0] ? (
-        <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
+        <div className="w-10 h-10 rounded-md overflow-hidden">
           <img src={p.images[0]} alt={p.name} className="w-full h-full object-contain" />
         </div>
       ) : <div className="w-10 h-10 rounded-md bg-muted" />,
@@ -208,7 +208,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
         const prod = getProduct(cw);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
+          <div className="w-10 h-10 rounded-md overflow-hidden">
             <img src={img} alt={prod.name} className="w-full h-full object-contain" />
           </div>
         ) : <div className="w-10 h-10 rounded-md bg-muted" />;
@@ -393,7 +393,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         const prod = getProduct(v);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
+          <div className="w-10 h-10 rounded-md overflow-hidden">
             <img src={img} alt={prod.name} className="w-full h-full object-contain" />
           </div>
         ) : <div className="w-10 h-10 rounded-md bg-muted" />;
