@@ -26,7 +26,7 @@ export default function ColorwayCard({ variant, techColor, productImage = "", on
           {/* Hex swatch overlay when using product fallback image */}
           {useProductImage && variant.color_hex && (
             <div
-              className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md"
+              className="absolute bottom-2 left-2 w-6 h-6 rounded-md shadow-md"
               style={{ backgroundColor: variant.color_hex }}
               title={variant.color_hex}
             />
@@ -51,7 +51,7 @@ export default function ColorwayCard({ variant, techColor, productImage = "", on
         </div>
         <div className="p-3">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full border border-border shrink-0" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
+            <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
             <span className="font-medium text-sm truncate">{variant.color_name}</span>
           </div>
           {variant.colorway_code && (

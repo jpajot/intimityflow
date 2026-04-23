@@ -56,11 +56,11 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       width: 80,
       render: (cv) =>
         cv.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setLightboxSrc(cv.image_url); setLightboxAlt(cv.color_name); }}>
+          <div className="w-8 h-8 rounded-md overflow-hidden cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setLightboxSrc(cv.image_url); setLightboxAlt(cv.color_name); }}>
             <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+          <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
         ),
     },
     {
@@ -85,7 +85,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       render: (cv) =>
         cv.color_hex ? (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: cv.color_hex }} />
+            <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: cv.color_hex }} />
             <span className="font-mono text-xs text-muted-foreground">{cv.color_hex}</span>
           </div>
         ) : "—",
@@ -115,7 +115,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
         if (!tc) return "—";
         return (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: tc.hex || cv.color_hex || "#ccc" }} />
+            <div className="w-4 h-4 rounded-sm shrink-0" style={{ backgroundColor: tc.hex || cv.color_hex || "#ccc" }} />
             <span className="text-xs text-muted-foreground">{tc.code} – {tc.name}</span>
           </div>
         );

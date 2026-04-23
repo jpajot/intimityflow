@@ -270,11 +270,11 @@ export default function LinkedColorwaysView({
         const prod = getProduct(cw);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden border border-border cursor-zoom-in" onClick={() => setTableLightbox(img)}>
+          <div className="w-10 h-10 rounded-md overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(img)}>
             <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
           </div>
         ) : (
-          <div className="w-10 h-10 rounded-md border border-border bg-muted" />
+          <div className="w-10 h-10 rounded-md bg-muted" />
         );
       },
     },
@@ -302,11 +302,11 @@ export default function LinkedColorwaysView({
       width: 70,
       render: (cw) =>
         cw.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}>
+          <div className="w-8 h-8 rounded-md overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}>
             <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+          <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
         ),
     },
     { id: "style_sub_type", label: "Style: Sub-type", width: 130, sortKey: (cw) => getProduct(cw)?.sub_type || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_type || "—"}</span> },
@@ -349,7 +349,7 @@ export default function LinkedColorwaysView({
         if (!tc) return "—";
         return (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+            <div className="w-4 h-4 rounded-sm shrink-0" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
             <span className="text-xs font-mono text-muted-foreground">{tc.code}</span>
           </div>
         );
