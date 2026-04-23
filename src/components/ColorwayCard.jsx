@@ -3,11 +3,19 @@ import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 import ImageLightbox from "./ImageLightbox";
 
-export default function ColorwayCard({ variant, techColor, productImage = "", onEdit }) {
+export default function ColorwayCard({ variant, techColor, productImage = "", onEdit, commColor, allTechColors = [] }) {
   const [lightbox, setLightbox] = useState(false);
   // Rule: show colorway image if available, else fall back to product main image
   const useProductImage = !variant.image_url && !!productImage;
   const displayImage = variant.image_url || productImage;
+
+  // Build multi-hex array for combined commercial colors
+  const linkedHexes = (() => {
+    if (!commColor || commColor.sub_type !== "Combined") return null;
+    const ids = commColor.linked_technical_color_ids || [];
+    const hexes = ids.map((id) => allTechColors.find((t) => t.id === id)?.hex).filter(Boolean);
+    return hexes.length > 1 ? hexes : null;
+  })();
 
   return (
     <>
@@ -20,6 +28,12 @@ export default function ColorwayCard({ variant, techColor, productImage = "", on
               className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
               onClick={() => setLightbox(true)}
             />
+          ) : linkedHexes ? (
+            <div className="w-full h-full flex">
+              {linkedHexes.map((h, i) => (
+                <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />
+              ))}
+            </div>
           ) : (
             <div className="w-full h-full" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
           )}

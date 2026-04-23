@@ -54,14 +54,27 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       id: "image",
       label: "Image",
       width: 80,
-      render: (cv) =>
-        cv.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setLightboxSrc(cv.image_url); setLightboxAlt(cv.color_name); }}>
-            <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
-          </div>
-        ) : (
-          <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-        ),
+      render: (cv) => {
+        if (cv.image_url) {
+          return (
+            <div className="w-8 h-8 rounded-md overflow-hidden cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setLightboxSrc(cv.image_url); setLightboxAlt(cv.color_name); }}>
+              <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
+            </div>
+          );
+        }
+        const cc = commColors.find((c) => c.id === cv.linked_color_id);
+        const linkedHexes = cc?.sub_type === "Combined"
+          ? (cc.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean)
+          : null;
+        if (linkedHexes?.length > 1) {
+          return (
+            <div className="w-8 h-8 rounded-md overflow-hidden flex">
+              {linkedHexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+            </div>
+          );
+        }
+        return <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cv.color_hex || "#ccc" }} />;
+      },
     },
     {
       id: "name",
@@ -192,7 +205,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filteredVariants.map((cv) => (
-            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} productImage={productImage} onEdit={() => onEdit(cv)} />
+            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} productImage={productImage} onEdit={() => onEdit(cv)} commColor={commColors.find((c) => c.id === cv.linked_color_id)} allTechColors={techColors} />
           ))}
         </div>
       ) : (
