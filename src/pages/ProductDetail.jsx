@@ -250,7 +250,9 @@ export default function ProductDetail() {
   const handleAddColor = async (data) => {
     const created = await base44.entities.ProductColor.create({ ...data, product_id: product.id });
     setColorVariants((prev) => [...prev, created]);
-    await createDefaultVariation(created.id, created.color_name);
+    if (created.linked_tech_color_id) {
+      await createDefaultVariation(created.id, created.color_name);
+    }
   };
 
   const handleAddFromLibrary = async (colorways) => {
@@ -259,7 +261,9 @@ export default function ProductDetail() {
     );
     setColorVariants(prev => [...prev, ...created]);
     for (const cv of created) {
-      await createDefaultVariation(cv.id, cv.color_name);
+      if (cv.linked_tech_color_id) {
+        await createDefaultVariation(cv.id, cv.color_name);
+      }
     }
   };
 
