@@ -332,6 +332,13 @@ export default function ProductDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate(product.type === "Material" ? "/materials" : "/")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
+        {!isNew && product.images?.[0] && (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="h-10 w-auto object-contain"
+          />
+        )}
         <div className="flex-1">
           <h1 className="font-display text-2xl font-semibold tracking-tight">
             {isNew ? `New ${product.type}` : product.name}
