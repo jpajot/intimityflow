@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, ChevronDown } from "lucide-react";
 import ItemSubNav from "../components/ItemSubNav";
+import ImageLightbox from "../components/ImageLightbox";
 
 import MoreVariationsSection from "../components/MoreVariationsSection";
 import StyleSizesSection from "../components/StyleSizesSection";
@@ -68,6 +69,7 @@ export default function ProductDetail() {
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [activeTab, setActiveTab] = useState("colorways");
+  const [lightboxImages, setLightboxImages] = useState(null); // { images: [], index: 0 }
 
   useEffect(() => {
     loadLovData();
@@ -403,7 +405,7 @@ export default function ProductDetail() {
                     <div className="grid grid-cols-2 gap-2">
                       {(product.images || []).map((url, idx) => (
                         <div key={url} className="relative group/img aspect-square rounded-lg overflow-hidden border border-border">
-                          <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover" />
+                          <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setLightboxImages({ images: product.images || [], index: idx })} />
                           {idx === 0 && (
                             <div className="absolute top-1 left-1 px-1 py-0.5 bg-primary text-primary-foreground text-[9px] font-semibold rounded">Main</div>
                           )}
@@ -620,6 +622,16 @@ export default function ProductDetail() {
         onClose={() => setShowLibraryPicker(false)}
         onAdd={handleAddFromLibrary}
       />
+
+      {lightboxImages && (
+        <ImageLightbox
+          src={lightboxImages.images[lightboxImages.index]}
+          alt={`Style image ${lightboxImages.index + 1}`}
+          onClose={() => setLightboxImages(null)}
+          onPrev={lightboxImages.images.length > 1 ? () => setLightboxImages((s) => ({ ...s, index: (s.index - 1 + s.images.length) % s.images.length })) : undefined}
+          onNext={lightboxImages.images.length > 1 ? () => setLightboxImages((s) => ({ ...s, index: (s.index + 1) % s.images.length })) : undefined}
+        />
+      )}
     </div>
   );
 }

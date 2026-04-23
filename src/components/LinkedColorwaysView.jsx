@@ -1,4 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import ImageLightbox from "./ImageLightbox";
+
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,16 +12,18 @@ import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 
 function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
+  const [lightbox, setLightbox] = useState(false);
   const productImage = product?.images?.[0];
   // Rule: colorway image first, then product image as fallback
   const useProductFallback = !cw.image_url && !!productImage;
   const displayImage = cw.image_url || productImage;
 
   return (
+    <>
     <div className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
       <div className="aspect-square bg-muted relative">
         {displayImage ? (
-          <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" />
+          <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain cursor-zoom-in" onClick={() => setLightbox(true)} />
         ) : (
           <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
         )}
@@ -51,6 +56,8 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
         )}
       </div>
     </div>
+    {lightbox && <ImageLightbox src={displayImage} alt={cw.color_name} onClose={() => setLightbox(false)} />}
+    </>
   );
 }
 
@@ -157,6 +164,7 @@ export default function LinkedColorwaysView({
   const [showLink, setShowLink] = useState(false);
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
+  const [tableLightbox, setTableLightbox] = useState(null);
 
   useEffect(() => {
     base44.entities.TypeOfLOV.filter({ code: CHANNEL_LOV_CODE }).then((types) => {
@@ -263,7 +271,7 @@ export default function LinkedColorwaysView({
         const prod = getProduct(cw);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden border border-border">
+          <div className="w-10 h-10 rounded-md overflow-hidden border border-border cursor-zoom-in" onClick={() => setTableLightbox(img)}>
             <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
           </div>
         ) : (
@@ -295,7 +303,7 @@ export default function LinkedColorwaysView({
       width: 70,
       render: (cw) =>
         cw.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+          <div className="w-8 h-8 rounded-md overflow-hidden border border-border cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}>
             <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
           </div>
         ) : (
@@ -486,6 +494,8 @@ export default function LinkedColorwaysView({
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
       )}
+
+      {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
     </div>
   );
 }

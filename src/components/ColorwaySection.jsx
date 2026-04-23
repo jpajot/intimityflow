@@ -6,6 +6,7 @@ import ViewSelector from "./ViewSelector";
 import { base44 } from "@/api/base44Client";
 import DataTable from "./DataTable";
 import ColorwayCard from "./ColorwayCard";
+import ImageLightbox from "./ImageLightbox";
 
 const STORAGE_KEY = "colorway_section_view";
 
@@ -22,6 +23,8 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
   const [activeColumns, setActiveColumns] = useState(null);
 
   const [commColors, setCommColors] = useState([]);
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [lightboxAlt, setLightboxAlt] = useState("");
 
   useEffect(() => {
     base44.entities.TechnicalColor.list("code", 2000).then(setTechColors);
@@ -53,7 +56,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       width: 80,
       render: (cv) =>
         cv.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+          <div className="w-8 h-8 rounded-md overflow-hidden border border-border cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setLightboxSrc(cv.image_url); setLightboxAlt(cv.color_name); }}>
             <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-cover" />
           </div>
         ) : (
@@ -198,6 +201,10 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
           rows={filteredVariants}
           hideColumnToggle
         />
+      )}
+
+      {lightboxSrc && (
+        <ImageLightbox src={lightboxSrc} alt={lightboxAlt} onClose={() => setLightboxSrc(null)} />
       )}
     </div>
   );
