@@ -278,10 +278,12 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
     },
     { id: "color_name", label: "Color Name", width: 150, sortKey: (cw) => cw.color_name || "", render: (cw) => <span className="font-medium">{cw.color_name}</span> },
     { id: "colorway_code", label: "Colorway Code", width: 130, sortKey: (cw) => cw.colorway_code || "", render: (cw) => <span className="font-mono text-xs text-muted-foreground">{cw.colorway_code || "—"}</span> },
-    { id: "comm_color_status", label: "Commercial Color", width: 150, sortKey: (cw) => cw.linked_color_id ? "linked" : "", render: (cw) => cw.linked_color_id
-      ? <span className="text-xs font-mono text-muted-foreground">{cw.linked_color_id}</span>
-      : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>
-    },
+    { id: "comm_color_status", label: "Commercial Color", width: 180, sortKey: (cw) => getCommColor(cw)?.code || "", render: (cw) => {
+      const cc = getCommColor(cw);
+      return cc
+        ? <span className="text-xs font-mono text-muted-foreground">{cc.code} – {cc.color_name}</span>
+        : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>;
+    } },
     {
       id: "color_hex", label: "Hex", width: 110,
       render: (cw) => cw.color_hex ? (
