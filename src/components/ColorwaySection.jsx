@@ -46,7 +46,7 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
     });
   }, [colorVariants, search, techColors]);
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       id: "image",
       label: "Image",
@@ -152,7 +152,8 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
         </button>
       ),
     },
-  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [techColors, commColors, projects, onEdit]);
 
   const visibleColumns = activeColumns || columns;
 
