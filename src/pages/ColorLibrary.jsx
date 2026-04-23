@@ -135,13 +135,33 @@ export default function ColorLibrary({ hideTitle = false }) {
   const saveComm = async (e) => {
     e.preventDefault();
     setSaving(true);
+
+    let savedComm;
     if (editingComm) {
       await base44.entities.CommercialColor.update(editingComm.id, commForm);
-      setCommercialColors((prev) => prev.map((c) => (c.id === editingComm.id ? { ...c, ...commForm } : c)));
+      savedComm = { ...editingComm, ...commForm };
+      setCommercialColors((prev) => prev.map((c) => (c.id === editingComm.id ? savedComm : c)));
     } else {
-      const created = await base44.entities.CommercialColor.create(commForm);
-      setCommercialColors((prev) => [...prev, created]);
+      savedComm = await base44.entities.CommercialColor.create(commForm);
+      setCommercialColors((prev) => [...prev, savedComm]);
     }
+
+    // Retroactively update ProductColor records linked to this technical color
+    // that have no commercial color linked yet
+    if (savedComm.main_technical_color_id) {
+      const allProductColors = await base44.entities.ProductColor.list("-created_date", 5000);
+      const toUpdate = allProductColors.filter(
+        (pc) => pc.linked_tech_color_id === savedComm.main_technical_color_id && !pc.linked_color_id
+      );
+      await Promise.all(toUpdate.map((pc) =>
+        base44.entities.ProductColor.update(pc.id, {
+          linked_color_type: "commercial",
+          linked_color_id: savedComm.id,
+          colorway_code: pc.colorway_code || savedComm.code,
+        })
+      ));
+    }
+
     setShowCommDialog(false);
     setSaving(false);
   };

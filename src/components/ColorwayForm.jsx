@@ -112,11 +112,16 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
   };
 
   const handleSelectTech = (tech) => {
+    const linkedComm = commColors.find((c) => c.main_technical_color_id === tech.id);
     setForm((f) => ({
       ...f,
       linked_tech_color_id: tech.id,
       color_hex: colorToHex(tech) || f.color_hex,
       color_name: tech.name || f.color_name,
+      // Auto-inherit commercial color if one is linked to this technical color and none is set yet
+      linked_color_type: !f.linked_color_id && linkedComm ? "commercial" : f.linked_color_type,
+      linked_color_id: !f.linked_color_id && linkedComm ? linkedComm.id : f.linked_color_id,
+      colorway_code: !f.linked_color_id && linkedComm ? (linkedComm.code || f.colorway_code) : f.colorway_code,
     }));
   };
 

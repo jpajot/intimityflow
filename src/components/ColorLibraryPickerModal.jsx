@@ -80,15 +80,18 @@ export default function ColorLibraryPickerModal({ open, onClose, onAdd }) {
       const [type, id] = key.split("--");
       if (type === "tech") {
         const tc = techColors.find(c => c.id === id);
-        if (tc) colorways.push({
-          color_name: tc.name,
-          color_hex: colorToHex(tc),
-          colorway_code: "",
-          linked_tech_color_id: tc.id,
-          linked_color_type: "",
-          linked_color_id: "",
-          markets: [],
-        });
+        if (tc) {
+          const linkedComm = commColors.find(c => c.main_technical_color_id === tc.id);
+          colorways.push({
+            color_name: tc.name,
+            color_hex: colorToHex(tc),
+            colorway_code: linkedComm?.code || "",
+            linked_tech_color_id: tc.id,
+            linked_color_type: linkedComm ? "commercial" : "",
+            linked_color_id: linkedComm?.id || "",
+            markets: [],
+          });
+        }
       } else {
         const cc = commColors.find(c => c.id === id);
         if (cc) {

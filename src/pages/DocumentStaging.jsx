@@ -280,20 +280,34 @@ export default function DocumentStaging() {
     }
 
     // colorways
+    const allCommColors = await base44.entities.CommercialColor.list("code", 2000);
     for (const colorCode of (row["Style Technical Color Codes"] || [])) {
       if (tcxAlreadyOnProduct(product.id, colorCode)) continue; // skip duplicates
       const tc = techColors.find(t => t.code?.toLowerCase().trim() === colorCode?.toLowerCase().trim());
-      await base44.entities.ProductColor.create({
+      const linkedComm = tc ? allCommColors.find(c => c.main_technical_color_id === tc.id) : null;
+      const created = await base44.entities.ProductColor.create({
         product_id: product.id,
         color_name: tc?.name || colorCode,
-        colorway_code: colorCode,
+        colorway_code: linkedComm?.code || colorCode,
         color_hex: tc?.hex || "",
         linked_tech_color_id: tc?.id || "",
-        linked_color_type: "",
-        linked_color_id: "",
+        linked_color_type: linkedComm ? "commercial" : "",
+        linked_color_id: linkedComm?.id || "",
         creation_project_id: id,
         project_ids: [id],
       });
+      // Also create a default ProductColorAndMore if technical color is linked
+      if (tc?.id) {
+        const allVars = await base44.entities.ProductColorAndMore.list("-created_date", 500);
+        const nums = allVars.map(v => parseInt(v.sequence || "0", 10)).filter(n => !isNaN(n));
+        const max = nums.length > 0 ? Math.max(...nums) : 0;
+        await base44.entities.ProductColorAndMore.create({
+          product_color_id: created.id,
+          name: tc.name || "Default",
+          sequence: String(max + 1).padStart(4, "0"),
+          size_ids: [],
+        });
+      }
       await sleep(200);
     }
     return product;
