@@ -328,15 +328,18 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
           rows={filtered}
           renderThumbnail={(cw) => {
             const prod = getProduct(cw);
-            const img = prod?.images?.[0];
+            const productImage = prod?.images?.[0];
+            const useProductFallback = !cw.image_url && !!productImage;
+            const displayImage = cw.image_url || productImage;
             return (
               <div className="relative w-full h-full">
-                {img ? (
-                  <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
-                ) : cw.image_url ? (
-                  <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+                {displayImage ? (
+                  <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                  <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                )}
+                {useProductFallback && cw.color_hex && (
+                  <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
                 )}
                 {!cw.linked_color_id && (
                   <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />

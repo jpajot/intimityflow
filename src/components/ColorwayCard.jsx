@@ -1,17 +1,28 @@
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 
-export default function ColorwayCard({ variant, techColor, onEdit }) {
+export default function ColorwayCard({ variant, techColor, productImage = "", onEdit }) {
+  // Rule: show colorway image if available, else fall back to product main image
+  const useProductImage = !variant.image_url && !!productImage;
+  const displayImage = variant.image_url || productImage;
 
   return (
     <div
       className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all"
     >
       <div className="aspect-square bg-muted relative overflow-hidden">
-        {variant.image_url ? (
-          <img src={variant.image_url} alt={variant.color_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {displayImage ? (
+          <img src={displayImage} alt={variant.color_name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
+        )}
+        {/* Hex swatch overlay when using product fallback image */}
+        {useProductImage && variant.color_hex && (
+          <div
+            className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md"
+            style={{ backgroundColor: variant.color_hex }}
+            title={variant.color_hex}
+          />
         )}
         <div className="absolute top-2 right-2 flex gap-1.5">
           {!variant.linked_color_id && (

@@ -9,7 +9,7 @@ import ColorwayCard from "./ColorwayCard";
 
 const STORAGE_KEY = "colorway_section_view";
 
-export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAddFromLibrary }) {
+export default function ColorwaySection({ colorVariants, productImage = "", onEdit, onAddNew, onAddFromLibrary }) {
   const [view, setView] = useState(() => localStorage.getItem(STORAGE_KEY) || "grid");
 
   const handleSetView = (v) => {
@@ -189,7 +189,7 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filteredVariants.map((cv) => (
-            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} onEdit={() => onEdit(cv)} />
+            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} productImage={productImage} onEdit={() => onEdit(cv)} />
           ))}
         </div>
       ) : (

@@ -584,6 +584,7 @@ export default function ProductDetail() {
           {activeTab === "colorways" && (
             <ColorwaySection
               colorVariants={colorVariants}
+              productImage={product.images?.[0] || ""}
               onEdit={(cv) => setEditingColor(cv)}
               onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
               onAddFromLibrary={() => setShowLibraryPicker(true)}

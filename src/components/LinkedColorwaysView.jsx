@@ -9,23 +9,23 @@ import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 
 function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
-  const styleImage = product?.images?.[0];
+  const productImage = product?.images?.[0];
+  // Rule: colorway image first, then product image as fallback
+  const useProductFallback = !cw.image_url && !!productImage;
+  const displayImage = cw.image_url || productImage;
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
-      {/* Style image as thumbnail */}
       <div className="aspect-square bg-muted relative">
-        {styleImage ? (
-          <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
-        ) : cw.image_url ? (
-          <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+        {displayImage ? (
+          <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-          </div>
+          <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
         )}
-        {/* Colorway swatch overlay */}
-        <div className="absolute bottom-2 right-2 w-8 h-8 rounded-md border-2 border-white shadow" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+        {/* Hex swatch overlay only when using product fallback image */}
+        {useProductFallback && cw.color_hex && (
+          <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
+        )}
       </div>
       <div className="p-3 space-y-1.5">
         {/* Style name */}
@@ -462,15 +462,18 @@ export default function LinkedColorwaysView({
           rows={filtered}
           renderThumbnail={(cw) => {
             const product = getProduct(cw);
-            const styleImage = product?.images?.[0];
+            const productImage = product?.images?.[0];
+            const useProductFallback = !cw.image_url && !!productImage;
+            const displayImage = cw.image_url || productImage;
             return (
               <div className="relative w-full h-full">
-                {styleImage ? (
-                  <img src={styleImage} alt={product?.name} className="w-full h-full object-contain" />
-                ) : cw.image_url ? (
-                  <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
+                {displayImage ? (
+                  <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                  <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+                )}
+                {useProductFallback && cw.color_hex && (
+                  <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
                 )}
                 {!cw.linked_color_id && (
                   <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
