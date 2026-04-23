@@ -47,10 +47,10 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
     {
       id: "image", label: "Image", width: 70,
       render: (p) => p.images?.[0] ? (
-        <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted">
+        <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
           <img src={p.images[0]} alt={p.name} className="w-full h-full object-contain" />
         </div>
-      ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />,
+      ) : <div className="w-10 h-10 rounded-md bg-muted" />,
     },
     { id: "code", label: "Code", width: 120, sortKey: (p) => p.code || "", render: (p) => <span className="font-mono text-xs text-muted-foreground">{p.code || "—"}</span> },
     { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
@@ -71,7 +71,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
           <div className="flex gap-1 flex-wrap">
             {cvs.slice(0, 6).map((cv) => (
               <div key={cv.id} className="relative">
-                <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
+                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
                 {!cv.linked_color_id && (
                   <div title="No commercial color linked" className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 border border-white" />
                 )}
@@ -128,11 +128,11 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
                   {cvs.map((cv) => (
                     <div key={cv.id} className="flex items-center gap-2">
                       {cv.image_url ? (
-                        <div className="w-6 h-6 rounded overflow-hidden border border-border shrink-0">
+                        <div className="w-6 h-6 rounded overflow-hidden shrink-0">
                           <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-6 h-6 rounded border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                        <div className="w-6 h-6 rounded shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
                       )}
                       <span className="text-xs font-medium truncate">{cv.color_name}</span>
                     </div>
@@ -208,10 +208,10 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
         const prod = getProduct(cw);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted">
+          <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
             <img src={img} alt={prod.name} className="w-full h-full object-contain" />
           </div>
-        ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />;
+        ) : <div className="w-10 h-10 rounded-md bg-muted" />;
       },
     },
     {
@@ -232,11 +232,11 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
     {
       id: "cw_image", label: "Colorway Image", width: 70,
       render: (cw) => cw.image_url ? (
-        <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+        <div className="w-8 h-8 rounded-md overflow-hidden">
           <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-contain" />
         </div>
       ) : (
-        <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+        <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
       ),
     },
     { id: "color_name", label: "Color Name", width: 150, sortKey: (cw) => cw.color_name || "", render: (cw) => <span className="font-medium">{cw.color_name}</span> },
@@ -249,7 +249,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
       id: "color_hex", label: "Hex", width: 110,
       render: (cw) => cw.color_hex ? (
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: cw.color_hex }} />
+          <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: cw.color_hex }} />
           <span className="font-mono text-xs text-muted-foreground">{cw.color_hex}</span>
         </div>
       ) : "—",
@@ -261,7 +261,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
         if (!tc) return "—";
         return (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+            <div className="w-4 h-4 rounded-sm shrink-0" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
             <span className="text-xs font-mono text-muted-foreground">{tc.code}</span>
           </div>
         );
@@ -339,7 +339,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
                   <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
                 )}
                 {useProductFallback && cw.color_hex && (
-                  <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
+                  <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md shadow-md" style={{ backgroundColor: cw.color_hex }} />
                 )}
                 {!cw.linked_color_id && (
                   <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
@@ -393,10 +393,10 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         const prod = getProduct(v);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted">
+          <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
             <img src={img} alt={prod.name} className="w-full h-full object-contain" />
           </div>
-        ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />;
+        ) : <div className="w-10 h-10 rounded-md bg-muted" />;
       },
     },
     {
@@ -419,11 +419,11 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
       render: (v) => {
         const cw = getColorway(v);
         return cw?.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+          <div className="w-8 h-8 rounded-md overflow-hidden">
             <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-contain" />
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />
+          <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />
         );
       },
     },
@@ -432,10 +432,10 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
     {
       id: "var_image", label: "Variation Image", width: 70,
       render: (v) => v.image_url ? (
-        <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+        <div className="w-8 h-8 rounded-md overflow-hidden">
           <img src={v.image_url} alt={v.name} className="w-full h-full object-contain" />
         </div>
-      ) : <div className="w-8 h-8 rounded-md border border-border bg-muted" />,
+      ) : <div className="w-8 h-8 rounded-md bg-muted" />,
     },
     { id: "sequence", label: "Sequence", width: 90, sortKey: (v) => v.sequence || "", render: (v) => <span className="font-mono text-xs">{v.sequence || "—"}</span> },
     { id: "name", label: "Variation Name", width: 150, sortKey: (v) => v.name || "", render: (v) => <span className="font-medium">{v.name || "—"}</span> },
