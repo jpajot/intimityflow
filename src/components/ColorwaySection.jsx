@@ -112,8 +112,8 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
         if (!tc) return "—";
         return (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-            <span className="text-xs font-mono text-muted-foreground">{tc.code}</span>
+            <div className="w-4 h-4 rounded-sm border border-border shrink-0" style={{ backgroundColor: tc.hex || cv.color_hex || "#ccc" }} />
+            <span className="text-xs text-muted-foreground">{tc.code} – {tc.name}</span>
           </div>
         );
       },
@@ -154,6 +154,9 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [techColors, commColors, projects, onEdit]);
+
+  // Reset activeColumns whenever columns rebuild (data loaded) so renders always use fresh closures
+  useEffect(() => { setActiveColumns(null); }, [columns]);
 
   const visibleColumns = activeColumns || columns;
 
