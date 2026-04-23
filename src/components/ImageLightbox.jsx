@@ -16,14 +16,14 @@ export default function ImageLightbox({ src, alt = "", onClose, onPrev, onNext }
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/85 backdrop-blur-sm"
       onClick={onClose}
     >
       {/* Close */}
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-black transition-colors"
       >
         <X className="w-5 h-5" />
       </button>
@@ -33,7 +33,7 @@ export default function ImageLightbox({ src, alt = "", onClose, onPrev, onNext }
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onPrev(); }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/10 hover:bg-black/20 text-black transition-colors"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -56,7 +56,7 @@ export default function ImageLightbox({ src, alt = "", onClose, onPrev, onNext }
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onNext(); }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/10 hover:bg-black/20 text-black transition-colors"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
@@ -64,7 +64,7 @@ export default function ImageLightbox({ src, alt = "", onClose, onPrev, onNext }
 
       {/* Alt label */}
       {alt && (
-        <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">{alt}</p>
+        <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/60 text-sm">{alt}</p>
       )}
     </div>
   );
