@@ -10,12 +10,19 @@ import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 
-function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
+function LinkedColorwayCard({ cw, product, techColor, commColor, allTechColors = [], navigate }) {
   const [lightbox, setLightbox] = useState(false);
   const productImage = product?.images?.[0];
   // Rule: colorway image first, then product image as fallback
   const useProductFallback = !cw.image_url && !!productImage;
   const displayImage = cw.image_url || productImage;
+
+  const linkedHexes = (() => {
+    if (!commColor || commColor.sub_type !== "Combined") return null;
+    const ids = commColor.linked_technical_color_ids || [];
+    const hexes = ids.map((id) => allTechColors.find((t) => t.id === id)?.hex).filter(Boolean);
+    return hexes.length > 1 ? hexes : null;
+  })();
 
   return (
     <>
@@ -23,6 +30,10 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, navigate }) {
       <div className="aspect-square bg-muted relative">
         {displayImage ? (
           <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain cursor-zoom-in" onClick={() => setLightbox(true)} />
+        ) : linkedHexes ? (
+          <div className="w-full h-full flex">
+            {linkedHexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+          </div>
         ) : (
           <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
         )}
@@ -245,6 +256,13 @@ export default function LinkedColorwaysView({
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
   const getCommColor = (cw) => commColors.find((c) => c.id === cw.linked_color_id);
 
+  const getLinkedHexes = (cw) => {
+    const cc = getCommColor(cw);
+    if (!cc || cc.sub_type !== "Combined") return null;
+    const hexes = (cc.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean);
+    return hexes.length > 1 ? hexes : null;
+  };
+
   const filtered = useMemo(() => {
     if (!search.trim()) return colorways;
     const q = search.toLowerCase();
@@ -300,14 +318,20 @@ export default function LinkedColorwaysView({
       id: "cw_image",
       label: "Colorway",
       width: 70,
-      render: (cw) =>
-        cw.image_url ? (
+      render: (cw) => {
+        if (cw.image_url) return (
           <div className="w-8 h-8 rounded-md overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}>
             <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
           </div>
-        ) : (
-          <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-        ),
+        );
+        const hexes = getLinkedHexes(cw);
+        if (hexes) return (
+          <div className="w-8 h-8 rounded-md overflow-hidden flex">
+            {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+          </div>
+        );
+        return <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />;
+      },
     },
     { id: "style_sub_type", label: "Style: Sub-type", width: 130, sortKey: (cw) => getProduct(cw)?.sub_type || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_type || "—"}</span> },
     {
@@ -472,10 +496,15 @@ export default function LinkedColorwaysView({
             const productImage = product?.images?.[0];
             const useProductFallback = !cw.image_url && !!productImage;
             const displayImage = cw.image_url || productImage;
+            const hexes = !displayImage ? getLinkedHexes(cw) : null;
             return (
               <div className="relative w-full h-full">
                 {displayImage ? (
                   <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" />
+                ) : hexes ? (
+                  <div className="w-full h-full flex">
+                    {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                  </div>
                 ) : (
                   <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
                 )}

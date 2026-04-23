@@ -13,7 +13,7 @@ import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
-function StylesTab({ products, colorVariants, techColors, sizeGrids, projects }) {
+function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids, projects }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
@@ -69,14 +69,26 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
         const cvs = colorVariants.filter((cv) => cv.product_id === p.id);
         return (
           <div className="flex gap-1 flex-wrap">
-            {cvs.slice(0, 6).map((cv) => (
-              <div key={cv.id} className="relative">
-                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
-                {!cv.linked_color_id && (
-                  <div title="No commercial color linked" className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 border border-white" />
-                )}
-              </div>
-            ))}
+            {cvs.slice(0, 6).map((cv) => {
+              const cc = commColors.find((c) => c.id === cv.linked_color_id);
+              const hexes = cc?.sub_type === "Combined"
+                ? (cc.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean)
+                : null;
+              return (
+                <div key={cv.id} className="relative">
+                  {hexes?.length > 1 ? (
+                    <div className="w-5 h-5 rounded-full overflow-hidden flex" title={cv.color_name}>
+                      {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
+                  )}
+                  {!cv.linked_color_id && (
+                    <div title="No commercial color linked" className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 border border-white" />
+                  )}
+                </div>
+              );
+            })}
             {cvs.length > 6 && <span className="text-xs text-muted-foreground">+{cvs.length - 6}</span>}
           </div>
         );
@@ -125,18 +137,28 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
               const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 4);
               return cvs.length > 0 ? (
                 <div className="flex flex-col gap-1.5">
-                  {cvs.map((cv) => (
+                  {cvs.map((cv) => {
+                    const cc = commColors.find((c) => c.id === cv.linked_color_id);
+                    const hexes = !cv.image_url && cc?.sub_type === "Combined"
+                      ? (cc.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean)
+                      : null;
+                    return (
                     <div key={cv.id} className="flex items-center gap-2">
                       {cv.image_url ? (
                         <div className="w-6 h-6 rounded overflow-hidden shrink-0">
                           <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                        </div>
+                      ) : hexes?.length > 1 ? (
+                        <div className="w-6 h-6 rounded overflow-hidden flex shrink-0">
+                          {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
                         </div>
                       ) : (
                         <div className="w-6 h-6 rounded shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
                       )}
                       <span className="text-xs font-medium truncate">{cv.color_name}</span>
                     </div>
-                  ))}
+                    );
+                  })}
                   {colorVariants.filter((cv) => cv.product_id === product.id).length > 4 && (
                     <span className="text-xs text-muted-foreground">+{colorVariants.filter((cv) => cv.product_id === product.id).length - 4} more</span>
                   )}
@@ -175,7 +197,7 @@ function StylesTab({ products, colorVariants, techColors, sizeGrids, projects })
 }
 
 // ─── Colorways Tab ────────────────────────────────────────────────────────────
-function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) {
+function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, projects }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
@@ -184,6 +206,14 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
+  const getCommColor = (cw) => commColors.find((c) => c.id === cw.linked_color_id);
+
+  const getLinkedHexes = (cw) => {
+    const cc = getCommColor(cw);
+    if (!cc || cc.sub_type !== "Combined") return null;
+    const hexes = (cc.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean);
+    return hexes.length > 1 ? hexes : null;
+  };
 
   const filtered = useMemo(() => {
     if (!search.trim()) return colorways;
@@ -231,13 +261,20 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
     { id: "style_created_by", label: "Style: Created By", width: 180, sortKey: (cw) => getProduct(cw)?.created_by || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.created_by || "—"}</span> },
     {
       id: "cw_image", label: "Colorway Image", width: 70,
-      render: (cw) => cw.image_url ? (
-        <div className="w-8 h-8 rounded-md overflow-hidden">
-          <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-contain" />
-        </div>
-      ) : (
-        <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-      ),
+      render: (cw) => {
+        if (cw.image_url) return (
+          <div className="w-8 h-8 rounded-md overflow-hidden">
+            <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-contain" />
+          </div>
+        );
+        const hexes = getLinkedHexes(cw);
+        if (hexes) return (
+          <div className="w-8 h-8 rounded-md overflow-hidden flex">
+            {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+          </div>
+        );
+        return <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />;
+      },
     },
     { id: "color_name", label: "Color Name", width: 150, sortKey: (cw) => cw.color_name || "", render: (cw) => <span className="font-medium">{cw.color_name}</span> },
     { id: "colorway_code", label: "Colorway Code", width: 130, sortKey: (cw) => cw.colorway_code || "", render: (cw) => <span className="font-mono text-xs text-muted-foreground">{cw.colorway_code || "—"}</span> },
@@ -331,10 +368,15 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
             const productImage = prod?.images?.[0];
             const useProductFallback = !cw.image_url && !!productImage;
             const displayImage = cw.image_url || productImage;
+            const hexes = !displayImage ? getLinkedHexes(cw) : null;
             return (
               <div className="relative w-full h-full">
                 {displayImage ? (
                   <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" />
+                ) : hexes ? (
+                  <div className="w-full h-full flex">
+                    {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                  </div>
                 ) : (
                   <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
                 )}
@@ -537,6 +579,7 @@ export default function ListView() {
   const [colorways, setColorways] = useState([]);
   const [variations, setVariations] = useState([]);
   const [techColors, setTechColors] = useState([]);
+  const [commColors, setCommColors] = useState([]);
   const [sizeGrids, setSizeGrids] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -548,9 +591,10 @@ export default function ListView() {
       base44.entities.ProductColor.list("-created_date", 2000),
       base44.entities.ProductColorAndMore.list("-created_date", 5000),
       base44.entities.TechnicalColor.list("code", 2000),
+      base44.entities.CommercialColor.list("code", 2000),
       base44.entities.SizeGrid.list("name", 200),
       base44.entities.Project.list("name", 500),
-    ]).then(([prods, cws, vars, tcs, sgs, projs]) => {
+    ]).then(([prods, cws, vars, tcs, ccs, sgs, projs]) => {
       setSizeGrids(sgs);
       setProjects(projs);
       const styleProds = prods.filter((p) => p.type === "Product");
@@ -561,6 +605,7 @@ export default function ListView() {
       setColorways(styleCws);
       setVariations(vars.filter((v) => cwIds.has(v.product_color_id)));
       setTechColors(tcs);
+      setCommColors(ccs);
       setLoading(false);
     });
   }, []);
@@ -590,10 +635,10 @@ export default function ListView() {
             onChange={setActiveSection}
           >
             {activeSection === "styles" && (
-              <StylesTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
+              <StylesTab products={products} colorVariants={colorways} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
             )}
             {activeSection === "colorways" && (
-              <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
+              <ColorwaysTab colorways={colorways} products={products} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
             )}
             {activeSection === "variations" && (
               <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
