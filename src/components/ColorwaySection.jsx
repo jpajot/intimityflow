@@ -21,9 +21,12 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
   const [search, setSearch] = useState("");
   const [activeColumns, setActiveColumns] = useState(null);
 
+  const [commColors, setCommColors] = useState([]);
+
   useEffect(() => {
     base44.entities.TechnicalColor.list("code", 2000).then(setTechColors);
     base44.entities.Project.list("name", 500).then(setProjects);
+    base44.entities.CommercialColor.list("code", 2000).then(setCommColors);
   }, []);
 
   const getTechColor = (id) => techColors.find((t) => t.id === id);
@@ -87,11 +90,17 @@ export default function ColorwaySection({ colorVariants, onEdit, onAddNew, onAdd
     {
       id: "comm_color",
       label: "Commercial Color",
-      width: 160,
-      sortKey: (cv) => cv.linked_color_id ? "linked" : "",
-      render: (cv) => cv.linked_color_id
-        ? <span className="text-xs text-muted-foreground font-mono">{cv.linked_color_id}</span>
-        : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>,
+      width: 200,
+      sortKey: (cv) => {
+        const cc = commColors.find((c) => c.id === cv.linked_color_id);
+        return cc ? `${cc.code} ${cc.color_name}` : "";
+      },
+      render: (cv) => {
+        const cc = commColors.find((c) => c.id === cv.linked_color_id);
+        return cc
+          ? <span className="text-xs text-muted-foreground">{cc.code} – {cc.color_name}</span>
+          : <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300">⚠ Not linked</span>;
+      },
     },
     {
       id: "tech_color",
