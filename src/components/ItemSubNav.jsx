@@ -21,7 +21,7 @@ export default function ItemSubNav({ items, activeId, onChange, children }) {
   };
 
   return (
-    <div className="rounded-none flex border border-border overflow-hidden min-h-[400px]">
+    <div className="rounded-xl flex border border-border overflow-hidden min-h-[400px]">
       {/* Left vertical nav */}
       <div
         className={`shrink-0 bg-sidebar border-r border-border py-2 flex flex-col transition-all duration-200 ${expanded ? "w-44" : "w-12"}`}>
