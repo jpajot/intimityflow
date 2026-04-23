@@ -496,7 +496,7 @@ export default function LinkedColorwaysView({
             const productImage = product?.images?.[0];
             const useProductFallback = !cw.image_url && !!productImage;
             const displayImage = cw.image_url || productImage;
-            const hexes = !displayImage ? getLinkedHexes(cw) : null;
+            const hexes = getLinkedHexes(cw);
             return (
               <div className="relative w-full h-full">
                 {displayImage ? (
@@ -508,8 +508,14 @@ export default function LinkedColorwaysView({
                 ) : (
                   <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
                 )}
-                {useProductFallback && cw.color_hex && (
-                  <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
+                {useProductFallback && (
+                  hexes ? (
+                    <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md overflow-hidden flex">
+                      {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                    </div>
+                  ) : cw.color_hex ? (
+                    <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
+                  ) : null
                 )}
                 {!cw.linked_color_id && (
                   <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
