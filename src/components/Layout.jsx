@@ -166,7 +166,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop / Tablet sidebar — always visible */}
-      <aside className="bg-transparent hidden sm:flex flex-col border-r border-border transition-all duration-300 shrink-0 w-14">
+      <aside className="bg-transparent hidden sm:flex flex-col transition-all duration-300 shrink-0 w-14">
 
 
         
