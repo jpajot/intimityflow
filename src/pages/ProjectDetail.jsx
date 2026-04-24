@@ -21,6 +21,7 @@ import BoardIcon from "../components/icons/BoardIcon";
 import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
 import ItemSubNav from "../components/ItemSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
+import DCperCOTTab from "../components/DCperCOTTab";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -329,6 +330,7 @@ export default function ProjectDetail() {
         { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
         { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
         { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
+        { id: "dc_per_cot", label: "DC per CoT", icon: Layers },
         { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
         }
         activeId={activeSection}
@@ -414,6 +416,9 @@ export default function ProjectDetail() {
         }
         {activeSection === "variations" &&
         <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
+        }
+        {activeSection === "dc_per_cot" &&
+        <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} />
         }
       </ItemSubNav>
 

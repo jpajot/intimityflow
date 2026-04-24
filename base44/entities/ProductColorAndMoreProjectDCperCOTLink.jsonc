@@ -1,0 +1,32 @@
+{
+  "name": "ProductColorAndMoreProjectDCperCOTLink",
+  "type": "object",
+  "properties": {
+    "project_link_id": {
+      "type": "string",
+      "description": "ID of the parent ProductColorAndMoreProjectLink record"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID of the Project (denormalized for easy filtering)"
+    },
+    "distribution_channel": {
+      "type": "string",
+      "description": "Single Distribution Channel value (e.g. Wholesale)"
+    },
+    "channel_of_trade": {
+      "type": "string",
+      "description": "Single Channel of Trade value (e.g. EN)"
+    },
+    "forecasted_quantity": {
+      "type": "number",
+      "description": "Forecasted quantity for this DC x CoT combination"
+    }
+  },
+  "required": [
+    "project_link_id",
+    "project_id",
+    "distribution_channel",
+    "channel_of_trade"
+  ]
+}

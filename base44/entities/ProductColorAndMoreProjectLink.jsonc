@@ -21,6 +21,13 @@
       },
       "description": "Channels of Trade for this variation in this project"
     },
+    "distribution_channels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Distribution Channels for this variation in this project (e.g. Wholesale, Direct To Customer)"
+    },
     "status": {
       "type": "string",
       "description": "Project-specific status (e.g. Confirmed, Dropped, Development)"

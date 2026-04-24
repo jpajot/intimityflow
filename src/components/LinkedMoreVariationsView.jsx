@@ -122,10 +122,12 @@ function LinkCell({ value, onSave, type = "text", options = null }) {
 
 const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
 const CHANNEL_LOV_CODE = "ChannelOfTrade";
+const DIST_CHANNEL_OPTIONS = ["Wholesale", "Direct To Customer"];
 
 export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked }) {
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
+  const distChannelOptions = DIST_CHANNEL_OPTIONS;
 
   useEffect(() => {
     base44.entities.TypeOfLOV.list().then((types) => {
@@ -148,7 +150,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
 
   const saveLinkField = async (variationId, field, rawValue) => {
     let value = rawValue;
-    if (field === "channels_of_trade") {
+    if (field === "channels_of_trade" || field === "distribution_channels") {
       value = typeof rawValue === "string" ? rawValue.split(",").map((s) => s.trim()).filter(Boolean) : rawValue;
     }
     if (field === "forecasted_quantity") value = rawValue === "" ? null : Number(rawValue);
@@ -307,6 +309,16 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
       ),
     },
     {
+      id: "link_dist_channels", label: "Distribution Channels", width: 200,
+      render: (v) => (
+        <MultiSelectCell
+          value={linkMap[v.id]?.distribution_channels || []}
+          options={distChannelOptions}
+          onSave={(val) => saveLinkField(v.id, "distribution_channels", val)}
+        />
+      ),
+    },
+    {
       id: "link_status", label: "Project Status", width: 130,
       render: (v) => <LinkCell value={linkMap[v.id]?.status} options={LINK_STATUS_OPTIONS} onSave={(val) => saveLinkField(v.id, "status", val)} />,
     },
@@ -340,21 +352,16 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     { id: "linked_projects", label: "Linked Projects", getValue: (v) => (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean).join(", ") || "—", render: (v) => (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean).join(", ") || "—" },
   ];
 
-  // Always inject fresh channelOptions into the channels column render
-  const visibleColumns = (activeColumns || columns).map((col) =>
-    col.id === "link_channels"
-      ? {
-          ...col,
-          render: (v) => (
-            <MultiSelectCell
-              value={linkMap[v.id]?.channels_of_trade || []}
-              options={channelOptions}
-              onSave={(val) => saveLinkField(v.id, "channels_of_trade", val)}
-            />
-          ),
-        }
-      : col
-  );
+  // Always inject fresh options into multiselect columns (avoids stale closure when activeColumns is set)
+  const visibleColumns = (activeColumns || columns).map((col) => {
+    if (col.id === "link_channels") {
+      return { ...col, render: (v) => <MultiSelectCell value={linkMap[v.id]?.channels_of_trade || []} options={channelOptions} onSave={(val) => saveLinkField(v.id, "channels_of_trade", val)} /> };
+    }
+    if (col.id === "link_dist_channels") {
+      return { ...col, render: (v) => <MultiSelectCell value={linkMap[v.id]?.distribution_channels || []} options={distChannelOptions} onSave={(val) => saveLinkField(v.id, "distribution_channels", val)} /> };
+    }
+    return col;
+  });
 
   return (
     <div className="space-y-4">
