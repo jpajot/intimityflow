@@ -612,47 +612,49 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
             </div>
           </div>
 
-          <DataTable
-            columns={[
-              {
-                id: "_select",
-                label: (
-                  <input
-                    type="checkbox"
-                    checked={filtered.length > 0 && selectedForExport.size === filtered.length}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        const allIds = new Set(filtered.map((item) => item.id));
-                        setSelectedForExport(allIds);
-                      } else {
-                        setSelectedForExport(new Set());
-                      }
-                    }}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                ),
-                width: 40,
-                render: (row) => (
-                  <input
-                    type="checkbox"
-                    checked={selectedForExport.has(row.id)}
-                    onChange={(e) => {
-                      const newSet = new Set(selectedForExport);
-                      if (e.target.checked) newSet.add(row.id);
-                      else newSet.delete(row.id);
-                      setSelectedForExport(newSet);
-                    }}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                ),
-              },
-              ...visibleColumns,
-            ]}
-            rows={filtered}
-            hideColumnToggle
-            fixedColumns={pinnedCols}
-            onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
-          />
+          <div className="border border-border rounded-lg overflow-hidden" style={{ maxHeight: "calc(100vh - 350px)" }}>
+            <DataTable
+              columns={[
+                {
+                  id: "_select",
+                  label: (
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && selectedForExport.size === filtered.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const allIds = new Set(filtered.map((item) => item.id));
+                          setSelectedForExport(allIds);
+                        } else {
+                          setSelectedForExport(new Set());
+                        }
+                      }}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  ),
+                  width: 40,
+                  render: (row) => (
+                    <input
+                      type="checkbox"
+                      checked={selectedForExport.has(row.id)}
+                      onChange={(e) => {
+                        const newSet = new Set(selectedForExport);
+                        if (e.target.checked) newSet.add(row.id);
+                        else newSet.delete(row.id);
+                        setSelectedForExport(newSet);
+                      }}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  ),
+                },
+                ...visibleColumns,
+              ]}
+              rows={filtered}
+              hideColumnToggle
+              fixedColumns={pinnedCols}
+              onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
+            />
+          </div>
         </>
       ) : (
         <GalleryView

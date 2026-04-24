@@ -419,7 +419,9 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
           onClickItem={(v) => navigate(`/products/${getProduct(v)?.id}`)}
         />
       ) : (
-        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
+        <div className="border border-border rounded-lg overflow-hidden" style={{ maxHeight: "calc(100vh - 350px)" }}>
+          <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
+        </div>
       )}
 
       {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
