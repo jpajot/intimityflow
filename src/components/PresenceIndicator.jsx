@@ -68,7 +68,15 @@ export default function PresenceIndicator({ entityType, entityId }) {
       // Heartbeat every 30s
       intervalId = setInterval(async () => {
         if (recordIdRef.current) {
-          await base44.entities.UserPresence.update(recordIdRef.current, { last_seen: new Date().toISOString() }).catch(() => {});
+          try {
+            await base44.entities.UserPresence.update(recordIdRef.current, { last_seen: new Date().toISOString() });
+          } catch {
+            // Record was deleted externally — re-create it
+            try {
+              const created = await base44.entities.UserPresence.create(payload);
+              recordIdRef.current = created.id;
+            } catch {}
+          }
           await refreshOthers(me.email).catch(() => {});
         }
       }, 30_000);
