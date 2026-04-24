@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, Link, ZoomIn } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export function SizeControl({ size, onChange }) {
   return (
@@ -40,20 +41,24 @@ function saveSize(size) {
 }
 
 /**
- * Renders palette colors in a commercial-led layout:
+ * Renders palette colors in a commercial-led layout with drag-and-drop reordering.
  * - Commercial colors are primary cards
  * - Their linked technical colors appear as sub-swatches inside
  * - Unlinked technical colors appear in a secondary section below
+ * - onReorder(orderedEntryIds) is called after drag with the new order of entry IDs
  */
-export default function PaletteColorGrid({ swatches, techColors, commColors, paletteColors, paletteId, onRemove, onLinkTech, size: sizeProp, onSizeChange }) {
+export default function PaletteColorGrid({ swatches, techColors, commColors, paletteColors, paletteId, onRemove, onLinkTech, onReorder, size: sizeProp, onSizeChange }) {
   const [sizeLocal, setSizeLocal] = useState(loadSize);
   const size = sizeProp ?? sizeLocal;
   const handleSize = (s) => { setSizeLocal(s); saveSize(s); if (onSizeChange) onSizeChange(s); };
 
   const cfg = SIZE_CONFIGS[size];
 
-  // Separate commercial entries and technical entries in this palette
-  const palEntries = paletteColors.filter((pc) => pc.palette_id === paletteId);
+  // Separate commercial entries and technical entries in this palette, sorted by sort_order
+  const palEntries = paletteColors
+    .filter((pc) => pc.palette_id === paletteId)
+    .sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
+
   const commEntries = palEntries.filter((e) => e.color_type === "commercial");
   const techEntries = palEntries.filter((e) => e.color_type === "technical");
 
@@ -62,32 +67,23 @@ export default function PaletteColorGrid({ swatches, techColors, commColors, pal
     const comm = commColors.find((c) => c.id === e.color_id);
     if (!comm) return null;
 
-    // All linked technical colors for this commercial color
     const linkedTechIds = [
       ...(comm.main_technical_color_id ? [comm.main_technical_color_id] : []),
       ...(comm.linked_technical_color_ids || []).filter((id) => id !== comm.main_technical_color_id),
     ];
     const linkedTechs = linkedTechIds.map((id) => techColors.find((t) => t.id === id)).filter(Boolean);
-
-    // Main swatch hex: use main tech color hex, or first linked
     const mainHex = linkedTechs[0]?.hex || "#ccc";
-
-    // Is this a combined color (multiple hexes)?
     const isMulti = linkedTechs.length > 1;
 
     return { entryId: e.id, comm, linkedTechs, mainHex, isMulti };
   }).filter(Boolean);
 
-  // Technical entries to show standalone:
-  // - has no commercial color linked globally → truly unlinked (amber, show link button)
-  // - has a commercial color linked globally BUT that commercial is NOT in this palette → show it (amber, show link button)
-  // - has a commercial color linked AND that commercial IS in this palette → skip (already shown via comm card)
+  // Technical entries to show standalone (unlinked or whose commercial isn't in this palette)
   const commColorIdsInPalette = new Set(commEntries.map((e) => e.color_id));
   const unlinkedTechEntries = techEntries.filter((e) => {
     const linkedComm = commColors.find(
       (c) => c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id)
     );
-    // Hide if its commercial color is already shown as a card in this palette
     if (linkedComm && commColorIdsInPalette.has(linkedComm.id)) return false;
     return true;
   });
@@ -101,70 +97,95 @@ export default function PaletteColorGrid({ swatches, techColors, commColors, pal
     return <p className="text-sm text-muted-foreground">No colors in this palette yet.</p>;
   }
 
+  const handleDragEnd = (result) => {
+    if (!result.destination || result.destination.index === result.source.index) return;
+    const reordered = Array.from(commCards);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    if (onReorder) onReorder(reordered.map((c) => c.entryId));
+  };
+
   return (
     <div className="space-y-5">
-
-      {/* Commercial color cards */}
+      {/* Commercial color cards — draggable */}
       {commCards.length > 0 && (
-        <div className={`grid ${cfg.cols} gap-3`}>
-          {commCards.map(({ entryId, comm, linkedTechs, mainHex, isMulti }) => (
-            <div key={entryId} className="rounded-lg border border-border overflow-hidden group/color relative bg-card">
-              {/* Main color swatch */}
-              {isMulti ? (
-                <div className="aspect-square flex overflow-hidden">
-                  {linkedTechs.map((t, j) => (
-                    <div key={j} className="flex-1 h-full" style={{ backgroundColor: t.hex || "#ccc" }} />
-                  ))}
-                </div>
-              ) : (
-                <div className="aspect-square" style={{ backgroundColor: mainHex }} />
-              )}
-
-              {/* Remove button */}
-              <button
-                type="button"
-                onClick={() => {
-                  // Also find palette entry IDs for the linked tech colors
-                  const linkedTechEntryIds = linkedTechs
-                    .map((t) => techEntries.find((e) => e.color_id === t.id)?.id)
-                    .filter(Boolean);
-                  onRemove(entryId, linkedTechEntryIds);
-                }}
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex z-10"
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="palette-colors" direction="horizontal">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`grid ${cfg.cols} gap-3`}
               >
-                <X className="w-2.5 h-2.5" />
-              </button>
+                {commCards.map(({ entryId, comm, linkedTechs, mainHex, isMulti }, index) => (
+                  <Draggable key={entryId} draggableId={entryId} index={index}>
+                    {(drag, snapshot) => (
+                      <div
+                        ref={drag.innerRef}
+                        {...drag.draggableProps}
+                        {...drag.dragHandleProps}
+                        className={`rounded-lg border overflow-hidden group/color relative bg-card transition-shadow ${
+                          snapshot.isDragging ? "shadow-xl border-primary" : "border-border"
+                        }`}
+                      >
+                        {/* Main color swatch */}
+                        {isMulti ? (
+                          <div className="aspect-square flex overflow-hidden">
+                            {linkedTechs.map((t, j) => (
+                              <div key={j} className="flex-1 h-full" style={{ backgroundColor: t.hex || "#ccc" }} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="aspect-square" style={{ backgroundColor: mainHex }} />
+                        )}
 
-              {/* Card info */}
-              <div className="p-2 space-y-1.5">
-                {/* Commercial color name & code */}
-                <div>
-                  <p className={`font-semibold leading-tight ${cfg.cardClass}`}>{comm.color_name || "—"}</p>
-                  <p className={`font-mono text-muted-foreground ${cfg.codeClass}`}>{comm.code}</p>
-                </div>
+                        {/* Remove button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const linkedTechEntryIds = linkedTechs
+                              .map((t) => techEntries.find((e) => e.color_id === t.id)?.id)
+                              .filter(Boolean);
+                            onRemove(entryId, linkedTechEntryIds);
+                          }}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex z-10"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
 
-                {/* Linked technical sub-swatches */}
-                {linkedTechs.length > 0 && (
-                  <div className="border-t border-border pt-1.5 space-y-1">
-                    {linkedTechs.map((t) => (
-                      <div key={t.id} className="flex items-center gap-1.5">
-                        <div
-                          className={`${cfg.swatchSize} rounded-sm border border-border shrink-0`}
-                          style={{ backgroundColor: t.hex || "#ccc" }}
-                          title={t.hex}
-                        />
-                        <div className="min-w-0">
-                          <p className={`font-mono leading-tight ${cfg.codeClass} text-muted-foreground`}>{t.code}</p>
-                          <p className={`leading-tight ${cfg.codeClass} text-muted-foreground`}>{t.name}</p>
+                        {/* Card info */}
+                        <div className="p-2 space-y-1.5">
+                          <div>
+                            <p className={`font-semibold leading-tight ${cfg.cardClass}`}>{comm.color_name || "—"}</p>
+                            <p className={`font-mono text-muted-foreground ${cfg.codeClass}`}>{comm.code}</p>
+                          </div>
+                          {linkedTechs.length > 0 && (
+                            <div className="border-t border-border pt-1.5 space-y-1">
+                              {linkedTechs.map((t) => (
+                                <div key={t.id} className="flex items-center gap-1.5">
+                                  <div
+                                    className={`${cfg.swatchSize} rounded-sm border border-border shrink-0`}
+                                    style={{ backgroundColor: t.hex || "#ccc" }}
+                                    title={t.hex}
+                                  />
+                                  <div className="min-w-0">
+                                    <p className={`font-mono leading-tight ${cfg.codeClass} text-muted-foreground`}>{t.code}</p>
+                                    <p className={`leading-tight ${cfg.codeClass} text-muted-foreground`}>{t.name}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
 
       {/* Unlinked technical colors */}

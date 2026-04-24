@@ -1,0 +1,28 @@
+{
+  "name": "ColorPaletteColor",
+  "type": "object",
+  "properties": {
+    "palette_id": {
+      "type": "string"
+    },
+    "color_type": {
+      "type": "string",
+      "enum": [
+        "technical",
+        "commercial"
+      ]
+    },
+    "color_id": {
+      "type": "string"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Order of the color in the palette"
+    }
+  },
+  "required": [
+    "palette_id",
+    "color_type",
+    "color_id"
+  ]
+}

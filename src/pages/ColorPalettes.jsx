@@ -215,6 +215,19 @@ export default function ColorPalettes() {
     setShowColorPicker(false);
   };
 
+  const handleReorderColors = async (orderedEntryIds) => {
+    // Update local state immediately
+    setPaletteColors((prev) => prev.map((pc) => {
+      const idx = orderedEntryIds.indexOf(pc.id);
+      if (idx === -1) return pc;
+      return { ...pc, sort_order: idx };
+    }));
+    // Persist to backend
+    await Promise.all(orderedEntryIds.map((id, idx) =>
+      base44.entities.ColorPaletteColor.update(id, { sort_order: idx })
+    ));
+  };
+
   const handleRemoveColor = async (paletteColorEntry) => {
     const entryId = paletteColorEntry.id || paletteColorEntry;
     const linkedTechEntryIds = paletteColorEntry.linkedTechEntryIds || [];
@@ -277,7 +290,9 @@ export default function ColorPalettes() {
   };
 
   const getSwatchData = (paletteId) => {
-    const entries = paletteColors.filter((pc) => pc.palette_id === paletteId);
+    const entries = paletteColors
+      .filter((pc) => pc.palette_id === paletteId)
+      .sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
     return entries.map((e) => {
       if (e.color_type === "technical") {
         const t = techColors.find((c) => c.id === e.color_id);
@@ -528,6 +543,7 @@ export default function ColorPalettes() {
                     swatches={selectedSwatches}
                     onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
                     onLinkTech={(tech) => setLinkingTechColor(tech)}
+                    onReorder={handleReorderColors}
                     size={paletteCardSize}
                     onSizeChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }}
                   />

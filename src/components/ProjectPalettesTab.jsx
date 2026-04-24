@@ -86,7 +86,10 @@ export default function ProjectPalettesTab({
   // ── Color helpers ─────────────────────────────────────────────────────────────
 
   const getSwatchData = (paletteId) => {
-    return paletteColors.filter((pc) => pc.palette_id === paletteId).map((e) => {
+    return paletteColors
+      .filter((pc) => pc.palette_id === paletteId)
+      .sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999))
+      .map((e) => {
       if (e.color_type === "technical") {
         const t = techColors.find((c) => c.id === e.color_id);
         const comm = commColors.find((c) => c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id));
@@ -180,6 +183,17 @@ export default function ProjectPalettesTab({
     setPaletteColors((prev) => [...prev, ...newEntries]);
     setAddingColors(false);
     setShowColorPicker(false);
+  };
+
+  const handleReorderColors = async (orderedEntryIds) => {
+    setPaletteColors((prev) => prev.map((pc) => {
+      const idx = orderedEntryIds.indexOf(pc.id);
+      if (idx === -1) return pc;
+      return { ...pc, sort_order: idx };
+    }));
+    await Promise.all(orderedEntryIds.map((id, idx) =>
+      base44.entities.ColorPaletteColor.update(id, { sort_order: idx })
+    ));
   };
 
   const handleRemoveColor = async (entryId, linkedTechEntryIds = []) => {
@@ -482,6 +496,7 @@ export default function ProjectPalettesTab({
               swatches={selectedSwatches}
               onRemove={handleRemoveColor}
               onLinkTech={(tech) => setLinkingTechColor(tech)}
+              onReorder={handleReorderColors}
               size={paletteCardSize}
               onSizeChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }}
             />
