@@ -191,16 +191,6 @@ export default function ProjectPalettesTab({
     const swatches = getSwatchData(selectedPaletteId);
     if (!swatches.length) return;
 
-    // Helper: write a UTF-16BE null-terminated string and return byte length (for block size)
-    const encodeColorName = (name) => {
-      const chars = [...name];
-      const buf = new ArrayBuffer((chars.length + 1) * 2);
-      const view = new DataView(buf);
-      chars.forEach((c, i) => view.setUint16(i * 2, c.charCodeAt(0)));
-      view.setUint16(chars.length * 2, 0); // null terminator
-      return buf;
-    };
-
     const hexToRgbFloat = (hex) => {
       const h = hex.replace("#", "");
       const r = parseInt(h.substring(0, 2), 16) / 255;
@@ -211,30 +201,42 @@ export default function ProjectPalettesTab({
 
     // Build all color blocks first so we know total count
     const colorBlocks = swatches.map((s) => {
-      const labelBuf = encodeColorName(s.name || s.code || "Color");
+      const colorName = s.name || s.code || "Color";
       const [r, g, b] = hexToRgbFloat(s.hex || "#cccccc");
 
-      // Color entry block: type=0x0001
-      // Block size = labelLen + 4 (color model) + 12 (3 floats) + 2 (color type)
-      const blockDataSize = labelBuf.byteLength + 4 + 12 + 2;
-      const block = new ArrayBuffer(2 + 4 + blockDataSize); // type + size + data
+      // Name field: uint16 char count (including null) + UTF-16BE chars + null terminator
+      const nameCharCount = colorName.length + 1; // includes null terminator
+      const nameBytesLen = nameCharCount * 2;      // each char is 2 bytes
+
+      // Block data = 2 (name char count) + nameBytesLen + 4 (model) + 12 (3×float32) + 2 (color type)
+      const blockDataSize = 2 + nameBytesLen + 4 + 12 + 2;
+
+      // Total buffer = 2 (block type) + 4 (block size) + blockDataSize
+      const block = new ArrayBuffer(2 + 4 + blockDataSize);
       const v = new DataView(block);
       let o = 0;
-      v.setUint16(o, 0x0001); o += 2; // block type: color entry
-      v.setUint32(o, blockDataSize); o += 4; // block length
-      // name (UTF-16BE, includes null terminator length in uint16 count)
-      const nameLen = (s.name || s.code || "Color").length + 1;
-      v.setUint16(o, nameLen); o += 2;
-      new Uint8Array(block, o, labelBuf.byteLength).set(new Uint8Array(labelBuf));
-      o += labelBuf.byteLength;
-      // color model: "RGB "
+
+      v.setUint16(o, 0x0001); o += 2;         // block type: color entry
+      v.setUint32(o, blockDataSize); o += 4;   // block data length
+
+      // Name: uint16 char count then UTF-16BE chars including null
+      v.setUint16(o, nameCharCount); o += 2;
+      for (let i = 0; i < colorName.length; i++) {
+        v.setUint16(o, colorName.charCodeAt(i)); o += 2;
+      }
+      v.setUint16(o, 0); o += 2; // null terminator
+
+      // Color model: "RGB "
       v.setUint8(o, 0x52); v.setUint8(o+1, 0x47); v.setUint8(o+2, 0x42); v.setUint8(o+3, 0x20); o += 4;
+
       // R G B as float32 big-endian
       v.setFloat32(o, r); o += 4;
       v.setFloat32(o, g); o += 4;
       v.setFloat32(o, b); o += 4;
-      // color type: 0 = global
+
+      // Color type: 0 = global
       v.setUint16(o, 0); o += 2;
+
       return block;
     });
 
