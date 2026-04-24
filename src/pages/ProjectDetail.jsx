@@ -22,6 +22,7 @@ import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
 import ItemSubNav from "../components/ItemSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
+import DCperCOTIcon from "../components/icons/DCperCOTIcon";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -330,7 +331,7 @@ export default function ProjectDetail() {
         { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
         { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
         { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
-        { id: "dc_per_cot", label: "DC per CoT", icon: Layers },
+        { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
         { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
         }
         activeId={activeSection}
