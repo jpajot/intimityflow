@@ -175,12 +175,39 @@ export default function ColorPalettes() {
 
   const handleAddSelectedColors = async () => {
     setAddingColors(true);
-    const toCreate = [];
-    for (const key of selectedColorIds) {
-      const [type, id] = key.split(":");
-      toCreate.push({ palette_id: selectedPaletteId, color_type: type, color_id: id });
+
+    const alreadyInPalette = new Set(
+      paletteColors.filter((pc) => pc.palette_id === selectedPaletteId).map((pc) => pc.color_id)
+    );
+
+    const toAdd = [...selectedColorIds].map((key) => {
+      const [color_type, color_id] = key.split(":");
+      return { palette_id: selectedPaletteId, color_type, color_id };
+    });
+
+    const companions = [];
+    for (const { color_type, color_id } of toAdd) {
+      if (color_type === "commercial") {
+        const comm = commColors.find((c) => c.id === color_id);
+        if (comm?.main_technical_color_id && !alreadyInPalette.has(comm.main_technical_color_id) &&
+            !toAdd.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id) &&
+            !companions.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id)) {
+          companions.push({ palette_id: selectedPaletteId, color_type: "technical", color_id: comm.main_technical_color_id });
+        }
+      } else if (color_type === "technical") {
+        const comm = commColors.find((c) =>
+          c.main_technical_color_id === color_id || (c.linked_technical_color_ids || []).includes(color_id)
+        );
+        if (comm && !alreadyInPalette.has(comm.id) &&
+            !toAdd.some((e) => e.color_type === "commercial" && e.color_id === comm.id) &&
+            !companions.some((e) => e.color_type === "commercial" && e.color_id === comm.id)) {
+          companions.push({ palette_id: selectedPaletteId, color_type: "commercial", color_id: comm.id });
+        }
+      }
     }
-    const created = await Promise.all(toCreate.map((d) => base44.entities.ColorPaletteColor.create(d)));
+
+    const allEntries = [...toAdd, ...companions];
+    const created = await Promise.all(allEntries.map((d) => base44.entities.ColorPaletteColor.create(d)));
     setPaletteColors((prev) => [...prev, ...created]);
     setAddingColors(false);
     setShowColorPicker(false);

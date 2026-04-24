@@ -131,8 +131,44 @@ export default function ProjectPalettesTab({
 
   const handleAddSelectedColors = async () => {
     setAddingColors(true);
-    const entries = [...selectedColorIds].map((key) => { const [t, i] = key.split(":"); return { palette_id: selectedPaletteId, color_type: t, color_id: i }; });
-    const newEntries = await Promise.all(entries.map((d) => base44.entities.ColorPaletteColor.create(d)));
+
+    // Build the set of already-in-palette color IDs
+    const alreadyInPalette = new Set(
+      paletteColors.filter((pc) => pc.palette_id === selectedPaletteId).map((pc) => pc.color_id)
+    );
+
+    // Start with explicitly selected entries
+    const toAdd = [...selectedColorIds].map((key) => {
+      const [t, i] = key.split(":");
+      return { palette_id: selectedPaletteId, color_type: t, color_id: i };
+    });
+
+    // Collect auto-companion entries
+    const companions = [];
+    for (const { color_type, color_id } of toAdd) {
+      if (color_type === "commercial") {
+        // Rule 1: add the main technical color if not already present
+        const comm = commColors.find((c) => c.id === color_id);
+        if (comm?.main_technical_color_id && !alreadyInPalette.has(comm.main_technical_color_id) &&
+            !toAdd.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id) &&
+            !companions.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id)) {
+          companions.push({ palette_id: selectedPaletteId, color_type: "technical", color_id: comm.main_technical_color_id });
+        }
+      } else if (color_type === "technical") {
+        // Rule 2: add the linked commercial color if not already present
+        const comm = commColors.find((c) =>
+          c.main_technical_color_id === color_id || (c.linked_technical_color_ids || []).includes(color_id)
+        );
+        if (comm && !alreadyInPalette.has(comm.id) &&
+            !toAdd.some((e) => e.color_type === "commercial" && e.color_id === comm.id) &&
+            !companions.some((e) => e.color_type === "commercial" && e.color_id === comm.id)) {
+          companions.push({ palette_id: selectedPaletteId, color_type: "commercial", color_id: comm.id });
+        }
+      }
+    }
+
+    const allEntries = [...toAdd, ...companions];
+    const newEntries = await Promise.all(allEntries.map((d) => base44.entities.ColorPaletteColor.create(d)));
     setPaletteColors((prev) => [...prev, ...newEntries]);
     setAddingColors(false);
     setShowColorPicker(false);
