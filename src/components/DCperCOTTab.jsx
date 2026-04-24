@@ -612,7 +612,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
             </div>
           </div>
 
-          <div className="border border-border rounded-lg overflow-hidden" style={{ maxHeight: "calc(100vh - 350px)" }}>
+          <div className="border border-border rounded-lg overflow-y-auto" style={{ maxHeight: "calc(100vh - 380px)" }}>
             <DataTable
               columns={[
                 {

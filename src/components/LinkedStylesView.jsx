@@ -176,7 +176,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
           onClickItem={(p) => navigate(`/products/${p.id}`)}
         />
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden" style={{ maxHeight: "calc(100vh - 350px)" }}>
+        <div className="border border-border rounded-lg overflow-y-auto" style={{ maxHeight: "calc(100vh - 380px)" }}>
           <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
         </div>
       )}

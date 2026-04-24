@@ -524,7 +524,7 @@ export default function LinkedColorwaysView({
           onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}
         />
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden" style={{ maxHeight: "calc(100vh - 350px)" }}>
+        <div className="border border-border rounded-lg overflow-y-auto" style={{ maxHeight: "calc(100vh - 380px)" }}>
           <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
         </div>
       )}
