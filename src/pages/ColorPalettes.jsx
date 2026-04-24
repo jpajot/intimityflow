@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import ColorLibrary from "./ColorLibrary";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
+import PaletteColorGrid from "../components/PaletteColorGrid";
 
 export default function ColorPalettes() {
   const [mainTab, setMainTab] = useState("palettes");
@@ -218,6 +219,59 @@ export default function ColorPalettes() {
     setPaletteColors((prev) => prev.filter((pc) => pc.id !== paletteColorEntry.id));
   };
 
+  const exportASE = () => {
+    if (!selectedPaletteId) return;
+    const swatches = getSwatchData(selectedPaletteId);
+    if (!swatches.length) return;
+
+    const hexToRgbFloat = (hex) => {
+      const h = (hex || "#cccccc").replace("#", "");
+      return [parseInt(h.substring(0,2),16)/255, parseInt(h.substring(2,4),16)/255, parseInt(h.substring(4,6),16)/255];
+    };
+
+    const colorBlocks = swatches.map((s) => {
+      const colorName = s.name || s.code || "Color";
+      const [r, g, b] = hexToRgbFloat(s.hex);
+      const nameCharCount = colorName.length + 1;
+      const nameBytesLen = nameCharCount * 2;
+      const blockDataSize = 2 + nameBytesLen + 4 + 12 + 2;
+      const block = new ArrayBuffer(2 + 4 + blockDataSize);
+      const v = new DataView(block);
+      let o = 0;
+      v.setUint16(o, 0x0001); o += 2;
+      v.setUint32(o, blockDataSize); o += 4;
+      v.setUint16(o, nameCharCount); o += 2;
+      for (let i = 0; i < colorName.length; i++) { v.setUint16(o, colorName.charCodeAt(i)); o += 2; }
+      v.setUint16(o, 0); o += 2;
+      v.setUint8(o,0x52); v.setUint8(o+1,0x47); v.setUint8(o+2,0x42); v.setUint8(o+3,0x20); o += 4;
+      v.setFloat32(o, r); o += 4;
+      v.setFloat32(o, g); o += 4;
+      v.setFloat32(o, b); o += 4;
+      v.setUint16(o, 0); o += 2;
+      return block;
+    });
+
+    const header = new ArrayBuffer(12);
+    const hv = new DataView(header);
+    hv.setUint8(0,0x41); hv.setUint8(1,0x53); hv.setUint8(2,0x45); hv.setUint8(3,0x46);
+    hv.setUint16(4,1); hv.setUint16(6,0);
+    hv.setUint32(8, colorBlocks.length);
+
+    const totalSize = header.byteLength + colorBlocks.reduce((s,b) => s + b.byteLength, 0);
+    const combined = new Uint8Array(totalSize);
+    let offset = 0;
+    combined.set(new Uint8Array(header), offset); offset += header.byteLength;
+    for (const block of colorBlocks) { combined.set(new Uint8Array(block), offset); offset += block.byteLength; }
+
+    const blob = new Blob([combined], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedPalette?.name?.replace(/\s+/g,"_") || "palette"}.ase`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getSwatchData = (paletteId) => {
     const entries = paletteColors.filter((pc) => pc.palette_id === paletteId);
     return entries.map((e) => {
@@ -246,7 +300,14 @@ export default function ColorPalettes() {
       const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
       return t.code?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q) || linkedComm?.code?.toLowerCase().includes(q);
     });
-    const commFiltered = commColors.filter((c) => !linkedIds.has(c.id) && (!q || c.code?.toLowerCase().includes(q) || c.color_name?.toLowerCase().includes(q)));
+    const commFiltered = commColors.filter((c) => {
+      if (linkedIds.has(c.id)) return false;
+      if (!q) return true;
+      if (c.code?.toLowerCase().includes(q) || c.color_name?.toLowerCase().includes(q)) return true;
+      // also search by linked tech color codes
+      const linkedTechCodes = (c.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.code).filter(Boolean);
+      return linkedTechCodes.some((tc) => tc.toLowerCase().includes(q));
+    });
     return { techFiltered, commFiltered };
   };
 
@@ -359,9 +420,16 @@ export default function ColorPalettes() {
                         </p>
                       )}
                     </div>
-                    <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
-                      <Plus className="w-3.5 h-3.5" /> Add Color
-                    </Button>
+                    <div className="flex gap-2">
+                      {selectedSwatches.length > 0 && (
+                        <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
+                          <Download className="w-3.5 h-3.5" /> Export .ase
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
+                        <Plus className="w-3.5 h-3.5" /> Add Color
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Color Picker */}
@@ -373,8 +441,12 @@ export default function ColorPalettes() {
                           return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
                         })
                       : commFiltered.map((c) => {
-                          const t = techColors.find((t) => t.id === c.main_technical_color_id);
-                          return { key: `commercial:${c.id}`, hex: t?.hex || "#ccc", label: c.color_name, sub: c.code };
+                          const mainTech = techColors.find((t) => t.id === c.main_technical_color_id);
+                          const linkedHexes = (c.linked_technical_color_ids?.length > 1)
+                            ? (c.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean)
+                            : null;
+                          const techCode = mainTech?.code;
+                          return { key: `commercial:${c.id}`, hex: mainTech?.hex || "#ccc", linkedHexes, label: c.color_name, sub: c.code, techCode };
                         });
                     return (
                       <div className="border border-border rounded-lg overflow-hidden">
@@ -398,10 +470,20 @@ export default function ColorPalettes() {
                               <button key={item.key} type="button"
                                 onClick={() => toggleColorSelection(item.key)}
                                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${ selected ? "bg-primary/10" : "hover:bg-muted" }`}>
-                                <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                                {item.linkedHexes?.length > 1 ? (
+                                  <div className="w-5 h-5 rounded-sm border border-border shrink-0 overflow-hidden flex">
+                                    {item.linkedHexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                                )}
                                 <div className="flex-1 min-w-0">
                                   <span className="text-xs font-medium block truncate">{item.label}</span>
-                                  <span className="text-[10px] text-muted-foreground font-mono">{item.sub}{item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}</span>
+                                  <span className="text-[10px] text-muted-foreground font-mono">
+                                    {item.sub}
+                                    {item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}
+                                    {item.techCode ? <span className="ml-1.5 text-muted-foreground/70">· {item.techCode}</span> : null}
+                                  </span>
                                 </div>
                                 {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
                               </button>
@@ -432,46 +514,16 @@ export default function ColorPalettes() {
                     </div>
                   )}
 
-                  {/* Color cards grid */}
-                  {selectedSwatches.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No colors in this palette yet.</p>
-                  ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                      {selectedSwatches.map((s, i) => (
-                        <div key={i} className={`rounded-lg border overflow-hidden group/color relative ${s.isUnlinked ? "border-amber-300" : "border-border"}`}>
-                          {s.linkedHexes?.length > 1 ? (
-                            <div className="aspect-square flex overflow-hidden">
-                              {s.linkedHexes.map((h, j) => (
-                                <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="aspect-square" style={{ backgroundColor: s.hex }} />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveColor({ id: s.id })}
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex"
-                          >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                          <div className="p-2 space-y-0.5">
-                            <p className="text-xs font-medium truncate">{s.name || "—"}</p>
-                            {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
-                            <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
-                            {s.commCode && <p className="text-[10px] font-mono text-muted-foreground truncate border-t border-border pt-0.5 mt-0.5">{s.commCode}</p>}
-                            {s.isUnlinked && (
-                              <button type="button" onClick={() => setLinkingTechColor(s.techColorObj)}
-                                title="Link to commercial color"
-                                className="mt-1 w-5 h-5 flex items-center justify-center rounded bg-amber-50 text-amber-500 border border-amber-300 hover:bg-amber-100 transition-colors">
-                                <Link className="w-2.5 h-2.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Color cards grid — commercial-led layout via shared component */}
+                  <PaletteColorGrid
+                    paletteColors={paletteColors}
+                    paletteId={selectedPaletteId}
+                    techColors={techColors}
+                    commColors={commColors}
+                    swatches={selectedSwatches}
+                    onRemove={(entryId) => handleRemoveColor({ id: entryId })}
+                    onLinkTech={(tech) => setLinkingTechColor(tech)}
+                  />
                 </>
               )}
             </div>
