@@ -427,8 +427,9 @@ export default function ColorPalettes() {
                             {s.commCode && <p className="text-[10px] font-mono text-muted-foreground truncate border-t border-border pt-0.5 mt-0.5">{s.commCode}</p>}
                             {s.isUnlinked && (
                               <button type="button" onClick={() => setLinkingTechColor(s.techColorObj)}
-                                className="mt-1 w-full flex items-center justify-center gap-1 text-[10px] px-1.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 transition-colors">
-                                <Link className="w-2.5 h-2.5" /> Link commercial
+                                title="Link to commercial color"
+                                className="mt-1 w-5 h-5 flex items-center justify-center rounded bg-amber-50 text-amber-500 border border-amber-300 hover:bg-amber-100 transition-colors">
+                                <Link className="w-2.5 h-2.5" />
                               </button>
                             )}
                           </div>
