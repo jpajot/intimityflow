@@ -330,6 +330,33 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
 
   const visibleColumns = activeColumns || defaultColumns;
 
+  // Stats calculations
+  const totalItems = filtered.length;
+  const doneItems = filtered.filter((item) => item.forecast_status === "Done").length;
+  const forecastProgress = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+
+  const qtyByDC = useMemo(() => {
+    const map = {};
+    filtered.forEach((item) => {
+      if (item.forecast_status === "Done") {
+        if (!map[item.distribution_channel]) map[item.distribution_channel] = 0;
+        map[item.distribution_channel] += item.forecasted_quantity || 0;
+      }
+    });
+    return map;
+  }, [filtered]);
+
+  const qtyByCOT = useMemo(() => {
+    const map = {};
+    filtered.forEach((item) => {
+      if (item.forecast_status === "Done") {
+        if (!map[item.channel_of_trade]) map[item.channel_of_trade] = 0;
+        map[item.channel_of_trade] += item.forecasted_quantity || 0;
+      }
+    });
+    return map;
+  }, [filtered]);
+
   const handleExport = async () => {
     const toExport = selectedForExport.size > 0
       ? filtered.filter((item) => selectedForExport.has(item.id))
@@ -530,6 +557,60 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         </div>
       ) : view === "list" ? (
         <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+            {/* Forecast Progress */}
+            <div className="bg-card rounded-lg border border-border p-4">
+              <div className="text-xs font-semibold text-muted-foreground mb-2">Forecast Progress</div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-primary h-full transition-all duration-300"
+                      style={{ width: `${forecastProgress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-lg font-semibold">{forecastProgress}%</div>
+              </div>
+              <div className="text-xs text-muted-foreground mt-2">
+                {doneItems} of {totalItems} done
+              </div>
+            </div>
+
+            {/* Qty by DC */}
+            <div className="bg-card rounded-lg border border-border p-4">
+              <div className="text-xs font-semibold text-muted-foreground mb-3">Total Qty by DC</div>
+              <div className="space-y-2">
+                {Object.entries(qtyByDC).length > 0 ? (
+                  Object.entries(qtyByDC).map(([dc, qty]) => (
+                    <div key={dc} className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{dc}</span>
+                      <span className="font-semibold">{qty.toLocaleString()}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-muted-foreground">No completed forecasts</div>
+                )}
+              </div>
+            </div>
+
+            {/* Qty by CoT */}
+            <div className="bg-card rounded-lg border border-border p-4">
+              <div className="text-xs font-semibold text-muted-foreground mb-3">Total Qty by CoT</div>
+              <div className="space-y-2">
+                {Object.entries(qtyByCOT).length > 0 ? (
+                  Object.entries(qtyByCOT).map(([cot, qty]) => (
+                    <div key={cot} className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{cot}</span>
+                      <span className="font-semibold">{qty.toLocaleString()}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-muted-foreground">No completed forecasts</div>
+                )}
+              </div>
+            </div>
+          </div>
 
           <DataTable
             columns={[
