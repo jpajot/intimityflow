@@ -1,9 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Zap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Zap, LayoutGrid, List, FileDown } from "lucide-react";
 import DataTable from "./DataTable";
+import GalleryView from "./GalleryView";
+import ViewSelector from "./ViewSelector";
+import * as XLSX from "xlsx";
 
 // Inline number edit cell
 function NumberCell({ value, onSave }) {
@@ -37,16 +41,31 @@ function NumberCell({ value, onSave }) {
   );
 }
 
-export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products }) {
+export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [] }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterDC, setFilterDC] = useState("all");
+  const [filterCoT, setFilterCoT] = useState("all");
+  const [view, setView] = useState("list");
+  const [activeColumns, setActiveColumns] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
+  const [linkMap, setLinkMap] = useState({});
 
   useEffect(() => {
     if (!projectId) return;
     loadItems();
   }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    base44.entities.ProductColorAndMoreProjectLink.filter({ project_id: projectId }).then((links) => {
+      const map = {};
+      links.forEach((l) => { map[l.id] = l; });
+      setLinkMap(map);
+    });
+  }, [projectId, items.length]);
 
   const loadItems = async () => {
     setLoading(true);
@@ -57,14 +76,9 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
 
   const handleGenerate = async () => {
     setGenerating(true);
-
-    // Load all project links for this project
     const links = await base44.entities.ProductColorAndMoreProjectLink.filter({ project_id: projectId });
-
-    // Load existing DC x CoT combos to avoid duplicates
     const existing = await base44.entities.ProductColorAndMoreProjectDCperCOTLink.filter({ project_id: projectId });
     const existingKeys = new Set(existing.map((e) => `${e.project_link_id}__${e.distribution_channel}__${e.channel_of_trade}`));
-
     const toCreate = [];
     for (const link of links) {
       const dcs = link.distribution_channels || [];
@@ -73,23 +87,16 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         for (const cot of cots) {
           const key = `${link.id}__${dc}__${cot}`;
           if (!existingKeys.has(key)) {
-            toCreate.push({
-              project_link_id: link.id,
-              project_id: projectId,
-              distribution_channel: dc,
-              channel_of_trade: cot,
-            });
+            toCreate.push({ project_link_id: link.id, project_id: projectId, distribution_channel: dc, channel_of_trade: cot });
             existingKeys.add(key);
           }
         }
       }
     }
-
     if (toCreate.length > 0) {
       const created = await Promise.all(toCreate.map((d) => base44.entities.ProductColorAndMoreProjectDCperCOTLink.create(d)));
       setItems((prev) => [...prev, ...created]);
     }
-
     setGenerating(false);
   };
 
@@ -98,114 +105,193 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
     setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, forecasted_quantity: value } : i));
   };
 
-  const getVariation = (item) => {
-    // Find the parent link, then the variation
-    return null; // we'll resolve inline
-  };
-
-  // Build enriched rows by joining with link data
-  const [linkMap, setLinkMap] = useState({});
-  useEffect(() => {
-    if (!projectId) return;
-    base44.entities.ProductColorAndMoreProjectLink.filter({ project_id: projectId }).then((links) => {
-      const map = {};
-      links.forEach((l) => { map[l.id] = l; });
-      setLinkMap(map);
-    });
-  }, [projectId, items.length]);
-
-  const getVariationForLink = (linkId) => {
+  const getVariationForLink = useCallback((linkId) => {
     const link = linkMap[linkId];
     if (!link) return null;
     return allVariations.find((v) => v.id === link.product_color_and_more_id) || null;
-  };
+  }, [linkMap, allVariations]);
 
-  const getColorway = (v) => v ? colorways.find((cw) => cw.id === v.product_color_id) : null;
-  const getProduct = (v) => {
+  const getColorway = useCallback((v) => v ? colorways.find((cw) => cw.id === v.product_color_id) : null, [colorways]);
+
+  const getProduct = useCallback((v) => {
     const cw = getColorway(v);
     return cw ? products.find((p) => p.id === cw.product_id) : null;
-  };
+  }, [getColorway, products]);
 
-  const filtered = search.trim()
-    ? items.filter((item) => {
-        const v = getVariationForLink(item.project_link_id);
-        const cw = getColorway(v);
-        const prod = getProduct(v);
-        const q = search.toLowerCase();
+  const getMainTechColor = useCallback((cw) => {
+    if (!cw) return null;
+    const comm = commColors.find((c) => c.id === cw.linked_color_id);
+    const techId = comm?.main_technical_color_id || cw.linked_tech_color_id;
+    return techId ? (techColors.find((t) => t.id === techId) || null) : null;
+  }, [commColors, techColors]);
+
+  const allDCs = useMemo(() => [...new Set(items.map((i) => i.distribution_channel).filter(Boolean))].sort(), [items]);
+  const allCoTs = useMemo(() => [...new Set(items.map((i) => i.channel_of_trade).filter(Boolean))].sort(), [items]);
+
+  const filtered = useMemo(() => {
+    return items.filter((item) => {
+      if (filterDC !== "all" && item.distribution_channel !== filterDC) return false;
+      if (filterCoT !== "all" && item.channel_of_trade !== filterCoT) return false;
+      if (!search.trim()) return true;
+      const v = getVariationForLink(item.project_link_id);
+      const cw = getColorway(v);
+      const prod = getProduct(v);
+      const q = search.toLowerCase();
+      return (
+        item.distribution_channel?.toLowerCase().includes(q) ||
+        item.channel_of_trade?.toLowerCase().includes(q) ||
+        v?.sequence?.toLowerCase().includes(q) ||
+        v?.pack_code?.toLowerCase().includes(q) ||
+        cw?.color_name?.toLowerCase().includes(q) ||
+        prod?.name?.toLowerCase().includes(q)
+      );
+    });
+  }, [items, search, filterDC, filterCoT, getVariationForLink, getColorway, getProduct]);
+
+  const allFields = useMemo(() => [
+    {
+      id: "style_image", label: "Style Image",
+      getValue: () => "",
+      render: (item) => {
+        const prod = getProduct(getVariationForLink(item.project_link_id));
+        const img = prod?.images?.[0];
+        return img
+          ? <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted"><img src={img} alt="" className="w-full h-full object-contain" /></div>
+          : <div className="w-10 h-10 rounded-md border border-border bg-muted" />;
+      },
+    },
+    {
+      id: "style_name", label: "Style Name",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.name || "",
+      render: (item) => <span className="text-xs font-semibold">{getProduct(getVariationForLink(item.project_link_id))?.name || "—"}</span>,
+    },
+    {
+      id: "style_sub_type", label: "Style Sub-type",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.sub_type || "",
+      render: (item) => <span className="text-xs text-muted-foreground">{getProduct(getVariationForLink(item.project_link_id))?.sub_type || "—"}</span>,
+    },
+    {
+      id: "colorway_image", label: "Colorway Image",
+      getValue: () => "",
+      render: (item) => {
+        const cw = getColorway(getVariationForLink(item.project_link_id));
+        return cw?.image_url
+          ? <div className="w-8 h-8 rounded-md overflow-hidden border border-border"><img src={cw.image_url} alt="" className="w-full h-full object-contain" /></div>
+          : <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />;
+      },
+    },
+    {
+      id: "colorway_name", label: "Colorway Name",
+      getValue: (item) => getColorway(getVariationForLink(item.project_link_id))?.color_name || "",
+      render: (item) => {
+        const cw = getColorway(getVariationForLink(item.project_link_id));
         return (
-          item.distribution_channel?.toLowerCase().includes(q) ||
-          item.channel_of_trade?.toLowerCase().includes(q) ||
-          v?.sequence?.toLowerCase().includes(q) ||
-          v?.pack_code?.toLowerCase().includes(q) ||
-          cw?.color_name?.toLowerCase().includes(q) ||
-          prod?.name?.toLowerCase().includes(q)
-        );
-      })
-    : items;
-
-  const columns = [
-    {
-      id: "style_name", label: "Style", width: 150,
-      sortKey: (item) => getProduct(getVariationForLink(item.project_link_id))?.name || "",
-      render: (item) => {
-        const v = getVariationForLink(item.project_link_id);
-        const prod = getProduct(v);
-        return prod ? (
-          <span className="text-xs font-semibold">{prod.name}</span>
-        ) : <span className="text-xs text-muted-foreground">—</span>;
-      },
-    },
-    {
-      id: "colorway", label: "Colorway", width: 130,
-      sortKey: (item) => getColorway(getVariationForLink(item.project_link_id))?.color_name || "",
-      render: (item) => {
-        const v = getVariationForLink(item.project_link_id);
-        const cw = getColorway(v);
-        return cw ? (
           <div className="flex items-center gap-1.5">
-            <div className="w-3.5 h-3.5 rounded-sm border border-border shrink-0" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-            <span className="text-xs">{cw.color_name}</span>
+            {cw && <div className="w-3.5 h-3.5 rounded-sm border border-border shrink-0" style={{ backgroundColor: cw.color_hex || "#ccc" }} />}
+            <span className="text-xs">{cw?.color_name || "—"}</span>
           </div>
-        ) : <span className="text-xs text-muted-foreground">—</span>;
+        );
       },
     },
     {
-      id: "sequence", label: "Seq.", width: 70,
-      sortKey: (item) => getVariationForLink(item.project_link_id)?.sequence || "",
+      id: "colorway_code", label: "Colorway Code",
+      getValue: (item) => getColorway(getVariationForLink(item.project_link_id))?.colorway_code || "",
+      render: (item) => <span className="font-mono text-xs text-muted-foreground">{getColorway(getVariationForLink(item.project_link_id))?.colorway_code || "—"}</span>,
+    },
+    {
+      id: "tech_color", label: "Technical Color",
+      getValue: (item) => {
+        const tc = getMainTechColor(getColorway(getVariationForLink(item.project_link_id)));
+        return tc ? `${tc.code} ${tc.name}` : "";
+      },
       render: (item) => {
-        const v = getVariationForLink(item.project_link_id);
-        return <span className="font-mono text-xs text-muted-foreground">{v?.sequence || "—"}</span>;
+        const tc = getMainTechColor(getColorway(getVariationForLink(item.project_link_id)));
+        return tc
+          ? <div className="flex items-center gap-1.5">
+              <div className="w-3.5 h-3.5 rounded-sm border border-border shrink-0" style={{ backgroundColor: tc.hex || "#ccc" }} />
+              <span className="text-xs font-mono">{tc.code}</span>
+              <span className="text-xs text-muted-foreground">{tc.name}</span>
+            </div>
+          : <span className="text-xs text-muted-foreground">—</span>;
       },
     },
     {
-      id: "pack_code", label: "Pack Code", width: 100,
-      sortKey: (item) => getVariationForLink(item.project_link_id)?.pack_code || "",
-      render: (item) => {
-        const v = getVariationForLink(item.project_link_id);
-        return <span className="text-xs text-muted-foreground">{v?.pack_code || "—"}</span>;
-      },
+      id: "sequence", label: "Seq.",
+      getValue: (item) => getVariationForLink(item.project_link_id)?.sequence || "",
+      render: (item) => <span className="font-mono text-xs text-muted-foreground">{getVariationForLink(item.project_link_id)?.sequence || "—"}</span>,
     },
     {
-      id: "distribution_channel", label: "Distribution Channel", width: 170,
-      sortKey: (item) => item.distribution_channel || "",
+      id: "pack_code", label: "Pack Code",
+      getValue: (item) => getVariationForLink(item.project_link_id)?.pack_code || "",
+      render: (item) => <span className="text-xs text-muted-foreground">{getVariationForLink(item.project_link_id)?.pack_code || "—"}</span>,
+    },
+    {
+      id: "variant", label: "Variant",
+      getValue: (item) => getVariationForLink(item.project_link_id)?.variant || "",
+      render: (item) => <span className="text-xs text-muted-foreground">{getVariationForLink(item.project_link_id)?.variant || "—"}</span>,
+    },
+    {
+      id: "distribution_channel", label: "Distribution Channel",
+      getValue: (item) => item.distribution_channel || "",
       render: (item) => <span className="text-xs font-medium">{item.distribution_channel}</span>,
     },
     {
-      id: "channel_of_trade", label: "Channel of Trade", width: 150,
-      sortKey: (item) => item.channel_of_trade || "",
+      id: "channel_of_trade", label: "Channel of Trade",
+      getValue: (item) => item.channel_of_trade || "",
       render: (item) => <span className="text-xs font-medium">{item.channel_of_trade}</span>,
     },
     {
-      id: "forecasted_quantity", label: "Forecast Qty", width: 120,
-      sortKey: (item) => item.forecasted_quantity ?? -1,
+      id: "forecasted_quantity", label: "Forecast Qty",
+      getValue: (item) => item.forecasted_quantity ?? "",
       render: (item) => (
-        <NumberCell
-          value={item.forecasted_quantity}
-          onSave={(val) => updateForecast(item.id, val)}
-        />
+        <NumberCell value={item.forecasted_quantity} onSave={(val) => updateForecast(item.id, val)} />
       ),
     },
-  ];
+  ], [getVariationForLink, getColorway, getProduct, getMainTechColor]);
+
+  const filterableFields = useMemo(() => [
+    { id: "distribution_channel", label: "Distribution Channel", getValue: (item) => item.distribution_channel },
+    { id: "channel_of_trade", label: "Channel of Trade", getValue: (item) => item.channel_of_trade },
+    { id: "style_name", label: "Style Name", getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.name },
+    { id: "pack_code", label: "Pack Code", getValue: (item) => getVariationForLink(item.project_link_id)?.pack_code },
+  ], [getVariationForLink, getProduct]);
+
+  const defaultColumns = useMemo(() => allFields.map((f) => ({
+    id: f.id,
+    label: f.label,
+    width: ["style_image", "colorway_image"].includes(f.id) ? 70 : f.id.includes("name") ? 150 : f.id === "distribution_channel" ? 170 : f.id === "channel_of_trade" ? 150 : 120,
+    sortKey: f.getValue,
+    render: f.render,
+  })), [allFields]);
+
+  const visibleColumns = activeColumns || defaultColumns;
+
+  const handleExport = () => {
+    const rows = filtered.map((item) => {
+      const v = getVariationForLink(item.project_link_id);
+      const cw = getColorway(v);
+      const prod = getProduct(v);
+      const tc = getMainTechColor(cw);
+      return {
+        "Style Name": prod?.name || "",
+        "Style Sub-type": prod?.sub_type || "",
+        "Colorway Name": cw?.color_name || "",
+        "Colorway Code": cw?.colorway_code || "",
+        "Technical Color Code": tc?.code || "",
+        "Technical Color Name": tc?.name || "",
+        "Sequence": v?.sequence || "",
+        "Pack Code": v?.pack_code || "",
+        "Variant": v?.variant || "",
+        "Distribution Channel": item.distribution_channel || "",
+        "Channel of Trade": item.channel_of_trade || "",
+        "Forecast Qty": item.forecasted_quantity ?? "",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "DC per CoT");
+    XLSX.writeFile(wb, "dc_per_cot.xlsx");
+  };
 
   if (loading) {
     return (
@@ -217,32 +303,99 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
 
   return (
     <div className="space-y-4">
+      {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-48">
+        <div className="relative min-w-40 flex-1">
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="h-8 text-xs" />
         </div>
-        <Button
-          size="sm"
-          className="h-8 text-xs gap-1.5"
-          onClick={handleGenerate}
-          disabled={generating}
-          title="Create variations per Distribution Channels per Channel of Trade"
-        >
+
+        <Select value={filterDC} onValueChange={setFilterDC}>
+          <SelectTrigger className="h-8 text-xs w-44">
+            <SelectValue placeholder="Distribution Channel" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All DC</SelectItem>
+            {allDCs.map((dc) => <SelectItem key={dc} value={dc}>{dc}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterCoT} onValueChange={setFilterCoT}>
+          <SelectTrigger className="h-8 text-xs w-40">
+            <SelectValue placeholder="Channel of Trade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All CoT</SelectItem>
+            {allCoTs.map((cot) => <SelectItem key={cot} value={cot}>{cot}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleGenerate} disabled={generating}>
           {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
           Generate DC per CoT
         </Button>
+
+        {view === "list" && (
+          <ViewSelector
+            pageKey="dc_per_cot"
+            allColumns={defaultColumns}
+            onColumnsChange={setActiveColumns}
+            filterableFields={filterableFields}
+            rows={filtered}
+            entityNames={["ProductColorAndMoreProjectDCperCOTLink"]}
+            fixedColumnIds={pinnedCols}
+            onFixedColumnIdsChange={setPinnedCols}
+          />
+        )}
+
+        {view === "list" && (
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handleExport} title="Export to Excel">
+            <FileDown className="w-3.5 h-3.5" /> Export .xlsx
+          </Button>
+        )}
+
+        <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <button type="button" onClick={() => setView("grid")}
+            className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+            title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
+          <button type="button" onClick={() => setView("list")}
+            className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+            title="Table"><List className="w-4 h-4" /></button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
           <p className="text-sm text-muted-foreground">
             {items.length === 0
-              ? "No DC per CoT items yet. Make sure variations have Distribution Channels and Channels of Trade set, then click \"Generate DC per CoT\"."
-              : "No results match your search."}
+              ? `No DC per CoT items yet. Make sure variations have Distribution Channels and Channels of Trade set, then click "Generate DC per CoT".`
+              : "No results match your search or filters."}
           </p>
         </div>
+      ) : view === "list" ? (
+        <DataTable
+          columns={visibleColumns}
+          rows={filtered}
+          hideColumnToggle
+          fixedColumns={pinnedCols}
+          onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
+        />
       ) : (
-        <DataTable columns={columns} rows={filtered} hideColumnToggle />
+        <GalleryView
+          pageKey="dc_per_cot"
+          allFields={allFields}
+          filterableFields={filterableFields}
+          rows={filtered}
+          renderThumbnail={(item) => {
+            const v = getVariationForLink(item.project_link_id);
+            const prod = getProduct(v);
+            const cw = getColorway(v);
+            const img = v?.image_url || prod?.images?.[0];
+            return img
+              ? <img src={img} alt="" className="w-full h-full object-contain" />
+              : <div className="w-full h-full" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />;
+          }}
+          onClickItem={() => {}}
+        />
       )}
     </div>
   );

@@ -419,7 +419,7 @@ export default function ProjectDetail() {
         <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
         }
         {activeSection === "dc_per_cot" &&
-        <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} />
+        <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} />
         }
       </ItemSubNav>
 
