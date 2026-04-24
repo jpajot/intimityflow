@@ -1,6 +1,28 @@
 import { useState } from "react";
 import { X, Link, ZoomIn } from "lucide-react";
 
+export function SizeControl({ size, onChange }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <ZoomIn className="w-3.5 h-3.5 text-muted-foreground" />
+      <div className="flex items-center border border-border rounded-lg overflow-hidden">
+        {["S", "M", "L"].map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => onChange(s)}
+            className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+              size === s ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const SIZE_CONFIGS = {
   S: { cols: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5", cardClass: "text-[10px]", swatchSize: "w-5 h-5", codeClass: "text-[9px]" },
   M: { cols: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4", cardClass: "text-xs", swatchSize: "w-6 h-6", codeClass: "text-[10px]" },
@@ -23,10 +45,10 @@ function saveSize(size) {
  * - Their linked technical colors appear as sub-swatches inside
  * - Unlinked technical colors appear in a secondary section below
  */
-export default function PaletteColorGrid({ swatches, techColors, commColors, paletteColors, paletteId, onRemove, onLinkTech }) {
-  const [size, setSize] = useState(loadSize);
-
-  const handleSize = (s) => { setSize(s); saveSize(s); };
+export default function PaletteColorGrid({ swatches, techColors, commColors, paletteColors, paletteId, onRemove, onLinkTech, size: sizeProp, onSizeChange }) {
+  const [sizeLocal, setSizeLocal] = useState(loadSize);
+  const size = sizeProp ?? sizeLocal;
+  const handleSize = (s) => { setSizeLocal(s); saveSize(s); if (onSizeChange) onSizeChange(s); };
 
   const cfg = SIZE_CONFIGS[size];
 
@@ -81,24 +103,6 @@ export default function PaletteColorGrid({ swatches, techColors, commColors, pal
 
   return (
     <div className="space-y-5">
-      {/* Size control */}
-      <div className="flex items-center gap-2 justify-end">
-        <ZoomIn className="w-3.5 h-3.5 text-muted-foreground" />
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          {["S", "M", "L"].map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => handleSize(s)}
-              className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-                size === s ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Commercial color cards */}
       {commCards.length > 0 && (

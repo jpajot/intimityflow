@@ -10,7 +10,7 @@ import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download }
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import ColorLibrary from "./ColorLibrary";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
-import PaletteColorGrid from "../components/PaletteColorGrid";
+import PaletteColorGrid, { SizeControl } from "../components/PaletteColorGrid";
 
 export default function ColorPalettes() {
   const [mainTab, setMainTab] = useState("palettes");
@@ -32,6 +32,7 @@ export default function ColorPalettes() {
   const [colorTab, setColorTab] = useState("technical");
   const [selectedColorIds, setSelectedColorIds] = useState(new Set());
   const [addingColors, setAddingColors] = useState(false);
+  const [paletteCardSize, setPaletteCardSize] = useState(() => { try { return localStorage.getItem("palette_card_size") || "M"; } catch { return "M"; } });
   const [showTechDialog, setShowTechDialog] = useState(false);
   const [showCommDialog, setShowCommDialog] = useState(false);
   const [linkingTechColor, setLinkingTechColor] = useState(null);
@@ -423,7 +424,8 @@ export default function ColorPalettes() {
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      <SizeControl size={paletteCardSize} onChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }} />
                       {selectedSwatches.length > 0 && (
                         <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
                           <Download className="w-3.5 h-3.5" /> Export .ase
@@ -526,6 +528,8 @@ export default function ColorPalettes() {
                     swatches={selectedSwatches}
                     onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
                     onLinkTech={(tech) => setLinkingTechColor(tech)}
+                    size={paletteCardSize}
+                    onSizeChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }}
                   />
                 </>
               )}

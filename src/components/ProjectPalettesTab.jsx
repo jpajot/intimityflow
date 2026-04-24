@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, Download } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import LinkCommercialColorDialog from "./LinkCommercialColorDialog";
-import PaletteColorGrid from "./PaletteColorGrid";
+import PaletteColorGrid, { SizeControl } from "./PaletteColorGrid";
 
 export default function ProjectPalettesTab({
   projectId, projectName,
@@ -41,6 +41,8 @@ export default function ProjectPalettesTab({
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
+
+  const [paletteCardSize, setPaletteCardSize] = useState(() => { try { return localStorage.getItem("palette_card_size") || "M"; } catch { return "M"; } });
 
   // Link commercial color dialog
   const [linkingTechColor, setLinkingTechColor] = useState(null); // TechnicalColor object
@@ -393,7 +395,8 @@ export default function ProjectPalettesTab({
                   <FolderOpen className="w-3 h-3" />{projectName}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <SizeControl size={paletteCardSize} onChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }} />
                 {selectedSwatches.length > 0 && (
                   <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
                     <Download className="w-3.5 h-3.5" /> Export .ase
@@ -479,6 +482,8 @@ export default function ProjectPalettesTab({
               swatches={selectedSwatches}
               onRemove={handleRemoveColor}
               onLinkTech={(tech) => setLinkingTechColor(tech)}
+              size={paletteCardSize}
+              onSizeChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }}
             />
           </>
         )}
