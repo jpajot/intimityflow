@@ -159,8 +159,8 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         const prod = getProduct(getVariationForLink(item.project_link_id));
         const img = prod?.images?.[0];
         return img
-          ? <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted"><img src={img} alt="" className="w-full h-full object-contain" /></div>
-          : <div className="w-10 h-10 rounded-md border border-border bg-muted" />;
+          ? <div className="w-10 h-10 overflow-hidden"><img src={img} alt="" className="w-full h-full object-contain" /></div>
+          : null;
       },
     },
     {
@@ -209,8 +209,8 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
       render: (item) => {
         const cw = getColorway(getVariationForLink(item.project_link_id));
         return cw?.image_url
-          ? <div className="w-8 h-8 rounded-md overflow-hidden border border-border"><img src={cw.image_url} alt="" className="w-full h-full object-contain" /></div>
-          : <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />;
+          ? <div className="w-8 h-8 overflow-hidden"><img src={cw.image_url} alt="" className="w-full h-full object-contain" /></div>
+          : <div className="w-8 h-8" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />;
       },
     },
     {
