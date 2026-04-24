@@ -104,7 +104,12 @@ export default function ProjectPalettesTab({
   const getAvailableColors = () => {
     const linkedIds = new Set(paletteColors.filter((pc) => pc.palette_id === selectedPaletteId).map((pc) => pc.color_id));
     const q = colorSearch.toLowerCase();
-    const techFiltered = techColors.filter((t) => !linkedIds.has(t.id) && (!q || t.code?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q)));
+    const techFiltered = techColors.filter((t) => {
+      if (linkedIds.has(t.id)) return false;
+      if (!q) return true;
+      const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
+      return t.code?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q) || linkedComm?.code?.toLowerCase().includes(q);
+    });
     const commFiltered = commColors.filter((c) => !linkedIds.has(c.id) && (!q || c.code?.toLowerCase().includes(q) || c.color_name?.toLowerCase().includes(q)));
     return { techFiltered, commFiltered };
   };
@@ -403,7 +408,10 @@ export default function ProjectPalettesTab({
             {showColorPicker && (() => {
               const { techFiltered, commFiltered } = getAvailableColors();
               const items = colorTab === "technical"
-                ? techFiltered.map((t) => ({ key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code }))
+                ? techFiltered.map((t) => {
+                    const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
+                    return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
+                  })
                 : commFiltered.map((c) => {
                     const t = techColors.find((t) => t.id === c.main_technical_color_id);
                     return { key: `commercial:${c.id}`, hex: t?.hex || "#ccc", label: c.color_name, sub: c.code };
@@ -431,8 +439,8 @@ export default function ProjectPalettesTab({
                           className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}>
                           <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
                           <div className="flex-1 min-w-0">
-                            <span className="text-xs font-medium block truncate">{item.label}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono">{item.sub}</span>
+                           <span className="text-xs font-medium block truncate">{item.label}</span>
+                           <span className="text-[10px] text-muted-foreground font-mono">{item.sub}{item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}</span>
                           </div>
                           {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
                         </button>
