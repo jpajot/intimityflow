@@ -451,13 +451,13 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
         <thead>
           <tr className="border-b border-border bg-muted/40">
             {fixedCols.map((col, i) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground bg-muted/40 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i], position: 'sticky', top: 0, zIndex: 40 }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky bg-muted/40 z-10 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i] }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
             ))}
             {scrollableCols.map((col) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none bg-muted/40" style={{ width: getWidth(col), minWidth: getWidth(col), position: 'sticky', top: 0, zIndex: 20 }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col) }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
