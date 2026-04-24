@@ -56,12 +56,10 @@ export default function PaletteColorGrid({ swatches, techColors, commColors, pal
     return { entryId: e.id, comm, linkedTechs, mainHex, isMulti };
   }).filter(Boolean);
 
-  // Technical colors that are NOT linked to any commercial color in this palette
-  const commColorIdsInPalette = new Set(commEntries.map((e) => e.color_id));
+  // Technical colors that are NOT linked to ANY commercial color (globally)
   const unlinkedTechEntries = techEntries.filter((e) => {
     const comm = commColors.find(
-      (c) => commColorIdsInPalette.has(c.id) &&
-        (c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id))
+      (c) => c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id)
     );
     return !comm;
   });
