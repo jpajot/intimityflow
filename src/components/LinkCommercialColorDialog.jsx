@@ -72,7 +72,7 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-md overflow-visible">
+      <DialogContent className="max-w-lg w-full">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create Commercial Color" : "Link to Commercial Color"}
@@ -90,10 +90,10 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
 
         {mode === "choose" && (
           <div className="space-y-3 pt-1">
-            <Button className="w-full justify-start gap-2" variant="outline" onClick={() => setMode("link")}>
+            <Button className="w-full justify-start gap-2 h-auto py-3 text-sm whitespace-normal text-left" variant="outline" onClick={() => setMode("link")}>
               🔗 Link to an existing commercial color
             </Button>
-            <Button className="w-full justify-start gap-2" variant="outline" onClick={() => setMode("create")}>
+            <Button className="w-full justify-start gap-2 h-auto py-3 text-sm whitespace-normal text-left" variant="outline" onClick={() => setMode("create")}>
               ✨ Create a new commercial color from this technical color
             </Button>
           </div>
