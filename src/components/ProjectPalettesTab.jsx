@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Download } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Download, Link } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import LinkCommercialColorDialog from "./LinkCommercialColorDialog";
 
 export default function ProjectPalettesTab({
   projectId, projectName,
@@ -39,6 +40,9 @@ export default function ProjectPalettesTab({
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
+
+  // Link commercial color dialog
+  const [linkingTechColor, setLinkingTechColor] = useState(null); // TechnicalColor object
 
   // ── Palette CRUD ─────────────────────────────────────────────────────────────
 
@@ -82,16 +86,16 @@ export default function ProjectPalettesTab({
     return paletteColors.filter((pc) => pc.palette_id === paletteId).map((e) => {
       if (e.color_type === "technical") {
         const t = techColors.find((c) => c.id === e.color_id);
-        const comm = commColors.find((c) => c.main_technical_color_id === e.color_id);
-        return { id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "", commCode: comm?.code || null };
+        const comm = commColors.find((c) => c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id));
+        return { id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "", commCode: comm?.code || null, isUnlinked: !comm, techColorObj: t };
       } else {
         const c = commColors.find((c) => c.id === e.color_id);
-        if (!c) return { id: e.id, hex: "#ccc", name: "", code: "", commCode: null };
+        if (!c) return { id: e.id, hex: "#ccc", name: "", code: "", commCode: null, isUnlinked: false };
         const t = techColors.find((t) => t.id === c.main_technical_color_id);
         const linkedHexes = c.linked_technical_color_ids?.length > 1
           ? c.linked_technical_color_ids.map((lid) => { const lt = techColors.find((t) => t.id === lid); return lt?.hex || "#ccc"; })
           : null;
-        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null, linkedHexes };
+        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null, linkedHexes, isUnlinked: false };
       }
     });
   };
@@ -426,7 +430,7 @@ export default function ProjectPalettesTab({
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                 {selectedSwatches.map((s, i) => (
-                  <div key={i} className="rounded-lg border border-border overflow-hidden group/color relative">
+                  <div key={i} className={`rounded-lg border overflow-hidden group/color relative ${s.isUnlinked ? "border-amber-300" : "border-border"}`}>
                     {s.linkedHexes?.length > 1 ? (
                       <div className="aspect-square flex overflow-hidden">
                         {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
@@ -443,6 +447,12 @@ export default function ProjectPalettesTab({
                       {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
                       <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
                       {s.commCode && <p className="text-[10px] font-mono text-muted-foreground truncate border-t border-border pt-0.5 mt-0.5">{s.commCode}</p>}
+                      {s.isUnlinked && (
+                        <button type="button" onClick={() => setLinkingTechColor(s.techColorObj)}
+                          className="mt-1 w-full flex items-center justify-center gap-1 text-[10px] px-1.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 transition-colors">
+                          <Link className="w-2.5 h-2.5" /> Link commercial
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -494,6 +504,16 @@ export default function ProjectPalettesTab({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Link Commercial Color dialog */}
+      {linkingTechColor && (
+        <LinkCommercialColorDialog
+          techColor={linkingTechColor}
+          commColors={commColors}
+          setCommColors={setCommColors}
+          onClose={() => setLinkingTechColor(null)}
+        />
+      )}
 
       {/* New Commercial Color dialog */}
       <Dialog open={showCommDialog} onOpenChange={setShowCommDialog}>
