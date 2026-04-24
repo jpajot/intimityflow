@@ -410,7 +410,13 @@ export default function ColorPalettes() {
                           <div className="w-full bg-muted" />
                         ) : (
                           swatches.slice(0, 10).map((s, i) => (
-                            <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
+                            s.linkedHexes?.length > 1 ? (
+                              <div key={i} className="flex-1 flex overflow-hidden">
+                                {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                              </div>
+                            ) : (
+                              <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
+                            )
                           ))
                         )}
                       </div>
@@ -543,7 +549,13 @@ export default function ColorPalettes() {
                   {selectedSwatches.length > 0 && (
                     <div className="h-12 rounded-lg overflow-hidden flex border border-border">
                       {selectedSwatches.map((s, i) => (
-                        <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
+                        s.linkedHexes?.length > 1 ? (
+                          <div key={i} className="flex-1 flex overflow-hidden" title={s.name || s.code}>
+                            {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                          </div>
+                        ) : (
+                          <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
+                        )
                       ))}
                     </div>
                   )}

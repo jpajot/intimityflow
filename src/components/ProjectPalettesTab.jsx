@@ -385,7 +385,15 @@ export default function ProjectPalettesTab({
                   {swatches.length === 0 ? (
                     <div className="w-full bg-muted" />
                   ) : (
-                    swatches.slice(0, 10).map((s, i) => <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />)
+                    swatches.slice(0, 10).map((s, i) => (
+                      s.linkedHexes?.length > 1 ? (
+                        <div key={i} className="flex-1 flex overflow-hidden">
+                          {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                        </div>
+                      ) : (
+                        <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
+                      )
+                    ))
                   )}
                 </div>
                 <div className={`font-medium text-sm ${selectedPaletteId === p.id ? "text-primary" : ""}`}>{p.name}</div>
@@ -497,7 +505,15 @@ export default function ProjectPalettesTab({
             {/* Color strip */}
             {selectedSwatches.length > 0 && (
               <div className="h-12 rounded-lg overflow-hidden flex border border-border">
-                {selectedSwatches.map((s, i) => <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />)}
+                {selectedSwatches.map((s, i) => (
+                  s.linkedHexes?.length > 1 ? (
+                    <div key={i} className="flex-1 flex overflow-hidden" title={s.name || s.code}>
+                      {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                    </div>
+                  ) : (
+                    <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
+                  )
+                ))}
               </div>
             )}
 
