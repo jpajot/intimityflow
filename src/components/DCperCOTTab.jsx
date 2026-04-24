@@ -52,6 +52,9 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
   const [linkMap, setLinkMap] = useState({});
+  const [selectedForExport, setSelectedForExport] = useState(new Set());
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -274,8 +277,37 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
       id: "forecasted_quantity", label: "Forecast Qty",
       getValue: (item) => item.forecasted_quantity ?? "",
       render: (item) => (
-        <NumberCell value={item.forecasted_quantity} onSave={(val) => updateForecast(item.id, val)} />
+        <NumberCell
+          value={item.forecasted_quantity}
+          onSave={(val) => {
+            updateForecast(item.id, val);
+            // Mark as Revised if it was Done
+            if (item.forecast_status === "Done") {
+              base44.entities.ProductColorAndMoreProjectDCperCOTLink.update(item.id, { forecast_status: "Revised" });
+              setItems((prev) =>
+                prev.map((i) => i.id === item.id ? { ...i, forecast_status: "Revised" } : i)
+              );
+            }
+          }}
+        />
       ),
+    },
+    {
+      id: "forecast_status", label: "Forecast Status",
+      getValue: (item) => item.forecast_status || "Not Started",
+      render: (item) => {
+        const statusColors = {
+          "Not Started": "bg-muted text-muted-foreground",
+          "In Progress": "bg-blue-100 text-blue-800",
+          "Done": "bg-green-100 text-green-800",
+          "Revised": "bg-amber-100 text-amber-800",
+        };
+        return (
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColors[item.forecast_status] || statusColors["Not Started"]}`}>
+            {item.forecast_status || "Not Started"}
+          </span>
+        );
+      },
     },
   ], [getVariationForLink, getColorway, getProduct, getMainTechColor]);
 
@@ -296,13 +328,32 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
 
   const visibleColumns = activeColumns || defaultColumns;
 
-  const handleExport = () => {
-    const rows = filtered.map((item) => {
+  const handleExport = async () => {
+    const toExport = selectedForExport.size > 0
+      ? filtered.filter((item) => selectedForExport.has(item.id))
+      : filtered;
+
+    if (toExport.length === 0) return;
+
+    // Update status to "In Progress" for exported items
+    await Promise.all(toExport.map((item) =>
+      base44.entities.ProductColorAndMoreProjectDCperCOTLink.update(item.id, { forecast_status: "In Progress" })
+    ));
+
+    // Update local state
+    setItems((prev) =>
+      prev.map((item) =>
+        toExport.some((e) => e.id === item.id) ? { ...item, forecast_status: "In Progress" } : item
+      )
+    );
+
+    const rows = toExport.map((item) => {
       const v = getVariationForLink(item.project_link_id);
       const cw = getColorway(v);
       const prod = getProduct(v);
       const tc = getMainTechColor(cw);
       return {
+        "Item ID": item.id,
         "Style Name": prod?.name || "",
         "Style Sub-type": prod?.sub_type || "",
         "Colorway Name": cw?.color_name || "",
@@ -321,6 +372,47 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DC per CoT");
     XLSX.writeFile(wb, "dc_per_cot.xlsx");
+    setSelectedForExport(new Set());
+  };
+
+  const handleImportFile = async () => {
+    if (!importFile) return;
+    setImporting(true);
+
+    try {
+      const buffer = await importFile.arrayBuffer();
+      const wb = XLSX.read(buffer);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws);
+
+      const updates = [];
+      for (const row of rows) {
+        const itemId = row["Item ID"];
+        const newQty = row["Forecast Qty"];
+        if (itemId && newQty !== undefined && newQty !== null && newQty !== "") {
+          updates.push({
+            id: itemId,
+            qty: Number(newQty),
+          });
+        }
+      }
+
+      // Update items in bulk
+      await Promise.all(updates.map((u) =>
+        base44.entities.ProductColorAndMoreProjectDCperCOTLink.update(u.id, {
+          forecasted_quantity: u.qty,
+          forecast_status: "Done",
+        })
+      ));
+
+      // Reload items
+      await loadItems();
+      setImportFile(null);
+    } catch (e) {
+      console.error("Import error:", e);
+    }
+
+    setImporting(false);
   };
 
   if (loading) {
@@ -378,9 +470,42 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         )}
 
         {view === "list" && (
-          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handleExport} title="Export to Excel">
-            <FileDown className="w-3.5 h-3.5" /> Export .xlsx
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={handleExport}
+              disabled={filtered.length === 0}
+              title={selectedForExport.size > 0 ? `Export ${selectedForExport.size} selected items` : "Export all filtered items"}
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              Export {selectedForExport.size > 0 ? `(${selectedForExport.size})` : ""}
+            </Button>
+
+            <label className="flex items-center gap-1.5 px-3 h-8 text-xs border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">
+              <FileDown className="w-3.5 h-3.5" />
+              Import .xlsx
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </label>
+
+            {importFile && (
+              <Button
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={handleImportFile}
+                disabled={importing}
+              >
+                {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                {importing ? "Importing…" : "Confirm Import"}
+              </Button>
+            )}
+          </>
         )}
 
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
@@ -402,13 +527,47 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
           </p>
         </div>
       ) : view === "list" ? (
-        <DataTable
-          columns={visibleColumns}
-          rows={filtered}
-          hideColumnToggle
-          fixedColumns={pinnedCols}
-          onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
-        />
+        <>
+          {selectedForExport.size > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 bg-primary/10 border border-primary rounded-lg text-xs">
+              <span>{selectedForExport.size} item{selectedForExport.size !== 1 ? "s" : ""} selected for export</span>
+              <button
+                type="button"
+                onClick={() => setSelectedForExport(new Set())}
+                className="text-primary hover:underline"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+          <DataTable
+            columns={[
+              {
+                id: "_select",
+                label: "",
+                width: 40,
+                render: (row) => (
+                  <input
+                    type="checkbox"
+                    checked={selectedForExport.has(row.id)}
+                    onChange={(e) => {
+                      const newSet = new Set(selectedForExport);
+                      if (e.target.checked) newSet.add(row.id);
+                      else newSet.delete(row.id);
+                      setSelectedForExport(newSet);
+                    }}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                ),
+              },
+              ...visibleColumns,
+            ]}
+            rows={filtered}
+            hideColumnToggle
+            fixedColumns={pinnedCols}
+            onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
+          />
+        </>
       ) : (
         <GalleryView
           pageKey="dc_per_cot"

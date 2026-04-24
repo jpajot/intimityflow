@@ -21,6 +21,17 @@
     "forecasted_quantity": {
       "type": "number",
       "description": "Forecasted quantity for this DC x CoT combination"
+    },
+    "forecast_status": {
+      "type": "string",
+      "enum": [
+        "Not Started",
+        "In Progress",
+        "Done",
+        "Revised"
+      ],
+      "default": "Not Started",
+      "description": "Status of forecast: Not Started > In Progress (exported to Excel) > Done (reimported) > Revised (edited after import)"
     }
   },
   "required": [
