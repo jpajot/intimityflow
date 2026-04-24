@@ -530,16 +530,38 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         </div>
       ) : view === "list" ? (
         <>
-          {selectedForExport.size > 0 && (
-            <div className="flex items-center justify-between px-3 py-2 bg-primary/10 border border-primary rounded-lg text-xs">
-              <span>{selectedForExport.size} item{selectedForExport.size !== 1 ? "s" : ""} selected for export</span>
-              <button
-                type="button"
-                onClick={() => setSelectedForExport(new Set())}
-                className="text-primary hover:underline"
-              >
-                Clear selection
-              </button>
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border border-border rounded-lg text-xs">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && selectedForExport.size === filtered.length}
+                  indeterminate={selectedForExport.size > 0 && selectedForExport.size < filtered.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      const allIds = new Set(filtered.map((item) => item.id));
+                      setSelectedForExport(allIds);
+                    } else {
+                      setSelectedForExport(new Set());
+                    }
+                  }}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                <span className="text-muted-foreground">
+                  {selectedForExport.size > 0
+                    ? `${selectedForExport.size} of ${filtered.length} selected`
+                    : `${filtered.length} item${filtered.length !== 1 ? "s" : ""}`}
+                </span>
+              </div>
+              {selectedForExport.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedForExport(new Set())}
+                  className="text-primary hover:underline"
+                >
+                  Clear selection
+                </button>
+              )}
             </div>
           )}
           <DataTable
