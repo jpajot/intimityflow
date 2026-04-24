@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Download, Link } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, Download } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import LinkCommercialColorDialog from "./LinkCommercialColorDialog";
+import PaletteColorGrid from "./PaletteColorGrid";
 
 export default function ProjectPalettesTab({
   projectId, projectName,
@@ -460,41 +461,16 @@ export default function ProjectPalettesTab({
               </div>
             )}
 
-            {/* Color cards grid */}
-            {selectedSwatches.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No colors in this palette yet.</p>
-            ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                {selectedSwatches.map((s, i) => (
-                  <div key={i} className={`rounded-lg border overflow-hidden group/color relative ${s.isUnlinked ? "border-amber-300" : "border-border"}`}>
-                    {s.linkedHexes?.length > 1 ? (
-                      <div className="aspect-square flex overflow-hidden">
-                        {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                      </div>
-                    ) : (
-                      <div className="aspect-square" style={{ backgroundColor: s.hex }} />
-                    )}
-                    <button type="button" onClick={() => handleRemoveColor(s.id)}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex">
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                    <div className="p-2 space-y-0.5">
-                      <p className="text-xs font-medium truncate">{s.name || "—"}</p>
-                      {s.code && <p className="text-[10px] font-mono text-muted-foreground truncate">{s.code}</p>}
-                      <p className="text-[10px] font-mono text-muted-foreground truncate">{s.hex}</p>
-                      {s.commCode && <p className="text-[10px] font-mono text-muted-foreground truncate border-t border-border pt-0.5 mt-0.5">{s.commCode}</p>}
-                      {s.isUnlinked && (
-                        <button type="button" onClick={() => setLinkingTechColor(s.techColorObj)}
-                          title="Link to commercial color"
-                          className="mt-1 w-5 h-5 flex items-center justify-center rounded bg-amber-50 text-amber-500 border border-amber-300 hover:bg-amber-100 transition-colors">
-                          <Link className="w-2.5 h-2.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Color cards grid — commercial-led layout */}
+            <PaletteColorGrid
+              paletteColors={paletteColors}
+              paletteId={selectedPaletteId}
+              techColors={techColors}
+              commColors={commColors}
+              swatches={selectedSwatches}
+              onRemove={handleRemoveColor}
+              onLinkTech={(tech) => setLinkingTechColor(tech)}
+            />
           </>
         )}
       </div>
