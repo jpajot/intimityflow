@@ -56,12 +56,18 @@ export default function PaletteColorGrid({ swatches, techColors, commColors, pal
     return { entryId: e.id, comm, linkedTechs, mainHex, isMulti };
   }).filter(Boolean);
 
-  // Technical colors that are NOT linked to ANY commercial color (globally)
+  // Technical entries to show standalone:
+  // - has no commercial color linked globally → truly unlinked (amber, show link button)
+  // - has a commercial color linked globally BUT that commercial is NOT in this palette → show it (amber, show link button)
+  // - has a commercial color linked AND that commercial IS in this palette → skip (already shown via comm card)
+  const commColorIdsInPalette = new Set(commEntries.map((e) => e.color_id));
   const unlinkedTechEntries = techEntries.filter((e) => {
-    const comm = commColors.find(
+    const linkedComm = commColors.find(
       (c) => c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id)
     );
-    return !comm;
+    // Hide if its commercial color is already shown as a card in this palette
+    if (linkedComm && commColorIdsInPalette.has(linkedComm.id)) return false;
+    return true;
   });
 
   const unlinkedTechCards = unlinkedTechEntries.map((e) => {
