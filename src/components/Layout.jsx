@@ -166,10 +166,10 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop / Tablet sidebar — always visible */}
-      <aside
-        className={`hidden sm:flex flex-col border-r border-border bg-[hsl(var(--sidebar-background)/0.7)] transition-all duration-300 shrink-0 ${
-        expanded ? "w-56" : "w-14"}`
-        }>
+      <aside className="bg-transparent hidden sm:flex flex-col border-r border-border transition-all duration-300 shrink-0 w-14">
+
+
+        
         
         {/* Top: logo + toggle */}
         <div className={`flex items-center border-b border-border h-16 shrink-0 ${
