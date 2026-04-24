@@ -119,7 +119,13 @@ export default function PaletteColorGrid({ swatches, techColors, commColors, pal
               {/* Remove button */}
               <button
                 type="button"
-                onClick={() => onRemove(entryId)}
+                onClick={() => {
+                  // Also find palette entry IDs for the linked tech colors
+                  const linkedTechEntryIds = linkedTechs
+                    .map((t) => techEntries.find((e) => e.color_id === t.id)?.id)
+                    .filter(Boolean);
+                  onRemove(entryId, linkedTechEntryIds);
+                }}
                 className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/color:flex z-10"
               >
                 <X className="w-2.5 h-2.5" />

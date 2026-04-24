@@ -180,9 +180,10 @@ export default function ProjectPalettesTab({
     setShowColorPicker(false);
   };
 
-  const handleRemoveColor = async (entryId) => {
-    await base44.entities.ColorPaletteColor.delete(entryId);
-    setPaletteColors((prev) => prev.filter((pc) => pc.id !== entryId));
+  const handleRemoveColor = async (entryId, linkedTechEntryIds = []) => {
+    const allIds = [entryId, ...linkedTechEntryIds];
+    await Promise.all(allIds.map((id) => base44.entities.ColorPaletteColor.delete(id)));
+    setPaletteColors((prev) => prev.filter((pc) => !allIds.includes(pc.id)));
   };
 
   // ── New Technical Color ───────────────────────────────────────────────────────

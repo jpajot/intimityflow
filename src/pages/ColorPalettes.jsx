@@ -215,8 +215,11 @@ export default function ColorPalettes() {
   };
 
   const handleRemoveColor = async (paletteColorEntry) => {
-    await base44.entities.ColorPaletteColor.delete(paletteColorEntry.id);
-    setPaletteColors((prev) => prev.filter((pc) => pc.id !== paletteColorEntry.id));
+    const entryId = paletteColorEntry.id || paletteColorEntry;
+    const linkedTechEntryIds = paletteColorEntry.linkedTechEntryIds || [];
+    const allIds = [entryId, ...linkedTechEntryIds];
+    await Promise.all(allIds.map((id) => base44.entities.ColorPaletteColor.delete(id)));
+    setPaletteColors((prev) => prev.filter((pc) => !allIds.includes(pc.id)));
   };
 
   const exportASE = () => {
@@ -521,7 +524,7 @@ export default function ColorPalettes() {
                     techColors={techColors}
                     commColors={commColors}
                     swatches={selectedSwatches}
-                    onRemove={(entryId) => handleRemoveColor({ id: entryId })}
+                    onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
                     onLinkTech={(tech) => setLinkingTechColor(tech)}
                   />
                 </>
