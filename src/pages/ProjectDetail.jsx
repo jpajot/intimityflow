@@ -339,19 +339,15 @@ export default function ProjectDetail() {
         {activeSection === "palettes" &&
           <ProjectPalettesTab
             projectId={id}
+            projectName={project.name}
             palettes={palettes}
+            setPalettes={setPalettes}
             paletteColors={paletteColors}
+            setPaletteColors={setPaletteColors}
             techColors={techColors}
+            setTechColors={setTechColors}
             commColors={commColors}
-            getPaletteHexes={getPaletteHexes}
-            onPaletteCreated={async () => {
-              const [pals, palCols] = await Promise.all([
-                base44.entities.ColorPalette.filter({ project_id: id }),
-                base44.entities.ColorPaletteColor.list("-created_date", 2000),
-              ]);
-              setPalettes(pals);
-              setPaletteColors(palCols);
-            }}
+            setCommColors={setCommColors}
           />
         }
 
