@@ -86,24 +86,38 @@ export default function ProjectPalettesTab({
   // ── Color helpers ─────────────────────────────────────────────────────────────
 
   const getSwatchData = (paletteId) => {
-    return paletteColors
+    const entries = paletteColors
       .filter((pc) => pc.palette_id === paletteId)
-      .sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999))
-      .map((e) => {
-      if (e.color_type === "technical") {
-        const t = techColors.find((c) => c.id === e.color_id);
-        const comm = commColors.find((c) => c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id));
-        return { id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "", commCode: comm?.code || null, isUnlinked: !comm, techColorObj: t };
-      } else {
-        const c = commColors.find((c) => c.id === e.color_id);
-        if (!c) return { id: e.id, hex: "#ccc", name: "", code: "", commCode: null, isUnlinked: false };
-        const t = techColors.find((t) => t.id === c.main_technical_color_id);
-        const linkedHexes = c.linked_technical_color_ids?.length > 1
-          ? c.linked_technical_color_ids.map((lid) => { const lt = techColors.find((t) => t.id === lid); return lt?.hex || "#ccc"; })
-          : null;
-        return { id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null, linkedHexes, isUnlinked: false };
-      }
-    });
+      .sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
+
+    const commEntries = entries.filter((e) => e.color_type === "commercial");
+    const commColorIdsInPalette = new Set(commEntries.map((e) => e.color_id));
+
+    const result = [];
+
+    // Commercial colors
+    for (const e of commEntries) {
+      const c = commColors.find((c) => c.id === e.color_id);
+      if (!c) continue;
+      const t = techColors.find((t) => t.id === c.main_technical_color_id);
+      const linkedHexes = c.linked_technical_color_ids?.length > 1
+        ? c.linked_technical_color_ids.map((lid) => { const lt = techColors.find((t) => t.id === lid); return lt?.hex || "#ccc"; })
+        : null;
+      result.push({ id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null, linkedHexes, isUnlinked: false });
+    }
+
+    // Only truly unlinked technical colors
+    for (const e of entries.filter((e) => e.color_type === "technical")) {
+      const linkedComm = commColors.find((c) =>
+        (c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id)) &&
+        commColorIdsInPalette.has(c.id)
+      );
+      if (linkedComm) continue;
+      const t = techColors.find((c) => c.id === e.color_id);
+      result.push({ id: e.id, hex: t?.hex || "#ccc", name: t?.name || "", code: t?.code || "", commCode: null, isUnlinked: true, techColorObj: t });
+    }
+
+    return result;
   };
 
   const getAvailableColors = () => {
