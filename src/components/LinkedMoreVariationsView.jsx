@@ -319,7 +319,21 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
     { id: "linked_projects", label: "Linked Projects", getValue: (v) => (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean).join(", ") || "—", render: (v) => (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean).join(", ") || "—" },
   ];
 
-  const visibleColumns = activeColumns || columns;
+  // Always inject fresh channelOptions into the channels column render
+  const visibleColumns = (activeColumns || columns).map((col) =>
+    col.id === "link_channels"
+      ? {
+          ...col,
+          render: (v) => (
+            <MultiSelectCell
+              value={linkMap[v.id]?.channels_of_trade || []}
+              options={channelOptions}
+              onSave={(val) => saveLinkField(v.id, "channels_of_trade", val)}
+            />
+          ),
+        }
+      : col
+  );
 
   return (
     <div className="space-y-4">
