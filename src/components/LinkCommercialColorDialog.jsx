@@ -72,7 +72,7 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md overflow-visible">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create Commercial Color" : "Link to Commercial Color"}
