@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Download } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
 export default function ProjectPalettesTab({
@@ -185,6 +185,85 @@ export default function ProjectPalettesTab({
     setSaving(false);
   };
 
+  // ── ASE Export ───────────────────────────────────────────────────────────────
+
+  const exportASE = () => {
+    const swatches = getSwatchData(selectedPaletteId);
+    if (!swatches.length) return;
+
+    // Helper: write a UTF-16BE null-terminated string and return byte length (for block size)
+    const encodeColorName = (name) => {
+      const chars = [...name];
+      const buf = new ArrayBuffer((chars.length + 1) * 2);
+      const view = new DataView(buf);
+      chars.forEach((c, i) => view.setUint16(i * 2, c.charCodeAt(0)));
+      view.setUint16(chars.length * 2, 0); // null terminator
+      return buf;
+    };
+
+    const hexToRgbFloat = (hex) => {
+      const h = hex.replace("#", "");
+      const r = parseInt(h.substring(0, 2), 16) / 255;
+      const g = parseInt(h.substring(2, 4), 16) / 255;
+      const b = parseInt(h.substring(4, 6), 16) / 255;
+      return [r, g, b];
+    };
+
+    // Build all color blocks first so we know total count
+    const colorBlocks = swatches.map((s) => {
+      const labelBuf = encodeColorName(s.name || s.code || "Color");
+      const [r, g, b] = hexToRgbFloat(s.hex || "#cccccc");
+
+      // Color entry block: type=0x0001
+      // Block size = labelLen + 4 (color model) + 12 (3 floats) + 2 (color type)
+      const blockDataSize = labelBuf.byteLength + 4 + 12 + 2;
+      const block = new ArrayBuffer(2 + 4 + blockDataSize); // type + size + data
+      const v = new DataView(block);
+      let o = 0;
+      v.setUint16(o, 0x0001); o += 2; // block type: color entry
+      v.setUint32(o, blockDataSize); o += 4; // block length
+      // name (UTF-16BE, includes null terminator length in uint16 count)
+      const nameLen = (s.name || s.code || "Color").length + 1;
+      v.setUint16(o, nameLen); o += 2;
+      new Uint8Array(block, o, labelBuf.byteLength).set(new Uint8Array(labelBuf));
+      o += labelBuf.byteLength;
+      // color model: "RGB "
+      v.setUint8(o, 0x52); v.setUint8(o+1, 0x47); v.setUint8(o+2, 0x42); v.setUint8(o+3, 0x20); o += 4;
+      // R G B as float32 big-endian
+      v.setFloat32(o, r); o += 4;
+      v.setFloat32(o, g); o += 4;
+      v.setFloat32(o, b); o += 4;
+      // color type: 0 = global
+      v.setUint16(o, 0); o += 2;
+      return block;
+    });
+
+    // ASE header: signature "ASEF" + version 1.0 + color count
+    const header = new ArrayBuffer(12);
+    const hv = new DataView(header);
+    // "ASEF"
+    hv.setUint8(0, 0x41); hv.setUint8(1, 0x53); hv.setUint8(2, 0x45); hv.setUint8(3, 0x46);
+    hv.setUint16(4, 1); // version major
+    hv.setUint16(6, 0); // version minor
+    hv.setUint32(8, colorBlocks.length); // num blocks
+
+    const totalSize = header.byteLength + colorBlocks.reduce((s, b) => s + b.byteLength, 0);
+    const combined = new Uint8Array(totalSize);
+    let offset = 0;
+    combined.set(new Uint8Array(header), offset); offset += header.byteLength;
+    for (const block of colorBlocks) {
+      combined.set(new Uint8Array(block), offset); offset += block.byteLength;
+    }
+
+    const blob = new Blob([combined], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedPalette.name.replace(/\s+/g, "_")}.ase`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   const filtered = palettes.filter((p) => !paletteSearch || p.name?.toLowerCase().includes(paletteSearch.toLowerCase()));
@@ -265,9 +344,16 @@ export default function ProjectPalettesTab({
                   <FolderOpen className="w-3 h-3" />{projectName}
                 </p>
               </div>
-              <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
-                <Plus className="w-3.5 h-3.5" /> Add Color
-              </Button>
+              <div className="flex gap-2">
+                {selectedSwatches.length > 0 && (
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
+                    <Download className="w-3.5 h-3.5" /> Export .ase
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
+                  <Plus className="w-3.5 h-3.5" /> Add Color
+                </Button>
+              </div>
             </div>
 
             {/* Inline color picker */}
