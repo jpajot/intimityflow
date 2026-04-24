@@ -166,9 +166,39 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
       render: (item) => <span className="text-xs font-semibold">{getProduct(getVariationForLink(item.project_link_id))?.name || "—"}</span>,
     },
     {
+      id: "style_code", label: "Style Code",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.code || "",
+      render: (item) => <span className="font-mono text-xs text-muted-foreground">{getProduct(getVariationForLink(item.project_link_id))?.code || "—"}</span>,
+    },
+    {
+      id: "style_type", label: "Style Type",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.type || "",
+      render: (item) => <span className="text-xs">{getProduct(getVariationForLink(item.project_link_id))?.type || "—"}</span>,
+    },
+    {
+      id: "style_category", label: "Style Category",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.category || "",
+      render: (item) => <span className="text-xs">{getProduct(getVariationForLink(item.project_link_id))?.category || "—"}</span>,
+    },
+    {
+      id: "style_sub_category", label: "Style Sub-Category",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.sub_category || "",
+      render: (item) => <span className="text-xs">{getProduct(getVariationForLink(item.project_link_id))?.sub_category || "—"}</span>,
+    },
+    {
       id: "style_sub_type", label: "Style Sub-type",
       getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.sub_type || "",
       render: (item) => <span className="text-xs text-muted-foreground">{getProduct(getVariationForLink(item.project_link_id))?.sub_type || "—"}</span>,
+    },
+    {
+      id: "style_customer_need", label: "Style Customer Need",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.customer_need || "",
+      render: (item) => <span className="text-xs">{getProduct(getVariationForLink(item.project_link_id))?.customer_need || "—"}</span>,
+    },
+    {
+      id: "style_description", label: "Style Description",
+      getValue: (item) => getProduct(getVariationForLink(item.project_link_id))?.description || "",
+      render: (item) => <span className="text-xs text-muted-foreground truncate">{getProduct(getVariationForLink(item.project_link_id))?.description || "—"}</span>,
     },
     {
       id: "colorway_image", label: "Colorway Image",
