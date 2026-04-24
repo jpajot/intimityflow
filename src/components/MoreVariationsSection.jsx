@@ -50,7 +50,7 @@ const emptyForm = () => ({
   sequence: "",
   });
 
-export default function MoreVariationsSection({ productId, colorVariants }) {
+export default function MoreVariationsSection({ productId, colorVariants, projects = [] }) {
   const [variations, setVariations] = useState([]);
   const [styleSizes, setStyleSizes] = useState([]);
   const [sizes, setSizes] = useState([]);
@@ -267,6 +267,19 @@ export default function MoreVariationsSection({ productId, colorVariants }) {
       width: 90,
       sortKey: (v) => v.variant || "",
       render: (v) => <span className="text-xs text-muted-foreground">{v.variant || "—"}</span>,
+    },
+    {
+      id: "creation_project",
+      label: "Creation Project",
+      width: 160,
+      sortKey: (v) => projects.find((p) => p.id === v.creation_project_id)?.name || "",
+      render: (v) => { const p = projects.find((pr) => pr.id === v.creation_project_id); return <span className="text-xs text-muted-foreground">{p?.name || "—"}</span>; },
+    },
+    {
+      id: "linked_projects",
+      label: "Linked Projects",
+      width: 200,
+      render: (v) => { const names = (v.project_ids || []).map((pid) => projects.find((p) => p.id === pid)?.name).filter(Boolean); return <span className="text-xs text-muted-foreground">{names.length > 0 ? names.join(", ") : "—"}</span>; },
     },
     {
       id: "sizes",

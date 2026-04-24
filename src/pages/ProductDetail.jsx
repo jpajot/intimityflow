@@ -603,7 +603,7 @@ export default function ProductDetail() {
             <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
           )}
           {activeTab === "more" && (
-            <MoreVariationsSection productId={product.id} colorVariants={colorVariants} />
+            <MoreVariationsSection productId={product.id} colorVariants={colorVariants} projects={projects} />
           )}
         </ItemSubNav>
       )}
