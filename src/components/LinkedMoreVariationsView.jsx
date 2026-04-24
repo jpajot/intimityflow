@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,53 +9,73 @@ import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 
-// Multi-select dropdown for array fields
+// Multi-select dropdown for array fields — uses portal to escape scroll containers
 function MultiSelectCell({ value = [], onSave, options = [] }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(value || []);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => { setSelected(value || []); }, [JSON.stringify(value)]);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); onSave(selected); } };
+    const handler = (e) => {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+        triggerRef.current && !triggerRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+        onSave(selected);
+      }
+    };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open, selected]);
+
+  const handleOpen = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen(true);
+  };
 
   const toggle = (opt) => {
     setSelected((prev) => prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]);
   };
 
-  if (!open) {
-    return (
-      <button type="button" onClick={() => setOpen(true)}
+  return (
+    <>
+      <button ref={triggerRef} type="button" onClick={handleOpen}
         className="text-left text-xs w-full h-full block px-2 py-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground">
         {selected.length ? selected.join(", ") : "—"}
       </button>
-    );
-  }
-
-  return (
-    <div ref={ref} className="relative z-50">
-      <div className="absolute top-0 left-0 min-w-[160px] bg-popover border border-border rounded-lg shadow-lg p-1.5 flex flex-col gap-0.5">
-        {options.map((opt) => (
-          <button key={opt} type="button"
-            onClick={() => toggle(opt)}
-            className={`flex items-center gap-2 px-2 py-1 rounded text-xs text-left transition-colors ${
-              selected.includes(opt) ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-            }`}>
-            <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${
-              selected.includes(opt) ? "bg-primary-foreground border-primary-foreground" : "border-muted-foreground"
-            }`}>{selected.includes(opt) && <span className="text-primary text-[10px] leading-none">✓</span>}</span>
-            {opt}
-          </button>
-        ))}
-        <button type="button" onClick={() => { setOpen(false); onSave(selected); }}
-          className="mt-1 text-[10px] text-center text-muted-foreground hover:text-foreground border-t border-border pt-1">Done</button>
-      </div>
-    </div>
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
+          className="min-w-[160px] bg-popover border border-border rounded-lg shadow-lg p-1.5 flex flex-col gap-0.5"
+        >
+          {options.map((opt) => (
+            <button key={opt} type="button"
+              onClick={() => toggle(opt)}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-xs text-left transition-colors ${
+                selected.includes(opt) ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}>
+              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${
+                selected.includes(opt) ? "bg-primary-foreground border-primary-foreground" : "border-muted-foreground"
+              }`}>{selected.includes(opt) && <span className="text-primary text-[10px] leading-none">✓</span>}</span>
+              {opt}
+            </button>
+          ))}
+          <button type="button" onClick={() => { setOpen(false); onSave(selected); }}
+            className="mt-1 text-[10px] text-center text-muted-foreground hover:text-foreground border-t border-border pt-1">Done</button>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
