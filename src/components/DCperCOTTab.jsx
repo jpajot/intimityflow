@@ -7,6 +7,7 @@ import { Loader2, Zap, LayoutGrid, List, FileDown } from "lucide-react";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
+import ImageLightbox from "./ImageLightbox";
 import * as XLSX from "xlsx";
 
 // Inline number edit cell
@@ -55,6 +56,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
   const [selectedForExport, setSelectedForExport] = useState(new Set());
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [tableLightbox, setTableLightbox] = useState(null);
 
   useEffect(() => {
     if (!projectId) return;
@@ -159,7 +161,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         const prod = getProduct(getVariationForLink(item.project_link_id));
         const img = prod?.images?.[0];
         return img
-          ? <div className="w-10 h-10 overflow-hidden"><img src={img} alt="" className="w-full h-full object-contain" /></div>
+          ? <div className="w-10 h-10 overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(img)}><img src={img} alt="" className="w-full h-full object-contain" /></div>
           : null;
       },
     },
@@ -209,7 +211,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
       render: (item) => {
         const cw = getColorway(getVariationForLink(item.project_link_id));
         return cw?.image_url
-          ? <div className="w-8 h-8 overflow-hidden"><img src={cw.image_url} alt="" className="w-full h-full object-contain" /></div>
+          ? <div className="w-8 h-8 overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}><img src={cw.image_url} alt="" className="w-full h-full object-contain" /></div>
           : <div className="w-8 h-8" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />;
       },
     },
@@ -585,7 +587,9 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
           }}
           onClickItem={() => {}}
         />
-      )}
-    </div>
-  );
-}
+        )}
+
+        {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
+        </div>
+        );
+        }

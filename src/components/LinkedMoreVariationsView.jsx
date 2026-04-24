@@ -8,6 +8,7 @@ import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
+import ImageLightbox from "./ImageLightbox";
 
 // Multi-select dropdown for array fields — uses portal to escape scroll containers
 function MultiSelectCell({ value = [], onSave, options = [] }) {
@@ -127,6 +128,7 @@ const DIST_CHANNEL_OPTIONS = ["Wholesale", "Direct To Customer"];
 export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked }) {
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
+  const [tableLightbox, setTableLightbox] = useState(null);
   const distChannelOptions = DIST_CHANNEL_OPTIONS;
 
   useEffect(() => {
@@ -257,7 +259,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         const prod = getProduct(v);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 overflow-hidden">
+          <div className="w-10 h-10 overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(img)}>
             <img src={img} alt={prod.name} className="w-full h-full object-contain" />
           </div>
         ) : null;
@@ -419,6 +421,8 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       )}
+
+      {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
     </div>
   );
 }

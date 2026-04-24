@@ -7,6 +7,7 @@ import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
+import ImageLightbox from "./ImageLightbox";
 
 export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked }) {
   const [search, setSearch] = useState("");
@@ -14,6 +15,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
   const [showLink, setShowLink] = useState(false);
+  const [tableLightbox, setTableLightbox] = useState(null);
 
   const alreadyLinkedIds = useMemo(() => styles.map((s) => s.id), [styles]);
 
@@ -74,7 +76,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
     {
       id: "image", label: "Image", width: 70,
       render: (p) => p.images?.[0] ? (
-        <div className="w-10 h-10 overflow-hidden">
+        <div className="w-10 h-10 overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(p.images[0])}>
           <img src={p.images[0]} alt={p.name} className="w-full h-full object-contain" />
         </div>
       ) : null,
@@ -176,6 +178,8 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
       ) : (
         <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       )}
+
+      {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
     </div>
   );
 }
