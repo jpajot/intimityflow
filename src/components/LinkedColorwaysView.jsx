@@ -288,12 +288,10 @@ export default function LinkedColorwaysView({
         const prod = getProduct(cw);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden cursor-zoom-in bg-transparent" onClick={() => setTableLightbox(img)}>
+          <div className="w-10 h-10 overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(img)}>
             <img src={img} alt={prod?.name} className="w-full h-full object-contain" />
           </div>
-        ) : (
-          <div className="w-10 h-10 rounded-md bg-muted" />
-        );
+        ) : null;
       },
     },
     {
@@ -320,17 +318,17 @@ export default function LinkedColorwaysView({
       width: 70,
       render: (cw) => {
         if (cw.image_url) return (
-          <div className="w-8 h-8 rounded-md overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}>
+          <div className="w-8 h-8 overflow-hidden cursor-zoom-in" onClick={() => setTableLightbox(cw.image_url)}>
             <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-cover" />
           </div>
         );
         const hexes = getLinkedHexes(cw);
         if (hexes) return (
-          <div className="w-8 h-8 rounded-md overflow-hidden flex">
+          <div className="w-8 h-8 overflow-hidden flex">
             {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
           </div>
         );
-        return <div className="w-8 h-8 rounded-md" style={{ backgroundColor: cw.color_hex || "#ccc" }} />;
+        return <div className="w-8 h-8" style={{ backgroundColor: cw.color_hex || "#ccc" }} />;
       },
     },
     { id: "style_sub_type", label: "Style: Sub-type", width: 130, sortKey: (cw) => getProduct(cw)?.sub_type || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_type || "—"}</span> },

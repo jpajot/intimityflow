@@ -257,10 +257,10 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         const prod = getProduct(v);
         const img = prod?.images?.[0];
         return img ? (
-          <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted">
+          <div className="w-10 h-10 overflow-hidden">
             <img src={img} alt={prod.name} className="w-full h-full object-contain" />
           </div>
-        ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />;
+        ) : null;
       },
     },
     {
@@ -277,11 +277,11 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
       render: (v) => {
         const cw = getColorway(v);
         return cw?.image_url ? (
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-border">
+          <div className="w-8 h-8 overflow-hidden">
             <img src={cw.image_url} alt={cw.color_name} className="w-full h-full object-contain" />
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-md border border-border" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />
+          <div className="w-8 h-8" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />
         );
       },
     },

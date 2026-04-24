@@ -74,10 +74,10 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
     {
       id: "image", label: "Image", width: 70,
       render: (p) => p.images?.[0] ? (
-        <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted">
+        <div className="w-10 h-10 overflow-hidden">
           <img src={p.images[0]} alt={p.name} className="w-full h-full object-contain" />
         </div>
-      ) : <div className="w-10 h-10 rounded-md border border-border bg-muted" />,
+      ) : null,
     },
     { id: "code", label: "Code", width: 120, sortKey: (p) => p.code || "", render: (p) => <span className="font-mono text-xs text-muted-foreground">{p.code || "—"}</span> },
     { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
