@@ -107,9 +107,10 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
   const [channelOptions, setChannelOptions] = useState([]);
 
   useEffect(() => {
-    base44.entities.TypeOfLOV.filter({ code: CHANNEL_LOV_CODE }).then((types) => {
-      if (types.length === 0) return;
-      base44.entities.ListOfValues.filter({ type_of_lov_id: types[0].id }).then((vals) => {
+    base44.entities.TypeOfLOV.list().then((types) => {
+      const match = types.find((t) => t.code === CHANNEL_LOV_CODE);
+      if (!match) return;
+      base44.entities.ListOfValues.filter({ type_of_lov_id: match.id }).then((vals) => {
         setChannelOptions(vals.map((v) => v.name));
       });
     });
