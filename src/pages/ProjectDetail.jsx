@@ -20,6 +20,7 @@ import ProjectBoards from "./ProjectBoards";
 import BoardIcon from "../components/icons/BoardIcon";
 import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
 import ItemSubNav from "../components/ItemSubNav";
+import ProjectPalettesTab from "../components/ProjectPalettesTab";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -336,35 +337,22 @@ export default function ProjectDetail() {
         {activeSection === "boards" && <ProjectBoards projectId={id} />}
 
         {activeSection === "palettes" &&
-        <div className="space-y-4">
-            {palettes.length === 0 ?
-          <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-                <p className="text-sm text-muted-foreground">No color palettes yet.</p>
-              </div> :
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {palettes.map((palette) => {
-              const hexes = getPaletteHexes(palette.id);
-              const count = paletteColors.filter((pc) => pc.palette_id === palette.id).length;
-              return (
-                <button key={palette.id} onClick={() => navigate(`/color-palettes/${palette.id}`)} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all text-left">
-                      <div className="h-12 flex">
-                        {hexes.length === 0 ?
-                    <div className="flex-1 bg-muted" /> :
-
-                    hexes.slice(0, 10).map((hex, i) => <div key={i} className="flex-1" style={{ backgroundColor: hex }} />)
-                    }
-                      </div>
-                      <div className="px-4 py-2.5 flex items-center justify-between">
-                        <span className="font-medium text-sm">{palette.name}</span>
-                        <span className="text-xs text-muted-foreground">{count} color{count !== 1 ? "s" : ""}</span>
-                      </div>
-                    </button>);
-
-            })}
-              </div>
-          }
-          </div>
+          <ProjectPalettesTab
+            projectId={id}
+            palettes={palettes}
+            paletteColors={paletteColors}
+            techColors={techColors}
+            commColors={commColors}
+            getPaletteHexes={getPaletteHexes}
+            onPaletteCreated={async () => {
+              const [pals, palCols] = await Promise.all([
+                base44.entities.ColorPalette.filter({ project_id: id }),
+                base44.entities.ColorPaletteColor.list("-created_date", 2000),
+              ]);
+              setPalettes(pals);
+              setPaletteColors(palCols);
+            }}
+          />
         }
 
         {activeSection === "documents" &&
