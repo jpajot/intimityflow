@@ -157,8 +157,11 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
       if (!v) continue;
       // Link project to variation
       const varProjects = v.project_ids || [];
-      if (!varProjects.includes(projectId)) {
-        await base44.entities.ProductColorAndMore.update(vid, { project_ids: [...varProjects, projectId] });
+      const updates = {};
+      if (!varProjects.includes(projectId)) updates.project_ids = [...varProjects, projectId];
+      if (!v.creation_project_id) updates.creation_project_id = projectId;
+      if (Object.keys(updates).length > 0) {
+        await base44.entities.ProductColorAndMore.update(vid, updates);
       }
       // Also link project to parent colorway if not already linked
       const cw = colorways.find((c) => c.id === v.product_color_id);
