@@ -451,13 +451,13 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
         <thead className="sticky top-0 z-20">
           <tr className="border-b border-border bg-muted/40">
             {fixedCols.map((col, i) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky bg-muted/40 z-30 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i] }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky z-30 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i], backgroundColor: "hsl(var(--muted) / 0.4)" }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
             ))}
             {scrollableCols.map((col) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col) }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col), backgroundColor: "hsl(var(--muted) / 0.4)" }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
@@ -468,7 +468,7 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
           {rows.map((row, rowIdx) => (
             <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
               {fixedCols.map((col, i) => (
-                <td key={col.id} className="px-4 py-3 text-sm sticky bg-card border-r border-border/60 z-[5]" style={{ left: fixedOffsets[i], width: getWidth(col), minWidth: getWidth(col) }}>
+                <td key={col.id} className="px-4 py-3 text-sm sticky border-r border-border/60 z-[5]" style={{ left: fixedOffsets[i], width: getWidth(col), minWidth: getWidth(col), backgroundColor: "hsl(var(--card))" }}>
                   {col.render ? col.render(row) : "—"}
                 </td>
               ))}
