@@ -449,15 +449,15 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
     <div className="overflow-auto max-h-[calc(100vh-280px)]">
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-20">
-          <tr className="border-b border-border bg-muted/40">
+          <tr className="border-b border-border" style={{ backgroundColor: "hsl(var(--muted))" }}>
             {fixedCols.map((col, i) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky z-30 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i], backgroundColor: "hsl(var(--muted) / 0.4)" }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky z-30 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i], backgroundColor: "hsl(var(--muted))" }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
             ))}
             {scrollableCols.map((col) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col), backgroundColor: "hsl(var(--muted) / 0.4)" }} {...(headerProps ? headerProps(col) : {})}>
+              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col), backgroundColor: "hsl(var(--muted))" }} {...(headerProps ? headerProps(col) : {})}>
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
