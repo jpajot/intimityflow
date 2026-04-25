@@ -329,7 +329,7 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
   const dragHandleRef = React.useRef(null);
   
   if (!col.editable || !onEdit) {
-    return <td className="px-4 py-3 text-sm" style={{ width: col.width }}>{col.render(row)}</td>;
+    return <td className="px-4 py-3 text-sm border-b border-border" style={{ width: col.width }}>{col.render(row)}</td>;
   }
   
   const handleStart = () => { setEditingCell(cellKey); setEditValue(col.getDisplayValue(row)); };
@@ -352,7 +352,7 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
   
   return (
     <td 
-      className={`px-4 py-3 text-sm relative ${isDragging ? 'bg-primary/20' : ''}`} 
+      className={`px-4 py-3 text-sm relative border-b border-border ${isDragging ? 'bg-primary/20' : ''}`} 
       style={{ width: col.width }} 
       onClick={handleStart}
       onDragEnter={handleDragEnter}
@@ -445,19 +445,32 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fixedCols, colWidths]);
 
+  const BG_HEADER = "hsl(var(--muted))";
+  const BG_CELL = "hsl(var(--card))";
+
   return (
-    <div className="overflow-auto max-h-[calc(100vh-280px)]">
-      <table className="text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, minWidth: "100%" }}>
-        <thead className="sticky top-0 z-20">
-          <tr className="border-b border-border" style={{ backgroundColor: "hsl(var(--muted))" }}>
+    <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 280px)", position: "relative" }}>
+      <table style={{ borderCollapse: "separate", borderSpacing: 0, tableLayout: "fixed", width: "max-content", minWidth: "100%" }} className="text-sm">
+        <thead>
+          <tr className="border-b border-border">
             {fixedCols.map((col, i) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky z-30 cursor-context-menu select-none border-r border-border/60" style={{ width: getWidth(col), minWidth: getWidth(col), left: fixedOffsets[i], backgroundColor: "hsl(var(--muted))" }} {...(headerProps ? headerProps(col) : {})}>
+              <th
+                key={col.id}
+                className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none border-r border-b border-border"
+                style={{ position: "sticky", top: 0, left: fixedOffsets[i], zIndex: 30, width: getWidth(col), minWidth: getWidth(col), backgroundColor: BG_HEADER }}
+                {...(headerProps ? headerProps(col) : {})}
+              >
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
             ))}
             {scrollableCols.map((col) => (
-              <th key={col.id} className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none" style={{ width: getWidth(col), minWidth: getWidth(col), backgroundColor: "hsl(var(--muted))" }} {...(headerProps ? headerProps(col) : {})}>
+              <th
+                key={col.id}
+                className="relative text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-context-menu select-none border-b border-border"
+                style={{ position: "sticky", top: 0, zIndex: 20, width: getWidth(col), minWidth: getWidth(col), backgroundColor: BG_HEADER }}
+                {...(headerProps ? headerProps(col) : {})}
+              >
                 <SortHeader col={col} sortBy={sortBy} sortDir={sortDir} onSort={() => handleSort(col.id)} />
                 <ResizeHandle colId={col.id} onResize={handleResize} />
               </th>
@@ -466,9 +479,13 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
         </thead>
         <tbody>
           {rows.map((row, rowIdx) => (
-            <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+            <tr key={row.id} className="hover:bg-muted/20 transition-colors">
               {fixedCols.map((col, i) => (
-                <td key={col.id} className="px-4 py-3 text-sm sticky border-r border-border/60 z-[5]" style={{ left: fixedOffsets[i], width: getWidth(col), minWidth: getWidth(col), backgroundColor: "hsl(var(--card))" }}>
+                <td
+                  key={col.id}
+                  className="px-4 py-3 text-sm border-b border-r border-border"
+                  style={{ position: "sticky", left: fixedOffsets[i], zIndex: 5, width: getWidth(col), minWidth: getWidth(col), backgroundColor: BG_CELL }}
+                >
                   {col.render ? col.render(row) : "—"}
                 </td>
               ))}
