@@ -235,7 +235,7 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
           {renderGroupTree(groups, visibleColumns, fixedCols, scrollableCols, sortBy, sortDir, handleSort, onEdit, editingCell, setEditingCell, editValue, setEditValue, expandedGroups, toggleGroup, headerProps)}
         </div>
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-xl border border-border">
           <TableContent
             columns={visibleColumns} fixedCols={fixedCols} scrollableCols={scrollableCols}
             rows={sortedRows} handleSort={handleSort} sortBy={sortBy} sortDir={sortDir}
@@ -280,7 +280,7 @@ function renderGroupTree(groups, columns, fixedCols, scrollableCols, sortBy, sor
   return groups.map((group) => {
     if (!group.label) {
       return (
-        <div key="all" className="rounded-xl border border-border overflow-hidden">
+        <div key="all" className="rounded-xl border border-border">
           <TableContent columns={columns} fixedCols={fixedCols} scrollableCols={scrollableCols} rows={group.items || []} handleSort={handleSort} sortBy={sortBy} sortDir={sortDir} onEdit={onEdit} editingCell={editingCell} setEditingCell={setEditingCell} editValue={editValue} setEditValue={setEditValue} headerProps={headerProps} />
         </div>
       );
@@ -289,7 +289,7 @@ function renderGroupTree(groups, columns, fixedCols, scrollableCols, sortBy, sor
     const count = group.items ? group.items.length : countLeaves(group.children || []);
     const indent = depth * 12;
     return (
-      <div key={group.key} className="rounded-xl border border-border overflow-hidden">
+      <div key={group.key} className="rounded-xl border border-border">
         <button
           type="button"
           onClick={() => toggleGroup(group.key)}
