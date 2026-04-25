@@ -21,10 +21,10 @@ export default function ItemSubNav({ items, activeId, onChange, children }) {
   };
 
   return (
-    <div className="rounded-xl flex border border-border overflow-hidden min-h-[400px]">
+    <div className="rounded-xl flex border border-border overflow-hidden" style={{ height: "calc(100vh - 200px)", minHeight: 400 }}>
       {/* Left vertical nav */}
       <div
-        className={`shrink-0 bg-sidebar border-r border-border py-2 flex flex-col transition-all duration-200 ${expanded ? "w-44" : "w-12"}`}>
+        className={`shrink-0 bg-sidebar border-r border-border py-2 flex flex-col transition-all duration-200 overflow-y-auto ${expanded ? "w-44" : "w-12"}`}>
         
         {/* Toggle arrow */}
         <button
@@ -74,7 +74,7 @@ export default function ItemSubNav({ items, activeId, onChange, children }) {
       </div>
 
       {/* Content area */}
-      <div className="flex-1 p-5 min-w-0 overflow-auto bg-background">
+      <div className="flex-1 p-5 min-w-0 overflow-y-auto overflow-x-hidden bg-background">
         {children}
       </div>
     </div>);
