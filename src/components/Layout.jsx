@@ -14,6 +14,10 @@ export function getPinnedItems() {
 }
 export function setPinnedItems(items) {
   localStorage.setItem(PINNED_ITEMS_KEY, JSON.stringify(items));
+  // Also persist to user profile for cross-device sync
+  import("@/api/base44Client").then(({ base44 }) => {
+    base44.auth.updateMe({ pinned_nav_items: items }).catch(() => {});
+  });
 }
 
 const NAV_ITEMS = [
@@ -43,6 +47,19 @@ export default function Layout() {
   const [sizeStudioOpen, setSizeStudioOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+
+  // On mount, load pinned items from user profile (cross-device sync)
+  useEffect(() => {
+    import("@/api/base44Client").then(({ base44 }) => {
+      base44.auth.me().then((user) => {
+        if (user?.pinned_nav_items && Array.isArray(user.pinned_nav_items)) {
+          // User profile is the source of truth — sync to localStorage too
+          setPinnedItems(user.pinned_nav_items);
+          setPinnedItemsState(user.pinned_nav_items);
+        }
+      }).catch(() => {});
+    });
+  }, []);
 
   // Keep pinned items in sync across tabs/pages
   useEffect(() => {

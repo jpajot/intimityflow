@@ -1,0 +1,21 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "pinned_nav_items": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Pinned navigation items for cross-device persistence"
+    }
+  }
+}
