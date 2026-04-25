@@ -447,7 +447,7 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
 
   return (
     <div className="overflow-auto max-h-[calc(100vh-280px)]">
-      <table className="w-full text-sm">
+      <table className="text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, minWidth: "100%" }}>
         <thead className="sticky top-0 z-20">
           <tr className="border-b border-border" style={{ backgroundColor: "hsl(var(--muted))" }}>
             {fixedCols.map((col, i) => (
