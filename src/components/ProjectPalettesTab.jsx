@@ -434,8 +434,8 @@ export default function ProjectPalettesTab({
               <div className="flex items-center gap-2">
                 <SizeControl size={paletteCardSize} onChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }} />
                 {selectedSwatches.length > 0 && (
-                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
-                    <Download className="w-3.5 h-3.5" /> Export .ase
+                  <Button size="sm" variant="outline" className="gap-1 h-8 text-xs px-2" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
+                    <Download className="w-3.5 h-3.5" /> .ase
                   </Button>
                 )}
                 <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
