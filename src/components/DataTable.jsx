@@ -446,7 +446,7 @@ function TableContent({ columns, fixedCols, scrollableCols, rows, handleSort, so
   }, [fixedCols, colWidths]);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-auto max-h-[calc(100vh-280px)]">
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-20">
           <tr className="border-b border-border bg-muted/40">

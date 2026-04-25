@@ -74,7 +74,7 @@ export default function ItemSubNav({ items, activeId, onChange, children }) {
       </div>
 
       {/* Content area */}
-      <div className="flex-1 p-5 min-w-0 overflow-y-auto overflow-x-hidden bg-background">
+      <div className="flex-1 p-5 min-w-0 overflow-x-hidden bg-background overflow-y-auto">
         {children}
       </div>
     </div>);
