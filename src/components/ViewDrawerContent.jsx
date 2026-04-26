@@ -35,11 +35,14 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
   ];
 
   useEffect(() => {
-    base44.entities.ListViewConfig.filter({ page_key: pageKey }).then((data) => {
+    const queryPageKey = currentViewType === 'grid' 
+      ? `gallery_${pageKey.replace(/_grid$|_list$/, '')}`
+      : pageKey;
+    base44.entities.ListViewConfig.filter({ page_key: queryPageKey }).then((data) => {
       setViews(data);
       setLoading(false);
     });
-  }, [pageKey]);
+  }, [pageKey, currentViewType]);
 
   const openNew = () => {
     setFormName("");
