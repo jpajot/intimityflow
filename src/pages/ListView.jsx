@@ -662,7 +662,7 @@ export default function ListView() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pointer-events-auto">
       {activeSection === "styles" && (
         <StylesTab products={products} colorVariants={colorways} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
       )}
