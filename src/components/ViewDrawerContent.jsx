@@ -216,25 +216,25 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                 />
               </div>
 
-              <Tabs value={dialogTab} onValueChange={setDialogTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="fields" className="flex-1 text-xs">Fields</TabsTrigger>
-                  <TabsTrigger value="filters" className="flex-1 text-xs">
+              <Tabs value={dialogTab} onValueChange={setDialogTab} onClick={(e) => e.stopPropagation()}>
+                <TabsList className="w-full" onClick={(e) => e.stopPropagation()}>
+                  <TabsTrigger value="fields" className="flex-1 text-xs" onClick={(e) => e.stopPropagation()}>Fields</TabsTrigger>
+                  <TabsTrigger value="filters" className="flex-1 text-xs" onClick={(e) => e.stopPropagation()}>
                     Filters
                     {formFilters.filters.filter(f => f.field && f.values.length > 0).length > 0 && (
                       <Badge className="ml-1.5 px-1.5 py-0 text-[10px] h-4">{formFilters.filters.filter(f => f.field && f.values.length > 0).length}</Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="roles" className="flex-1 text-xs">
+                  <TabsTrigger value="roles" className="flex-1 text-xs" onClick={(e) => e.stopPropagation()}>
                     Roles {formRoles.length > 0 && <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-[10px] h-4">{formRoles.length}</Badge>}
                   </TabsTrigger>
                 </TabsList>
 
                 {/* FIELDS TAB */}
-                <TabsContent value="fields" className="mt-3 space-y-3">
-                  <div className="relative">
+                <TabsContent value="fields" className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                    <Input value={fieldSearch} onChange={(e) => setFieldSearch(e.target.value)} placeholder="Search fields…" className="h-7 text-xs pl-8" />
+                    <Input value={fieldSearch} onChange={(e) => setFieldSearch(e.target.value)} placeholder="Search fields…" className="h-7 text-xs pl-8" onClick={(e) => e.stopPropagation()} />
                   </div>
                   {(() => {
                     const q = fieldSearch.toLowerCase();
@@ -243,15 +243,15 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                     const filteredChecked = q ? checked.filter((f) => f.label.toLowerCase().includes(q)) : checked;
                     const filteredUnchecked = q ? unchecked.filter((f) => f.label.toLowerCase().includes(q)) : unchecked;
                     return (
-                      <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="border border-border rounded-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
                         <div className="max-h-44 overflow-y-auto divide-y divide-border">
                           <div className="bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground">Active Fields</div>
                           {filteredChecked.length === 0 ? (
                             <div className="px-3 py-2 text-xs text-muted-foreground">No fields selected</div>
                           ) : (
                             filteredChecked.map((field) => (
-                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors">
-                                <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onClick={(e) => e.stopPropagation()} />
                                 <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer">{field.label}</label>
                                 {formFixedFieldIds.includes(field.id) && (
                                   <Badge className="text-[10px] h-4 px-1">#</Badge>
@@ -267,8 +267,8 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                           <div className="max-h-24 overflow-y-auto divide-y divide-border">
                             <div className="bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground">Available Fields</div>
                             {filteredUnchecked.map((field) => (
-                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60 hover:opacity-100 transition-opacity">
-                                <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60 hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onClick={(e) => e.stopPropagation()} />
                                 <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer">{field.label}</label>
                               </div>
                             ))}
@@ -280,9 +280,9 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                 </TabsContent>
 
                 {/* FILTERS TAB */}
-                <TabsContent value="filters" className="mt-3 space-y-3">
+                <TabsContent value="filters" className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
                   <p className="text-xs text-muted-foreground">Add filters to automatically apply when this view is selected.</p>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2 max-h-64 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                     {formFilters.filters.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">No filters yet.</p>
                     )}
@@ -321,10 +321,10 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                 </TabsContent>
 
                 {/* ROLES TAB */}
-                <TabsContent value="roles" className="mt-3 space-y-3">
+                <TabsContent value="roles" className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
                   <p className="text-xs text-muted-foreground">Restrict this view to specific user roles. Leave empty for all.</p>
-                  <div className="flex gap-1">
-                    <Input value={roleInput} onChange={(e) => setRoleInput(e.target.value)}
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const r = roleInput.trim(); if (r && !formRoles.includes(r)) setFormRoles((p) => [...p, r]); setRoleInput(""); } }}
                       placeholder="e.g. admin, manager…" className="h-7 text-xs flex-1" />
                     <Button type="button" variant="outline" size="sm" onClick={() => { const r = roleInput.trim(); if (r && !formRoles.includes(r)) setFormRoles((p) => [...p, r]); setRoleInput(""); }} className="h-7 text-xs gap-1 px-2">
