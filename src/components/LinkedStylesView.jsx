@@ -37,7 +37,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
   }, [activeViewId]);
 
   useEffect(() => {
-    onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
+    onViewRef?.({ view, setView: (v) => { setView(v); }, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
   }, [view, activeColumns, pinnedCols, onViewRef]);
 
   const alreadyLinkedIds = useMemo(() => styles.map((s) => s.id), [styles]);

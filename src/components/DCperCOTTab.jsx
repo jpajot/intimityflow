@@ -65,7 +65,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
       const fileInput = document.querySelector('[data-dc-import-input]');
       fileInput?.click();
     });
-    onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
+    onViewRef?.({ view, setView: (v) => { setView(v); }, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
   }, [view, activeColumns, pinnedCols]);
 
   useEffect(() => {

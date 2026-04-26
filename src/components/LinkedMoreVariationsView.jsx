@@ -156,7 +156,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
   }, [activeViewId]);
 
   useEffect(() => {
-    onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
+    onViewRef?.({ view, setView: (v) => { setView(v); }, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
   }, [view, activeColumns, pinnedCols, onViewRef]);
 
   useEffect(() => {

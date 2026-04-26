@@ -64,12 +64,16 @@ export default function ProjectDetail() {
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
   const [showStylesViewMenu, setShowStylesViewMenu] = useState(false);
   const [stylesActiveViewId, setStylesActiveViewId] = useState("default");
+  const [stylesViewMode, setStylesViewMode] = useState("grid");
   const [showColorwaysViewMenu, setShowColorwaysViewMenu] = useState(false);
   const [colorwaysActiveViewId, setColorwaysActiveViewId] = useState("default");
+  const [colorwaysViewMode, setColorwaysViewMode] = useState("grid");
   const [showVariationsViewMenu, setShowVariationsViewMenu] = useState(false);
   const [variationsActiveViewId, setVariationsActiveViewId] = useState("default");
+  const [variationsViewMode, setVariationsViewMode] = useState("grid");
   const [showDCViewMenu, setShowDCViewMenu] = useState(false);
   const [dcActiveViewId, setDCActiveViewId] = useState("default");
+  const [dcViewMode, setDCViewMode] = useState("list");
 
   const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
 
@@ -104,83 +108,71 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     if (activeSection === "styles") {
-      const viewState = stylesViewRef.current;
-      const isListView = viewState?.view === "list";
       setOptions({
         items: [
-          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
-            if (viewState) {
-              viewState.setView(isListView ? "grid" : "list");
-            }
+          { label: stylesViewMode === "list" ? "View: Grid" : "View: List", icon: stylesViewMode === "list" ? LayoutGrid : List, onClick: () => {
+            setStylesViewMode(stylesViewMode === "list" ? "grid" : "list");
+            stylesViewRef.current?.setView(stylesViewMode === "list" ? "grid" : "list");
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true },
         ],
         customContent: showStylesViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} allFields={[]} currentViewType={viewState?.view} />
+          <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} allFields={[]} currentViewType={stylesViewMode} />
         ) : null,
       });
     } else if (activeSection === "colorways") {
-      const viewState = colorwaysViewRef.current;
-      const isListView = viewState?.view === "list";
       setOptions({
         items: [
-          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
-            if (viewState) {
-              viewState.setView(isListView ? "grid" : "list");
-            }
+          { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => {
+            setColorwaysViewMode(colorwaysViewMode === "list" ? "grid" : "list");
+            colorwaysViewRef.current?.setView(colorwaysViewMode === "list" ? "grid" : "list");
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
         ],
         customContent: showColorwaysViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={viewState?.view} />
+          <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode} />
         ) : null,
       });
     } else if (activeSection === "variations") {
-      const viewState = variationsViewRef.current;
-      const isListView = viewState?.view === "list";
       setOptions({
         items: [
           { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
           { divider: true },
-          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
-            if (viewState) {
-              viewState.setView(isListView ? "grid" : "list");
-            }
+          { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => {
+            setVariationsViewMode(variationsViewMode === "list" ? "grid" : "list");
+            variationsViewRef.current?.setView(variationsViewMode === "list" ? "grid" : "list");
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
         ],
         customContent: showVariationsViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={viewState?.view} />
+          <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode} />
         ) : null,
       });
     } else if (activeSection === "dc_per_cot") {
-      const viewState = window.dcPerCOTView;
-      const isListView = viewState?.view === "list";
       setOptions({
         items: [
           { label: "Generate DC per CoT", icon: Zap, onClick: () => window.dcPerCOTGenerate?.() },
           { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
           { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
           { divider: true },
-          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
-            if (viewState) {
-              viewState.setView(isListView ? "grid" : "list");
-            }
+          { label: dcViewMode === "list" ? "View: Grid" : "View: List", icon: dcViewMode === "list" ? LayoutGrid : List, onClick: () => {
+            setDCViewMode(dcViewMode === "list" ? "grid" : "list");
+            window.dcPerCOTView?.setView(dcViewMode === "list" ? "grid" : "list");
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu(!showDCViewMenu), custom: true },
         ],
         customContent: showDCViewMenu ? (
-          <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={viewState?.view} />
+          <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={dcViewMode} />
         ) : null,
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId]);
+  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId, stylesViewMode, colorwaysViewMode, variationsViewMode, dcViewMode]);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];

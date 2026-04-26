@@ -179,7 +179,7 @@ export default function LinkedColorwaysView({
   const [pinnedCols, setPinnedCols] = useState([]);
 
   useEffect(() => {
-    onViewRef?.({ view, setView: onViewChange, activeColumns, setActiveColumns: onColumnsChange, pinnedCols, setPinnedCols });
+    onViewRef?.({ view, setView: (v) => { onViewChange(v); }, activeColumns, setActiveColumns: onColumnsChange, pinnedCols, setPinnedCols });
   }, [view, activeColumns, pinnedCols, onViewRef, onViewChange, onColumnsChange]);
 
   useEffect(() => {
