@@ -170,7 +170,7 @@ const CHANNELS_OPTIONS = ["Wholesale", "Retail", "E-commerce", "Outlet", "Travel
 export default function LinkedColorwaysView({
   colorways, products, techColors, commColors, navigate,
   search, onSearchChange, view, onViewChange, activeColumns, onColumnsChange,
-  projectId, allColorways = [], onLinked, onViewRef
+  projectId, allColorways = [], onLinked, onViewRef, activeViewId, onSelectView
 }) {
   const [showLink, setShowLink] = useState(false);
   const [linkMap, setLinkMap] = useState({});

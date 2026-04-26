@@ -42,7 +42,7 @@ function NumberCell({ value, onSave }) {
   );
 }
 
-export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef, onViewRef }) {
+export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef, onViewRef, activeViewId, onSelectView }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

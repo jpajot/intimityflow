@@ -13,6 +13,8 @@ export default function LinkedColorwaysManager({
   allColorways,
   onLinked,
   onViewRef,
+  activeViewId,
+  onSelectView,
 }) {
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
@@ -34,6 +36,8 @@ export default function LinkedColorwaysManager({
       allColorways={allColorways}
       onLinked={onLinked}
       onViewRef={onViewRef}
+      activeViewId={activeViewId}
+      onSelectView={onSelectView}
     />
   );
 }
