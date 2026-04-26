@@ -390,29 +390,11 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
   const ts = THUMB_SIZES.find((s) => s.id === thumbSize) || THUMB_SIZES[2];
 
   return (
-    <div className="space-y-3">
-      {/* View selector + filter badge (rendered by parent ListView as children) */}
-      <div className="flex items-center gap-1.5">
-        <Select value={activeViewId} onValueChange={switchView}>
-          <SelectTrigger className="h-8 text-xs w-32 border-dashed shrink-0">
-            <SelectValue>{activeLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default</SelectItem>
-            {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {activeFilterCount > 0 && (
-          <Badge className="px-1.5 py-0 text-[10px] h-4 shrink-0">{activeFilterCount}</Badge>
-        )}
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground ml-auto" onClick={openManage}>
-          <Pencil className="w-4 h-4" />
-        </Button>
-      </div>
-
+    <div>
       {/* Active grouping pills */}
-      {groupCols.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="space-y-3">
+        {groupCols.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground flex items-center gap-1"><Layers className="w-3.5 h-3.5" /> Grouped by:</span>
           {groupCols.map((id, idx) => {
             const field = mergedFields.find((f) => f.id === id);
@@ -438,27 +420,28 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
           onGroup={() => addGroupCol(contextMenu.field.id)}
           onClose={() => setContextMenu(null)}
         />
-      )}
+        )}
 
-      {/* Gallery */}
-      {groups ? (
-        <div className="space-y-3">
+          {/* Gallery */}
+        {groups ? (
+          <div className="space-y-3">
           {groups.map((group) => (
             <GroupSection key={group.key} group={group} allFields={mergedFields} activeFields={activeFieldIds}
               thumbSize={thumbSize} renderThumbnail={renderThumbnail} onClickItem={onClickItem}
               onFieldRightClick={(e, field) => setContextMenu({ x: e.clientX, y: e.clientY, field })}
               expandedGroups={expandedGroups} toggleGroup={toggleGroup} groupCols={groupCols} />
           ))}
-        </div>
-      ) : (
-        <div className={`grid ${ts.cols} gap-3`}>
+          </div>
+        ) : (
+          <div className={`grid ${ts.cols} gap-3`}>
           {filteredRows.map((row) => (
             <GalleryCard key={row.id} row={row} activeFields={activeFieldIds} allFields={mergedFields}
               thumbSize={thumbSize} renderThumbnail={renderThumbnail} onClickItem={onClickItem}
               onFieldRightClick={(e, field) => setContextMenu({ x: e.clientX, y: e.clientY, field })} />
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Manage Dialog */}
       <Dialog open={showManage} onOpenChange={(o) => { if (!o) { setShowManage(false); setMode("list"); } }}>
