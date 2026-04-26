@@ -175,6 +175,7 @@ export default function LinkedColorwaysView({
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
   const [tableLightbox, setTableLightbox] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
 
   useEffect(() => {
     base44.entities.TypeOfLOV.filter({ code: CHANNEL_LOV_CODE }).then((types) => {
@@ -436,7 +437,7 @@ export default function LinkedColorwaysView({
           </Button>
         )}
         {view === "list" && (
-          <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} />
+          <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <button
@@ -524,7 +525,7 @@ export default function LinkedColorwaysView({
           onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)}
         />
       ) : (
-        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
+        <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       )}
 
       {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
