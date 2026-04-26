@@ -42,7 +42,7 @@ function NumberCell({ value, onSave }) {
   );
 }
 
-export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef }) {
+export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef, onViewRef }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -65,7 +65,8 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
       const fileInput = document.querySelector('[data-dc-import-input]');
       fileInput?.click();
     });
-  }, []);
+    onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
+  }, [view, activeColumns, pinnedCols]);
 
   useEffect(() => {
     if (importFile) {
@@ -495,63 +496,32 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
           </SelectContent>
         </Select>
 
-        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleGenerate} disabled={generating}>
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-          Generate DC per CoT
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs gap-1.5"
+          onClick={handleExport}
+          disabled={filtered.length === 0}
+          title={selectedForExport.size > 0 ? `Export ${selectedForExport.size} selected items` : "Export all filtered items"}
+        >
+          <FileDown className="w-3.5 h-3.5" />
+          Export {selectedForExport.size > 0 ? `(${selectedForExport.size})` : ""}
         </Button>
 
-        {view === "list" && (
-          <ViewSelector
-            pageKey="dc_per_cot"
-            allColumns={defaultColumns}
-            onColumnsChange={setActiveColumns}
-            filterableFields={filterableFields}
-            rows={filtered}
-            entityNames={["ProductColorAndMoreProjectDCperCOTLink"]}
-            fixedColumnIds={pinnedCols}
-            onFixedColumnIdsChange={setPinnedCols}
-          />
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+          className="hidden"
+          data-dc-import-input
+        />
+
+        {importing && (
+          <div className="flex items-center gap-1.5 px-3 text-xs text-muted-foreground">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Importing…
+          </div>
         )}
-
-        {view === "list" && (
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs gap-1.5"
-              onClick={handleExport}
-              disabled={filtered.length === 0}
-              title={selectedForExport.size > 0 ? `Export ${selectedForExport.size} selected items` : "Export all filtered items"}
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              Export {selectedForExport.size > 0 ? `(${selectedForExport.size})` : ""}
-            </Button>
-
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-              className="hidden"
-              data-dc-import-input
-            />
-
-            {importing && (
-              <div className="flex items-center gap-1.5 px-3 text-xs text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Importing…
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button type="button" onClick={() => setView("grid")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
-          <button type="button" onClick={() => setView("list")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Table"><List className="w-4 h-4" /></button>
-        </div>
       </div>
 
       {filtered.length === 0 ? (

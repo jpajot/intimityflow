@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, Pin, PinOff, Info } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, Pin, PinOff, Info, Zap, LayoutGrid, List } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
 import PresenceIndicator from "../components/PresenceIndicator";
@@ -92,11 +92,19 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     if (activeSection === "dc_per_cot") {
+      const viewState = window.dcPerCOTView;
+      const isListView = viewState?.view === "list";
       setOptions({
         items: [
-          { label: "Generate DC per CoT", icon: FileText, onClick: () => window.dcPerCOTGenerate?.() },
+          { label: "Generate DC per CoT", icon: Zap, onClick: () => window.dcPerCOTGenerate?.() },
           { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
           { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
+          { divider: true },
+          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
+            if (viewState) {
+              viewState.setView(isListView ? "grid" : "list");
+            }
+          }},
         ],
       });
     } else {
@@ -430,7 +438,7 @@ export default function ProjectDetail() {
       <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
       }
       {activeSection === "dc_per_cot" &&
-      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => { window.dcPerCOTGenerate = handler; }} onExportRef={(handler) => { window.dcPerCOTExport = handler; }} onImportRef={(handler) => { window.dcPerCOTImport = handler; }} />
+      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => { window.dcPerCOTGenerate = handler; }} onExportRef={(handler) => { window.dcPerCOTExport = handler; }} onImportRef={(handler) => { window.dcPerCOTImport = handler; }} onViewRef={(viewState) => { window.dcPerCOTView = viewState; }} />
       }
 
       {/* Upload Dialog */}
