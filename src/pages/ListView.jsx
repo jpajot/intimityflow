@@ -179,6 +179,8 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
       ) : view === "grid" ? (
         <GalleryView
           pageKey="styles_list"
+          activeViewId={activeViewId}
+          onSelectView={setActiveViewId}
           navigate={navigate}
           allFields={[
             { id: "colorways", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
@@ -402,6 +404,8 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
       ) : view === "grid" ? (
         <GalleryView
           pageKey="colorways_list"
+          activeViewId={activeViewId}
+          onSelectView={setActiveViewId}
           navigate={navigate}
           allFields={[
             { id: "cw_color_name", label: "CW: Color Name", getValue: (cw) => cw.color_name || "—", render: (cw) => cw.color_name || "—" },
@@ -606,6 +610,8 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
       ) : view === "grid" ? (
         <GalleryView
           pageKey="variations_list"
+          activeViewId={activeViewId}
+          onSelectView={setActiveViewId}
           navigate={navigate}
           allFields={[
             { id: "sequence", label: "Var: Sequence", getValue: (v) => v.sequence || "—", render: (v) => v.sequence || "—" },

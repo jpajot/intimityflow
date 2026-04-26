@@ -166,7 +166,7 @@ function formatFieldLabel(key) {
 }
 
 // ─── Main GalleryView ─────────────────────────────────────────────────────────
-export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [], toolbarExtra, navigate }) {
+export default function GalleryView({ pageKey, allFields, rows = [], filterableFields = [], renderThumbnail, onClickItem, entityNames = [], toolbarExtra, navigate, activeViewId: propActiveViewId, onSelectView }) {
   const [views, setViews] = useState([]);
   const [schemaFields, setSchemaFields] = useState([]);
   const [activeViewId, setActiveViewId] = useState(() => localStorage.getItem(STORAGE_KEY(pageKey)) || "default");
@@ -198,6 +198,13 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
       setLoading(false);
     });
   }, [pageKey]);
+
+  // Sync external activeViewId prop with internal state
+  useEffect(() => {
+    if (propActiveViewId !== undefined) {
+      setActiveViewId(propActiveViewId);
+    }
+  }, [propActiveViewId]);
 
   // Auto-discover extra fields from entity schemas
   useEffect(() => {
@@ -281,6 +288,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
   const switchView = (viewId) => {
     setActiveViewId(viewId);
     localStorage.setItem(STORAGE_KEY(pageKey), viewId);
+    if (onSelectView) onSelectView(viewId);
     applyView(viewId);
   };
 
