@@ -19,7 +19,7 @@ import LinkedStylesView from "../components/LinkedStylesView";
 import ProjectBoards from "./ProjectBoards";
 import BoardIcon from "../components/icons/BoardIcon";
 import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
-import ItemSubNav from "../components/ItemSubNav";
+import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
@@ -76,6 +76,17 @@ export default function ProjectDetail() {
     window.dispatchEvent(new Event("pinned-items-changed"));
   };
   const autoSaveTimer = useRef(null);
+
+  const subNavItems = [
+    { id: "boards", label: "Boards", icon: BoardIcon },
+    { id: "documents", label: "Documents", count: documents.length, icon: FileText },
+    { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
+    { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
+    { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
+    { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
+    { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
+  ];
+  useRegisterSubNav(subNavItems, activeSection, setActiveSection);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
@@ -323,105 +334,89 @@ export default function ProjectDetail() {
         }
       </div>
 
-      {/* Sub-navigation */}
-      <ItemSubNav
-        items={[
-        { id: "boards", label: "Boards", icon: BoardIcon },
-        { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-        { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
-        { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
-        { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
-        { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
-        { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
-        }
-        activeId={activeSection}
-        onChange={setActiveSection}>
-        
-        {activeSection === "boards" && <ProjectBoards projectId={id} />}
+      {activeSection === "boards" && <ProjectBoards projectId={id} />}
 
-        {activeSection === "palettes" &&
-          <ProjectPalettesTab
-            projectId={id}
-            projectName={project.name}
-            palettes={palettes}
-            setPalettes={setPalettes}
-            paletteColors={paletteColors}
-            setPaletteColors={setPaletteColors}
-            techColors={techColors}
-            setTechColors={setTechColors}
-            commColors={commColors}
-            setCommColors={setCommColors}
-          />
-        }
-
-        {activeSection === "documents" &&
-        <div className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search documents…" className="pl-8 h-9" />
-              </div>
-              <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
-                <Upload className="w-4 h-4" /> Upload &amp; Parse
-              </Button>
-            </div>
-            {filteredDocs.length === 0 ?
-          <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-                <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
-              </div> :
-
-          <div className="space-y-2">
-                {filteredDocs.map((doc) =>
-            <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
-                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{doc.original_filename || "Document"}</p>
-                      <p className="text-xs text-muted-foreground">{doc.document_type} • {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ""}</p>
-                      {doc.collection_name && <p className="text-xs text-primary mt-0.5">{doc.collection_name}</p>}
-                    </div>
-                    <Badge variant={doc.status === "processed" ? "default" : doc.status === "error" ? "destructive" : "secondary"} className="text-xs shrink-0">
-                      {doc.status === "processed" ? "Processed" : doc.status === "error" ? "Error" : doc.status === "processing" ? "Parsing…" : "Staged"}
-                    </Badge>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate(`/projects/${id}/documents-to-parse/${doc.id}`)} title="View details">→</Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={() => handleDeleteDoc(doc.id)} title="Delete">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-            )}
-              </div>
-          }
-          </div>
-        }
-
-        {activeSection === "colorways" &&
-        <LinkedColorwaysManager
-          colorways={linkedColorways}
-          products={linkedProducts}
-          techColors={techColors}
-          commColors={commColors}
-          navigate={navigate}
-          search={cwSearch}
-          onSearchChange={setCwSearch}
-          view={cwView}
-          onViewChange={setCwView}
-          activeColumns={cwActiveColumns}
-          onColumnsChange={setCwActiveColumns}
+      {activeSection === "palettes" &&
+        <ProjectPalettesTab
           projectId={id}
-          allColorways={allColorways}
-          onLinked={loadData} />
+          projectName={project.name}
+          palettes={palettes}
+          setPalettes={setPalettes}
+          paletteColors={paletteColors}
+          setPaletteColors={setPaletteColors}
+          techColors={techColors}
+          setTechColors={setTechColors}
+          commColors={commColors}
+          setCommColors={setCommColors}
+        />
+      }
 
+      {activeSection === "documents" &&
+      <div className="space-y-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search documents…" className="pl-8 h-9" />
+            </div>
+            <Button size="sm" onClick={() => setShowUploadDialog(true)} className="gap-1.5 h-9">
+              <Upload className="w-4 h-4" /> Upload &amp; Parse
+            </Button>
+          </div>
+          {filteredDocs.length === 0 ?
+        <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+              <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{documents.length === 0 ? "No documents yet. Upload one to get started." : "No results match your search."}</p>
+            </div> :
+        <div className="space-y-2">
+              {filteredDocs.map((doc) =>
+          <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.original_filename || "Document"}</p>
+                    <p className="text-xs text-muted-foreground">{doc.document_type} • {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ""}</p>
+                    {doc.collection_name && <p className="text-xs text-primary mt-0.5">{doc.collection_name}</p>}
+                  </div>
+                  <Badge variant={doc.status === "processed" ? "default" : doc.status === "error" ? "destructive" : "secondary"} className="text-xs shrink-0">
+                    {doc.status === "processed" ? "Processed" : doc.status === "error" ? "Error" : doc.status === "processing" ? "Parsing…" : "Staged"}
+                  </Badge>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => navigate(`/projects/${id}/documents-to-parse/${doc.id}`)} title="View details">→</Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={() => handleDeleteDoc(doc.id)} title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+          )}
+            </div>
         }
-        {activeSection === "styles" &&
-        <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} />
-        }
-        {activeSection === "variations" &&
-        <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
-        }
-        {activeSection === "dc_per_cot" &&
-        <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} />
-        }
-      </ItemSubNav>
+        </div>
+      }
+
+      {activeSection === "colorways" &&
+      <LinkedColorwaysManager
+        colorways={linkedColorways}
+        products={linkedProducts}
+        techColors={techColors}
+        commColors={commColors}
+        navigate={navigate}
+        search={cwSearch}
+        onSearchChange={setCwSearch}
+        view={cwView}
+        onViewChange={setCwView}
+        activeColumns={cwActiveColumns}
+        onColumnsChange={setCwActiveColumns}
+        projectId={id}
+        allColorways={allColorways}
+        onLinked={loadData} />
+      }
+
+      {activeSection === "styles" &&
+      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} />
+      }
+      {activeSection === "variations" &&
+      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
+      }
+      {activeSection === "dc_per_cot" &&
+      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} />
+      }
 
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={(o) => {if (!o) {setFile(null);setSelectedType("");}setShowUploadDialog(o);}}>

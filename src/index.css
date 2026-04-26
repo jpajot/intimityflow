@@ -33,7 +33,7 @@
     --chart-3: 220 55% 50%;
     --chart-4: 45 80% 55%;
     --chart-5: 340 60% 50%;
-    --radius: 0px;
+    --radius: 4px;
     --sidebar-background: 30 12% 91%;
     --sidebar-foreground: 240 10% 10%;
     --sidebar-primary: 24 70% 45%;
@@ -90,8 +90,8 @@
 }
 
 @layer utilities {
-  /* Remove all border-radius except on buttons and their children */
-  *:not(button):not(button *):not([role="button"]):not([role="button"] *) {
-    border-radius: 0 !important;
+  /* Subtle global radius */
+  * {
+    border-radius: inherit;
   }
 }
