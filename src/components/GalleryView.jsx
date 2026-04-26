@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Loader2, LayoutGrid, X, ShieldCheck, Layers, GripVertical, MoreHorizontal, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, LayoutGrid, X, ShieldCheck, Layers, GripVertical, MoreHorizontal } from "lucide-react";
 import ListToolbar from "./ListToolbar";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
@@ -191,7 +191,6 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
   const [dialogTab, setDialogTab] = useState("fields");
   const [fieldSearch, setFieldSearch] = useState("");
   const [localThumbSize, setLocalThumbSize] = useState(thumbSize);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     base44.entities.ListViewConfig.filter({ page_key: `gallery_${pageKey}` }).then((data) => {
@@ -392,28 +391,32 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
 
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex items-center gap-1.5">
-        <Select value={activeViewId} onValueChange={switchView}>
-          <SelectTrigger className="h-8 text-xs w-28 border-dashed">
-            <SelectValue>{activeLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default</SelectItem>
-            {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {activeFilterCount > 0 && (
-          <Badge className="px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>
-        )}
-        <div className="flex-1" />
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setSearchOpen(!searchOpen)}>
-          <Search className="w-4 h-4" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={openManage}>
-          <Pencil className="w-4 h-4" />
-        </Button>
-      </div>
+      {/* Toolbar using ListToolbar + ViewSelector */}
+      <ListToolbar
+        search=""
+        onSearch={() => {}}
+        searchPlaceholder="Search…"
+        view={null}
+        onViewChange={null}
+        moreItems={[
+          { label: "Manage Views", icon: Pencil, onClick: openManage },
+        ]}
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Select value={activeViewId} onValueChange={switchView}>
+            <SelectTrigger className="h-8 text-xs w-28 border-dashed">
+              <SelectValue>{activeLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {activeFilterCount > 0 && (
+            <Badge className="px-1.5 py-0 text-[10px] h-4 shrink-0">{activeFilterCount}</Badge>
+          )}
+        </div>
+      </ListToolbar>
 
       {/* Active grouping pills */}
       {groupCols.length > 0 && (
