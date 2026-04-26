@@ -94,11 +94,6 @@ export default function Layout() {
     return () => { window.removeEventListener("storage", handler); window.removeEventListener("pinned-items-changed", handler); };
   }, []);
 
-  // Close sub-nav popover when active section changes
-  useEffect(() => {
-    subNavDrawer.close();
-  }, [subNav?.activeId]);
-
   const activeDrawerItem = DRAWER_ITEMS.find((item) => isDrawerItemActive(item, location.pathname));
   const DrawerIcon = activeDrawerItem?.icon ?? StylesIcon;
 
@@ -192,24 +187,6 @@ export default function Layout() {
     );
   };
 
-  // ── Sidebar nav button builder ─────────────────────────────────────────────
-
-  const NavButton = ({ popover, icon: Icon, label, isActive, tooltip, children }) => (
-    <div className="group relative w-full">
-      <button ref={popover.btnRef} type="button" onClick={popover.toggle}
-        className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
-          isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-        }`}>
-        <Icon className="w-4 h-4" />
-      </button>
-      {tooltip && (
-        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
-          {tooltip}
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -228,23 +205,33 @@ export default function Layout() {
         <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2">
 
           {/* Main drawer button */}
-          <NavButton
-            popover={mainDrawer}
-            icon={DrawerIcon}
-            isActive={!!activeDrawerItem}
-            tooltip={activeDrawerItem?.label ?? "Navigation"}
-          />
+          <div className="group relative w-full">
+            <button ref={mainDrawer.btnRef} type="button" onClick={mainDrawer.toggle}
+              className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+                activeDrawerItem ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}>
+              <DrawerIcon className="w-4 h-4" />
+            </button>
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
+              {activeDrawerItem?.label ?? "Navigation"}
+            </div>
+          </div>
 
           {/* Sub-nav drawer button — only when a page has registered sub-nav */}
           {subNav && subNav.items.length > 0 && (
             <>
               <div className="w-full my-1 border-t border-border" />
-              <NavButton
-                popover={subNavDrawer}
-                icon={SubNavIcon ?? (() => <span className="w-4 h-4 flex items-center justify-center text-xs font-bold">≡</span>)}
-                isActive={!!activeSubNavItem}
-                tooltip={activeSubNavItem?.label ?? "Section"}
-              />
+              <div className="group relative w-full">
+                <button ref={subNavDrawer.btnRef} type="button" onClick={subNavDrawer.toggle}
+                  className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+                    activeSubNavItem ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}>
+                  {SubNavIcon ? <SubNavIcon className="w-4 h-4" /> : <span className="w-4 h-4 flex items-center justify-center text-xs font-bold">≡</span>}
+                </button>
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
+                  {activeSubNavItem?.label ?? "Section"}
+                </div>
+              </div>
             </>
           )}
 
@@ -252,12 +239,17 @@ export default function Layout() {
           {pinnedItems.length > 0 && (
             <>
               <div className="w-full my-1 border-t border-border" />
-              <NavButton
-                popover={pinnedDrawer}
-                icon={Pin}
-                isActive={hasPinnedActive}
-                tooltip={`Pinned (${pinnedItems.length})`}
-              />
+              <div className="group relative w-full">
+                <button ref={pinnedDrawer.btnRef} type="button" onClick={pinnedDrawer.toggle}
+                  className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+                    hasPinnedActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}>
+                  <Pin className="w-4 h-4" />
+                </button>
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
+                  Pinned ({pinnedItems.length})
+                </div>
+              </div>
             </>
           )}
         </div>
