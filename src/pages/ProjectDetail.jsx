@@ -23,8 +23,9 @@ import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
+import ViewDrawerContent from "../components/ViewDrawerContent";
 import { usePageOptions } from "@/lib/PageOptionsContext";
-import { Download, Upload as UploadIcon } from "lucide-react";
+import { Download, Upload as UploadIcon, Pencil, Plus } from "lucide-react";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -61,6 +62,8 @@ export default function ProjectDetail() {
   const [docSearch, setDocSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+  const [showVariationsViewMenu, setShowVariationsViewMenu] = useState(false);
+  const [variationsActiveViewId, setVariationsActiveViewId] = useState("default");
 
   const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
 
@@ -139,12 +142,19 @@ export default function ProjectDetail() {
       const isListView = viewState?.view === "list";
       setOptions({
         items: [
+          { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
+          { divider: true },
           { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
             if (viewState) {
               viewState.setView(isListView ? "grid" : "list");
             }
           }},
+          { divider: true },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
         ],
+        customContent: showVariationsViewMenu ? (
+          <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={viewState?.view} />
+        ) : null,
       });
     } else {
       setOptions({ items: [] });
@@ -476,7 +486,7 @@ export default function ProjectDetail() {
       <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { stylesViewRef.current = state; }} />
       }
       {activeSection === "variations" &&
-      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { variationsViewRef.current = state; }} />
+      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { variationsViewRef.current = state; }} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} />
       }
       {activeSection === "dc_per_cot" &&
       <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => { window.dcPerCOTGenerate = handler; }} onExportRef={(handler) => { window.dcPerCOTExport = handler; }} onImportRef={(handler) => { window.dcPerCOTImport = handler; }} onViewRef={(viewState) => { window.dcPerCOTView = viewState; }} />
