@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Pencil, Plus, Trash2, Loader2, X, Badge, ShieldCheck } from "lucide-react";
+import { Pencil, Plus, Trash2, Loader2, X, Badge, ShieldCheck, GripVertical, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
-export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView }) {
+export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView, allFields = [] }) {
   const [views, setViews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -16,10 +17,12 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
   const [editingView, setEditingView] = useState(null);
   const [formName, setFormName] = useState("");
   const [formFieldIds, setFormFieldIds] = useState([]);
+  const [formFixedFieldIds, setFormFixedFieldIds] = useState([]);
   const [formFilters, setFormFilters] = useState({ operator: "and", filters: [] });
   const [formRoles, setFormRoles] = useState([]);
   const [dialogTab, setDialogTab] = useState("fields");
   const [roleInput, setRoleInput] = useState("");
+  const [fieldSearch, setFieldSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -32,9 +35,11 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
   const openNew = () => {
     setFormName("");
     setFormFieldIds([]);
+    setFormFixedFieldIds([]);
     setFormFilters({ operator: "and", filters: [] });
     setFormRoles([]);
     setRoleInput("");
+    setFieldSearch("");
     setEditingView(null);
     setMode("new");
     setDialogTab("fields");
@@ -44,9 +49,11 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
   const openEdit = (view) => {
     setFormName(view.name);
     setFormFieldIds(view.column_ids || []);
+    setFormFixedFieldIds(view.fixed_column_ids || []);
     setFormFilters(view.filters_config || { operator: "and", filters: [] });
     setFormRoles(view.allowed_roles || []);
     setRoleInput("");
+    setFieldSearch("");
     setEditingView(view);
     setMode("edit");
     setDialogTab("fields");
@@ -61,6 +68,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
       page_key: pageKey,
       name: formName.trim(),
       column_ids: formFieldIds,
+      fixed_column_ids: formFixedFieldIds,
       filters_config: formFilters,
       allowed_roles: formRoles,
     };
@@ -68,9 +76,11 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
     if (editingView) {
       await base44.entities.ListViewConfig.update(editingView.id, data);
       setViews(views.map((v) => v.id === editingView.id ? { ...v, ...data } : v));
+      if (activeViewId === editingView.id) onSelectView(editingView.id);
     } else {
       const created = await base44.entities.ListViewConfig.create(data);
       setViews([...views, created]);
+      onSelectView(created.id);
     }
     
     setSaving(false);
@@ -94,6 +104,14 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
       ...f,
       filters: f.filters.map((fi, i) => i === idx ? { ...fi, values: fi.values.includes(val) ? fi.values.filter((v) => v !== val) : [...fi.values, val] } : fi),
     }));
+  };
+
+  const toggleField = (fieldId) => {
+    setFormFieldIds((prev) => prev.includes(fieldId) ? prev.filter((x) => x !== fieldId) : [...prev, fieldId]);
+  };
+
+  const toggleFixedField = (fieldId) => {
+    setFormFixedFieldIds((prev) => prev.includes(fieldId) ? prev.filter((x) => x !== fieldId) : [...prev, fieldId]);
   };
 
   const handleDelete = async (view) => {
@@ -126,7 +144,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
         ) : views.length > 0 ? (
           <div className="space-y-1.5">
             {views.map((v) => (
-              <div key={v.id} className="flex items-center gap-2">
+              <div key={v.id} className="group flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => onSelectView(v.id)}
@@ -141,15 +159,15 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
                 <button
                   type="button"
                   onClick={() => openEdit(v)}
-                  className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  title="Edit view name"
+                  className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                  title="Edit view"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(v)}
-                  className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                  className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                   title="Delete view"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -172,7 +190,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
 
       {/* Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>
               {mode === "list" ? "View Management" : mode === "new" ? "Create New View" : "Edit View"}
@@ -180,7 +198,9 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
           </DialogHeader>
 
           {mode === "list" && (
-            <div className="text-sm text-muted-foreground">Select a view to edit or create a new one.</div>
+            <div className="text-sm text-muted-foreground">
+              {views.length === 0 ? "No views yet. Create one to get started." : "Select a view to edit or create a new one."}
+            </div>
           )}
 
           {(mode === "new" || mode === "edit") && (
@@ -211,24 +231,52 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView 
                 </TabsList>
 
                 {/* FIELDS TAB */}
-                <TabsContent value="fields" className="mt-3">
-                  <p className="text-xs text-muted-foreground mb-2">Configure which fields to display in this view.</p>
-                  <div className="space-y-2">
-                    {formFieldIds.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">No fields selected. Create the view and configure from the main interface.</p>
-                    ) : (
-                      <div className="border border-border rounded-lg p-2 space-y-1">
-                        {formFieldIds.map((id) => (
-                          <div key={id} className="flex items-center justify-between text-xs px-2 py-1 bg-muted/50 rounded">
-                            <span>{id}</span>
-                            <button type="button" onClick={() => setFormFieldIds((prev) => prev.filter((x) => x !== id))} className="text-muted-foreground hover:text-destructive">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                <TabsContent value="fields" className="mt-3 space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input value={fieldSearch} onChange={(e) => setFieldSearch(e.target.value)} placeholder="Search fields…" className="h-7 text-xs pl-8" />
                   </div>
+                  {(() => {
+                    const q = fieldSearch.toLowerCase();
+                    const checked = formFieldIds.map((id) => allFields.find((f) => f.id === id)).filter(Boolean);
+                    const unchecked = allFields.filter((f) => !formFieldIds.includes(f.id));
+                    const filteredChecked = q ? checked.filter((f) => f.label.toLowerCase().includes(q)) : checked;
+                    const filteredUnchecked = q ? unchecked.filter((f) => f.label.toLowerCase().includes(q)) : unchecked;
+                    return (
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <div className="max-h-44 overflow-y-auto divide-y divide-border">
+                          <div className="bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground">Active Fields</div>
+                          {filteredChecked.length === 0 ? (
+                            <div className="px-3 py-2 text-xs text-muted-foreground">No fields selected</div>
+                          ) : (
+                            filteredChecked.map((field) => (
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors">
+                                <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                                <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer">{field.label}</label>
+                                {formFixedFieldIds.includes(field.id) && (
+                                  <Badge className="text-[10px] h-4 px-1">#</Badge>
+                                )}
+                                <button type="button" onClick={() => toggleFixedField(field.id)} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={formFixedFieldIds.includes(field.id) ? "Unpin column" : "Pin column"}>
+                                  {formFixedFieldIds.includes(field.id) ? "📌" : "○"}
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        {filteredUnchecked.length > 0 && (
+                          <div className="max-h-24 overflow-y-auto divide-y divide-border">
+                            <div className="bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground">Available Fields</div>
+                            {filteredUnchecked.map((field) => (
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60 hover:opacity-100 transition-opacity">
+                                <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} />
+                                <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer">{field.label}</label>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </TabsContent>
 
                 {/* FILTERS TAB */}

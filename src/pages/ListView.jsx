@@ -23,6 +23,25 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewMenu, setShowViewMenu] = useState(false);
 
+  // All available columns for field selection
+  const allAvailableFields = [
+    { id: "image", label: "Image" },
+    { id: "code", label: "Code" },
+    { id: "name", label: "Name" },
+    { id: "type", label: "Type" },
+    { id: "sub_type", label: "Sub-type" },
+    { id: "category", label: "Category" },
+    { id: "sub_category", label: "Sub-Category" },
+    { id: "customer_need", label: "Customer Need" },
+    { id: "size_grid_id", label: "Size Grid" },
+    { id: "created_by", label: "Created By" },
+    { id: "creation_project", label: "Creation Project" },
+    { id: "linked_projects", label: "Linked Projects" },
+    { id: "colors", label: "Colorways" },
+  ];
+
+  const viewKey = `styles_list_${view}`;
+
   // Set page options on mount/update
   useEffect(() => {
     setOptions({
@@ -35,10 +54,10 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
         { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey="styles_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+        <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} />
       ) : null,
     });
-  }, [setOptions, navigate, showViewMenu, activeViewId]);
+  }, [setOptions, navigate, showViewMenu, activeViewId, view, viewKey]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
