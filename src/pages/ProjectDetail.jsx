@@ -103,23 +103,7 @@ export default function ProjectDetail() {
   const { setOptions } = usePageOptions();
 
   useEffect(() => {
-    if (activeSection === "dc_per_cot") {
-      const viewState = window.dcPerCOTView;
-      const isListView = viewState?.view === "list";
-      setOptions({
-        items: [
-          { label: "Generate DC per CoT", icon: Zap, onClick: () => window.dcPerCOTGenerate?.() },
-          { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
-          { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
-          { divider: true },
-          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
-            if (viewState) {
-              viewState.setView(isListView ? "grid" : "list");
-            }
-          }},
-        ],
-      });
-    } else if (activeSection === "styles") {
+    if (activeSection === "styles") {
       const viewState = stylesViewRef.current;
       const isListView = viewState?.view === "list";
       setOptions({
@@ -196,7 +180,7 @@ export default function ProjectDetail() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, setOptions]);
+  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId]);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
