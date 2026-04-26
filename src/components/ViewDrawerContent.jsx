@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView, allFields = [] }) {
+export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView, allFields = [], currentViewType = null }) {
   const [views, setViews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -124,7 +124,14 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
     <div className="space-y-3">
       {/* View Selection */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Select View</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Select View</p>
+          {currentViewType && (
+            <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+              {currentViewType === 'grid' ? 'Gallery' : 'Table'}
+            </span>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => onSelectView("default")}

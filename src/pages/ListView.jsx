@@ -70,7 +70,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
         { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} />
+        <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view} />
       ) : null,
     });
   }, [setOptions, navigate, showViewMenu, activeViewId, view, viewKey]);
@@ -265,7 +265,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+        <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} />
       ) : null,
     });
   }, [setOptions, showViewMenu, activeViewId]);
@@ -487,7 +487,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+        <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} />
       ) : null,
     });
   }, [setOptions, showViewMenu, activeViewId]);
