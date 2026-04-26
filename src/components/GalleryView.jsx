@@ -396,23 +396,24 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
         search=""
         onSearch={() => {}}
         view={null}
-        moreItems={[]}
+        moreItems={[
+          { label: "Manage Views", onClick: openManage },
+        ]}
       >
-        <Select value={activeViewId} onValueChange={switchView}>
-          <SelectTrigger className="h-8 text-xs w-36 border-dashed">
-            <SelectValue>{activeLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default</SelectItem>
-            {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {(views.length > 0 || activeFilterCount > 0) && (
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={openManage}>
-            <Pencil className="w-3 h-3" />
-            {activeFilterCount > 0 && <Badge className="px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>}
-          </Button>
-        )}
+        <div className="flex items-center gap-1.5">
+          <Select value={activeViewId} onValueChange={switchView}>
+            <SelectTrigger className="h-8 text-xs w-36 border-dashed">
+              <SelectValue>{activeLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {activeFilterCount > 0 && (
+            <Badge className="px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>
+          )}
+        </div>
         {toolbarExtra}
       </ListToolbar>
 
