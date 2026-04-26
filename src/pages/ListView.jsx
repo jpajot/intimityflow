@@ -160,7 +160,9 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
     { id: "creation_project", label: "Creation Project", getValue: (p) => projects.find((pr) => pr.id === p.creation_project_id)?.name },
   ];
 
-  const visibleColumns = activeColumns || columns;
+  const visibleColumns = activeColumns 
+    ? activeColumns.map(id => columns.find(col => col.id === id)).filter(Boolean)
+    : columns;
 
   return (
     <div className="space-y-4">
@@ -381,7 +383,9 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
     { id: "creation_project", label: "Creation Project", getValue: (cw) => projects.find((p) => p.id === cw.creation_project_id)?.name },
   ];
 
-  const visibleColumns = activeColumns || columns;
+  const visibleColumns = activeColumns 
+    ? activeColumns.map(id => columns.find(col => col.id === id)).filter(Boolean)
+    : columns;
 
   return (
     <div className="space-y-4">
@@ -583,7 +587,9 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
     { id: "style_creation_project", label: "Style: Creation Project", getValue: (v) => projects.find((p) => p.id === getProduct(v)?.creation_project_id)?.name },
   ];
 
-  const visibleColumns = activeColumns || columns;
+  const visibleColumns = activeColumns 
+    ? activeColumns.map(id => columns.find(col => col.id === id)).filter(Boolean)
+    : columns;
 
   return (
     <div className="space-y-4">
