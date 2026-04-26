@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid, List, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+
+import { Plus } from "lucide-react";
+import ListToolbar from "./ListToolbar";
 import ViewSelector from "./ViewSelector";
 import { base44 } from "@/api/base44Client";
 import DataTable from "./DataTable";
@@ -178,25 +178,21 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
-        </div>
-        {colorVariants.length > 0 && (
-          <>
-            {view === "list" && (
-              <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColor"]} />
-            )}
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <button type="button" onClick={() => handleSetView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-              <button type="button" onClick={() => handleSetView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
-            </div>
-          </>
+      <ListToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search colorways…"
+        view={colorVariants.length > 0 ? view : null}
+        onViewChange={handleSetView}
+        moreItems={[
+          { label: "From Library", onClick: onAddFromLibrary },
+          { label: "Add Colorway", icon: Plus, onClick: onAddNew },
+        ]}
+      >
+        {colorVariants.length > 0 && view === "list" && (
+          <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColor"]} />
         )}
-        <Button variant="outline" size="sm" onClick={onAddFromLibrary} className="gap-1.5 h-8 text-xs">From Library</Button>
-        <Button variant="outline" size="sm" onClick={onAddNew} className="gap-1.5 h-8 text-xs"><Plus className="w-3.5 h-3.5" /> Add</Button>
-      </div>
+      </ListToolbar>
 
       {filteredVariants.length === 0 ? (
         <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">

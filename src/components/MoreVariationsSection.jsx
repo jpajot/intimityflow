@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Loader2, X, Upload, Search } from "lucide-react";
+import { Plus, Pencil, Loader2, X, Upload } from "lucide-react";
+import ListToolbar from "./ListToolbar";
 import ViewSelector from "./ViewSelector";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "./DataTable";
@@ -308,16 +310,15 @@ export default function MoreVariationsSection({ productId, colorVariants, projec
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-8 h-8 text-xs" />
-        </div>
+      <ListToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search variations…"
+        view={null}
+        moreItems={[{ label: "Add Variations", icon: Plus, onClick: openAdd }]}
+      >
         <ViewSelector pageKey="more_variations_product" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColorAndMore"]} />
-        <Button variant="outline" size="sm" onClick={openAdd} className="gap-1.5 h-8 text-xs">
-          <Plus className="w-3.5 h-3.5" /> Add Variations
-        </Button>
-      </div>
+      </ListToolbar>
 
       {variations.length === 0 ? (
         <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">

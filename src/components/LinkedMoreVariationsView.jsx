@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, LayoutGrid, List, Plus, X } from "lucide-react";
+
+import { Plus, X } from "lucide-react";
+import ListToolbar from "./ListToolbar";
 import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
@@ -367,24 +367,18 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-8 h-8 text-xs" />
-        </div>
-        {projectId && (
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowLink(true)}>
-            <Plus className="w-3.5 h-3.5" /> Add
-          </Button>
-        )}
+      <ListToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search variations…"
+        view={view}
+        onViewChange={setView}
+        moreItems={projectId ? [{ label: "Add Variation", icon: Plus, onClick: () => setShowLink(true) }] : []}
+      >
         {view === "list" && (
           <ViewSelector pageKey="project_linked_variations" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
-          <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
-        </div>
-      </div>
+      </ListToolbar>
 
       <LinkToProjectModal
         open={showLink}

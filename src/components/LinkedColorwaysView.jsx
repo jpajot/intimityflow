@@ -4,7 +4,8 @@ import ImageLightbox from "./ImageLightbox";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import ListToolbar from "./ListToolbar";
 import LinkToProjectModal from "./LinkToProjectModal";
 import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
@@ -425,38 +426,18 @@ export default function LinkedColorwaysView({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
-        </div>
-        {projectId &&
-        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowLink(true)}>
-            <Plus className="w-3.5 h-3.5" /> Add
-          </Button>
-        }
-        {view === "list" &&
-        <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} />
-        }
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => onViewChange("grid")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Gallery view">
-            
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewChange("list")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Table view">
-            
-            <List className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <ListToolbar
+        search={search}
+        onSearch={onSearchChange}
+        searchPlaceholder="Search colorways…"
+        view={view}
+        onViewChange={onViewChange}
+        moreItems={projectId ? [{ label: "Add Colorway", icon: Plus, onClick: () => setShowLink(true) }] : []}
+      >
+        {view === "list" && (
+          <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} />
+        )}
+      </ListToolbar>
 
       <LinkToProjectModal
         open={showLink}
