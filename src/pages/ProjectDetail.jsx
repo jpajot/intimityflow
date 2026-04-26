@@ -96,29 +96,39 @@ export default function ProjectDetail() {
     loadData();
   }, [id]);
 
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
   const loadData = async () => {
     setLoading(true);
 
     // Batch 1: project-specific data (lightweight)
-    const [proj, pals, docs, lovTypes, projs, sgs] = await Promise.all([
+    const [proj, pals, docs, lovTypes] = await Promise.all([
       base44.entities.Project.filter({ id }),
       base44.entities.ColorPalette.filter({ project_id: id }),
       base44.entities.UploadedDocument.filter({ project_id: id }),
       base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
-      base44.entities.Project.list("name", 500),
-      base44.entities.SizeGrid.list("name", 200),
     ]);
-    setAllProjects(projs);
-    setSizeGrids(sgs);
     setProject(proj[0] || null);
     setPalettes(pals);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
-    if (lovTypes.length > 0) {
-      const values = await base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id });
-      setDocTypes(values.map((v) => v.name));
-    }
 
-    // Batch 2: color library data
+    await delay(100);
+
+    // Batch 2: reference data + doc types
+    const [projs, sgs, docValues] = await Promise.all([
+      base44.entities.Project.list("name", 500),
+      base44.entities.SizeGrid.list("name", 200),
+      lovTypes.length > 0
+        ? base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id })
+        : Promise.resolve([]),
+    ]);
+    setAllProjects(projs);
+    setSizeGrids(sgs);
+    setDocTypes(docValues.map((v) => v.name));
+
+    await delay(100);
+
+    // Batch 3: color library data
     const [tc, cc, palCols] = await Promise.all([
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.CommercialColor.list("code", 2000),
@@ -128,7 +138,9 @@ export default function ProjectDetail() {
     setCommColors(cc);
     setPaletteColors(palCols);
 
-    // Batch 3: product/colorway data
+    await delay(100);
+
+    // Batch 4: product/colorway data
     const [allCws, allProducts, allVars] = await Promise.all([
       base44.entities.ProductColor.list("-created_date", 5000),
       base44.entities.Product.list("-created_date", 2000),
