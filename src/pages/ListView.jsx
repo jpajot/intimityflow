@@ -31,11 +31,16 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
         { label: "View: List", icon: List, onClick: () => setView("list") },
         { divider: true },
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
-        { divider: true },
-        { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey="styles_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+        <ViewDrawerContent 
+          pageKey="styles_list" 
+          activeViewId={activeViewId} 
+          onSelectView={setActiveViewId}
+          actionItems={[
+            { label: "New Product", icon: Plus, onClick: () => navigate("/products/new"), variant: "default" }
+          ]}
+        />
       ) : null,
     });
   }, [setOptions, navigate, showViewMenu, activeViewId]);
