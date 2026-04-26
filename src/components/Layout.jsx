@@ -4,7 +4,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
-import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, CornerDownRight } from "lucide-react";
+import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, ChevronDown } from "lucide-react";
 import { useSubNav } from "@/lib/SubNavContext";
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
@@ -214,36 +214,34 @@ export default function Layout() {
 
           {/* Main drawer button */}
           <button ref={mainDrawer.btnRef} type="button" onClick={mainDrawer.toggle}
-            className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all relative ${
-              activeDrawerItem ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all relative hover:bg-muted ${
+              activeDrawerItem ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}>
             <DrawerIcon className="w-4 h-4 shrink-0" />
             <span className="text-[9px] font-medium leading-none truncate max-w-full px-1 text-center">
               {activeDrawerItem?.label ?? "Menu"}
             </span>
-            <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-50" />
+            <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
           </button>
 
           {/* Sub-nav drawer button — only when a page has registered sub-nav */}
           {subNav && subNav.items.length > 0 && (
             <>
               <div className="w-full my-0.5 border-t border-border" />
-              {/* Indent + connecting line to show "child of" parent */}
-              <div className="w-full flex items-start gap-0.5 pl-1">
-                <div className="flex flex-col items-center pt-2 shrink-0">
-                  <CornerDownRight className="w-2.5 h-2.5 text-muted-foreground/40" />
-                </div>
-                <button ref={subNavDrawer.btnRef} type="button" onClick={subNavDrawer.toggle}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all relative ${
-                    activeSubNavItem ? "bg-primary/80 text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}>
-                  {SubNavIcon ? <SubNavIcon className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 flex items-center justify-center text-xs font-bold">≡</span>}
-                  <span className="text-[9px] font-medium leading-none truncate max-w-full px-1 text-center">
-                    {activeSubNavItem?.label ?? "Section"}
-                  </span>
-                  <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-50" />
-                </button>
+              {/* Down arrow to indicate this is a child of the main drawer */}
+              <div className="flex justify-center w-full">
+                <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/40" />
               </div>
+              <button ref={subNavDrawer.btnRef} type="button" onClick={subNavDrawer.toggle}
+                className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all relative hover:bg-muted ${
+                  activeSubNavItem ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}>
+                {SubNavIcon ? <SubNavIcon className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 flex items-center justify-center text-xs font-bold">≡</span>}
+                <span className="text-[9px] font-medium leading-none truncate max-w-full px-1 text-center">
+                  {activeSubNavItem?.label ?? "Section"}
+                </span>
+                <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
+              </button>
             </>
           )}
 
@@ -252,12 +250,12 @@ export default function Layout() {
             <>
               <div className="w-full my-0.5 border-t border-border" />
               <button ref={pinnedDrawer.btnRef} type="button" onClick={pinnedDrawer.toggle}
-                className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all relative ${
-                  hasPinnedActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all relative hover:bg-muted ${
+                  hasPinnedActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}>
                 <Pin className="w-4 h-4 shrink-0" />
                 <span className="text-[9px] font-medium leading-none">Pinned</span>
-                <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-50" />
+                <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
               </button>
             </>
           )}
@@ -266,10 +264,11 @@ export default function Layout() {
         {/* Settings at bottom */}
         <div className="shrink-0 border-t border-border py-3 px-2 flex justify-center">
           <Link to="/config" title="Settings"
-            className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
-              location.pathname.startsWith("/config") ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-all hover:bg-muted ${
+              location.pathname.startsWith("/config") ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}>
             <Settings className="w-4 h-4" />
+            <span className="text-[9px] font-medium leading-none">Settings</span>
           </Link>
         </div>
       </aside>
@@ -289,7 +288,10 @@ export default function Layout() {
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                 activeDrawerItem ? "text-primary" : "text-muted-foreground"
               }`}>
-              <DrawerIcon className="w-5 h-5 shrink-0" />
+              <div className="relative">
+                <DrawerIcon className="w-5 h-5 shrink-0" />
+                <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
+              </div>
               <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">
                 {activeDrawerItem?.label ?? "Menu"}
               </span>
@@ -303,7 +305,10 @@ export default function Layout() {
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                     activeSubNavItem ? "text-primary" : "text-muted-foreground"
                   }`}>
-                  {MobileSubIcon ? <MobileSubIcon className="w-5 h-5 shrink-0" /> : <span className="text-lg font-bold leading-none">≡</span>}
+                  <div className="relative">
+                    {MobileSubIcon ? <MobileSubIcon className="w-5 h-5 shrink-0" /> : <span className="text-lg font-bold leading-none">≡</span>}
+                    <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
+                  </div>
                   <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">
                     {activeSubNavItem?.label ?? "Section"}
                   </span>
@@ -316,7 +321,10 @@ export default function Layout() {
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                 hasPinnedActive ? "text-primary" : "text-muted-foreground"
               }`}>
-              <Pin className="w-5 h-5 shrink-0" />
+              <div className="relative">
+                <Pin className="w-5 h-5 shrink-0" />
+                <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
+              </div>
               <span className="text-[10px] font-medium leading-none">Pinned</span>
             </button>
 
