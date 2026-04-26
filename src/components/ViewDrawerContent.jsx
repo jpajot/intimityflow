@@ -251,9 +251,9 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                             <div className="px-3 py-2 text-xs text-muted-foreground">No fields selected</div>
                           ) : (
                             filteredChecked.map((field) => (
-                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors" onClick={(e) => e.stopPropagation()}>
-                                <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onClick={(e) => e.stopPropagation()} />
-                                <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer">{field.label}</label>
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors" onMouseDown={(e) => e.stopPropagation()}>
+                                <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onMouseDown={(e) => e.stopPropagation()} />
+                                <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); toggleField(field.id); }}>{field.label}</label>
                                 {formFixedFieldIds.includes(field.id) && (
                                   <Badge className="text-[10px] h-4 px-1">#</Badge>
                                 )}
@@ -268,8 +268,8 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                           <div className="max-h-24 overflow-y-auto divide-y divide-border">
                             <div className="bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground">Available Fields</div>
                             {filteredUnchecked.map((field) => (
-                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60 hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onClick={(e) => e.stopPropagation()} />
+                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60 hover:opacity-100 transition-opacity" onMouseDown={(e) => e.stopPropagation()}>
+                                <Checkbox checked={false} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onMouseDown={(e) => e.stopPropagation()} />
                                 <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer">{field.label}</label>
                               </div>
                             ))}
