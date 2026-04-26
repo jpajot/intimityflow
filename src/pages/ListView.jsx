@@ -5,22 +5,34 @@ import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { LayoutGrid, List, Loader2, Palette, Layers, Plus, Pencil } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
-import ViewSelector from "../components/ViewSelector";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
+import { usePageOptions } from "@/lib/PageOptionsContext";
 import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
-import ListToolbar from "../components/ListToolbar";
-import ViewsPanel from "../components/ViewsPanel";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
 function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids, projects }) {
   const navigate = useNavigate();
+  const { setOptions } = usePageOptions();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
-  const [showViews, setShowViews] = useState(false);
+
+  // Set page options on mount/update
+  useEffect(() => {
+    setOptions({
+      items: [
+        { label: "Search", icon: null, onClick: null }, // Placeholder
+        { divider: true },
+        { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
+        { label: "View: List", icon: List, onClick: () => setView("list") },
+        { divider: true },
+        { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
+      ]
+    });
+  }, [setOptions, navigate]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -110,29 +122,12 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4 !pointer-events-auto">
-      <ListToolbar
-        search={search}
-        onSearch={setSearch}
-        searchPlaceholder="Search styles…"
-        view={view}
-        onViewChange={setView}
-        moreItems={[
-          { label: "Views", onClick: () => setShowViews(true) },
-          { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
-        ]}
-      />
-
-      {showViews && (
-        <ViewsPanel
-          pageKey="styles_list"
-          allColumns={columns}
-          onColumnsChange={setActiveColumns}
-          filterableFields={filterableFields}
-          rows={products}
-          onClose={() => setShowViews(false)}
-        />
-      )}
+    <div className="space-y-4">
+      {/* Search bar */}
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search styles…" className="pl-9" />
+      </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -209,11 +204,20 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
 // ─── Colorways Tab ────────────────────────────────────────────────────────────
 function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, projects }) {
   const navigate = useNavigate();
+  const { setOptions } = usePageOptions();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
-  const [showViews, setShowViews] = useState(false);
+
+  useEffect(() => {
+    setOptions({
+      items: [
+        { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
+        { label: "View: List", icon: List, onClick: () => setView("list") },
+      ]
+    });
+  }, [setOptions]);
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
@@ -331,28 +335,12 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4 !pointer-events-auto">
-      <ListToolbar
-        search={search}
-        onSearch={setSearch}
-        searchPlaceholder="Search colorways…"
-        view={view}
-        onViewChange={setView}
-        moreItems={[
-          { label: "Views", onClick: () => setShowViews(true) },
-        ]}
-      />
-
-      {showViews && (
-        <ViewsPanel
-          pageKey="colorways_list"
-          allColumns={columns}
-          onColumnsChange={setActiveColumns}
-          filterableFields={filterableFields}
-          rows={colorways}
-          onClose={() => setShowViews(false)}
-        />
-      )}
+    <div className="space-y-4">
+      {/* Search bar */}
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search colorways…" className="pl-9" />
+      </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -428,11 +416,20 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
 // ─── More Variations Tab ──────────────────────────────────────────────────────
 function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects }) {
   const navigate = useNavigate();
+  const { setOptions } = usePageOptions();
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
-  const [showViews, setShowViews] = useState(false);
+
+  useEffect(() => {
+    setOptions({
+      items: [
+        { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
+        { label: "View: List", icon: List, onClick: () => setView("list") },
+      ]
+    });
+  }, [setOptions]);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {
@@ -532,28 +529,12 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4 !pointer-events-auto">
-      <ListToolbar
-        search={search}
-        onSearch={setSearch}
-        searchPlaceholder="Search variations…"
-        view={view}
-        onViewChange={setView}
-        moreItems={[
-          { label: "Views", onClick: () => setShowViews(true) },
-        ]}
-      />
-
-      {showViews && (
-        <ViewsPanel
-          pageKey="more_variations_list"
-          allColumns={columns}
-          onColumnsChange={setActiveColumns}
-          filterableFields={filterableFields}
-          rows={variations}
-          onClose={() => setShowViews(false)}
-        />
-      )}
+    <div className="space-y-4">
+      {/* Search bar */}
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-9" />
+      </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -662,7 +643,7 @@ export default function ListView() {
   }
 
   return (
-    <div className="space-y-4 !pointer-events-auto">
+    <div className="space-y-4">
       {activeSection === "styles" && (
         <StylesTab products={products} colorVariants={colorways} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
       )}

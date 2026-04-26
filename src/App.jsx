@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useParams } from 'rea
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SubNavProvider } from '@/lib/SubNavContext';
+import { PageOptionsProvider } from '@/lib/PageOptionsContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Products from './pages/Products';
@@ -90,12 +91,14 @@ function App() {
   return (
     <AuthProvider>
       <SubNavProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
+        <PageOptionsProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </PageOptionsProvider>
       </SubNavProvider>
     </AuthProvider>
   )

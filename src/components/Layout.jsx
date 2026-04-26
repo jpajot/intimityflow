@@ -4,8 +4,10 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
+import SliderIcon from "./icons/SliderIcon";
 import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, ChevronDown } from "lucide-react";
 import { useSubNav } from "@/lib/SubNavContext";
+import { usePageOptions } from "@/lib/PageOptionsContext";
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
 export function getPinnedItems() {
@@ -74,10 +76,12 @@ export default function Layout() {
   const location = useLocation();
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
   const { subNav } = useSubNav();
+  const { options } = usePageOptions();
 
   const mainDrawer = usePopover();
   const pinnedDrawer = usePopover();
   const subNavDrawer = usePopover();
+  const optionsDrawer = usePopover();
 
   // Cross-device sync
   useEffect(() => {
@@ -199,6 +203,29 @@ export default function Layout() {
     );
   };
 
+  const OptionsPopover = () => {
+    if (!options) return null;
+    return (
+      <div ref={optionsDrawer.popoverRef} style={optionsDrawer.style}
+        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
+        <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Options</p>
+        {options.items && options.items.map((item, idx) => (
+          <div key={idx}>
+            {item.divider ? (
+              <div className="my-1 border-t border-border" />
+            ) : (
+              <button type="button" onClick={() => { item.onClick?.(); optionsDrawer.close(); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors text-left">
+                {item.icon && <item.icon className="w-4 h-4 shrink-0 text-muted-foreground" />}
+                <span className="flex-1">{item.label}</span>
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -256,7 +283,19 @@ export default function Layout() {
               </button>
             </>
           )}
-        </div>
+
+          {/* More Options drawer button */}
+          {options && (
+            <>
+              <div className="w-full my-0.5 border-t border-border" />
+              <button ref={optionsDrawer.desktopBtnRef} type="button" onClick={() => optionsDrawer.toggle(false)}
+                className="w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted text-muted-foreground hover:text-foreground">
+                <SliderIcon className="w-5 h-5 shrink-0" />
+                <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
+              </button>
+            </>
+          )}
+          </div>
 
         {/* Settings at bottom */}
         <div className="shrink-0 border-t border-border py-3 px-2 flex justify-center">
@@ -324,22 +363,35 @@ export default function Layout() {
               <span className="text-[10px] font-medium leading-none">Pinned</span>
             </button>
 
+            {/* More Options */}
+             {options && (
+               <button ref={optionsDrawer.mobileBtnRef} type="button" onClick={() => optionsDrawer.toggle(true)}
+                 className="flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors text-muted-foreground">
+                 <div className="relative">
+                   <SliderIcon className="w-5 h-5 shrink-0" />
+                   <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
+                 </div>
+                 <span className="text-[10px] font-medium leading-none">Options</span>
+               </button>
+             )}
+
             {/* Settings */}
-            <Link to="/config"
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                location.pathname.startsWith("/config") ? "text-primary" : "text-muted-foreground"
-              }`}>
-              <Settings className="w-5 h-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none">Settings</span>
-            </Link>
-          </div>
-        </nav>
+             <Link to="/config"
+               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                 location.pathname.startsWith("/config") ? "text-primary" : "text-muted-foreground"
+               }`}>
+               <Settings className="w-5 h-5 shrink-0" />
+               <span className="text-[10px] font-medium leading-none">Settings</span>
+             </Link>
+            </div>
+            </nav>
       </div>
 
       {/* Portals */}
-      {mainDrawer.open && createPortal(<MainDrawerPopover />, document.body)}
-      {pinnedDrawer.open && createPortal(<PinnedDrawerPopover />, document.body)}
-      {subNavDrawer.open && createPortal(<SubNavPopover />, document.body)}
-    </div>
-  );
-}
+       {mainDrawer.open && createPortal(<MainDrawerPopover />, document.body)}
+       {pinnedDrawer.open && createPortal(<PinnedDrawerPopover />, document.body)}
+       {subNavDrawer.open && createPortal(<SubNavPopover />, document.body)}
+       {optionsDrawer.open && createPortal(<OptionsPopover />, document.body)}
+      </div>
+      );
+      }
