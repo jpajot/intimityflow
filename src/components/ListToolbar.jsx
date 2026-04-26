@@ -95,7 +95,7 @@ export default function ListToolbar({
       )}
 
       {/* Extra children (e.g. ViewSelector) */}
-      {children && <div className="flex items-center gap-1.5 min-w-0 shrink-0">{children}</div>}
+      {children && <div className="flex items-center gap-1.5 min-w-0">{children}</div>}
 
       {/* Spacer */}
       <div className="flex-1 min-w-0" />
