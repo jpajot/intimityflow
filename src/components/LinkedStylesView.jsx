@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useEffect } from "react";
 
 import { Plus, X } from "lucide-react";
 import ListToolbar from "./ListToolbar";
@@ -9,13 +10,17 @@ import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 import ImageLightbox from "./ImageLightbox";
 
-export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked }) {
+export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked, onViewRef }) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
   const [showLink, setShowLink] = useState(false);
   const [tableLightbox, setTableLightbox] = useState(null);
+
+  useEffect(() => {
+    onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
+  }, [view, activeColumns, pinnedCols, onViewRef]);
 
   const alreadyLinkedIds = useMemo(() => styles.map((s) => s.id), [styles]);
 
@@ -126,8 +131,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search styles…"
-        view={view}
-        onViewChange={setView}
+        hideViewToggle
         moreItems={projectId ? [{ label: "Add Style", icon: Plus, onClick: () => setShowLink(true) }] : []}
       >
         {view === "list" && (

@@ -50,6 +50,9 @@ export default function ProjectDetail() {
 
   const [activeSection, setActiveSection] = useState("details");
   const [cwSearch, setCwSearch] = useState("");
+  const stylesViewRef = useRef(null);
+  const colorwaysViewRef = useRef(null);
+  const variationsViewRef = useRef(null);
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -100,6 +103,42 @@ export default function ProjectDetail() {
           { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
           { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
           { divider: true },
+          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
+            if (viewState) {
+              viewState.setView(isListView ? "grid" : "list");
+            }
+          }},
+        ],
+      });
+    } else if (activeSection === "styles") {
+      const viewState = stylesViewRef.current;
+      const isListView = viewState?.view === "list";
+      setOptions({
+        items: [
+          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
+            if (viewState) {
+              viewState.setView(isListView ? "grid" : "list");
+            }
+          }},
+        ],
+      });
+    } else if (activeSection === "colorways") {
+      const viewState = colorwaysViewRef.current;
+      const isListView = viewState?.view === "list";
+      setOptions({
+        items: [
+          { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
+            if (viewState) {
+              viewState.setView(isListView ? "grid" : "list");
+            }
+          }},
+        ],
+      });
+    } else if (activeSection === "variations") {
+      const viewState = variationsViewRef.current;
+      const isListView = viewState?.view === "list";
+      setOptions({
+        items: [
           { label: isListView ? "View: Grid" : "View: List", icon: isListView ? LayoutGrid : List, onClick: () => {
             if (viewState) {
               viewState.setView(isListView ? "grid" : "list");
@@ -428,14 +467,16 @@ export default function ProjectDetail() {
         onSearchChange={setCwSearch}
         projectId={id}
         allColorways={allColorways}
-        onLinked={loadData} />
+        onLinked={loadData}
+        onViewRef={(state) => { colorwaysViewRef.current = state; }}
+      />
       }
 
       {activeSection === "styles" &&
-      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} />
+      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { stylesViewRef.current = state; }} />
       }
       {activeSection === "variations" &&
-      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
+      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { variationsViewRef.current = state; }} />
       }
       {activeSection === "dc_per_cot" &&
       <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => { window.dcPerCOTGenerate = handler; }} onExportRef={(handler) => { window.dcPerCOTExport = handler; }} onImportRef={(handler) => { window.dcPerCOTImport = handler; }} onViewRef={(viewState) => { window.dcPerCOTView = viewState; }} />

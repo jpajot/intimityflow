@@ -125,11 +125,20 @@ const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
 const CHANNEL_LOV_CODE = "ChannelOfTrade";
 const DIST_CHANNEL_OPTIONS = ["Wholesale", "Direct To Customer"];
 
-export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked }) {
+export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked, onViewRef }) {
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
   const [tableLightbox, setTableLightbox] = useState(null);
   const distChannelOptions = DIST_CHANNEL_OPTIONS;
+  const [search, setSearch] = useState("");
+  const [showLink, setShowLink] = useState(false);
+  const [view, setView] = useState("list");
+  const [activeColumns, setActiveColumns] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
+
+  useEffect(() => {
+    onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
+  }, [view, activeColumns, pinnedCols, onViewRef]);
 
   useEffect(() => {
     base44.entities.TypeOfLOV.list().then((types) => {
@@ -222,11 +231,6 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
       colorHex: !v.image_url && !prod?.images?.[0] ? cw?.color_hex : undefined,
     };
   }), [allVariations, colorways, products]);
-  const [search, setSearch] = useState("");
-  const [showLink, setShowLink] = useState(false);
-  const [view, setView] = useState("list");
-  const [activeColumns, setActiveColumns] = useState(null);
-  const [pinnedCols, setPinnedCols] = useState([]);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {
@@ -371,8 +375,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search variations…"
-        view={view}
-        onViewChange={setView}
+        hideViewToggle
         moreItems={projectId ? [{ label: "Add Variation", icon: Plus, onClick: () => setShowLink(true) }] : []}
       >
         {view === "list" && (

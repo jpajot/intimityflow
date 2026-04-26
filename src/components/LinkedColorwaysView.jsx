@@ -170,12 +170,17 @@ const CHANNELS_OPTIONS = ["Wholesale", "Retail", "E-commerce", "Outlet", "Travel
 export default function LinkedColorwaysView({
   colorways, products, techColors, commColors, navigate,
   search, onSearchChange, view, onViewChange, activeColumns, onColumnsChange,
-  projectId, allColorways = [], onLinked
+  projectId, allColorways = [], onLinked, onViewRef
 }) {
   const [showLink, setShowLink] = useState(false);
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
   const [tableLightbox, setTableLightbox] = useState(null);
+  const [pinnedCols, setPinnedCols] = useState([]);
+
+  useEffect(() => {
+    onViewRef?.({ view, setView: onViewChange, activeColumns, setActiveColumns: onColumnsChange, pinnedCols, setPinnedCols });
+  }, [view, activeColumns, pinnedCols, onViewRef, onViewChange, onColumnsChange]);
 
   useEffect(() => {
     base44.entities.TypeOfLOV.filter({ code: CHANNEL_LOV_CODE }).then((types) => {
@@ -430,8 +435,7 @@ export default function LinkedColorwaysView({
         search={search}
         onSearch={onSearchChange}
         searchPlaceholder="Search colorways…"
-        view={view}
-        onViewChange={onViewChange}
+        hideViewToggle
         moreItems={projectId ? [{ label: "Add Colorway", icon: Plus, onClick: () => setShowLink(true) }] : []}
       >
         {view === "list" && (
