@@ -24,6 +24,15 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
   const [roleInput, setRoleInput] = useState("");
   const [fieldSearch, setFieldSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [formThumbSize, setFormThumbSize] = useState("md");
+
+  const THUMB_SIZES = [
+    { id: "xs", label: "XS" },
+    { id: "sm", label: "S" },
+    { id: "md", label: "M" },
+    { id: "lg", label: "L" },
+    { id: "xl", label: "XL" },
+  ];
 
   useEffect(() => {
     base44.entities.ListViewConfig.filter({ page_key: pageKey }).then((data) => {
@@ -40,6 +49,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
     setFormRoles([]);
     setRoleInput("");
     setFieldSearch("");
+    setFormThumbSize("md");
     setEditingView(null);
     setMode("new");
     setDialogTab("fields");
@@ -54,6 +64,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
     setFormRoles(view.allowed_roles || []);
     setRoleInput("");
     setFieldSearch("");
+    setFormThumbSize(view.thumb_size || "md");
     setEditingView(view);
     setMode("edit");
     setDialogTab("fields");
@@ -68,9 +79,10 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
       page_key: pageKey,
       name: formName.trim(),
       column_ids: formFieldIds,
-      fixed_column_ids: formFixedFieldIds,
+      fixed_column_ids: currentViewType === 'grid' ? [] : formFixedFieldIds,
       filters_config: formFilters,
       allowed_roles: formRoles,
+      ...(currentViewType === 'grid' && { thumb_size: formThumbSize }),
     };
 
     if (editingView) {
@@ -227,6 +239,9 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
               <Tabs value={dialogTab} onValueChange={setDialogTab} onClick={(e) => e.stopPropagation()}>
                 <TabsList className="w-full" onClick={(e) => e.stopPropagation()}>
                   <TabsTrigger value="fields" className="flex-1 text-xs" onClick={(e) => e.stopPropagation()}>Fields</TabsTrigger>
+                  {currentViewType === 'grid' && (
+                    <TabsTrigger value="display" className="flex-1 text-xs" onClick={(e) => e.stopPropagation()}>Display</TabsTrigger>
+                  )}
                   <TabsTrigger value="filters" className="flex-1 text-xs" onClick={(e) => e.stopPropagation()}>
                     Filters
                     {formFilters.filters.filter(f => f.field && f.values.length > 0).length > 0 && (
@@ -264,9 +279,11 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                                 {formFixedFieldIds.includes(field.id) && (
                                   <Badge className="text-[10px] h-4 px-1">#</Badge>
                                 )}
-                                <button type="button" onClick={(e) => { e.stopPropagation(); toggleFixedField(field.id); }} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={formFixedFieldIds.includes(field.id) ? "Unpin column" : "Pin column"}>
-                                  {formFixedFieldIds.includes(field.id) ? "📌" : "○"}
-                                </button>
+                                {currentViewType !== 'grid' && (
+                                  <button type="button" onClick={(e) => { e.stopPropagation(); toggleFixedField(field.id); }} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={formFixedFieldIds.includes(field.id) ? "Unpin column" : "Pin column"}>
+                                    {formFixedFieldIds.includes(field.id) ? "📌" : "○"}
+                                  </button>
+                                )}
                               </div>
                             ))
                           )}
@@ -286,6 +303,24 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                     );
                   })()}
                 </TabsContent>
+
+                {/* DISPLAY TAB (Gallery only) */}
+                {currentViewType === 'grid' && (
+                  <TabsContent value="display" className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Thumbnail Size</Label>
+                      <div className="flex gap-1.5">
+                        {THUMB_SIZES.map((s) => (
+                          <button key={s.id} type="button"
+                            onClick={() => setFormThumbSize(s.id)}
+                            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors border ${formThumbSize === s.id ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}`}>
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+                )}
 
                 {/* FILTERS TAB */}
                 <TabsContent value="filters" className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
