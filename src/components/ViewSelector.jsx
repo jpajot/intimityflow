@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Loader2, LayoutList, X, ShieldCheck, Pin, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, X, ShieldCheck, Pin, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -276,9 +276,14 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
   const activeLabel = activeViewId === "default" ? "Default" : views.find((v) => v.id === activeViewId)?.name || "Default";
   const activeFilterCount = (activeFiltersConfig.filters || []).filter((f) => f.field && f.values.length > 0).length;
 
+  const handleOpenManage = () => {
+    setMode("list");
+    setShowManage(true);
+  };
+
   return (
     <div className="flex items-center gap-2">
-      <LayoutList className="w-4 h-4 text-muted-foreground shrink-0" />
+      {/* View dropdown only — button is rendered by caller (ListToolbar.children) */}
       <Select value={activeViewId} onValueChange={switchView}>
         <SelectTrigger className="h-8 text-xs w-36 border-dashed">
           <SelectValue>{activeLabel}</SelectValue>
@@ -288,10 +293,13 @@ export default function ViewSelector({ pageKey, allColumns, onColumnsChange, fil
           {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
         </SelectContent>
       </Select>
-      <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => { setMode("list"); setShowManage(true); }}>
-        <Pencil className="w-3 h-3" /> Manage Views
-        {activeFilterCount > 0 && <Badge className="ml-1 px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>}
-      </Button>
+      {/* Render manage button only if there are custom views or active filters */}
+      {(views.length > 0 || activeFilterCount > 0) && (
+        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleOpenManage}>
+          <Pencil className="w-3 h-3" />
+          {activeFilterCount > 0 && <Badge className="px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>}
+        </Button>
+      )}
 
       <Dialog open={showManage} onOpenChange={(o) => { if (!o) { setShowManage(false); setMode("list"); } }}>
         <DialogContent className="max-w-lg">
