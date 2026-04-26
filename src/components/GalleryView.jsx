@@ -245,14 +245,19 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
     if (viewId === "default") {
       setActiveFieldIds(mergedFields.map((f) => f.id));
       setActiveFiltersConfig(DEFAULT_FILTERS);
+      setThumbSize("md");
     } else {
       const view = list.find((v) => v.id === viewId);
       if (view) {
         setActiveFieldIds(view.column_ids || mergedFields.map((f) => f.id));
         setActiveFiltersConfig(view.filters_config || DEFAULT_FILTERS);
+        if (view.thumb_size) {
+          setThumbSize(view.thumb_size);
+          localStorage.setItem(THUMB_KEY(pageKey), view.thumb_size);
+        }
       }
     }
-  }, [views, mergedFields]);
+  }, [views, mergedFields, pageKey]);
 
   useEffect(() => {
     if (!loading) applyView(activeViewId);
