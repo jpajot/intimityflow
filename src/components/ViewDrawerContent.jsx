@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView, actionItems = [] }) {
+export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView }) {
   const [views, setViews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -133,24 +133,6 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
       >
         <Plus className="w-3.5 h-3.5" /> New View
       </Button>
-
-      {/* Action Items */}
-      {actionItems.length > 0 && (
-        <div className="border-t border-border pt-3 space-y-2">
-          {actionItems.map((item, idx) => (
-            <Button
-              key={idx}
-              onClick={item.onClick}
-              variant={item.variant || "outline"}
-              size="sm"
-              className="w-full gap-2 text-xs justify-start"
-            >
-              {item.icon && <item.icon className="w-3.5 h-3.5" />}
-              {item.label}
-            </Button>
-          ))}
-        </div>
-      )}
 
       {/* Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
