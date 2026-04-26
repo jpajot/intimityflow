@@ -33,7 +33,8 @@ function isDrawerItemActive(item, pathname) {
 }
 
 function usePopover() {
-  const btnRef = useRef(null);
+  const desktopBtnRef = useRef(null);
+  const mobileBtnRef = useRef(null);
   const popoverRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [style, setStyle] = useState({});
@@ -43,30 +44,30 @@ function usePopover() {
     const handler = (e) => {
       if (
         popoverRef.current && !popoverRef.current.contains(e.target) &&
-        btnRef.current && !btnRef.current.contains(e.target)
+        desktopBtnRef.current && !desktopBtnRef.current.contains(e.target) &&
+        mobileBtnRef.current && !mobileBtnRef.current.contains(e.target)
       ) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const toggle = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      const isMobile = window.innerWidth < 640;
-      if (isMobile) {
+  const toggle = (isMobileClick = false) => {
+    const ref = isMobileClick ? mobileBtnRef : desktopBtnRef;
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      if (isMobileClick) {
         setStyle({ position: "fixed", bottom: window.innerHeight - rect.top + 8, left: 16, right: 16, zIndex: 9999 });
       } else {
-        // Clamp top so popover (est. max 320px tall) doesn't overflow viewport bottom
         const popoverHeight = 320;
-        const top = Math.min(rect.top, window.innerHeight - popoverHeight - 8);
-        setStyle({ position: "fixed", top: Math.max(8, top), left: rect.right + 8, zIndex: 9999 });
+        const top = Math.max(8, Math.min(rect.top, window.innerHeight - popoverHeight - 8));
+        setStyle({ position: "fixed", top, left: rect.right + 8, zIndex: 9999 });
       }
     }
     setOpen((v) => !v);
   };
 
-  return { btnRef, popoverRef, open, toggle, style, close: () => setOpen(false) };
+  return { desktopBtnRef, mobileBtnRef, popoverRef, open, toggle, style, close: () => setOpen(false) };
 }
 
 export default function Layout() {
@@ -216,7 +217,7 @@ export default function Layout() {
         <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2">
 
           {/* Main drawer button */}
-          <button ref={mainDrawer.btnRef} type="button" onClick={mainDrawer.toggle}
+          <button ref={mainDrawer.desktopBtnRef} type="button" onClick={() => mainDrawer.toggle(false)}
             className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted ${
               activeDrawerItem ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}>
@@ -232,7 +233,7 @@ export default function Layout() {
               <div className="flex justify-center w-full">
                 <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/40" />
               </div>
-              <button ref={subNavDrawer.btnRef} type="button" onClick={subNavDrawer.toggle}
+              <button ref={subNavDrawer.desktopBtnRef} type="button" onClick={() => subNavDrawer.toggle(false)}
                 className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted ${
                   activeSubNavItem ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}>
@@ -246,7 +247,7 @@ export default function Layout() {
           {pinnedItems.length > 0 && (
             <>
               <div className="w-full my-0.5 border-t border-border" />
-              <button ref={pinnedDrawer.btnRef} type="button" onClick={pinnedDrawer.toggle}
+              <button ref={pinnedDrawer.desktopBtnRef} type="button" onClick={() => pinnedDrawer.toggle(false)}
                 className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted ${
                   hasPinnedActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}>
@@ -279,7 +280,7 @@ export default function Layout() {
           <div className="flex items-stretch h-[60px]">
 
             {/* Main drawer */}
-            <button ref={mainDrawer.btnRef} type="button" onClick={mainDrawer.toggle}
+            <button ref={mainDrawer.mobileBtnRef} type="button" onClick={() => mainDrawer.toggle(true)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                 activeDrawerItem ? "text-primary" : "text-muted-foreground"
               }`}>
@@ -296,7 +297,7 @@ export default function Layout() {
             {subNav && subNav.items.length > 0 && (() => {
               const MobileSubIcon = SubNavIcon;
               return (
-                <button ref={subNavDrawer.btnRef} type="button" onClick={subNavDrawer.toggle}
+                <button ref={subNavDrawer.mobileBtnRef} type="button" onClick={() => subNavDrawer.toggle(true)}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                     activeSubNavItem ? "text-primary" : "text-muted-foreground"
                   }`}>
@@ -312,7 +313,7 @@ export default function Layout() {
             })()}
 
             {/* Pinned drawer */}
-            <button ref={pinnedDrawer.btnRef} type="button" onClick={pinnedDrawer.toggle}
+            <button ref={pinnedDrawer.mobileBtnRef} type="button" onClick={() => pinnedDrawer.toggle(true)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                 hasPinnedActive ? "text-primary" : "text-muted-foreground"
               }`}>
