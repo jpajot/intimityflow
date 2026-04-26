@@ -240,14 +240,19 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
     return [...allFields, ...schemaFields.filter((f) => !existingIds.has(f.id))];
   }, [allFields, schemaFields]);
 
-  const applyView = useCallback((viewId, viewList) => {
+  const applyView = useCallback(async (viewId, viewList) => {
     const list = viewList || views;
     if (viewId === "default") {
       setActiveFieldIds(mergedFields.map((f) => f.id));
       setActiveFiltersConfig(DEFAULT_FILTERS);
       setThumbSize("md");
     } else {
-      const view = list.find((v) => v.id === viewId);
+      let view = list.find((v) => v.id === viewId);
+      // If view not found locally, fetch it from the API (newly created view)
+      if (!view) {
+        const results = await base44.entities.ListViewConfig.filter({ id: viewId });
+        view = results[0];
+      }
       if (view) {
         setActiveFieldIds(view.column_ids || mergedFields.map((f) => f.id));
         setActiveFiltersConfig(view.filters_config || DEFAULT_FILTERS);
