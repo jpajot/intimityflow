@@ -44,7 +44,7 @@ export default function ListToolbar({
     if (e.key === "Escape") { onSearch(""); setSearchOpen(false); }
   };
 
-  // Close more-menu on outside click
+  // Close more-menu on outside click/touch
   useEffect(() => {
     if (!menuOpen) return;
     const h = (e) => {
@@ -54,7 +54,11 @@ export default function ListToolbar({
       ) setMenuOpen(false);
     };
     document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    document.addEventListener("touchstart", h);
+    return () => { 
+      document.removeEventListener("mousedown", h);
+      document.removeEventListener("touchstart", h);
+    };
   }, [menuOpen]);
 
   const toggleMenu = () => {
@@ -71,7 +75,7 @@ export default function ListToolbar({
   };
 
   return (
-    <div className="flex items-center gap-1.5 flex-nowrap min-w-0">
+    <div className="flex items-center gap-1.5 flex-nowrap min-w-0 relative z-50">
       {/* View toggle — always first */}
       {onViewChange && (
         <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0">
@@ -101,7 +105,7 @@ export default function ListToolbar({
       <div className="flex-1 min-w-0" />
 
       {/* Collapsible search */}
-      <div className={`flex items-center transition-all duration-200 ${searchOpen ? "flex-1 min-w-0 max-w-xs" : "w-8 shrink-0"}`}>
+      <div className={`flex items-center transition-all duration-200 z-40 ${searchOpen ? "flex-1 min-w-0 max-w-xs" : "w-8 shrink-0"}`}>
         {searchOpen ? (
           <div className="relative w-full">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
