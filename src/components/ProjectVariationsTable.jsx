@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Copy, Loader2 } from "lucide-react";
 import DataTable from "@/components/DataTable";
-import GroupBySelector from "./GroupBySelector";
 
 export default function ProjectVariationsTable({ projectId, productType, variations, products, colorVariants, onRefresh }) {
   const [copying, setCopying] = useState(null);

@@ -48,8 +48,6 @@ export default function ProjectDetail() {
 
   const [activeSection, setActiveSection] = useState("details");
   const [cwSearch, setCwSearch] = useState("");
-  const [cwView, setCwView] = useState("grid");
-  const [cwActiveColumns, setCwActiveColumns] = useState(null);
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -402,10 +400,6 @@ export default function ProjectDetail() {
         navigate={navigate}
         search={cwSearch}
         onSearchChange={setCwSearch}
-        view={cwView}
-        onViewChange={setCwView}
-        activeColumns={cwActiveColumns}
-        onColumnsChange={setCwActiveColumns}
         projectId={id}
         allColorways={allColorways}
         onLinked={loadData} />
