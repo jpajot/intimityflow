@@ -190,7 +190,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
 
       {/* Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>
               {mode === "list" ? "View Management" : mode === "new" ? "Create New View" : "Edit View"}
