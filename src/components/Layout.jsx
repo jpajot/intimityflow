@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
-import { Shirt, SwatchBook, Ruler, Menu, Settings, Pin, PinOff } from "lucide-react";
+import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff } from "lucide-react";
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
 export function getPinnedItems() {
@@ -19,13 +17,12 @@ export function setPinnedItems(items) {
   });
 }
 
-// All main nav items grouped in the drawer
 const DRAWER_ITEMS = [
-  { path: "/projects",    label: "Projects",        icon: ProjectsIcon },
-  { path: "/list-view",   label: "Products Lists",  icon: StylesIcon },
-  { path: "/materials",   label: "Materials Lists", icon: FabricRollIcon },
-  { path: "/color-palettes", label: "Color Studio", icon: SwatchBook },
-  { path: "/size-grid-library", label: "Size Studio", icon: Ruler },
+  { path: "/projects",         label: "Projects",        icon: ProjectsIcon },
+  { path: "/list-view",        label: "Products Lists",  icon: StylesIcon },
+  { path: "/materials",        label: "Materials Lists", icon: FabricRollIcon },
+  { path: "/color-palettes",   label: "Color Studio",    icon: SwatchBook },
+  { path: "/size-grid-library",label: "Size Studio",     icon: Ruler },
 ];
 
 function isDrawerItemActive(item, pathname) {
@@ -34,15 +31,49 @@ function isDrawerItemActive(item, pathname) {
   return pathname === item.path || pathname.startsWith(item.path + "/");
 }
 
+// Generic popover hook: returns { btnRef, open, toggle, popoverStyle }
+function usePopover() {
+  const btnRef = useRef(null);
+  const popoverRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [style, setStyle] = useState({});
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target) &&
+        btnRef.current && !btnRef.current.contains(e.target)
+      ) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const toggle = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        setStyle({ position: "fixed", bottom: window.innerHeight - rect.top + 8, left: 16, right: 16, zIndex: 9999 });
+      } else {
+        setStyle({ position: "fixed", top: rect.top, left: rect.right + 8, zIndex: 9999 });
+      }
+    }
+    setOpen((v) => !v);
+  };
+
+  return { btnRef, popoverRef, open, toggle, style, close: () => setOpen(false) };
+}
+
 export default function Layout() {
   const location = useLocation();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
-  const drawerRef = useRef(null);
-  const drawerBtnRef = useRef(null);
-  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
 
-  // Cross-device sync for pinned items
+  const mainDrawer = usePopover();
+  const pinnedDrawer = usePopover();
+
+  // Cross-device sync
   useEffect(() => {
     import("@/api/base44Client").then(({ base44 }) => {
       base44.auth.me().then((user) => {
@@ -58,49 +89,30 @@ export default function Layout() {
     const handler = () => setPinnedItemsState(getPinnedItems());
     window.addEventListener("storage", handler);
     window.addEventListener("pinned-items-changed", handler);
-    return () => {
-      window.removeEventListener("storage", handler);
-      window.removeEventListener("pinned-items-changed", handler);
-    };
+    return () => { window.removeEventListener("storage", handler); window.removeEventListener("pinned-items-changed", handler); };
   }, []);
 
-  // Close drawer on outside click
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const handler = (e) => {
-      if (
-        drawerRef.current && !drawerRef.current.contains(e.target) &&
-        drawerBtnRef.current && !drawerBtnRef.current.contains(e.target)
-      ) {
-        setDrawerOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [drawerOpen]);
-
-  const openDrawer = () => {
-    if (drawerBtnRef.current) {
-      const rect = drawerBtnRef.current.getBoundingClientRect();
-      const isMobile = window.innerWidth < 640;
-      if (isMobile) {
-        // open upward from bottom bar
-        setPopoverPos({ bottom: window.innerHeight - rect.top + 8, left: 16, right: 16, top: "auto" });
-      } else {
-        setPopoverPos({ top: rect.top, left: rect.right + 8, bottom: "auto", right: "auto" });
-      }
-    }
-    setDrawerOpen((v) => !v);
-  };
-
-  // Find active drawer item to show its icon on the drawer button
   const activeDrawerItem = DRAWER_ITEMS.find((item) => isDrawerItemActive(item, location.pathname));
-
   const DrawerIcon = activeDrawerItem?.icon ?? StylesIcon;
 
-  // Mobile nav content
-  const MobileNavContent = ({ onNavigate }) => (
-    <nav className="space-y-0.5">
+  const hasPinnedActive = pinnedItems.some(
+    (item) => location.pathname === item.path || location.pathname.startsWith(item.path + "/")
+  );
+
+  const unpin = (path) => {
+    const updated = pinnedItems.filter((p) => p.path !== path);
+    setPinnedItems(updated);
+    setPinnedItemsState(updated);
+    window.dispatchEvent(new Event("pinned-items-changed"));
+  };
+
+  // Shared popover content renderers
+  const MainDrawerPopover = () => (
+    <div
+      ref={mainDrawer.popoverRef}
+      style={mainDrawer.style}
+      className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]"
+    >
       {DRAWER_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = isDrawerItemActive(item, location.pathname);
@@ -108,9 +120,9 @@ export default function Layout() {
           <Link
             key={item.path}
             to={item.path}
-            onClick={onNavigate}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={mainDrawer.close}
+            className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+              isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
             }`}
           >
             <Icon className="w-4 h-4 shrink-0" />
@@ -118,45 +130,48 @@ export default function Layout() {
           </Link>
         );
       })}
+    </div>
+  );
 
-      {pinnedItems.length > 0 && (
-        <>
-          <div className="my-2 border-t border-border" />
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1 pb-0.5">Pinned</p>
-          {pinnedItems.map((item) => (
-            <div key={item.path} className="group relative">
-              <Link
-                to={item.path}
-                onClick={onNavigate}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  location.pathname === item.path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <Pin className="w-3.5 h-3.5 shrink-0" />
-                <span className="flex-1 truncate">{item.label}</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  const updated = pinnedItems.filter((p) => p.path !== item.path);
-                  setPinnedItems(updated);
-                  setPinnedItemsState(updated);
-                  window.dispatchEvent(new Event("pinned-items-changed"));
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive text-muted-foreground transition-opacity"
-                title="Unpin"
-              >
-                <PinOff className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </>
-      )}
-    </nav>
+  const PinnedDrawerPopover = () => (
+    <div
+      ref={pinnedDrawer.popoverRef}
+      style={pinnedDrawer.style}
+      className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]"
+    >
+      {pinnedItems.length === 0 ? (
+        <p className="px-4 py-3 text-xs text-muted-foreground">No pinned items yet.</p>
+      ) : pinnedItems.map((item) => {
+        const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+        return (
+          <div key={item.path} className="group flex items-center">
+            <Link
+              to={item.path}
+              onClick={pinnedDrawer.close}
+              className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
+              }`}
+            >
+              <Pin className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => unpin(item.path)}
+              className="pr-3 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+              title="Unpin"
+            >
+              <PinOff className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
   );
 
   return (
     <div className="min-h-screen bg-background flex">
+
       {/* Desktop icon-only sidebar */}
       <aside className="hidden sm:flex flex-col shrink-0 w-14 bg-transparent">
         {/* Logo */}
@@ -170,83 +185,40 @@ export default function Layout() {
 
         {/* Nav area */}
         <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2">
-          {/* Drawer button — shows active item icon */}
-          <div className="w-full">
-            <button
-              ref={drawerBtnRef}
-              type="button"
-              title={activeDrawerItem?.label ?? "Navigation"}
-              onClick={openDrawer}
-              className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
-                activeDrawerItem
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <DrawerIcon className="w-4 h-4" />
-            </button>
-          </div>
 
-          {/* Drawer popover via portal — only the 5 main nav items */}
-          {drawerOpen && createPortal(
-            <div
-              ref={drawerRef}
-              style={{
-                position: "fixed",
-                top: popoverPos.top !== "auto" ? popoverPos.top : undefined,
-                bottom: popoverPos.bottom !== undefined && popoverPos.bottom !== "auto" ? popoverPos.bottom : undefined,
-                left: popoverPos.right !== undefined && popoverPos.right !== "auto" ? popoverPos.left : popoverPos.left,
-                right: popoverPos.right !== undefined && popoverPos.right !== "auto" ? popoverPos.right : undefined,
-                zIndex: 9999,
-                width: popoverPos.right !== undefined && popoverPos.right !== "auto" ? `calc(100vw - ${popoverPos.left * 2}px)` : undefined,
-              }}
-              className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]"
-            >
-              {DRAWER_ITEMS.map((item) => {
-                const Icon = item.icon;
-                const isActive = isDrawerItemActive(item, location.pathname);
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                      isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>,
-            document.body
-          )}
+          {/* Main drawer button */}
+          <button
+            ref={mainDrawer.btnRef}
+            type="button"
+            title={activeDrawerItem?.label ?? "Navigation"}
+            onClick={mainDrawer.toggle}
+            className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+              activeDrawerItem ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <DrawerIcon className="w-4 h-4" />
+          </button>
 
-          {/* Pinned items */}
+          {/* Pinned drawer button */}
           {pinnedItems.length > 0 && (
             <>
               <div className="w-full my-1 border-t border-border" />
-              {pinnedItems.map((item) => {
-                const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
-                return (
-                  <div key={item.path} className="group relative w-full">
-                    <Link
-                      to={item.path}
-                      title={item.label}
-                      className={`w-full flex items-center justify-center py-2 rounded-lg transition-all ${
-                        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      <Pin className="w-3.5 h-3.5" />
-                    </Link>
-                    {/* Tooltip label on hover */}
-                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
-                      {item.label}
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="group relative w-full">
+                <button
+                  ref={pinnedDrawer.btnRef}
+                  type="button"
+                  title="Pinned"
+                  onClick={pinnedDrawer.toggle}
+                  className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+                    hasPinnedActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Pin className="w-4 h-4" />
+                </button>
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
+                  Pinned ({pinnedItems.length})
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -265,7 +237,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Mobile / Tablet layout */}
+      {/* Main content */}
       <div className="flex flex-col flex-1 min-w-0">
         <main className="flex-1 overflow-y-auto sm:p-4 pb-[72px] sm:pb-0">
           <Outlet />
@@ -275,11 +247,11 @@ export default function Layout() {
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border">
           <div className="flex items-stretch h-[60px]">
 
-            {/* Drawer button */}
+            {/* Main drawer button */}
             <button
-              ref={drawerBtnRef}
+              ref={mainDrawer.btnRef}
               type="button"
-              onClick={openDrawer}
+              onClick={mainDrawer.toggle}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                 activeDrawerItem ? "text-primary" : "text-muted-foreground"
               }`}
@@ -290,24 +262,20 @@ export default function Layout() {
               </span>
             </button>
 
-            {/* Pinned items */}
-            {pinnedItems.map((item) => {
-              const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  <Pin className="w-5 h-5 shrink-0" />
-                  <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">{item.label}</span>
-                </Link>
-              );
-            })}
+            {/* Pinned drawer button */}
+            <button
+              ref={pinnedDrawer.btnRef}
+              type="button"
+              onClick={pinnedDrawer.toggle}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                hasPinnedActive ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <Pin className="w-5 h-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Pinned</span>
+            </button>
 
-            {/* Settings tab */}
+            {/* Settings */}
             <Link
               to="/config"
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
@@ -320,6 +288,10 @@ export default function Layout() {
           </div>
         </nav>
       </div>
+
+      {/* Portals for popovers */}
+      {mainDrawer.open && createPortal(<MainDrawerPopover />, document.body)}
+      {pinnedDrawer.open && createPortal(<PinnedDrawerPopover />, document.body)}
     </div>
   );
 }

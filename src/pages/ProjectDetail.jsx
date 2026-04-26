@@ -68,7 +68,6 @@ export default function ProjectDetail() {
     if (current.some((p) => p.path === `/projects/${id}`)) {
       updated = current.filter((p) => p.path !== `/projects/${id}`);
     } else {
-      if (current.length >= 3) return;
       updated = [...current, { path: `/projects/${id}`, label: project?.name || "Project" }];
     }
     setPinnedItems(updated);
@@ -249,8 +248,8 @@ export default function ProjectDetail() {
         <button
           type="button"
           onClick={togglePin}
-          title={isPinned ? "Unpin from sidebar" : getPinnedItems().length >= 3 ? "Max 3 pinned items" : "Pin to sidebar"}
-          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"} ${!isPinned && getPinnedItems().length >= 3 ? "opacity-40 cursor-not-allowed" : ""}`}>
+          title={isPinned ? "Unpin from sidebar" : "Pin to sidebar"}
+          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"}`}>
           
           {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
         </button>
