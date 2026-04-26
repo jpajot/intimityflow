@@ -396,9 +396,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
         search=""
         onSearch={() => {}}
         view={null}
-        moreItems={[
-          { label: activeFilterCount > 0 ? `Manage Views (${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""})` : "Manage Views", icon: Pencil, onClick: openManage },
-        ]}
+        moreItems={[]}
       >
         <Select value={activeViewId} onValueChange={switchView}>
           <SelectTrigger className="h-8 text-xs w-36 border-dashed">
@@ -409,6 +407,12 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
             {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        {(views.length > 0 || activeFilterCount > 0) && (
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={openManage}>
+            <Pencil className="w-3 h-3" />
+            {activeFilterCount > 0 && <Badge className="px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>}
+          </Button>
+        )}
         {toolbarExtra}
       </ListToolbar>
 
