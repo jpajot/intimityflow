@@ -23,6 +23,22 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewMenu, setShowViewMenu] = useState(false);
 
+  // Load and apply selected view configuration
+  useEffect(() => {
+    if (activeViewId === "default") {
+      setActiveColumns(null);
+      setPinnedCols([]);
+    } else {
+      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+        if (results.length > 0) {
+          const viewConfig = results[0];
+          setActiveColumns(viewConfig.column_ids || null);
+          setPinnedCols(viewConfig.fixed_column_ids || []);
+        }
+      });
+    }
+  }, [activeViewId]);
+
   // All available columns for field selection
   const allAvailableFields = [
     { id: "image", label: "Image" },
