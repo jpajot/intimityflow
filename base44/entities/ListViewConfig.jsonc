@@ -24,6 +24,17 @@
       },
       "description": "List of column IDs that are pinned/fixed to the left"
     },
+    "thumb_size": {
+      "type": "string",
+      "enum": [
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl"
+      ],
+      "description": "Gallery view thumbnail size (xs, sm, md, lg, xl)"
+    },
     "filters_config": {
       "type": "object",
       "description": "Filter configuration: { operator: 'and'|'or'|'nor', filters: [{field, values}] }"
