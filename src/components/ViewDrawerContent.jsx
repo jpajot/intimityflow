@@ -180,7 +180,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
 
       {/* New View Button */}
       <Button
-        onClick={openNew}
+        onClick={(e) => { e.stopPropagation(); openNew(); }}
         variant="outline"
         size="sm"
         className="w-full gap-2 text-xs"
@@ -205,7 +205,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
 
           {(mode === "new" || mode === "edit") && (
             <div className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
                 <Label className="text-xs">View Name</Label>
                 <Input
                   value={formName}
@@ -213,6 +213,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                   placeholder="e.g. Sales View"
                   className="h-8 text-xs"
                   autoFocus
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
 
@@ -256,7 +257,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                                 {formFixedFieldIds.includes(field.id) && (
                                   <Badge className="text-[10px] h-4 px-1">#</Badge>
                                 )}
-                                <button type="button" onClick={() => toggleFixedField(field.id)} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={formFixedFieldIds.includes(field.id) ? "Unpin column" : "Pin column"}>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); toggleFixedField(field.id); }} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={formFixedFieldIds.includes(field.id) ? "Unpin column" : "Pin column"}>
                                   {formFixedFieldIds.includes(field.id) ? "📌" : "○"}
                                 </button>
                               </div>
@@ -301,7 +302,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                             </Select>
                           )}
                           <span className="text-muted-foreground">{fi.field || "—"}</span>
-                          <button type="button" onClick={() => removeFilter(idx)} className="ml-auto p-0.5 hover:text-destructive text-muted-foreground">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeFilter(idx); }} className="ml-auto p-0.5 hover:text-destructive text-muted-foreground">
                             <X className="w-3 h-3" />
                           </button>
                         </div>
@@ -315,7 +316,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                       </div>
                     ))}
                   </div>
-                  <Button variant="outline" size="sm" onClick={addFilter} className="gap-1 text-xs w-full h-7">
+                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); addFilter(); }} className="gap-1 text-xs w-full h-7">
                     <Plus className="w-3 h-3" /> Add Filter
                   </Button>
                 </TabsContent>
@@ -327,7 +328,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                     <Input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const r = roleInput.trim(); if (r && !formRoles.includes(r)) setFormRoles((p) => [...p, r]); setRoleInput(""); } }}
                       placeholder="e.g. admin, manager…" className="h-7 text-xs flex-1" />
-                    <Button type="button" variant="outline" size="sm" onClick={() => { const r = roleInput.trim(); if (r && !formRoles.includes(r)) setFormRoles((p) => [...p, r]); setRoleInput(""); }} className="h-7 text-xs gap-1 px-2">
+                    <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); const r = roleInput.trim(); if (r && !formRoles.includes(r)) setFormRoles((p) => [...p, r]); setRoleInput(""); }} className="h-7 text-xs gap-1 px-2">
                       <Plus className="w-3 h-3" />
                     </Button>
                   </div>
@@ -340,7 +341,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                       {formRoles.map((r) => (
                         <div key={r} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
                           {r}
-                          <button type="button" onClick={() => setFormRoles((p) => p.filter((x) => x !== r))} className="hover:text-destructive">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setFormRoles((p) => p.filter((x) => x !== r)); }} className="hover:text-destructive">
                             <X className="w-3 h-3" />
                           </button>
                         </div>
@@ -350,11 +351,11 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                 </TabsContent>
               </Tabs>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowDialog(false)} className="text-xs" size="sm">
+              <DialogFooter onClick={(e) => e.stopPropagation()}>
+                <Button variant="outline" onClick={(e) => { e.stopPropagation(); setShowDialog(false); }} className="text-xs" size="sm">
                   Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={saving || !formName.trim()} className="text-xs gap-2" size="sm">
+                <Button onClick={(e) => { e.stopPropagation(); handleSave(); }} disabled={saving || !formName.trim()} className="text-xs gap-2" size="sm">
                   {saving && <Loader2 className="w-3 h-3 animate-spin" />}
                   Save
                 </Button>
