@@ -146,11 +146,11 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
                     <div key={cv.id} className="flex items-center gap-2">
                       {cv.image_url ? (
                         <div className="w-6 h-6 overflow-hidden shrink-0" style={{ borderRadius: 4 }}>
-                          <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                          <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" style={{ borderRadius: 0 }} />
                         </div>
                       ) : hexes?.length > 1 ? (
-                        <div className="w-6 h-6 overflow-hidden flex shrink-0" style={{ borderRadius: 4 }}>
-                          {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h, borderRadius: 0 }} />)}
+                        <div className="w-6 h-6 overflow-hidden shrink-0 flex" style={{ borderRadius: 4 }}>
+                          {hexes.map((h, i) => <div key={i} style={{ backgroundColor: h, borderRadius: 0, flex: 1, height: "100%" }} />)}
                         </div>
                       ) : (
                         <div className="w-6 h-6 shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc", borderRadius: 4 }} />
