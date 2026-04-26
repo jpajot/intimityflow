@@ -68,6 +68,12 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
   }, []);
 
   useEffect(() => {
+    if (importFile) {
+      handleImportFile();
+    }
+  }, [importFile]);
+
+  useEffect(() => {
     if (!projectId) return;
     loadItems();
   }, [projectId]);
@@ -529,16 +535,11 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
               data-dc-import-input
             />
 
-            {importFile && (
-              <Button
-                size="sm"
-                className="h-8 text-xs gap-1.5"
-                onClick={handleImportFile}
-                disabled={importing}
-              >
-                {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                {importing ? "Importing…" : "Confirm Import"}
-              </Button>
+            {importing && (
+              <div className="flex items-center gap-1.5 px-3 text-xs text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Importing…
+              </div>
             )}
           </>
         )}
