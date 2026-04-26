@@ -24,10 +24,10 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   useEffect(() => {
     setOptions({
       items: [
-        { label: "Search", icon: null, onClick: null }, // Placeholder
-        { divider: true },
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => {} }, // Placeholder
         { divider: true },
         { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       ]
@@ -215,6 +215,8 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
       items: [
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => {} }, // Placeholder
       ]
     });
   }, [setOptions]);
@@ -427,6 +429,8 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
       items: [
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => {} }, // Placeholder
       ]
     });
   }, [setOptions]);
