@@ -62,12 +62,12 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   useEffect(() => {
     setOptions({
       items: [
+        { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
+        { divider: true },
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
         { divider: true },
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
-        { divider: true },
-        { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       ],
       customContent: showViewMenu ? (
         <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view} />
@@ -267,10 +267,10 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} />
+        <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} allFields={[]} />
       ) : null,
     });
-  }, [setOptions, showViewMenu, activeViewId]);
+  }, [setOptions, showViewMenu, activeViewId, view]);
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
@@ -491,10 +491,10 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
       ],
       customContent: showViewMenu ? (
-        <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} />
+        <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} allFields={[]} />
       ) : null,
     });
-  }, [setOptions, showViewMenu, activeViewId]);
+  }, [setOptions, showViewMenu, activeViewId, view]);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {

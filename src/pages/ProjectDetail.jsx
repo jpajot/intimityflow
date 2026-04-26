@@ -23,6 +23,8 @@ import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
+import { usePageOptions } from "@/lib/PageOptionsContext";
+import { Download, Upload as UploadIcon } from "lucide-react";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -85,6 +87,22 @@ export default function ProjectDetail() {
     { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
   ];
   useRegisterSubNav(subNavItems, activeSection, setActiveSection);
+
+  const { setOptions } = usePageOptions();
+
+  useEffect(() => {
+    if (activeSection === "dc_per_cot") {
+      setOptions({
+        items: [
+          { label: "Generate DC per CoT", icon: FileText, onClick: () => {} },
+          { label: "Export", icon: Download, onClick: () => {} },
+          { label: "Import", icon: UploadIcon, onClick: () => {} },
+        ],
+      });
+    } else {
+      setOptions({ items: [] });
+    }
+  }, [activeSection, setOptions]);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
