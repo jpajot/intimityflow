@@ -329,7 +329,7 @@ function EditableCell({ col, row, rowIdx, allRows, editingCell, setEditingCell, 
   const dragHandleRef = React.useRef(null);
   
   if (!col.editable || !onEdit) {
-    return <td className="px-4 py-3 text-sm" style={{ width: col.width }}>{col.render(row)}</td>;
+    return <td className="px-4 py-3 text-sm" style={{ width: col.width }}>{col.render ? col.render(row) : "—"}</td>;
   }
   
   const handleStart = () => { setEditingCell(cellKey); setEditValue(col.getDisplayValue(row)); };
