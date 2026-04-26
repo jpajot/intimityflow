@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useEffect } from "react";
 
 import { Plus, X } from "lucide-react";
 import ListToolbar from "./ListToolbar";
@@ -10,13 +9,32 @@ import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 import ImageLightbox from "./ImageLightbox";
 
-export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked, onViewRef }) {
+export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked, onViewRef, activeViewId, onSelectView }) {
   const [search, setSearch] = useState("");
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
   const [showLink, setShowLink] = useState(false);
   const [tableLightbox, setTableLightbox] = useState(null);
+
+  useEffect(() => {
+    const handler = () => setShowLink(true);
+    window.addEventListener("addStyle", handler);
+    return () => window.removeEventListener("addStyle", handler);
+  }, []);
+
+  useEffect(() => {
+    if (activeViewId && activeViewId !== "default") {
+      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+        if (results.length > 0) {
+          const viewConfig = results[0];
+          setActiveColumns(viewConfig.column_ids || null);
+        }
+      });
+    } else {
+      setActiveColumns(null);
+    }
+  }, [activeViewId]);
 
   useEffect(() => {
     onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
@@ -130,9 +148,9 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
       <ListToolbar
         search={search}
         onSearch={setSearch}
-        searchPlaceholder="Search styles…"
+        searchPlaceholder="Search products…"
         hideViewToggle
-        moreItems={projectId ? [{ label: "Add Style", icon: Plus, onClick: () => setShowLink(true) }] : []}
+        moreItems={projectId ? [{ label: "Add Product", icon: Plus, onClick: () => setShowLink(true) }] : []}
       >
         {view === "list" && (
           <ViewSelector pageKey="project_linked_styles" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={styles} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
@@ -142,7 +160,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
       <LinkToProjectModal
         open={showLink}
         onClose={() => setShowLink(false)}
-        title="Link Styles to Project"
+        title="Link Products to Project"
         items={modalItems}
         alreadyLinkedIds={alreadyLinkedIds}
         onSave={handleLink}
@@ -151,7 +169,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
           <p className="text-sm text-muted-foreground">
-            {styles.length === 0 ? "No linked styles yet." : "No results match your search."}
+            {styles.length === 0 ? "No linked products yet." : "No results match your search."}
           </p>
         </div>
       ) : view === "grid" ? (

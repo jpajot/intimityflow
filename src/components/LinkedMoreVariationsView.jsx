@@ -125,7 +125,7 @@ const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
 const CHANNEL_LOV_CODE = "ChannelOfTrade";
 const DIST_CHANNEL_OPTIONS = ["Wholesale", "Direct To Customer"];
 
-export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked, onViewRef }) {
+export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked, onViewRef, activeViewId, onSelectView }) {
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
   const [tableLightbox, setTableLightbox] = useState(null);
@@ -135,6 +135,25 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+
+  useEffect(() => {
+    const handler = () => setShowLink(true);
+    window.addEventListener("addVariation", handler);
+    return () => window.removeEventListener("addVariation", handler);
+  }, []);
+
+  useEffect(() => {
+    if (activeViewId && activeViewId !== "default") {
+      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+        if (results.length > 0) {
+          const viewConfig = results[0];
+          setActiveColumns(viewConfig.column_ids || null);
+        }
+      });
+    } else {
+      setActiveColumns(null);
+    }
+  }, [activeViewId]);
 
   useEffect(() => {
     onViewRef?.({ view, setView, activeColumns, setActiveColumns, pinnedCols, setPinnedCols });
