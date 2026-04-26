@@ -207,14 +207,14 @@ export default function Layout() {
     if (!options) return null;
     return (
       <div ref={optionsDrawer.popoverRef} style={optionsDrawer.style}
-        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
+        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[240px] max-h-[80vh] overflow-y-auto">
         <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Options</p>
         {options.items && options.items.map((item, idx) => (
           <div key={idx}>
             {item.divider ? (
               <div className="my-1 border-t border-border" />
             ) : (
-              <button type="button" onClick={() => { item.onClick?.(); optionsDrawer.close(); }}
+              <button type="button" onClick={() => { item.onClick?.(); if (!item.custom) optionsDrawer.close(); }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors text-left">
                 {item.icon && <item.icon className="w-4 h-4 shrink-0 text-muted-foreground" />}
                 <span className="flex-1">{item.label}</span>
@@ -222,6 +222,11 @@ export default function Layout() {
             )}
           </div>
         ))}
+        {options.customContent && (
+          <div className="px-4 py-3 border-t border-border">
+            {options.customContent}
+          </div>
+        )}
       </div>
     );
   };

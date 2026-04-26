@@ -10,6 +10,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
+import ViewDrawerContent from "../components/ViewDrawerContent";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
 function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids, projects }) {
@@ -19,6 +20,8 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+  const [activeViewId, setActiveViewId] = useState("default");
+  const [showViewMenu, setShowViewMenu] = useState(false);
 
   // Set page options on mount/update
   useEffect(() => {
@@ -27,12 +30,15 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => {} }, // Placeholder
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
         { divider: true },
         { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
-      ]
+      ],
+      customContent: showViewMenu ? (
+        <ViewDrawerContent pageKey="styles_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+      ) : null,
     });
-  }, [setOptions, navigate]);
+  }, [setOptions, navigate, showViewMenu, activeViewId]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -210,16 +216,22 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
 
+  const [activeViewId, setActiveViewId] = useState("default");
+  const [showViewMenu, setShowViewMenu] = useState(false);
+
   useEffect(() => {
     setOptions({
       items: [
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => {} }, // Placeholder
-      ]
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
+      ],
+      customContent: showViewMenu ? (
+        <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+      ) : null,
     });
-  }, [setOptions]);
+  }, [setOptions, showViewMenu, activeViewId]);
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
@@ -424,16 +436,22 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
 
+  const [activeViewId, setActiveViewId] = useState("default");
+  const [showViewMenu, setShowViewMenu] = useState(false);
+
   useEffect(() => {
     setOptions({
       items: [
         { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
         { label: "View: List", icon: List, onClick: () => setView("list") },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => {} }, // Placeholder
-      ]
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true },
+      ],
+      customContent: showViewMenu ? (
+        <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} />
+      ) : null,
     });
-  }, [setOptions]);
+  }, [setOptions, showViewMenu, activeViewId]);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {
