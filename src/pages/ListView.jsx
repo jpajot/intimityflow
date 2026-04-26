@@ -77,12 +77,12 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
               return (
                 <div key={cv.id} className="relative">
                   {hexes?.length > 1 ? (
-                    <div className="w-5 h-5 rounded-full overflow-hidden flex" title={cv.color_name}>
+                    <div className="w-5 h-5 rounded-sm overflow-hidden flex" title={cv.color_name}>
                       {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
-                  )}
+                        <div className="w-5 h-5 rounded-sm" style={{ backgroundColor: cv.color_hex || "#ccc" }} title={cv.color_name} />
+                      )}
                   {!cv.linked_color_id && (
                     <div title="No commercial color linked" className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 border border-white" />
                   )}
@@ -149,11 +149,11 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
                           <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
                         </div>
                       ) : hexes?.length > 1 ? (
-                        <div className="w-6 h-6 rounded overflow-hidden flex shrink-0">
+                        <div className="w-6 h-6 rounded-sm overflow-hidden flex shrink-0">
                           {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
                         </div>
                       ) : (
-                        <div className="w-6 h-6 rounded shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                        <div className="w-6 h-6 rounded-sm shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
                       )}
                       <span className="text-xs font-medium truncate">{cv.color_name}</span>
                     </div>

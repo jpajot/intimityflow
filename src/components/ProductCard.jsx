@@ -37,13 +37,13 @@ export default function ProductCard({ product, colorVariants = [] }) {
             {colorVariants.slice(0, 5).map((cv) => (
               <div
                 key={cv.id}
-                className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
+                className="w-5 h-5 rounded-sm border-2 border-white shadow-sm"
                 style={{ backgroundColor: cv.color_hex || '#ccc' }}
                 title={cv.color_name}
               />
             ))}
             {colorVariants.length > 5 && (
-              <div className="w-5 h-5 rounded-full border-2 border-white shadow-sm bg-foreground/80 text-background text-[8px] flex items-center justify-center font-medium">
+              <div className="w-5 h-5 rounded-sm border-2 border-white shadow-sm bg-foreground/80 text-background text-[8px] flex items-center justify-center font-medium">
                 +{colorVariants.length - 5}
               </div>
             )}
