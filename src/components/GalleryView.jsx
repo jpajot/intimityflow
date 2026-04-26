@@ -404,7 +404,7 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
       >
         <div className="flex items-center gap-1.5 min-w-0">
           <Select value={activeViewId} onValueChange={switchView}>
-            <SelectTrigger className="h-8 text-xs w-28 border-dashed">
+            <SelectTrigger className="h-8 text-xs text-ellipsis flex-shrink-0 border-dashed" style={{maxWidth: '120px'}}>
               <SelectValue>{activeLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
