@@ -400,9 +400,9 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
           { label: "Manage Views", onClick: openManage },
         ]}
       >
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Select value={activeViewId} onValueChange={switchView}>
-            <SelectTrigger className="h-8 text-xs w-36 border-dashed">
+            <SelectTrigger className="h-8 text-xs w-28 border-dashed">
               <SelectValue>{activeLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
