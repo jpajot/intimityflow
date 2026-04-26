@@ -149,9 +149,9 @@ export default function Layout() {
         </div>
 
         {/* Nav area */}
-        <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2" ref={drawerRef}>
+        <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2">
           {/* Drawer button — shows active item icon */}
-          <div className="relative w-full">
+          <div className="relative w-full" ref={drawerRef}>
             <button
               type="button"
               title={activeDrawerItem?.label ?? "Navigation"}
@@ -165,9 +165,9 @@ export default function Layout() {
               <DrawerIcon className="w-4 h-4" />
             </button>
 
-            {/* Drawer popover */}
+            {/* Drawer popover — only the 5 main nav items */}
             {drawerOpen && (
-              <div className="absolute left-full top-0 ml-2 z-50 bg-popover border border-border rounded-lg shadow-lg py-1.5 min-w-[180px]">
+              <div className="absolute left-full top-0 ml-2 z-[100] bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]">
                 {DRAWER_ITEMS.map((item) => {
                   const Icon = item.icon;
                   const isActive = isDrawerItemActive(item, location.pathname);
@@ -176,10 +176,10 @@ export default function Layout() {
                       key={item.path}
                       to={item.path}
                       onClick={() => setDrawerOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
                         isActive
                           ? "text-primary bg-primary/10"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          : "text-foreground hover:bg-muted"
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
