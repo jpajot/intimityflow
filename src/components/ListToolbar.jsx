@@ -75,25 +75,23 @@ export default function ListToolbar({
   };
 
   return (
-    <div className="flex items-center gap-1.5 flex-nowrap min-w-0 relative z-50" style={{ pointerEvents: 'auto', touchAction: 'auto' }}>
+    <div className="flex items-center gap-1.5 flex-nowrap min-w-0 relative z-50 !pointer-events-auto">
       {/* View toggle — always first */}
       {onViewChange && (
-        <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0" style={{ pointerEvents: 'auto' }}>
+        <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0 !pointer-events-auto">
           <button
             type="button"
             onClick={() => onViewChange("grid")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+            className={`px-2.5 py-1.5 transition-colors !pointer-events-auto ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
             title="Gallery"
-            style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => onViewChange("list")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+            className={`px-2.5 py-1.5 transition-colors !pointer-events-auto ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
             title="Table"
-            style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
           >
             <List className="w-4 h-4" />
           </button>
@@ -107,7 +105,7 @@ export default function ListToolbar({
       <div className="flex-1 min-w-0" />
 
       {/* Collapsible search */}
-      <div className={`flex items-center transition-all duration-200 z-40 ${searchOpen ? "flex-1 min-w-0 max-w-xs" : "w-8 shrink-0"}`} style={{ pointerEvents: 'auto' }}>
+      <div className={`flex items-center transition-all duration-200 z-40 !pointer-events-auto ${searchOpen ? "flex-1 min-w-0 max-w-xs" : "w-8 shrink-0"}`}>
         {searchOpen ? (
           <div className="relative w-full">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
@@ -134,9 +132,8 @@ export default function ListToolbar({
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors !pointer-events-auto"
             title="Search"
-            style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
           >
             <Search className="w-4 h-4" />
           </button>
@@ -150,9 +147,8 @@ export default function ListToolbar({
             ref={moreBtnRef}
             type="button"
             onClick={toggleMenu}
-            className={`w-8 h-8 flex items-center justify-center rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0 ${menuOpen ? "bg-muted" : ""}`}
+            className={`w-8 h-8 flex items-center justify-center rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0 !pointer-events-auto ${menuOpen ? "bg-muted" : ""}`}
             title="More actions"
-            style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
           >
             <MoreHorizontal className="w-4 h-4" />
           </button>
