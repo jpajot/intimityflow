@@ -75,7 +75,7 @@ export default function ListToolbar({
   };
 
   return (
-    <div className="flex items-center gap-1.5 flex-nowrap min-w-0 relative z-50 !pointer-events-auto">
+    <div className="flex items-center gap-1.5 flex-nowrap min-w-0 relative z-50 !pointer-events-auto" style={{ pointerEvents: 'auto' }}>
       {/* View toggle — always first */}
       {onViewChange && (
         <div className="flex items-center border border-border rounded-lg overflow-hidden shrink-0 !pointer-events-auto">
