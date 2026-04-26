@@ -496,18 +496,6 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
           </SelectContent>
         </Select>
 
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs gap-1.5"
-          onClick={handleExport}
-          disabled={filtered.length === 0}
-          title={selectedForExport.size > 0 ? `Export ${selectedForExport.size} selected items` : "Export all filtered items"}
-        >
-          <FileDown className="w-3.5 h-3.5" />
-          Export {selectedForExport.size > 0 ? `(${selectedForExport.size})` : ""}
-        </Button>
-
         <input
           type="file"
           accept=".xlsx,.xls"

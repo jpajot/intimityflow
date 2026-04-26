@@ -248,6 +248,21 @@ export default function Layout() {
         {/* Nav area */}
         <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2">
 
+          {/* Pinned drawer button — first position */}
+          {pinnedItems.length > 0 && (
+            <button ref={pinnedDrawer.desktopBtnRef} type="button" onClick={() => pinnedDrawer.toggle(false)}
+              className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted ${
+                hasPinnedActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              }`}>
+              <Pin className="w-5 h-5 shrink-0" />
+              <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
+            </button>
+          )}
+
+          {pinnedItems.length > 0 && (
+            <div className="w-full my-0.5 border-t border-border" />
+          )}
+
           {/* Main drawer button */}
           <button ref={mainDrawer.desktopBtnRef} type="button" onClick={() => mainDrawer.toggle(false)}
             className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted ${
@@ -275,21 +290,7 @@ export default function Layout() {
             </>
           )}
 
-          {/* Pinned drawer button */}
-          {pinnedItems.length > 0 && (
-            <>
-              <div className="w-full my-0.5 border-t border-border" />
-              <button ref={pinnedDrawer.desktopBtnRef} type="button" onClick={() => pinnedDrawer.toggle(false)}
-                className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted ${
-                  hasPinnedActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}>
-                <Pin className="w-5 h-5 shrink-0" />
-                <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
-              </button>
-            </>
-          )}
-
-          {/* More Options drawer button */}
+          {/* More Options drawer button — last position */}
           {options && (
             <>
               <div className="w-full my-0.5 border-t border-border" />
@@ -322,6 +323,18 @@ export default function Layout() {
         {/* iOS-style bottom tab bar — mobile & tablet only */}
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border">
           <div className="flex items-stretch h-[60px]">
+
+              {/* Pinned drawer — first position */}
+            <button ref={pinnedDrawer.mobileBtnRef} type="button" onClick={() => pinnedDrawer.toggle(true)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                hasPinnedActive ? "text-primary" : "text-muted-foreground"
+              }`}>
+              <div className="relative">
+                <Pin className="w-5 h-5 shrink-0" />
+                <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
+              </div>
+              <span className="text-[10px] font-medium leading-none">Pinned</span>
+            </button>
 
             {/* Main drawer */}
             <button ref={mainDrawer.mobileBtnRef} type="button" onClick={() => mainDrawer.toggle(true)}
@@ -356,19 +369,7 @@ export default function Layout() {
               );
             })()}
 
-            {/* Pinned drawer */}
-            <button ref={pinnedDrawer.mobileBtnRef} type="button" onClick={() => pinnedDrawer.toggle(true)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                hasPinnedActive ? "text-primary" : "text-muted-foreground"
-              }`}>
-              <div className="relative">
-                <Pin className="w-5 h-5 shrink-0" />
-                <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
-              </div>
-              <span className="text-[10px] font-medium leading-none">Pinned</span>
-            </button>
-
-            {/* More Options */}
+            {/* More Options — last position */}
              {options && (
                <button ref={optionsDrawer.mobileBtnRef} type="button" onClick={() => optionsDrawer.toggle(true)}
                  className="flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors text-muted-foreground">
