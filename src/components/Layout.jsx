@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,8 @@ export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
   const drawerRef = useRef(null);
+  const drawerBtnRef = useRef(null);
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
 
   // Cross-device sync for pinned items
   useEffect(() => {
@@ -65,13 +68,24 @@ export default function Layout() {
   useEffect(() => {
     if (!drawerOpen) return;
     const handler = (e) => {
-      if (drawerRef.current && !drawerRef.current.contains(e.target)) {
+      if (
+        drawerRef.current && !drawerRef.current.contains(e.target) &&
+        drawerBtnRef.current && !drawerBtnRef.current.contains(e.target)
+      ) {
         setDrawerOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [drawerOpen]);
+
+  const openDrawer = () => {
+    if (drawerBtnRef.current) {
+      const rect = drawerBtnRef.current.getBoundingClientRect();
+      setPopoverPos({ top: rect.top, left: rect.right + 8 });
+    }
+    setDrawerOpen((v) => !v);
+  };
 
   // Find active drawer item to show its icon on the drawer button
   const activeDrawerItem = DRAWER_ITEMS.find((item) => isDrawerItemActive(item, location.pathname));
@@ -151,11 +165,12 @@ export default function Layout() {
         {/* Nav area */}
         <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2">
           {/* Drawer button — shows active item icon */}
-          <div className="relative w-full" ref={drawerRef}>
+          <div className="w-full">
             <button
+              ref={drawerBtnRef}
               type="button"
               title={activeDrawerItem?.label ?? "Navigation"}
-              onClick={() => setDrawerOpen((v) => !v)}
+              onClick={openDrawer}
               className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
                 activeDrawerItem
                   ? "bg-primary text-primary-foreground"
@@ -164,32 +179,35 @@ export default function Layout() {
             >
               <DrawerIcon className="w-4 h-4" />
             </button>
-
-            {/* Drawer popover — only the 5 main nav items */}
-            {drawerOpen && (
-              <div className="absolute left-full top-0 ml-2 z-[100] bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]">
-                {DRAWER_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = isDrawerItemActive(item, location.pathname);
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setDrawerOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                        isActive
-                          ? "text-primary bg-primary/10"
-                          : "text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </div>
+
+          {/* Drawer popover via portal — only the 5 main nav items */}
+          {drawerOpen && createPortal(
+            <div
+              ref={drawerRef}
+              style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 9999 }}
+              className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]"
+            >
+              {DRAWER_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = isDrawerItemActive(item, location.pathname);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setDrawerOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                      isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>,
+            document.body
+          )}
 
           {/* Pinned items */}
           {pinnedItems.length > 0 && (
