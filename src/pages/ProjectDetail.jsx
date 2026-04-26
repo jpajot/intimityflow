@@ -7,12 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, Pin, PinOff, Info } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, ChevronDown, Pin, PinOff } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
 import PresenceIndicator from "../components/PresenceIndicator";
 import { Textarea } from "@/components/ui/textarea";
-import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import LinkedColorwaysView from "../components/LinkedColorwaysView";
 import LinkedColorwaysManager from "../components/LinkedColorwaysManager";
@@ -20,6 +19,7 @@ import LinkedStylesView from "../components/LinkedStylesView";
 import ProjectBoards from "./ProjectBoards";
 import BoardIcon from "../components/icons/BoardIcon";
 import LinkedMoreVariationsView from "../components/LinkedMoreVariationsView";
+import ItemSubNav from "../components/ItemSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
@@ -46,7 +46,7 @@ export default function ProjectDetail() {
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeSection, setActiveSection] = useState("details");
+  const [activeSection, setActiveSection] = useState("palettes");
   const [cwSearch, setCwSearch] = useState("");
   const [cwView, setCwView] = useState("grid");
   const [cwActiveColumns, setCwActiveColumns] = useState(null);
@@ -57,6 +57,7 @@ export default function ProjectDetail() {
   const [file, setFile] = useState(null);
   const [docSearch, setDocSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
 
   const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
@@ -67,6 +68,7 @@ export default function ProjectDetail() {
     if (current.some((p) => p.path === `/projects/${id}`)) {
       updated = current.filter((p) => p.path !== `/projects/${id}`);
     } else {
+      if (current.length >= 3) return;
       updated = [...current, { path: `/projects/${id}`, label: project?.name || "Project" }];
     }
     setPinnedItems(updated);
@@ -74,18 +76,6 @@ export default function ProjectDetail() {
     window.dispatchEvent(new Event("pinned-items-changed"));
   };
   const autoSaveTimer = useRef(null);
-
-  const subNavItems = [
-    { id: "details", label: "Details", icon: Info },
-    { id: "boards", label: "Boards", icon: BoardIcon },
-    { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-    { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
-    { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
-    { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
-    { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
-    { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
-  ];
-  useRegisterSubNav(subNavItems, activeSection, setActiveSection);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
@@ -259,8 +249,8 @@ export default function ProjectDetail() {
         <button
           type="button"
           onClick={togglePin}
-          title={isPinned ? "Unpin from sidebar" : "Pin to sidebar"}
-          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"}`}>
+          title={isPinned ? "Unpin from sidebar" : getPinnedItems().length >= 3 ? "Max 3 pinned items" : "Pin to sidebar"}
+          className={`p-2 rounded-md transition-colors ${isPinned ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-muted"} ${!isPinned && getPinnedItems().length >= 3 ? "opacity-40 cursor-not-allowed" : ""}`}>
           
           {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
         </button>
@@ -283,10 +273,18 @@ export default function ProjectDetail() {
         </AlertDialog>
       </div>
 
-      {/* Details tab */}
-      {activeSection === "details" && (
+      {/* Project Details */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 py-5 space-y-4">
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors">
+          
+          <span className="text-sm font-semibold">Details</span>
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${detailsOpen ? "" : "-rotate-90"}`} />
+        </button>
+        {detailsOpen &&
+        <div className="px-5 pb-5 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs">Name</Label>
@@ -322,9 +320,23 @@ export default function ProjectDetail() {
               <Textarea value={project.description || ""} onChange={(e) => updateField("description", e.target.value)} rows={3} />
             </div>
           </div>
+        }
       </div>
-      )}
 
+      {/* Sub-navigation */}
+      <ItemSubNav
+        items={[
+        { id: "boards", label: "Boards", icon: BoardIcon },
+        { id: "documents", label: "Documents", count: documents.length, icon: FileText },
+        { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
+        { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
+        { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
+        { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
+        { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }]
+        }
+        activeId={activeSection}
+        onChange={setActiveSection}>
+        
         {activeSection === "boards" && <ProjectBoards projectId={id} />}
 
         {activeSection === "palettes" &&
@@ -409,6 +421,7 @@ export default function ProjectDetail() {
         {activeSection === "dc_per_cot" &&
         <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} />
         }
+      </ItemSubNav>
 
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={(o) => {if (!o) {setFile(null);setSelectedType("");}setShowUploadDialog(o);}}>
