@@ -2,14 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Loader2, Palette, Layers, Plus } from "lucide-react";
+import { Loader2, Palette, Layers, Plus } from "lucide-react";
 import FabricRollIcon from "../components/icons/FabricRollIcon";
 import ViewSelector from "../components/ViewSelector";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
+import ListToolbar from "../components/ListToolbar";
 
 // ─── Materials Tab ────────────────────────────────────────────────────────────
 function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects }) {
@@ -88,20 +87,20 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search materials…" className="pl-8 h-8 text-xs" />
-        </div>
+      <ListToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search materials…"
+        view={view}
+        onViewChange={setView}
+        moreItems={[
+          { label: "New Material", icon: Plus, onClick: () => navigate("/products/new") },
+        ]}
+      >
         {view === "list" && (
           <ViewSelector pageKey="mat_styles_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={products} entityNames={["Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
-          <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
-        </div>
-        <Button size="sm" className="gap-1.5 h-8" onClick={() => navigate("/products/new")}><Plus className="w-3.5 h-3.5" /> New Material</Button>
-      </div>
+      </ListToolbar>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -266,19 +265,18 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search colorways…" className="pl-8 h-8 text-xs" />
-        </div>
+      <ListToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search colorways…"
+        view={view}
+        onViewChange={setView}
+        moreItems={[]}
+      >
         {view === "list" && (
           <ViewSelector pageKey="mat_colorways_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={colorways} entityNames={["ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
-          <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
-        </div>
-      </div>
+      </ListToolbar>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -428,19 +426,18 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search variations…" className="pl-8 h-8 text-xs" />
-        </div>
+      <ListToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search variations…"
+        view={view}
+        onViewChange={setView}
+        moreItems={[]}
+      >
         {view === "list" && (
           <ViewSelector pageKey="mat_more_variations_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore", "ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
         )}
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button type="button" onClick={() => setView("grid")} className={`px-2.5 py-1.5 transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery"><LayoutGrid className="w-4 h-4" /></button>
-          <button type="button" onClick={() => setView("list")} className={`px-2.5 py-1.5 transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table"><List className="w-4 h-4" /></button>
-        </div>
-      </div>
+      </ListToolbar>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">

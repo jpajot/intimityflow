@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Loader2, LayoutGrid, X, ShieldCheck, Layers, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, LayoutGrid, X, ShieldCheck, Layers, GripVertical, MoreHorizontal } from "lucide-react";
+import ListToolbar from "./ListToolbar";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const STORAGE_KEY = (pageKey) => `gallery_active_view_${pageKey}`;
@@ -391,8 +392,14 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <LayoutGrid className="w-4 h-4 text-muted-foreground shrink-0" />
+      <ListToolbar
+        search=""
+        onSearch={() => {}}
+        view={null}
+        moreItems={[
+          { label: activeFilterCount > 0 ? `Manage Views (${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""})` : "Manage Views", icon: Pencil, onClick: openManage },
+        ]}
+      >
         <Select value={activeViewId} onValueChange={switchView}>
           <SelectTrigger className="h-8 text-xs w-36 border-dashed">
             <SelectValue>{activeLabel}</SelectValue>
@@ -402,12 +409,8 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
             {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={openManage}>
-          <Pencil className="w-3 h-3" /> Manage Views
-          {activeFilterCount > 0 && <Badge className="ml-1 px-1.5 py-0 text-[10px] h-4">{activeFilterCount}</Badge>}
-        </Button>
         {toolbarExtra}
-      </div>
+      </ListToolbar>
 
       {/* Active grouping pills */}
       {groupCols.length > 0 && (
