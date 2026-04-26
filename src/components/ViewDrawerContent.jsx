@@ -76,7 +76,7 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
     setSaving(true);
     
     const data = {
-      page_key: pageKey,
+      page_key: currentViewType === 'grid' ? `gallery_${pageKey.replace(/_grid$|_list$/, '')}` : pageKey,
       name: formName.trim(),
       column_ids: formFieldIds,
       fixed_column_ids: currentViewType === 'grid' ? [] : formFixedFieldIds,
