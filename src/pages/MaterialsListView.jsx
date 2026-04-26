@@ -2,21 +2,28 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
-import { Loader2, Palette, Layers, Plus } from "lucide-react";
+import { Loader2, Palette, Layers, Plus, LayoutGrid, List, Pencil, Pin, PinOff } from "lucide-react";
 import FabricRollIcon from "../components/icons/FabricRollIcon";
 import ViewSelector from "../components/ViewSelector";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ListToolbar from "../components/ListToolbar";
+import ViewDrawerContent from "../components/ViewDrawerContent";
+import { usePageOptions } from "@/lib/PageOptionsContext";
+import { getPinnedItems, setPinnedItems } from "../components/Layout";
 
 // ─── Materials Tab ────────────────────────────────────────────────────────────
-function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects }) {
+function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects, viewMode, onViewModeChange }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState(viewMode);
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+
+  useEffect(() => {
+    setView(viewMode);
+  }, [viewMode]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -91,8 +98,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search materials…"
-        view={view}
-        onViewChange={setView}
+        hideViewToggle
         moreItems={[
           { label: "New Material", icon: Plus, onClick: () => navigate("/products/new") },
         ]}
@@ -163,12 +169,16 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
 }
 
 // ─── Colorways Tab ────────────────────────────────────────────────────────────
-function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) {
+function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, viewMode, onViewModeChange }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [view, setView] = useState("list");
+  const [view, setView] = useState(viewMode);
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+
+  useEffect(() => {
+    setView(viewMode);
+  }, [viewMode]);
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
@@ -269,8 +279,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search colorways…"
-        view={view}
-        onViewChange={setView}
+        hideViewToggle
         moreItems={[]}
       >
         {view === "list" && (
@@ -323,12 +332,16 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects }) 
 }
 
 // ─── More Variations Tab ──────────────────────────────────────────────────────
-function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects }) {
+function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects, viewMode, onViewModeChange }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [view, setView] = useState("list");
+  const [view, setView] = useState(viewMode);
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+
+  useEffect(() => {
+    setView(viewMode);
+  }, [viewMode]);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {
@@ -430,8 +443,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search variations…"
-        view={view}
-        onViewChange={setView}
+        hideViewToggle
         moreItems={[]}
       >
         {view === "list" && (
@@ -492,6 +504,21 @@ export default function MaterialsListView() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("materials");
+  const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+  
+  const [showMaterialsViewMenu, setShowMaterialsViewMenu] = useState(false);
+  const [materialsViewMode, setMaterialsViewMode] = useState("grid");
+  const [materialsActiveViewId, setMaterialsActiveViewId] = useState("default");
+  
+  const [showColorwaysViewMenu, setShowColorwaysViewMenu] = useState(false);
+  const [colorwaysViewMode, setColorwaysViewMode] = useState("list");
+  const [colorwaysActiveViewId, setColorwaysActiveViewId] = useState("default");
+  
+  const [showVariationsViewMenu, setShowVariationsViewMenu] = useState(false);
+  const [variationsViewMode, setVariationsViewMode] = useState("list");
+  const [variationsActiveViewId, setVariationsActiveViewId] = useState("default");
+
+  const { setOptions } = usePageOptions();
 
   const subNavItems = [
     { id: "materials", label: "Materials", count: products.length, icon: FabricRollIcon },
@@ -499,6 +526,67 @@ export default function MaterialsListView() {
     { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
   ];
   useRegisterSubNav(subNavItems, activeSection, setActiveSection);
+
+  const isPinned = (path) => pinnedItems.some((p) => p.path === path);
+  
+  const togglePin = (path, label) => {
+    const current = getPinnedItems();
+    let updated;
+    if (current.some((p) => p.path === path)) {
+      updated = current.filter((p) => p.path !== path);
+    } else {
+      if (current.length >= 3) return;
+      updated = [...current, { path, label }];
+    }
+    setPinnedItems(updated);
+    setPinnedItemsState(updated);
+    window.dispatchEvent(new Event("pinned-items-changed"));
+  };
+
+  useEffect(() => {
+    if (activeSection === "materials") {
+      setOptions({
+        items: [
+          { label: materialsViewMode === "list" ? "View: Grid" : "View: List", icon: materialsViewMode === "list" ? LayoutGrid : List, onClick: () => setMaterialsViewMode(materialsViewMode === "list" ? "grid" : "list") },
+          { divider: true },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowMaterialsViewMenu(!showMaterialsViewMenu), custom: true },
+          { divider: true },
+          { label: isPinned("/materials") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials") ? PinOff : Pin, onClick: () => togglePin("/materials", "Materials Lists") },
+        ],
+        customContent: showMaterialsViewMenu ? (
+          <ViewDrawerContent pageKey="mat_styles_list" activeViewId={materialsActiveViewId} onSelectView={setMaterialsActiveViewId} allFields={[]} currentViewType={materialsViewMode} />
+        ) : null,
+      });
+    } else if (activeSection === "colorways") {
+      setOptions({
+        items: [
+          { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => setColorwaysViewMode(colorwaysViewMode === "list" ? "grid" : "list") },
+          { divider: true },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
+          { divider: true },
+          { label: isPinned("/materials-colorways") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-colorways") ? PinOff : Pin, onClick: () => togglePin("/materials-colorways", "Materials Lists: Colorways") },
+        ],
+        customContent: showColorwaysViewMenu ? (
+          <ViewDrawerContent pageKey="mat_colorways_list" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode} />
+        ) : null,
+      });
+    } else if (activeSection === "variations") {
+      setOptions({
+        items: [
+          { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => setVariationsViewMode(variationsViewMode === "list" ? "grid" : "list") },
+          { divider: true },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
+          { divider: true },
+          { label: isPinned("/materials-variations") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-variations") ? PinOff : Pin, onClick: () => togglePin("/materials-variations", "Materials Lists: Variations") },
+        ],
+        customContent: showVariationsViewMenu ? (
+          <ViewDrawerContent pageKey="mat_more_variations_list" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode} />
+        ) : null,
+      });
+    } else {
+      setOptions({ items: [] });
+    }
+  }, [activeSection, setOptions, showMaterialsViewMenu, showColorwaysViewMenu, showVariationsViewMenu, materialsActiveViewId, colorwaysActiveViewId, variationsActiveViewId, materialsViewMode, colorwaysViewMode, variationsViewMode, pinnedItems]);
 
   useEffect(() => {
     Promise.all([
@@ -534,13 +622,13 @@ export default function MaterialsListView() {
   return (
     <div className="space-y-4">
       {activeSection === "materials" && (
-        <MaterialsTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
+        <MaterialsTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} projects={projects} viewMode={materialsViewMode} onViewModeChange={setMaterialsViewMode} />
       )}
       {activeSection === "colorways" && (
-        <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} />
+        <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} viewMode={colorwaysViewMode} onViewModeChange={setColorwaysViewMode} />
       )}
       {activeSection === "variations" && (
-        <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
+        <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} viewMode={variationsViewMode} onViewModeChange={setVariationsViewMode} />
       )}
     </div>
   );

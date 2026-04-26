@@ -6,8 +6,10 @@ import GalleryView from "../components/GalleryView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, Loader2, LayoutGrid, List, Plus } from "lucide-react";
+import { Search, Package, Loader2, LayoutGrid, List, Plus, Pin, PinOff } from "lucide-react";
 import DataTable from "@/components/DataTable";
+import { usePageOptions } from "@/lib/PageOptionsContext";
+import { getPinnedItems, setPinnedItems } from "../components/Layout";
 
 
 export default function Products() {
@@ -20,6 +22,34 @@ export default function Products() {
   const [view, setView] = useState(() => localStorage.getItem("products_view") || "gallery");
   const [activeColumns, setActiveColumns] = useState(null);
   const [filteredRows, setFilteredRows] = useState(null);
+  const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+  const { setOptions } = usePageOptions();
+
+  const isPinned = pinnedItems.some((p) => p.path === "/list-view");
+  
+  const togglePin = () => {
+    const current = getPinnedItems();
+    let updated;
+    if (current.some((p) => p.path === "/list-view")) {
+      updated = current.filter((p) => p.path !== "/list-view");
+    } else {
+      if (current.length >= 3) return;
+      updated = [...current, { path: "/list-view", label: "Products Lists" }];
+    }
+    setPinnedItems(updated);
+    setPinnedItemsState(updated);
+    window.dispatchEvent(new Event("pinned-items-changed"));
+  };
+
+  useEffect(() => {
+    setOptions({
+      items: [
+        { label: view === "table" ? "View: Gallery" : "View: Table", icon: view === "table" ? LayoutGrid : List, onClick: () => { setView(view === "table" ? "gallery" : "table"); localStorage.setItem("products_view", view === "table" ? "gallery" : "table"); } },
+        { divider: true },
+        { label: isPinned ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned ? PinOff : Pin, onClick: togglePin },
+      ],
+    });
+  }, [setOptions, view, isPinned]);
 
   useEffect(() => {
     loadData();
@@ -178,23 +208,20 @@ export default function Products() {
         </Select>
         <div className="flex items-center gap-2 flex-wrap">
           {view === "table" && (
-            <ViewSelector
-              pageKey="styles"
-              allColumns={allColumns}
-              onColumnsChange={setActiveColumns}
-              filterableFields={filterableFields}
-              rows={filtered}
-              onFilteredRowsChange={setFilteredRows}
-            />
-          )}
-          {view === "table" && (
             <>
-              <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("products_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-                <button type="button" onClick={() => { setView("table"); localStorage.setItem("products_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
-              </div>
+              <ViewSelector
+                pageKey="styles"
+                allColumns={allColumns}
+                onColumnsChange={setActiveColumns}
+                filterableFields={filterableFields}
+                rows={filtered}
+                onFilteredRowsChange={setFilteredRows}
+              />
               <Link to="/products/new" asChild><Button className="gap-2"><Plus className="w-4 h-4" />New Style</Button></Link>
             </>
+          )}
+          {view === "gallery" && (
+            <Link to="/products/new" asChild><Button className="gap-2"><Plus className="w-4 h-4" />New Style</Button></Link>
           )}
         </div>
       </div>
@@ -249,16 +276,7 @@ export default function Products() {
            );
          }}
          onClickItem={(p) => navigate(`/products/${p.id}`)}
-         toolbarExtra={
-            <>
-              <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                <button type="button" onClick={() => { setView("gallery"); localStorage.setItem("products_view", "gallery"); }} className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Gallery view"><LayoutGrid className="w-4 h-4" /></button>
-                <button type="button" onClick={() => { setView("table"); localStorage.setItem("products_view", "table"); }} className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`} title="Table view"><List className="w-4 h-4" /></button>
-              </div>
-              <Link to="/products/new" asChild><Button className="gap-2"><Plus className="w-4 h-4" />New Style</Button></Link>
-            </>
-          }
-        />
+         />
       ) : (
         <DataTable
           columns={columns}
