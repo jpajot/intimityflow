@@ -110,7 +110,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 !pointer-events-auto">
       <ListToolbar
         search={search}
         onSearch={setSearch}
@@ -331,7 +331,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 !pointer-events-auto">
       <ListToolbar
         search={search}
         onSearch={setSearch}
@@ -532,7 +532,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 !pointer-events-auto">
       <ListToolbar
         search={search}
         onSearch={setSearch}
@@ -662,7 +662,7 @@ export default function ListView() {
   }
 
   return (
-    <div className="space-y-4 pointer-events-auto">
+    <div className="space-y-4 !pointer-events-auto">
       {activeSection === "styles" && (
         <StylesTab products={products} colorVariants={colorways} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
       )}
