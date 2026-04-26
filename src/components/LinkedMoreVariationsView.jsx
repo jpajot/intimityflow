@@ -395,12 +395,7 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
         onSearch={setSearch}
         searchPlaceholder="Search variations…"
         hideViewToggle
-        moreItems={projectId ? [{ label: "Add Variation", icon: Plus, onClick: () => setShowLink(true) }] : []}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="project_linked_variations" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+      />
 
       <LinkToProjectModal
         open={showLink}

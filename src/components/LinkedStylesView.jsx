@@ -150,12 +150,7 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
         onSearch={setSearch}
         searchPlaceholder="Search products…"
         hideViewToggle
-        moreItems={projectId ? [{ label: "Add Product", icon: Plus, onClick: () => setShowLink(true) }] : []}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="project_linked_styles" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={styles} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+      />
 
       <LinkToProjectModal
         open={showLink}

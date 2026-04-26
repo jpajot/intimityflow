@@ -436,12 +436,7 @@ export default function LinkedColorwaysView({
         onSearch={onSearchChange}
         searchPlaceholder="Search colorways…"
         hideViewToggle
-        moreItems={projectId ? [{ label: "Add Colorway", icon: Plus, onClick: () => setShowLink(true) }] : []}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="project_linked_colorways" allColumns={columns} onColumnsChange={onColumnsChange} entityNames={["ProductColor"]} />
-        )}
-      </ListToolbar>
+      />
 
       <LinkToProjectModal
         open={showLink}
