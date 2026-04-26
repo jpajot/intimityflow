@@ -78,7 +78,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
                 <div key={cv.id} className="relative">
                   {hexes?.length > 1 ? (
                     <div className="w-5 h-5 overflow-hidden flex" style={{ borderRadius: 4 }} title={cv.color_name}>
-                      {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                      {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h, borderRadius: 0 }} />)}
                     </div>
                   ) : (
                         <div className="w-5 h-5" style={{ backgroundColor: cv.color_hex || "#ccc", borderRadius: 4 }} title={cv.color_name} />
@@ -150,7 +150,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
                         </div>
                       ) : hexes?.length > 1 ? (
                         <div className="w-6 h-6 overflow-hidden flex shrink-0" style={{ borderRadius: 4 }}>
-                          {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                          {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h, borderRadius: 0 }} />)}
                         </div>
                       ) : (
                         <div className="w-6 h-6 shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc", borderRadius: 4 }} />
