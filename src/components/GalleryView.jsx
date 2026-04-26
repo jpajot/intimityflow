@@ -402,20 +402,18 @@ export default function GalleryView({ pageKey, allFields, rows = [], filterableF
           { label: "Manage Views", icon: Pencil, onClick: openManage },
         ]}
       >
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Select value={activeViewId} onValueChange={switchView}>
-            <SelectTrigger className="h-8 text-xs text-ellipsis flex-shrink-0 border-dashed" style={{maxWidth: '120px'}}>
-              <SelectValue>{activeLabel}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Default</SelectItem>
-              {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {activeFilterCount > 0 && (
-            <Badge className="px-1.5 py-0 text-[10px] h-4 shrink-0">{activeFilterCount}</Badge>
-          )}
-        </div>
+        <Select value={activeViewId} onValueChange={switchView}>
+          <SelectTrigger className="h-8 text-xs w-32 border-dashed shrink-0">
+            <SelectValue>{activeLabel}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Default</SelectItem>
+            {views.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {activeFilterCount > 0 && (
+          <Badge className="px-1.5 py-0 text-[10px] h-4 shrink-0">{activeFilterCount}</Badge>
+        )}
       </ListToolbar>
 
       {/* Active grouping pills */}
