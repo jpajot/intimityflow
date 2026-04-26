@@ -251,40 +251,45 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Mobile header + sheet */}
+      {/* Mobile / Tablet layout */}
       <div className="flex flex-col flex-1 min-w-0">
-        <header className="sm:hidden sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-          <div className="px-4 h-14 flex items-center gap-3">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon"><Menu className="w-5 h-5" /></Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="p-4 border-b border-border">
-                  <Link to="/" className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                      <Shirt className="w-3.5 h-3.5 text-primary-foreground" />
-                    </div>
-                    <span className="font-display text-lg font-semibold">Linea</span>
-                  </Link>
-                </div>
-                <div className="p-3 overflow-y-auto">
-                  <MobileNavContent onNavigate={() => {}} />
-                </div>
-              </SheetContent>
-            </Sheet>
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                <Shirt className="w-3.5 h-3.5 text-primary-foreground" />
-              </div>
-              <span className="font-display text-lg font-semibold">Linea</span>
-            </Link>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto sm:p-4">
+        <main className="flex-1 overflow-y-auto sm:p-4 pb-[72px] sm:pb-0">
           <Outlet />
         </main>
+
+        {/* iOS-style bottom tab bar — mobile & tablet only */}
+        <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border">
+          <div className="flex items-stretch h-[60px] safe-b">
+            {DRAWER_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = isDrawerItemActive(item, location.pathname);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+            {/* Settings tab */}
+            <Link
+              to="/config"
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                location.pathname.startsWith("/config") ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <Settings className="w-5 h-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Settings</span>
+            </Link>
+          </div>
+        </nav>
       </div>
     </div>
   );
