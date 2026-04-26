@@ -1,59 +1,49 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
-import { Shirt, SwatchBook, Palette, Ruler, ListCollapse, Menu, ChevronsLeft, ChevronsRight, Hash, Languages, Settings, Pin, PinOff, ChevronDown } from "lucide-react";
+import { Shirt, SwatchBook, Ruler, Menu, Settings, Pin, PinOff } from "lucide-react";
 
 export const PINNED_ITEMS_KEY = "pinnedNavItems";
 export function getPinnedItems() {
-  try {return JSON.parse(localStorage.getItem(PINNED_ITEMS_KEY) || "[]");} catch {return [];}
+  try { return JSON.parse(localStorage.getItem(PINNED_ITEMS_KEY) || "[]"); } catch { return []; }
 }
 export function setPinnedItems(items) {
   localStorage.setItem(PINNED_ITEMS_KEY, JSON.stringify(items));
-  // Also persist to user profile for cross-device sync
   import("@/api/base44Client").then(({ base44 }) => {
     base44.auth.updateMe({ pinned_nav_items: items }).catch(() => {});
   });
 }
 
-const NAV_ITEMS = [
-{ path: "/list-view", label: "Products Lists", icon: StylesIcon },
-{ path: "/materials", label: "Materials Lists", icon: FabricRollIcon },
-{ path: "/projects", label: "Projects", icon: ProjectsIcon }];
+// All main nav items grouped in the drawer
+const DRAWER_ITEMS = [
+  { path: "/projects",    label: "Projects",        icon: ProjectsIcon },
+  { path: "/list-view",   label: "Products Lists",  icon: StylesIcon },
+  { path: "/materials",   label: "Materials Lists", icon: FabricRollIcon },
+  { path: "/color-palettes", label: "Color Studio", icon: SwatchBook },
+  { path: "/size-grid-library", label: "Size Studio", icon: Ruler },
+];
 
-
-
-
-const SIZE_STUDIO_ITEMS = [];
-
-const CONFIG_ITEMS = [
-{ path: "/translations", label: "Translations", icon: Languages },
-{ path: "/list-of-values", label: "List of Values", icon: ListCollapse },
-{ path: "/code-generators", label: "Code Generators", icon: Hash }];
-
+function isDrawerItemActive(item, pathname) {
+  if (item.path === "/color-palettes") return pathname.startsWith("/color-palettes");
+  if (item.path === "/size-grid-library") return pathname.startsWith("/size-grid-library");
+  return pathname === item.path || pathname.startsWith(item.path + "/");
+}
 
 export default function Layout() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [expanded, setExpanded] = useState(() => {
-    const saved = localStorage.getItem("sidebarExpanded");
-    return saved ? JSON.parse(saved) : true;
-  });
-  const [studioOpen, setStudioOpen] = useState(false);
-  const [sizeStudioOpen, setSizeStudioOpen] = useState(false);
-  const [configOpen, setConfigOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
+  const drawerRef = useRef(null);
 
-  // On mount, load pinned items from user profile (cross-device sync)
+  // Cross-device sync for pinned items
   useEffect(() => {
     import("@/api/base44Client").then(({ base44 }) => {
       base44.auth.me().then((user) => {
         if (user?.pinned_nav_items && Array.isArray(user.pinned_nav_items)) {
-          // User profile is the source of truth — sync to localStorage too
           setPinnedItems(user.pinned_nav_items);
           setPinnedItemsState(user.pinned_nav_items);
         }
@@ -61,175 +51,185 @@ export default function Layout() {
     });
   }, []);
 
-  // Keep pinned items in sync across tabs/pages
   useEffect(() => {
     const handler = () => setPinnedItemsState(getPinnedItems());
     window.addEventListener("storage", handler);
     window.addEventListener("pinned-items-changed", handler);
-    return () => {window.removeEventListener("storage", handler);window.removeEventListener("pinned-items-changed", handler);};
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("pinned-items-changed", handler);
+    };
   }, []);
 
-  const toggleExpanded = () => {
-    setExpanded((v) => {
-      localStorage.setItem("sidebarExpanded", JSON.stringify(!v));
-      return !v;
-    });
-  };
+  // Close drawer on outside click
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const handler = (e) => {
+      if (drawerRef.current && !drawerRef.current.contains(e.target)) {
+        setDrawerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [drawerOpen]);
 
-  const isStudioActive = location.pathname.startsWith("/color-palettes");
-  const isSizeStudioActive = SIZE_STUDIO_ITEMS.some((i) => location.pathname.startsWith(i.path));
-  const isConfigActive = CONFIG_ITEMS.some((i) => location.pathname.startsWith(i.path));
+  // Find active drawer item to show its icon on the drawer button
+  const activeDrawerItem = DRAWER_ITEMS.find((item) => isDrawerItemActive(item, location.pathname));
 
-  // Reusable nav item for both expanded and collapsed sidebar
-  const NavItem = ({ item, onNavigate, isActive }) => {
-    const Icon = item.icon;
-    return (
-      <Link
-        to={item.path}
-        onClick={onNavigate}
-        title={!expanded ? item.label : undefined}
-        className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
-        expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"} ${
+  const DrawerIcon = activeDrawerItem?.icon ?? StylesIcon;
 
-        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`
-        }>
-        
-        <Icon className="w-4 h-4 shrink-0" />
-        {expanded && <span>{item.label}</span>}
-      </Link>);
+  // Mobile nav content
+  const MobileNavContent = ({ onNavigate }) => (
+    <nav className="space-y-0.5">
+      {DRAWER_ITEMS.map((item) => {
+        const Icon = item.icon;
+        const isActive = isDrawerItemActive(item, location.pathname);
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            onClick={onNavigate}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <Icon className="w-4 h-4 shrink-0" />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
 
-  };
-
-  const GroupButton = ({ icon: Icon, label, open, onToggle, isActive, navPath }) =>
-  <button
-    onClick={() => {
-      if (!expanded) setExpanded(true);
-      if (navPath) navigate(navPath);
-      onToggle();
-    }}
-    title={!expanded ? label : undefined}
-    className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
-    expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"} ${
-
-    isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`
-    }>
-    
-      <Icon className="w-4 h-4 shrink-0" />
-      {expanded &&
-    <>
-          <span className="flex-1 text-left">{label}</span>
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-        </>
-    }
-    </button>;
-
-
-  const NavContent = ({ onNavigate = null }) =>
-  <nav className="space-y-0.5">
-      {NAV_ITEMS.map((item) =>
-    <NavItem key={item.path} item={item} onNavigate={onNavigate} isActive={location.pathname === item.path} />
-    )}
-
-      <div className="my-2 border-t border-border" />
-
-      {/* Color Studio */}
-      <NavItem item={{ path: "/color-palettes", label: "Color Studio", icon: SwatchBook }} onNavigate={onNavigate} isActive={isStudioActive} />
-
-      {/* Size Studio */}
-      <NavItem item={{ path: "/size-grid-library", label: "Size Studio", icon: Ruler }} onNavigate={onNavigate} isActive={location.pathname.startsWith("/size-grid-library")} />
-
-      {/* Pinned Items */}
-      {pinnedItems.length > 0 &&
-    <>
+      {pinnedItems.length > 0 && (
+        <>
           <div className="my-2 border-t border-border" />
-          {expanded && <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1 pb-0.5">Pinned</p>}
-          {pinnedItems.map((item) =>
-      <div key={item.path} className="group relative">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1 pb-0.5">Pinned</p>
+          {pinnedItems.map((item) => (
+            <div key={item.path} className="group relative">
               <Link
-          to={item.path}
-          onClick={onNavigate}
-          title={!expanded ? item.label : undefined}
-          className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all ${
-          expanded ? "px-3 py-2" : "px-0 py-2 justify-center"} ${
-
-          location.pathname === item.path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`
-          }>
-          
+                to={item.path}
+                onClick={onNavigate}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  location.pathname === item.path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
                 <Pin className="w-3.5 h-3.5 shrink-0" />
-                {expanded && <span className="flex-1 truncate">{item.label}</span>}
+                <span className="flex-1 truncate">{item.label}</span>
               </Link>
-              {expanded &&
-        <button
-          type="button"
-          onClick={() => {
-            const updated = pinnedItems.filter((p) => p.path !== item.path);
-            setPinnedItems(updated);
-            setPinnedItemsState(updated);
-            window.dispatchEvent(new Event("pinned-items-changed"));
-          }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive text-muted-foreground transition-opacity"
-          title="Unpin">
-          
-                  <PinOff className="w-3 h-3" />
-                </button>
-        }
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = pinnedItems.filter((p) => p.path !== item.path);
+                  setPinnedItems(updated);
+                  setPinnedItemsState(updated);
+                  window.dispatchEvent(new Event("pinned-items-changed"));
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive text-muted-foreground transition-opacity"
+                title="Unpin"
+              >
+                <PinOff className="w-3 h-3" />
+              </button>
             </div>
-      )}
+          ))}
         </>
-    }
-    </nav>;
-
+      )}
+    </nav>
+  );
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Desktop / Tablet sidebar — always visible */}
-      <aside className="bg-transparent hidden sm:flex flex-col transition-all duration-300 shrink-0 w-14">
-
-
-        
-        
-        {/* Top: logo + toggle */}
-        <div className={`flex items-center border-b border-border h-16 shrink-0 ${
-        expanded ? "px-3 gap-3" : "justify-center px-0"}`
-        }>
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+      {/* Desktop icon-only sidebar */}
+      <aside className="hidden sm:flex flex-col shrink-0 w-14 bg-transparent">
+        {/* Logo */}
+        <div className="flex items-center justify-center h-16 border-b border-border shrink-0">
+          <Link to="/" title="Linea">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Shirt className="w-4 h-4 text-primary-foreground" />
             </div>
-            {expanded && <span className="font-display text-lg font-semibold tracking-tight">Linea</span>}
           </Link>
-          {expanded &&
-          <button
-            onClick={toggleExpanded}
-            className="ml-auto p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors"
-            title="Collapse sidebar">
-            
-              <ChevronsLeft className="w-4 h-4" />
+        </div>
+
+        {/* Nav area */}
+        <div className="flex-1 flex flex-col items-center py-3 gap-1 overflow-y-auto overflow-x-hidden px-2" ref={drawerRef}>
+          {/* Drawer button — shows active item icon */}
+          <div className="relative w-full">
+            <button
+              type="button"
+              title={activeDrawerItem?.label ?? "Navigation"}
+              onClick={() => setDrawerOpen((v) => !v)}
+              className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+                activeDrawerItem
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <DrawerIcon className="w-4 h-4" />
             </button>
-          }
+
+            {/* Drawer popover */}
+            {drawerOpen && (
+              <div className="absolute left-full top-0 ml-2 z-50 bg-popover border border-border rounded-lg shadow-lg py-1.5 min-w-[180px]">
+                {DRAWER_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = isDrawerItemActive(item, location.pathname);
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setDrawerOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Pinned items */}
+          {pinnedItems.length > 0 && (
+            <>
+              <div className="w-full my-1 border-t border-border" />
+              {pinnedItems.map((item) => {
+                const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+                return (
+                  <div key={item.path} className="group relative w-full">
+                    <Link
+                      to={item.path}
+                      title={item.label}
+                      className={`w-full flex items-center justify-center py-2 rounded-lg transition-all ${
+                        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Pin className="w-3.5 h-3.5" />
+                    </Link>
+                    {/* Tooltip label on hover */}
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-popover border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-sm transition-opacity">
+                      {item.label}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
-        {/* Collapse toggle when icon-only */}
-        {!expanded &&
-        <button
-          onClick={toggleExpanded}
-          className="mx-auto mt-2 p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
-          title="Expand sidebar">
-          
-            <ChevronsRight className="w-4 h-4" />
-          </button>
-        }
-
-        {/* Nav */}
-        <div className={`flex-1 overflow-y-auto overflow-x-hidden py-3 ${
-        expanded ? "px-3" : "px-2"}`
-        }>
-          <NavContent />
-        </div>
-
-        {/* Config at bottom */}
-        <div className={`shrink-0 border-t border-border py-3 ${expanded ? "px-3" : "px-2"}`}>
-          <NavItem item={{ path: "/config", label: "Settings", icon: Settings }} onNavigate={null} isActive={location.pathname.startsWith("/config") || isConfigActive} />
+        {/* Settings at bottom */}
+        <div className="shrink-0 border-t border-border py-3 px-2 flex justify-center">
+          <Link
+            to="/config"
+            title="Settings"
+            className={`w-full flex items-center justify-center py-2.5 rounded-lg transition-all ${
+              location.pathname.startsWith("/config") ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+          </Link>
         </div>
       </aside>
 
@@ -251,7 +251,7 @@ export default function Layout() {
                   </Link>
                 </div>
                 <div className="p-3 overflow-y-auto">
-                  <NavContent />
+                  <MobileNavContent onNavigate={() => {}} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -268,6 +268,6 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
-    </div>);
-
+    </div>
+  );
 }
