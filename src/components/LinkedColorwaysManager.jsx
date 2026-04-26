@@ -1,3 +1,4 @@
+import { useState } from "react";
 import LinkedColorwaysView from "./LinkedColorwaysView";
 
 export default function LinkedColorwaysManager({
@@ -8,14 +9,13 @@ export default function LinkedColorwaysManager({
   navigate,
   search,
   onSearchChange,
-  view,
-  onViewChange,
-  activeColumns,
-  onColumnsChange,
   projectId,
   allColorways,
   onLinked,
 }) {
+  const [view, setView] = useState("grid");
+  const [activeColumns, setActiveColumns] = useState(null);
+
   return (
     <LinkedColorwaysView
       colorways={colorways}
@@ -26,9 +26,9 @@ export default function LinkedColorwaysManager({
       search={search}
       onSearchChange={onSearchChange}
       view={view}
-      onViewChange={onViewChange}
+      onViewChange={setView}
       activeColumns={activeColumns}
-      onColumnsChange={onColumnsChange}
+      onColumnsChange={setActiveColumns}
       projectId={projectId}
       allColorways={allColorways}
       onLinked={onLinked}
