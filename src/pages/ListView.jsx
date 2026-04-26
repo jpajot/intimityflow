@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, List, Search, Loader2, Palette, Layers, Plus } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
-import ItemSubNav from "../components/ItemSubNav";
 import ViewSelector from "../components/ViewSelector";
+import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
@@ -593,6 +593,13 @@ export default function ListView() {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("styles");
 
+  const subNavItems = [
+    { id: "styles", label: "Products", count: products.length, icon: StylesIcon },
+    { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
+    { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
+  ];
+  useRegisterSubNav(subNavItems, activeSection, setActiveSection);
+
   useEffect(() => {
     Promise.all([
       base44.entities.Product.list("-created_date", 500),
@@ -627,31 +634,16 @@ export default function ListView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Products Lists</h1>
-        <p className="text-muted-foreground mt-1">Browse and filter products, colorways, and variations</p>
-      </div>
-
-      <ItemSubNav
-            items={[
-              { id: "styles", label: "Products", count: products.length, icon: StylesIcon },
-              { id: "colorways", label: "Colorways", count: colorways.length, icon: Palette },
-              { id: "variations", label: "More Variations", count: variations.length, icon: Layers },
-            ]}
-            activeId={activeSection}
-            onChange={setActiveSection}
-          >
-            {activeSection === "styles" && (
-              <StylesTab products={products} colorVariants={colorways} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
-            )}
-            {activeSection === "colorways" && (
-              <ColorwaysTab colorways={colorways} products={products} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
-            )}
-            {activeSection === "variations" && (
-              <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
-            )}
-          </ItemSubNav>
+    <div className="space-y-4">
+      {activeSection === "styles" && (
+        <StylesTab products={products} colorVariants={colorways} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
+      )}
+      {activeSection === "colorways" && (
+        <ColorwaysTab colorways={colorways} products={products} techColors={techColors} commColors={commColors} sizeGrids={sizeGrids} projects={projects} />
+      )}
+      {activeSection === "variations" && (
+        <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} />
+      )}
     </div>
   );
 }

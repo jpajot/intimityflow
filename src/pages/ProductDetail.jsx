@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, ChevronDown } from "lucide-react";
-import ItemSubNav from "../components/ItemSubNav";
+import { ArrowLeft, Plus, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info } from "lucide-react";
 import ImageLightbox from "../components/ImageLightbox";
+import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 
 import MoreVariationsSection from "../components/MoreVariationsSection";
 import StyleSizesSection from "../components/StyleSizesSection";
@@ -38,16 +38,6 @@ export default function ProductDetail() {
   const queryParams = new URLSearchParams(window.location.search);
   const typeFromQuery = queryParams.get("type") || "Product";
 
-  const [detailsOpen, setDetailsOpen] = useState(() => {
-    const saved = localStorage.getItem("product_detail_details_open");
-    return saved === null ? true : saved === "true";
-  });
-
-  const toggleDetails = (v) => {
-    const next = typeof v === "boolean" ? v : !detailsOpen;
-    setDetailsOpen(next);
-    localStorage.setItem("product_detail_details_open", String(next));
-  };
   const [product, setProduct] = useState({
     type: typeFromQuery, name: "", category: "", sub_category: "", customer_need: "",
     description: "", images: [], size_grid_id: "",
@@ -68,8 +58,16 @@ export default function ProductDetail() {
   const [editingColor, setEditingColor] = useState(null);
   const [showNewColorModal, setShowNewColorModal] = useState(false);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
-  const [activeTab, setActiveTab] = useState("colorways");
+  const [activeTab, setActiveTab] = useState("details");
   const [lightboxImages, setLightboxImages] = useState(null); // { images: [], index: 0 }
+
+  const subNavItems = isNew ? [] : [
+    { id: "details", label: "Details", icon: Info },
+    { id: "colorways", label: "Colorways", count: colorVariants.length, icon: Palette },
+    { id: "sizes", label: "Sizes", icon: Ruler },
+    { id: "more", label: "More Variations", icon: Layers },
+  ];
+  useRegisterSubNav(subNavItems, activeTab, setActiveTab);
 
   useEffect(() => {
     loadLovData();
@@ -372,18 +370,10 @@ export default function ProductDetail() {
         )}
       </div>
 
-      {/* Collapsible Form */}
+      {/* Details / sub-nav content */}
+      {(isNew || activeTab === "details") && (
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <button
-          type="button"
-          onClick={() => toggleDetails()}
-          className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors"
-        >
-          <span className="text-sm font-semibold">{isNew ? `New ${product.type}` : "Details"}</span>
-          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${detailsOpen ? "" : "-rotate-90"}`} />
-        </button>
-        {detailsOpen && (
-          <div className="p-5 pt-0">
+        <div className="px-5 py-4">
             <div className="flex gap-6 items-start">
 
               {/* 1/4 — Images */}
@@ -576,36 +566,24 @@ export default function ProductDetail() {
                 )}
               </div>
             </div>
-          </div>
-        )}
+        </div>
       </div>
+      )}
 
-      {!isNew && (
-        <ItemSubNav
-          items={[
-            { id: "colorways", label: "Colorways", count: colorVariants.length, icon: Palette },
-            { id: "sizes", label: "Sizes", icon: Ruler },
-            { id: "more", label: "More Variations", icon: Layers },
-          ]}
-          activeId={activeTab}
-          onChange={setActiveTab}
-        >
-          {activeTab === "colorways" && (
-            <ColorwaySection
-              colorVariants={colorVariants}
-              productImage={product.images?.[0] || ""}
-              onEdit={(cv) => setEditingColor(cv)}
-              onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
-              onAddFromLibrary={() => setShowLibraryPicker(true)}
-            />
-          )}
-          {activeTab === "sizes" && (
-            <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
-          )}
-          {activeTab === "more" && (
-            <MoreVariationsSection productId={product.id} colorVariants={colorVariants} projects={projects} />
-          )}
-        </ItemSubNav>
+      {!isNew && activeTab === "colorways" && (
+        <ColorwaySection
+          colorVariants={colorVariants}
+          productImage={product.images?.[0] || ""}
+          onEdit={(cv) => setEditingColor(cv)}
+          onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
+          onAddFromLibrary={() => setShowLibraryPicker(true)}
+        />
+      )}
+      {!isNew && activeTab === "sizes" && (
+        <StyleSizesSection product={product} onSizesChange={(hasSizes) => { setHasStyleSizes(hasSizes); if (!hasSizes) setOriginalSizeGridId(""); }} />
+      )}
+      {!isNew && activeTab === "more" && (
+        <MoreVariationsSection productId={product.id} colorVariants={colorVariants} projects={projects} />
       )}
 
       <ColorwayEditModal

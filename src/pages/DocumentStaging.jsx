@@ -6,13 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, ArrowLeft, Loader2, Check, AlertCircle, RefreshCw, X, ArrowRight, FileText, Palette, Layers } from "lucide-react";
+import { Search, ArrowLeft, Loader2, Check, AlertCircle, RefreshCw, X, ArrowRight } from "lucide-react";
 import DataTable from "../components/DataTable";
 import ViewSelector from "../components/ViewSelector";
-import ItemSubNav from "../components/ItemSubNav";
-import StylesIcon from "../components/icons/StylesIcon";
-import BoardIcon from "../components/icons/BoardIcon";
-import { SwatchBook } from "lucide-react";
+
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function TcxBadge({ code, techColors }) {
@@ -127,8 +124,7 @@ export default function DocumentStaging() {
   const [existingColorways, setExistingColorways] = useState([]); // all colorways for those products
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  // project sidebar counts
-  const [projectCounts, setProjectCounts] = useState({ docs: 0, styles: 0, colorways: 0, variations: 0, palettes: 0 });
+
   const [processing, setProcessing] = useState(false);
   const [reparsing, setReparsing] = useState(false);
   const [result, setResult] = useState(null);
@@ -145,14 +141,11 @@ export default function DocumentStaging() {
 
   const loadData = async () => {
     setLoading(true);
-    const [docs, tc, prods, colors, projDocs, palettes, variations] = await Promise.all([
+    const [docs, tc, prods, colors] = await Promise.all([
       base44.entities.UploadedDocument.filter({ id: docId }),
       base44.entities.TechnicalColor.list("code", 2000),
       base44.entities.Product.list("-created_date", 2000),
       base44.entities.ProductColor.list("-created_date", 5000),
-      base44.entities.UploadedDocument.filter({ project_id: id }),
-      base44.entities.ColorPalette.filter({ project_id: id }),
-      base44.entities.ProductColorAndMore.list("-created_date", 500),
     ]);
     const d = docs[0];
     setDoc(d);
@@ -160,17 +153,6 @@ export default function DocumentStaging() {
     setExistingProducts(prods.filter(p => p.code));
     setExistingColorways(colors);
     if (d?.staged_data) setData(JSON.parse(JSON.stringify(d.staged_data)));
-    // compute sidebar counts
-    const linkedStyles = prods.filter(p => (p.project_ids || []).includes(id));
-    const linkedColorways = colors.filter(c => (c.project_ids || []).includes(id));
-    const linkedVariations = variations.filter(v => (v.project_ids || []).includes(id));
-    setProjectCounts({
-      docs: projDocs.length,
-      styles: linkedStyles.length,
-      colorways: linkedColorways.length,
-      variations: linkedVariations.length,
-      palettes: palettes.length,
-    });
     setLoading(false);
   };
 
@@ -571,21 +553,7 @@ export default function DocumentStaging() {
   }, 0);
   const isProcessed = doc.status === "processed";
 
-  const subNavItems = [
-    { id: "boards", label: "Boards", icon: BoardIcon },
-    { id: "documents", label: "Documents", count: projectCounts.docs, icon: FileText },
-    { id: "styles", label: "Products", count: projectCounts.styles, icon: StylesIcon },
-    { id: "colorways", label: "Colorways", count: projectCounts.colorways, icon: Palette },
-    { id: "variations", label: "Variations", count: projectCounts.variations, icon: Layers },
-    { id: "palettes", label: "Color Palettes", count: projectCounts.palettes, icon: SwatchBook },
-  ];
-
   return (
-    <ItemSubNav
-      items={subNavItems}
-      activeId="documents"
-      onChange={(section) => navigate(`/projects/${id}?tab=${section}`)}
-    >
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${id}?tab=documents`)}>
@@ -716,6 +684,5 @@ export default function DocumentStaging() {
         </div>
       )}
     </div>
-    </ItemSubNav>
   );
 }
