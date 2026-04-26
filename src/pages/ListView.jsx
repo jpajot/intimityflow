@@ -11,6 +11,7 @@ import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
 import ListToolbar from "../components/ListToolbar";
+import ViewsPanel from "../components/ViewsPanel";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
 function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids, projects }) {
@@ -19,6 +20,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+  const [showViews, setShowViews] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -116,13 +118,21 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
         view={view}
         onViewChange={setView}
         moreItems={[
+          { label: "Views", onClick: () => setShowViews(true) },
           { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
         ]}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="styles_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={products} entityNames={["Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+      />
+
+      {showViews && (
+        <ViewsPanel
+          pageKey="styles_list"
+          allColumns={columns}
+          onColumnsChange={setActiveColumns}
+          filterableFields={filterableFields}
+          rows={products}
+          onClose={() => setShowViews(false)}
+        />
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -203,6 +213,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+  const [showViews, setShowViews] = useState(false);
 
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
@@ -327,12 +338,21 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
         searchPlaceholder="Search colorways…"
         view={view}
         onViewChange={setView}
-        moreItems={[]}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="colorways_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={colorways} entityNames={["ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+        moreItems={[
+          { label: "Views", onClick: () => setShowViews(true) },
+        ]}
+      />
+
+      {showViews && (
+        <ViewsPanel
+          pageKey="colorways_list"
+          allColumns={columns}
+          onColumnsChange={setActiveColumns}
+          filterableFields={filterableFields}
+          rows={colorways}
+          onClose={() => setShowViews(false)}
+        />
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -412,6 +432,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
+  const [showViews, setShowViews] = useState(false);
 
   const getColorway = (v) => colorways.find((cw) => cw.id === v.product_color_id);
   const getProduct = (v) => {
@@ -518,12 +539,21 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         searchPlaceholder="Search variations…"
         view={view}
         onViewChange={setView}
-        moreItems={[]}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="more_variations_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore", "ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+        moreItems={[
+          { label: "Views", onClick: () => setShowViews(true) },
+        ]}
+      />
+
+      {showViews && (
+        <ViewsPanel
+          pageKey="more_variations_list"
+          allColumns={columns}
+          onColumnsChange={setActiveColumns}
+          filterableFields={filterableFields}
+          rows={variations}
+          onClose={() => setShowViews(false)}
+        />
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
