@@ -103,8 +103,8 @@ function GalleryCard({ row, activeFields, allFields, thumbSize, renderThumbnail,
             return (
               <div
                 key={fieldId}
-                className={`text-xs truncate select-none ${
-                  isClickable ? "cursor-pointer text-primary hover:underline" : "cursor-default"
+                className={`text-xs select-none min-w-0 ${
+                  isClickable ? "cursor-pointer text-primary hover:underline truncate" : "cursor-default"
                 }`}
                 onClick={() => isClickable && onClickItem?.(row)}
                 onContextMenu={(e) => { e.preventDefault(); onFieldRightClick(e, field); }}
