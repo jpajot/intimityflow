@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, ChevronDown, Pin, PinOff } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, Pin, PinOff, Info } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
 import PresenceIndicator from "../components/PresenceIndicator";
@@ -46,7 +46,7 @@ export default function ProjectDetail() {
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeSection, setActiveSection] = useState("palettes");
+  const [activeSection, setActiveSection] = useState("details");
   const [cwSearch, setCwSearch] = useState("");
   const [cwView, setCwView] = useState("grid");
   const [cwActiveColumns, setCwActiveColumns] = useState(null);
@@ -57,7 +57,6 @@ export default function ProjectDetail() {
   const [file, setFile] = useState(null);
   const [docSearch, setDocSearch] = useState("");
   const [saving, setSaving] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
 
   const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
@@ -78,6 +77,7 @@ export default function ProjectDetail() {
   const autoSaveTimer = useRef(null);
 
   const subNavItems = [
+    { id: "details", label: "Details", icon: Info },
     { id: "boards", label: "Boards", icon: BoardIcon },
     { id: "documents", label: "Documents", count: documents.length, icon: FileText },
     { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
@@ -284,55 +284,46 @@ export default function ProjectDetail() {
         </AlertDialog>
       </div>
 
-      {/* Project Details */}
+      {activeSection === "details" &&
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors">
-          
-          <span className="text-sm font-semibold">Details</span>
-          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${detailsOpen ? "" : "-rotate-90"}`} />
-        </button>
-        {detailsOpen &&
-        <div className="px-5 pb-5 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs">Name</Label>
-                <Input value={project.name || ""} onChange={(e) => updateField("name", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Type</Label>
-                <Select value={project.type || ""} onValueChange={(v) => updateField("type", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
-                  <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Season</Label>
-                <Select value={project.season || "none"} onValueChange={(v) => updateField("season", v === "none" ? "" : v)}>
-                  <SelectTrigger><SelectValue placeholder="Select season…" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Status</Label>
-                <Select value={project.status || "Planning"} onValueChange={(v) => updateField("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
+        <div className="px-5 py-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Name</Label>
+              <Input value={project.name || ""} onChange={(e) => updateField("name", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">Description</Label>
-              <Textarea value={project.description || ""} onChange={(e) => updateField("description", e.target.value)} rows={3} />
+              <Label className="text-xs">Type</Label>
+              <Select value={project.type || ""} onValueChange={(v) => updateField("type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
+                <SelectContent>{PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Season</Label>
+              <Select value={project.season || "none"} onValueChange={(v) => updateField("season", v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Select season…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Status</Label>
+              <Select value={project.status || "Planning"} onValueChange={(v) => updateField("status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
           </div>
-        }
+          <div className="space-y-2">
+            <Label className="text-xs">Description</Label>
+            <Textarea value={project.description || ""} onChange={(e) => updateField("description", e.target.value)} rows={3} />
+          </div>
+        </div>
       </div>
+      }
 
       {activeSection === "boards" && <ProjectBoards projectId={id} />}
 
