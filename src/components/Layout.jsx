@@ -57,7 +57,10 @@ function usePopover() {
       if (isMobile) {
         setStyle({ position: "fixed", bottom: window.innerHeight - rect.top + 8, left: 16, right: 16, zIndex: 9999 });
       } else {
-        setStyle({ position: "fixed", top: rect.top, left: rect.right + 8, zIndex: 9999 });
+        // Clamp top so popover (est. max 320px tall) doesn't overflow viewport bottom
+        const popoverHeight = 320;
+        const top = Math.min(rect.top, window.innerHeight - popoverHeight - 8);
+        setStyle({ position: "fixed", top: Math.max(8, top), left: rect.right + 8, zIndex: 9999 });
       }
     }
     setOpen((v) => !v);
