@@ -82,7 +82,13 @@ export default function Layout() {
   const openDrawer = () => {
     if (drawerBtnRef.current) {
       const rect = drawerBtnRef.current.getBoundingClientRect();
-      setPopoverPos({ top: rect.top, left: rect.right + 8 });
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        // open upward from bottom bar
+        setPopoverPos({ bottom: window.innerHeight - rect.top + 8, left: 16, right: 16, top: "auto" });
+      } else {
+        setPopoverPos({ top: rect.top, left: rect.right + 8, bottom: "auto", right: "auto" });
+      }
     }
     setDrawerOpen((v) => !v);
   };
@@ -185,7 +191,15 @@ export default function Layout() {
           {drawerOpen && createPortal(
             <div
               ref={drawerRef}
-              style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 9999 }}
+              style={{
+                position: "fixed",
+                top: popoverPos.top !== "auto" ? popoverPos.top : undefined,
+                bottom: popoverPos.bottom !== undefined && popoverPos.bottom !== "auto" ? popoverPos.bottom : undefined,
+                left: popoverPos.right !== undefined && popoverPos.right !== "auto" ? popoverPos.left : popoverPos.left,
+                right: popoverPos.right !== undefined && popoverPos.right !== "auto" ? popoverPos.right : undefined,
+                zIndex: 9999,
+                width: popoverPos.right !== undefined && popoverPos.right !== "auto" ? `calc(100vw - ${popoverPos.left * 2}px)` : undefined,
+              }}
               className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]"
             >
               {DRAWER_ITEMS.map((item) => {
@@ -259,10 +273,26 @@ export default function Layout() {
 
         {/* iOS-style bottom tab bar — mobile & tablet only */}
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border">
-          <div className="flex items-stretch h-[60px] safe-b">
-            {DRAWER_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = isDrawerItemActive(item, location.pathname);
+          <div className="flex items-stretch h-[60px]">
+
+            {/* Drawer button */}
+            <button
+              ref={drawerBtnRef}
+              type="button"
+              onClick={openDrawer}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                activeDrawerItem ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <DrawerIcon className="w-5 h-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">
+                {activeDrawerItem?.label ?? "Menu"}
+              </span>
+            </button>
+
+            {/* Pinned items */}
+            {pinnedItems.map((item) => {
+              const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
               return (
                 <Link
                   key={item.path}
@@ -271,13 +301,12 @@ export default function Layout() {
                     isActive ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">
-                    {item.label}
-                  </span>
+                  <Pin className="w-5 h-5 shrink-0" />
+                  <span className="text-[10px] font-medium leading-none truncate max-w-full px-0.5">{item.label}</span>
                 </Link>
               );
             })}
+
             {/* Settings tab */}
             <Link
               to="/config"
