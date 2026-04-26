@@ -94,9 +94,9 @@ export default function ProjectDetail() {
     if (activeSection === "dc_per_cot") {
       setOptions({
         items: [
-          { label: "Generate DC per CoT", icon: FileText, onClick: () => {} },
-          { label: "Export", icon: Download, onClick: () => {} },
-          { label: "Import", icon: UploadIcon, onClick: () => {} },
+          { label: "Generate DC per CoT", icon: FileText, onClick: () => window.dcPerCOTGenerate?.() },
+          { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
+          { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
         ],
       });
     } else {
@@ -430,7 +430,7 @@ export default function ProjectDetail() {
       <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} />
       }
       {activeSection === "dc_per_cot" &&
-      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} />
+      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => { window.dcPerCOTGenerate = handler; }} onExportRef={(handler) => { window.dcPerCOTExport = handler; }} onImportRef={(handler) => { window.dcPerCOTImport = handler; }} />
       }
 
       {/* Upload Dialog */}

@@ -42,7 +42,7 @@ function NumberCell({ value, onSave }) {
   );
 }
 
-export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [] }) {
+export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -57,6 +57,15 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [tableLightbox, setTableLightbox] = useState(null);
+
+  useEffect(() => {
+    onGenerateRef?.(handleGenerate);
+    onExportRef?.(handleExport);
+    onImportRef?.(() => {
+      const fileInput = document.querySelector('[data-dc-import-input]');
+      fileInput?.click();
+    });
+  }, []);
 
   useEffect(() => {
     if (!projectId) return;
@@ -512,16 +521,13 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
               Export {selectedForExport.size > 0 ? `(${selectedForExport.size})` : ""}
             </Button>
 
-            <label className="flex items-center gap-1.5 px-3 h-8 text-xs border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">
-              <FileDown className="w-3.5 h-3.5" />
-              Import .xlsx
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                className="hidden"
-              />
-            </label>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              className="hidden"
+              data-dc-import-input
+            />
 
             {importFile && (
               <Button
