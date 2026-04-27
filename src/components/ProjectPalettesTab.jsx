@@ -146,8 +146,7 @@ export default function ProjectPalettesTab({
     const techFiltered = techColors.filter((t) => {
       if (linkedIds.has(t.id)) return false;
       if (!q) return true;
-      const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
-      return t.code?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q) || linkedComm?.code?.toLowerCase().includes(q);
+      return t.code?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q);
     });
     const commFiltered = commColors.filter((c) => !linkedIds.has(c.id) && (!q || c.code?.toLowerCase().includes(q) || c.color_name?.toLowerCase().includes(q)));
     return { techFiltered, commFiltered };
