@@ -179,7 +179,7 @@ export default function ProjectDetail() {
     } else if (activeSection === "variations") {
       setOptions({
         items: [
-        { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
+        { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")), className: "text-primary hover:bg-primary/10" },
         { divider: true },
         { label: variationsViewMode === "grid" ? "View: List" : "View: Grid", icon: variationsViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setVariationsViewMode((prev) => {
