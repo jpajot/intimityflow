@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2 } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2, GripVertical, ShieldCheck } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Badge } from "@/components/ui/badge";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import { usePageOptions } from "@/lib/PageOptionsContext";
@@ -54,7 +57,15 @@ export default function ColorPalettes() {
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewEditor, setShowViewEditor] = useState(false);
   const [editingView, setEditingView] = useState(null);
-  const [viewForm, setViewForm] = useState({ name: "", fields: ["color", "code", "name", "hex"] });
+  const [editorMode, setEditorMode] = useState("list"); // list, new, edit
+  const [editorTab, setEditorTab] = useState("columns");
+  const [viewFormName, setViewFormName] = useState("");
+  const [viewFormColumns, setViewFormColumns] = useState([]);
+  const [viewFormFilters, setViewFormFilters] = useState({ operator: "and", filters: [] });
+  const [viewFormRoles, setViewFormRoles] = useState([]);
+  const [roleInput, setRoleInput] = useState("");
+  const [columnSearch, setColumnSearch] = useState("");
+  const DEFAULT_FILTERS = { operator: "and", filters: [] };
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -89,7 +100,7 @@ export default function ColorPalettes() {
               {techViews.map((v) => (
                 <div key={v.id} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border hover:bg-muted">
                   <button onClick={() => { setActiveViewId(v.id); setShowViewsMenu(false); }} className="flex-1 text-left text-sm">{v.name}</button>
-                  <button onClick={() => { setEditingView(v); setViewForm(v); setShowViewEditor(true); }} className="text-xs text-muted-foreground hover:text-foreground">✏️</button>
+                  <button onClick={() => { setEditingView(v); setViewFormName(v.name); setViewFormColumns(v.column_ids || []); setViewFormFilters(v.filters_config || DEFAULT_FILTERS); setViewFormRoles(v.allowed_roles || []); setEditorTab("columns"); setEditorMode("edit"); setShowViewEditor(true); }} className="text-xs text-muted-foreground hover:text-foreground">✏️</button>
                 </div>
               ))}
             </div>
@@ -111,7 +122,7 @@ export default function ColorPalettes() {
               {commViews.map((v) => (
                 <div key={v.id} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border hover:bg-muted">
                   <button onClick={() => { setActiveViewId(v.id); setShowViewsMenu(false); }} className="flex-1 text-left text-sm">{v.name}</button>
-                  <button onClick={() => { setEditingView(v); setViewForm(v); setShowViewEditor(true); }} className="text-xs text-muted-foreground hover:text-foreground">✏️</button>
+                  <button onClick={() => { setEditingView(v); setViewFormName(v.name); setViewFormColumns(v.column_ids || []); setViewFormFilters(v.filters_config || DEFAULT_FILTERS); setViewFormRoles(v.allowed_roles || []); setEditorTab("columns"); setEditorMode("edit"); setShowViewEditor(true); }} className="text-xs text-muted-foreground hover:text-foreground">✏️</button>
                 </div>
               ))}
             </div>
@@ -814,70 +825,134 @@ export default function ColorPalettes() {
         </DialogContent>
       </Dialog>
 
-      {/* View Editor Dialog */}
-      <Dialog open={showViewEditor} onOpenChange={setShowViewEditor}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editingView ? `Edit: ${editingView.name}` : "New View"}</DialogTitle></DialogHeader>
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            setSaving(true);
-            const newView = { id: editingView?.id || Date.now().toString(), ...viewForm };
-            if (activeSection === "technical") {
-              if (editingView) {
-                setTechViews(techViews.map(v => v.id === newView.id ? newView : v));
-              } else {
-                setTechViews([...techViews, newView]);
-              }
-            } else {
-              if (editingView) {
-                setCommViews(commViews.map(v => v.id === newView.id ? newView : v));
-              } else {
-                setCommViews([...commViews, newView]);
-              }
-            }
-            setShowViewEditor(false);
-            setActiveViewId(newView.id);
-            setShowViewsMenu(false);
-            setSaving(false);
-          }} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">View Name</Label>
-              <Input value={viewForm.name} onChange={(e) => setViewForm({ ...viewForm, name: e.target.value })} placeholder="e.g. Sales View" required />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Columns</Label>
-              <div className="border border-border rounded-lg p-2 space-y-2 max-h-40 overflow-y-auto">
-                {activeSection === "technical" && ["color", "code", "name", "hex"].map(field => (
-                  <label key={field} className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input type="checkbox" checked={viewForm.fields.includes(field)} onChange={(e) => {
-                      if (e.target.checked) {
-                        setViewForm({ ...viewForm, fields: [...viewForm.fields, field] });
-                      } else {
-                        setViewForm({ ...viewForm, fields: viewForm.fields.filter(f => f !== field) });
-                      }
-                    }} />
-                    {field.charAt(0).toUpperCase() + field.slice(1)}
-                  </label>
-                ))}
-                {activeSection === "commercial" && ["color", "code", "name", "type"].map(field => (
-                  <label key={field} className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input type="checkbox" checked={viewForm.fields.includes(field)} onChange={(e) => {
-                      if (e.target.checked) {
-                        setViewForm({ ...viewForm, fields: [...viewForm.fields, field] });
-                      } else {
-                        setViewForm({ ...viewForm, fields: viewForm.fields.filter(f => f !== field) });
-                      }
-                    }} />
-                    {field.charAt(0).toUpperCase() + field.slice(1)}
-                  </label>
-                ))}
+      {/* View Editor Dialog - Full Featured */}
+      <Dialog open={showViewEditor} onOpenChange={(o) => { if (!o) { setShowViewEditor(false); setEditorMode("list"); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editorMode === "list" ? "Views" : editorMode === "new" ? "New View" : `Edit: ${editingView?.name}`}</DialogTitle>
+          </DialogHeader>
+
+          {editorMode === "list" && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-2.5 rounded-lg border border-border bg-muted/30">
+                <span className="flex-1 text-sm font-medium">Default</span>
               </div>
+              {(activeSection === "technical" ? techViews : commViews).map((v) => (
+                <div key={v.id} className="flex items-center gap-2 p-2.5 rounded-lg border border-border">
+                  <span className="flex-1 text-sm font-medium">{v.name}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingView(v); setViewFormName(v.name); setViewFormColumns(v.column_ids || []); setViewFormFilters(v.filters_config || DEFAULT_FILTERS); setViewFormRoles(v.allowed_roles || []); setEditorTab("columns"); setEditorMode("edit"); }}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={async () => { setSaving(true); if (activeSection === "technical") { setTechViews(techViews.filter(vv => vv.id !== v.id)); } else { setCommViews(commViews.filter(vv => vv.id !== v.id)); } if (activeViewId === v.id) setActiveViewId("default"); setSaving(false); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                </div>
+              ))}
+              {(activeSection === "technical" ? techViews : commViews).length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No custom views yet</p>}
+              <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(activeSection === "technical" ? ["color", "code", "name", "hex"] : ["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); }} className="gap-2 w-full" variant="outline"><Plus className="w-4 h-4" /> New View</Button>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowViewEditor(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving || !viewForm.name.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save</Button>
-            </DialogFooter>
-          </form>
+          )}
+
+          {(editorMode === "new" || editorMode === "edit") && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">View Name</Label>
+                <Input value={viewFormName} onChange={(e) => setViewFormName(e.target.value)} placeholder="e.g. Sales View" autoFocus />
+              </div>
+
+              <Tabs value={editorTab} onValueChange={setEditorTab}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="columns" className="flex-1 text-xs">Columns</TabsTrigger>
+                  <TabsTrigger value="filters" className="flex-1 text-xs">Filters</TabsTrigger>
+                  <TabsTrigger value="roles" className="flex-1 text-xs">Roles</TabsTrigger>
+                </TabsList>
+
+                {/* COLUMNS */}
+                <TabsContent value="columns" className="mt-3">
+                  <div className="mb-2">
+                    <Input value={columnSearch} onChange={(e) => setColumnSearch(e.target.value)} placeholder="Search columns…" className="h-7 text-xs" />
+                  </div>
+                  {(() => {
+                    const allFields = activeSection === "technical" ? ["color", "code", "name", "hex"] : ["color", "code", "name", "type"];
+                    const q = columnSearch.toLowerCase();
+                    const checked = viewFormColumns.map(id => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
+                    const unchecked = allFields.filter(f => !viewFormColumns.includes(f)).map(id => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
+                    const filteredChecked = q ? checked.filter(c => c.label.toLowerCase().includes(q)) : checked;
+                    const filteredUnchecked = q ? unchecked.filter(c => c.label.toLowerCase().includes(q)) : unchecked;
+                    const handleDragEnd = (result) => {
+                      if (!result.destination) return;
+                      const newIds = [...viewFormColumns];
+                      const [removed] = newIds.splice(result.source.index, 1);
+                      newIds.splice(result.destination.index, 0, removed);
+                      setViewFormColumns(newIds);
+                    };
+                    return (
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                          <Droppable droppableId="columns-checked">
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.droppableProps} className="max-h-44 overflow-y-auto divide-y divide-border">
+                                {filteredChecked.map((col, index) => (
+                                  <Draggable key={col.id} draggableId={col.id} index={index}>
+                                    {(drag, snapshot) => (
+                                      <div ref={drag.innerRef} {...drag.draggableProps} className={`flex items-center gap-2.5 px-3 py-2 bg-card ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}>
+                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"><GripVertical className="w-3.5 h-3.5" /></div>
+                                        <Checkbox checked={true} onCheckedChange={() => setViewFormColumns(viewFormColumns.filter(c => c !== col.id))} id={`col-${col.id}`} />
+                                        <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+                        {filteredUnchecked.length > 0 && (
+                          <div className="border-t border-border max-h-24 overflow-y-auto divide-y divide-border">
+                            {filteredUnchecked.map((col) => (
+                              <div key={col.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
+                                <div className="w-3.5 h-3.5 shrink-0" />
+                                <Checkbox checked={false} onCheckedChange={() => setViewFormColumns([...viewFormColumns, col.id])} id={`col-${col.id}`} />
+                                <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </TabsContent>
+
+                {/* FILTERS */}
+                <TabsContent value="filters" className="mt-3 space-y-3">
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {viewFormFilters.filters.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No filters yet. Add one below.</p>}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setViewFormFilters((f) => ({ ...f, filters: [...f.filters, { field: "", operator: "and", values: [] }] }))} className="gap-1.5 text-xs w-full"><Plus className="w-3.5 h-3.5" /> Add Filter</Button>
+                </TabsContent>
+
+                {/* ROLES */}
+                <TabsContent value="roles" className="mt-3 space-y-3">
+                  <p className="text-xs text-muted-foreground">Restrict this view to specific user roles. Leave empty to allow all roles.</p>
+                  <div className="flex gap-2">
+                    <Input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (roleInput.trim() && !viewFormRoles.includes(roleInput.trim())) { setViewFormRoles([...viewFormRoles, roleInput.trim()]); setRoleInput(""); } } }} placeholder="e.g. admin, manager…" className="h-8 text-xs flex-1" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => { if (roleInput.trim() && !viewFormRoles.includes(roleInput.trim())) { setViewFormRoles([...viewFormRoles, roleInput.trim()]); setRoleInput(""); } }} className="h-8 text-xs gap-1"><Plus className="w-3.5 h-3.5" /> Add</Button>
+                  </div>
+                  {viewFormRoles.length === 0 ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground border border-dashed border-border rounded-lg p-3"><ShieldCheck className="w-4 h-4" /> Visible to all roles</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {viewFormRoles.map((r) => (
+                        <div key={r} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full border border-primary/20"><ShieldCheck className="w-3 h-3" />{r}<button type="button" onClick={() => setViewFormRoles(viewFormRoles.filter(rr => rr !== r))} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button></div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditorMode("list")}>Back</Button>
+                <Button onClick={async () => { if (!viewFormName.trim()) return; setSaving(true); const newView = { id: editingView?.id || `view_${Date.now()}`, name: viewFormName, column_ids: viewFormColumns, filters_config: viewFormFilters, allowed_roles: viewFormRoles }; if (activeSection === "technical") { if (editingView) { setTechViews(techViews.map(v => v.id === newView.id ? newView : v)); } else { setTechViews([...techViews, newView]); } } else { if (editingView) { setCommViews(commViews.map(v => v.id === newView.id ? newView : v)); } else { setCommViews([...commViews, newView]); } } setShowViewEditor(false); setActiveViewId(newView.id); setShowViewsMenu(false); setSaving(false); }} disabled={saving || !viewFormName.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editorMode === "new" ? "Create & Apply" : "Save"}</Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
