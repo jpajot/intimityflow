@@ -597,11 +597,11 @@ export default function ColorPalettes() {
       )}
 
       {activeSection === "technical" && (
-        <ColorLibrary hideTitle colorType="technical" />
+        <ColorLibrary hideTitle />
       )}
 
       {activeSection === "commercial" && (
-        <ColorLibrary hideTitle colorType="commercial" />
+        <ColorLibrary hideTitle />
       )}
 
       {/* Link Commercial Color dialog */}
