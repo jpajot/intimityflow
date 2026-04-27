@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
+import ViewSelector from "@/components/ViewSelector";
 
 export default function ColorPalettes() {
   const { setOptions } = usePageOptions();
@@ -66,24 +68,22 @@ export default function ColorPalettes() {
       });
     } else if (activeSection === "technical") {
       setOptions({
+        customContent: <ViewSelector pageKey="technical_colors" allColumns={[]} onColumnsChange={() => {}} />,
         items: [
-          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { divider: true },
-          { label: techView === "gallery" ? "View: Table" : "View: Gallery", icon: techView === "gallery" ? List : LayoutGrid, onClick: () => setTechView(techView === "table" ? "gallery" : "table") }
+          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" }
         ]
       });
     } else if (activeSection === "commercial") {
       setOptions({
+        customContent: <ViewSelector pageKey="commercial_colors" allColumns={[]} onColumnsChange={() => {}} />,
         items: [
-          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { divider: true },
-          { label: commView === "gallery" ? "View: Table" : "View: Gallery", icon: commView === "gallery" ? List : LayoutGrid, onClick: () => setCommView(commView === "table" ? "gallery" : "table") }
+          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" }
         ]
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, techView, commView, setOptions]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions]);
 
   useEffect(() => {loadData();}, []);
 
