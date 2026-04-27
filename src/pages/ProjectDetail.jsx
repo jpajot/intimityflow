@@ -93,15 +93,15 @@ export default function ProjectDetail() {
   const autoSaveTimer = useRef(null);
 
   const subNavItems = [
-    { id: "details", label: "Details", icon: Info },
-    { id: "boards", label: "Boards", icon: BoardIcon },
-    { id: "documents", label: "Documents", count: documents.length, icon: FileText },
-    { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
-    { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
-    { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
-    { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
-    { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
-  ];
+  { id: "details", label: "Details", icon: Info },
+  { id: "boards", label: "Boards", icon: BoardIcon },
+  { id: "documents", label: "Documents", count: documents.length, icon: FileText },
+  { id: "styles", label: "Products", count: linkedStyles.length, icon: StylesIcon },
+  { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
+  { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
+  { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
+  { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }];
+
   useRegisterSubNav(subNavItems, activeSection, setActiveSection, project?.name);
 
   const { setOptions } = usePageOptions();
@@ -110,120 +110,120 @@ export default function ProjectDetail() {
     if (activeSection === "styles") {
       setOptions({
         items: [
-          { label: stylesViewMode === "list" ? "View: Grid" : "View: List", icon: stylesViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: stylesViewMode === "list" ? "View: Grid" : "View: List", icon: stylesViewMode === "list" ? LayoutGrid : List, onClick: () => {
             setStylesViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               stylesViewRef.current?.setView(next);
               return next;
             });
-          }},
-          { divider: true },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true },
-        ],
-        customContent: showStylesViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode} allFields={[
-            { id: "image", label: "Image" },
-            { id: "code", label: "Code" },
-            { id: "name", label: "Name" },
-            { id: "type", label: "Type" },
-            { id: "sub_type", label: "Sub-type" },
-            { id: "category", label: "Category" },
-            { id: "sub_category", label: "Sub-Category" },
-            { id: "customer_need", label: "Customer Need" },
-            { id: "size_grid", label: "Size Grid" },
-            { id: "creation_project", label: "Creation Project" },
-            { id: "linked_projects", label: "Linked Projects" },
-            { id: "created_by", label: "Created By" },
-          ]} />
-        ) : null,
+          } },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true }],
+
+        customContent: showStylesViewMenu ?
+        <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode} allFields={[
+        { id: "image", label: "Image" },
+        { id: "code", label: "Code" },
+        { id: "name", label: "Name" },
+        { id: "type", label: "Type" },
+        { id: "sub_type", label: "Sub-type" },
+        { id: "category", label: "Category" },
+        { id: "sub_category", label: "Sub-Category" },
+        { id: "customer_need", label: "Customer Need" },
+        { id: "size_grid", label: "Size Grid" },
+        { id: "creation_project", label: "Creation Project" },
+        { id: "linked_projects", label: "Linked Projects" },
+        { id: "created_by", label: "Created By" }]
+        } /> :
+        null
       });
     } else if (activeSection === "colorways") {
       setOptions({
         items: [
-          { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => {
             setColorwaysViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               colorwaysViewRef.current?.setView(next);
               return next;
             });
-          }},
-          { divider: true },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
-        ],
-        customContent: showColorwaysViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode} allFields={[
-            { id: "style_image", label: "Style" },
-            { id: "style_name", label: "Style Name" },
-            { id: "cw_image", label: "Colorway" },
-            { id: "style_sub_type", label: "Style: Sub-type" },
-            { id: "color_name", label: "Color Name" },
-            { id: "comm_code", label: "Commercial Code" },
-            { id: "comm_color_status", label: "Commercial Color" },
-            { id: "tech_code", label: "Technical Code" },
-            { id: "link_forecasted_qty", label: "Fcst. Qty" },
-            { id: "link_channels", label: "Channels of Trade" },
-            { id: "link_status", label: "Project Status" },
-            { id: "link_notes", label: "Project Notes" },
-          ]} />
-        ) : null,
+          } },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true }],
+
+        customContent: showColorwaysViewMenu ?
+        <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode} allFields={[
+        { id: "style_image", label: "Style" },
+        { id: "style_name", label: "Style Name" },
+        { id: "cw_image", label: "Colorway" },
+        { id: "style_sub_type", label: "Style: Sub-type" },
+        { id: "color_name", label: "Color Name" },
+        { id: "comm_code", label: "Commercial Code" },
+        { id: "comm_color_status", label: "Commercial Color" },
+        { id: "tech_code", label: "Technical Code" },
+        { id: "link_forecasted_qty", label: "Fcst. Qty" },
+        { id: "link_channels", label: "Channels of Trade" },
+        { id: "link_status", label: "Project Status" },
+        { id: "link_notes", label: "Project Notes" }]
+        } /> :
+        null
       });
     } else if (activeSection === "variations") {
       setOptions({
         items: [
-          { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
-          { divider: true },
-          { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
+        { divider: true },
+        { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => {
             setVariationsViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               variationsViewRef.current?.setView(next);
               return next;
             });
-          }},
-          { divider: true },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
-        ],
-        customContent: showVariationsViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode} allFields={[
-            { id: "style_image", label: "Style Image" },
-            { id: "style_name", label: "Style Name" },
-            { id: "cw_image", label: "Colorway" },
-            { id: "style_sub_type", label: "Style: Sub-type" },
-            { id: "cw_color_name", label: "Colorway Name" },
-            { id: "cw_code", label: "Colorway Code" },
-            { id: "sequence", label: "Seq." },
-            { id: "name", label: "Variation Name" },
-            { id: "pack_code", label: "Pack Code" },
-            { id: "variant", label: "Variant" },
-            { id: "creation_project", label: "Creation Project" },
-            { id: "linked_projects", label: "Linked Projects" },
-            { id: "link_forecasted_qty", label: "Fcst. Qty" },
-            { id: "link_channels", label: "Channels of Trade" },
-            { id: "link_dist_channels", label: "Distribution Channels" },
-            { id: "link_status", label: "Project Status" },
-            { id: "link_notes", label: "Project Notes" },
-          ]} />
-        ) : null,
+          } },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true }],
+
+        customContent: showVariationsViewMenu ?
+        <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode} allFields={[
+        { id: "style_image", label: "Style Image" },
+        { id: "style_name", label: "Style Name" },
+        { id: "cw_image", label: "Colorway" },
+        { id: "style_sub_type", label: "Style: Sub-type" },
+        { id: "cw_color_name", label: "Colorway Name" },
+        { id: "cw_code", label: "Colorway Code" },
+        { id: "sequence", label: "Seq." },
+        { id: "name", label: "Variation Name" },
+        { id: "pack_code", label: "Pack Code" },
+        { id: "variant", label: "Variant" },
+        { id: "creation_project", label: "Creation Project" },
+        { id: "linked_projects", label: "Linked Projects" },
+        { id: "link_forecasted_qty", label: "Fcst. Qty" },
+        { id: "link_channels", label: "Channels of Trade" },
+        { id: "link_dist_channels", label: "Distribution Channels" },
+        { id: "link_status", label: "Project Status" },
+        { id: "link_notes", label: "Project Notes" }]
+        } /> :
+        null
       });
     } else if (activeSection === "dc_per_cot") {
       setOptions({
         items: [
-          { label: "Generate DC per CoT", icon: Zap, onClick: () => window.dcPerCOTGenerate?.() },
-          { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
-          { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
-          { divider: true },
-          { label: dcViewMode === "list" ? "View: Grid" : "View: List", icon: dcViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: "Generate DC per CoT", icon: Zap, onClick: () => window.dcPerCOTGenerate?.() },
+        { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
+        { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
+        { divider: true },
+        { label: dcViewMode === "list" ? "View: Grid" : "View: List", icon: dcViewMode === "list" ? LayoutGrid : List, onClick: () => {
             setDCViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               window.dcPerCOTView?.setView(next);
               return next;
             });
-          }},
-          { divider: true },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu(!showDCViewMenu), custom: true },
-        ],
-        customContent: showDCViewMenu ? (
-          <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={dcViewMode} />
-        ) : null,
+          } },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu(!showDCViewMenu), custom: true }],
+
+        customContent: showDCViewMenu ?
+        <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={dcViewMode} /> :
+        null
       });
     } else {
       setOptions({ items: [] });
@@ -245,11 +245,11 @@ export default function ProjectDetail() {
 
     // Batch 1: project-specific data (lightweight)
     const [proj, pals, docs, lovTypes] = await Promise.all([
-      base44.entities.Project.filter({ id }),
-      base44.entities.ColorPalette.filter({ project_id: id }),
-      base44.entities.UploadedDocument.filter({ project_id: id }),
-      base44.entities.TypeOfLOV.filter({ code: "DocumentType" }),
-    ]);
+    base44.entities.Project.filter({ id }),
+    base44.entities.ColorPalette.filter({ project_id: id }),
+    base44.entities.UploadedDocument.filter({ project_id: id }),
+    base44.entities.TypeOfLOV.filter({ code: "DocumentType" })]
+    );
     setProject(proj[0] || null);
     setPalettes(pals);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
@@ -258,12 +258,12 @@ export default function ProjectDetail() {
 
     // Batch 2: reference data + doc types
     const [projs, sgs, docValues] = await Promise.all([
-      base44.entities.Project.list("name", 500),
-      base44.entities.SizeGrid.list("name", 200),
-      lovTypes.length > 0
-        ? base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id })
-        : Promise.resolve([]),
-    ]);
+    base44.entities.Project.list("name", 500),
+    base44.entities.SizeGrid.list("name", 200),
+    lovTypes.length > 0 ?
+    base44.entities.ListOfValues.filter({ type_of_lov_id: lovTypes[0].id }) :
+    Promise.resolve([])]
+    );
     setAllProjects(projs);
     setSizeGrids(sgs);
     setDocTypes(docValues.map((v) => v.name));
@@ -272,10 +272,10 @@ export default function ProjectDetail() {
 
     // Batch 3: color library data
     const [tc, cc, palCols] = await Promise.all([
-      base44.entities.TechnicalColor.list("code", 2000),
-      base44.entities.CommercialColor.list("code", 2000),
-      base44.entities.ColorPaletteColor.list("-created_date", 2000),
-    ]);
+    base44.entities.TechnicalColor.list("code", 2000),
+    base44.entities.CommercialColor.list("code", 2000),
+    base44.entities.ColorPaletteColor.list("-created_date", 2000)]
+    );
     setTechColors(tc);
     setCommColors(cc);
     setPaletteColors(palCols);
@@ -284,10 +284,10 @@ export default function ProjectDetail() {
 
     // Batch 4: product/colorway data
     const [allCws, allProducts, allVars] = await Promise.all([
-      base44.entities.ProductColor.list("-created_date", 5000),
-      base44.entities.Product.list("-created_date", 2000),
-      base44.entities.ProductColorAndMore.list("-created_date", 5000),
-    ]);
+    base44.entities.ProductColor.list("-created_date", 5000),
+    base44.entities.Product.list("-created_date", 2000),
+    base44.entities.ProductColorAndMore.list("-created_date", 5000)]
+    );
     const linked = allCws.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
     setAllColorways(allCws);
@@ -401,7 +401,7 @@ export default function ProjectDetail() {
   documents;
 
   return (
-    <div className="space-y-4">
+    <div className="px-2 py-2 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate("/projects")}>
@@ -482,18 +482,18 @@ export default function ProjectDetail() {
       {activeSection === "boards" && <ProjectBoards projectId={id} />}
 
       {activeSection === "palettes" &&
-        <ProjectPalettesTab
-          projectId={id}
-          projectName={project.name}
-          palettes={palettes}
-          setPalettes={setPalettes}
-          paletteColors={paletteColors}
-          setPaletteColors={setPaletteColors}
-          techColors={techColors}
-          setTechColors={setTechColors}
-          commColors={commColors}
-          setCommColors={setCommColors}
-        />
+      <ProjectPalettesTab
+        projectId={id}
+        projectName={project.name}
+        palettes={palettes}
+        setPalettes={setPalettes}
+        paletteColors={paletteColors}
+        setPaletteColors={setPaletteColors}
+        techColors={techColors}
+        setTechColors={setTechColors}
+        commColors={commColors}
+        setCommColors={setCommColors} />
+
       }
 
       {activeSection === "documents" &&
@@ -547,20 +547,20 @@ export default function ProjectDetail() {
         projectId={id}
         allColorways={allColorways}
         onLinked={loadData}
-        onViewRef={(state) => { colorwaysViewRef.current = state; }}
+        onViewRef={(state) => {colorwaysViewRef.current = state;}}
         activeViewId={colorwaysActiveViewId}
-        onSelectView={setColorwaysActiveViewId}
-      />
+        onSelectView={setColorwaysActiveViewId} />
+
       }
 
       {activeSection === "styles" &&
-      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { stylesViewRef.current = state; }} activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} />
+      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {stylesViewRef.current = state;}} activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} />
       }
       {activeSection === "variations" &&
-      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => { variationsViewRef.current = state; }} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} />
+      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {variationsViewRef.current = state;}} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} />
       }
       {activeSection === "dc_per_cot" &&
-      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => { window.dcPerCOTGenerate = handler; }} onExportRef={(handler) => { window.dcPerCOTExport = handler; }} onImportRef={(handler) => { window.dcPerCOTImport = handler; }} onViewRef={(viewState) => { window.dcPerCOTView = viewState; }} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} />
+      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => {window.dcPerCOTGenerate = handler;}} onExportRef={(handler) => {window.dcPerCOTExport = handler;}} onImportRef={(handler) => {window.dcPerCOTImport = handler;}} onViewRef={(viewState) => {window.dcPerCOTView = viewState;}} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} />
       }
 
       {/* Upload Dialog */}
