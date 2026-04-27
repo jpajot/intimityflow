@@ -15,7 +15,6 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
-import ColorPalettesViewsMenu from "../components/ColorPalettesViewsMenu";
 
 
 export default function ColorPalettes() {
@@ -50,21 +49,7 @@ export default function ColorPalettes() {
   const [techView, setTechView] = useState("table");
   const [commView, setCommView] = useState("table");
   const [commSearch, setCommSearch] = useState("");
-  const [visibleTechColumns, setVisibleTechColumns] = useState(null);
-  const [visibleCommColumns, setVisibleCommColumns] = useState(null);
-  const [activeViewId, setActiveViewId] = useState("default");
-  const [showViewEditor, setShowViewEditor] = useState(false);
-  const [editingView, setEditingView] = useState(null);
-  const [editorMode, setEditorMode] = useState("list"); // list, new, edit
-  const [editorTab, setEditorTab] = useState("columns");
-  const [viewFormName, setViewFormName] = useState("");
-  const [viewFormColumns, setViewFormColumns] = useState([]);
-  const [viewFormFilters, setViewFormFilters] = useState({ operator: "and", filters: [] });
-  const [viewFormRoles, setViewFormRoles] = useState([]);
-  const [roleInput, setRoleInput] = useState("");
-  const [columnSearch, setColumnSearch] = useState("");
-  const [viewFormFixedColumnIds, setViewFormFixedColumnIds] = useState([]);
-  const DEFAULT_FILTERS = { operator: "and", filters: [] };
+
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -88,70 +73,14 @@ export default function ColorPalettes() {
     } else if (activeSection === "technical") {
       setOptions({
         items: [
-          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewEditor(true) }
-        ],
-        customContent: (
-          <ColorPalettesViewsMenu
-            activeSection={activeSection}
-            activeViewId={activeViewId}
-            onViewSelect={setActiveViewId}
-            onManageClick={(view) => {
-              if (view?.id) {
-                setEditingView(view);
-                setViewFormName(view.name);
-                setViewFormColumns(view.column_ids || []);
-                setViewFormFilters(view.filters_config || DEFAULT_FILTERS);
-                setViewFormRoles(view.allowed_roles || []);
-                setViewFormFixedColumnIds(view.fixed_column_ids || []);
-              } else {
-                setEditingView(null);
-                setViewFormName("");
-                setViewFormColumns(["color", "code", "name", "hex"]);
-                setViewFormFilters(DEFAULT_FILTERS);
-                setViewFormRoles([]);
-                setViewFormFixedColumnIds([]);
-              }
-              setEditorTab("columns");
-              setEditorMode(view?.id ? "edit" : "new");
-              setShowViewEditor(true);
-            }}
-          />
-        )
+          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" }
+        ]
       });
     } else if (activeSection === "commercial") {
       setOptions({
         items: [
-          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewEditor(true) }
-        ],
-        customContent: (
-          <ColorPalettesViewsMenu
-            activeSection={activeSection}
-            activeViewId={activeViewId}
-            onViewSelect={setActiveViewId}
-            onManageClick={(view) => {
-              if (view?.id) {
-                setEditingView(view);
-                setViewFormName(view.name);
-                setViewFormColumns(view.column_ids || []);
-                setViewFormFilters(view.filters_config || DEFAULT_FILTERS);
-                setViewFormRoles(view.allowed_roles || []);
-                setViewFormFixedColumnIds(view.fixed_column_ids || []);
-              } else {
-                setEditingView(null);
-                setViewFormName("");
-                setViewFormColumns(["color", "code", "name", "type"]);
-                setViewFormFilters(DEFAULT_FILTERS);
-                setViewFormRoles([]);
-                setViewFormFixedColumnIds([]);
-              }
-              setEditorTab("columns");
-              setEditorMode(view?.id ? "edit" : "new");
-              setShowViewEditor(true);
-            }}
-          />
-        )
+          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" }
+        ]
       });
     } else {
       setOptions({ items: [] });
@@ -160,31 +89,7 @@ export default function ColorPalettes() {
 
   useEffect(() => {loadData();}, []);
 
-  useEffect(() => {
-    const applyView = async () => {
-      if (activeViewId === "default") {
-        setVisibleTechColumns(null);
-        setVisibleCommColumns(null);
-        return;
-      }
-      try {
-        const pageKey = activeSection === "technical" ? "technical_colors" : "commercial_colors";
-        const views = await base44.entities.ListViewConfig.filter({ page_key: pageKey });
-        const selectedView = views.find((v) => v.id === activeViewId);
-        if (selectedView && selectedView.column_ids) {
-          const visibleCols = selectedView.column_ids.map((id) => ({
-            id,
-            label: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-          }));
-          if (activeSection === "technical") setVisibleTechColumns(visibleCols);
-          else setVisibleCommColumns(visibleCols);
-        }
-      } catch (err) {
-        console.error("Error loading view:", err);
-      }
-    };
-    applyView();
-  }, [activeViewId, activeSection]);
+
 
 
 
@@ -714,20 +619,28 @@ export default function ColorPalettes() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                     {!visibleTechColumns || visibleTechColumns.some((c) => c.id === "color") ? <th className="px-4 py-2 text-left text-xs font-medium">Color</th> : null}
-                     {!visibleTechColumns || visibleTechColumns.some((c) => c.id === "code") ? <th className="px-4 py-2 text-left text-xs font-medium">Code</th> : null}
-                     {!visibleTechColumns || visibleTechColumns.some((c) => c.id === "name") ? <th className="px-4 py-2 text-left text-xs font-medium">Name</th> : null}
-                     {!visibleTechColumns || visibleTechColumns.some((c) => c.id === "hex") ? <th className="px-4 py-2 text-left text-xs font-medium">Hex</th> : null}
+                     <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Hex</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">RGB</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">CMYK</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Color Group</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Sub-Group</th>
                      <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
                    </tr>
                 </thead>
                 <tbody>
                   {techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase())).map(c => (
                     <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                       {!visibleTechColumns || visibleTechColumns.some((col) => col.id === "color") ? <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td> : null}
-                       {!visibleTechColumns || visibleTechColumns.some((col) => col.id === "code") ? <td className="px-4 py-2 text-xs font-mono">{c.code}</td> : null}
-                       {!visibleTechColumns || visibleTechColumns.some((col) => col.id === "name") ? <td className="px-4 py-2 text-xs">{c.name}</td> : null}
-                       {!visibleTechColumns || visibleTechColumns.some((col) => col.id === "hex") ? <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td> : null}
+                       <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td>
+                       <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
+                       <td className="px-4 py-2 text-xs">{c.name}</td>
+                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td>
+                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.rgb || "—"}</td>
+                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.cmyk || "—"}</td>
+                       <td className="px-4 py-2 text-xs">{c.color_group || "—"}</td>
+                       <td className="px-4 py-2 text-xs">{c.color_sub_group || "—"}</td>
                        <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
                      </tr>
                   ))}
@@ -759,22 +672,29 @@ export default function ColorPalettes() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                     {!visibleCommColumns || visibleCommColumns.some((c) => c.id === "color") ? <th className="px-4 py-2 text-left text-xs font-medium">Color</th> : null}
-                     {!visibleCommColumns || visibleCommColumns.some((c) => c.id === "code") ? <th className="px-4 py-2 text-left text-xs font-medium">Code</th> : null}
-                     {!visibleCommColumns || visibleCommColumns.some((c) => c.id === "name") ? <th className="px-4 py-2 text-left text-xs font-medium">Name</th> : null}
-                     {!visibleCommColumns || visibleCommColumns.some((c) => c.id === "type") ? <th className="px-4 py-2 text-left text-xs font-medium">Type</th> : null}
+                     <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Type</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Tech Color</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Tech Code</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Linked Tech Colors</th>
                      <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
                    </tr>
                 </thead>
                 <tbody>
                   {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
                     const tech = techColors.find(t => t.id === c.main_technical_color_id);
+                    const linkedTechs = (c.linked_technical_color_ids || []).map(id => techColors.find(t => t.id === id)?.code).filter(Boolean);
                     return (
                       <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                         {!visibleCommColumns || visibleCommColumns.some((col) => col.id === "color") ? <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td> : null}
-                         {!visibleCommColumns || visibleCommColumns.some((col) => col.id === "code") ? <td className="px-4 py-2 text-xs font-mono">{c.code}</td> : null}
-                         {!visibleCommColumns || visibleCommColumns.some((col) => col.id === "name") ? <td className="px-4 py-2 text-xs">{c.color_name}</td> : null}
-                         {!visibleCommColumns || visibleCommColumns.some((col) => col.id === "type") ? <td className="px-4 py-2 text-xs">{c.sub_type}</td> : null}
+                         <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td>
+                         <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
+                         <td className="px-4 py-2 text-xs">{c.color_name}</td>
+                         <td className="px-4 py-2 text-xs">{c.sub_type}</td>
+                         <td className="px-4 py-2 text-xs">{tech?.name || "—"}</td>
+                         <td className="px-4 py-2 text-xs font-mono">{tech?.code || "—"}</td>
+                         <td className="px-4 py-2 text-xs">{linkedTechs.length > 0 ? linkedTechs.join(", ") : "—"}</td>
                          <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
                        </tr>
                     );
@@ -876,142 +796,7 @@ export default function ColorPalettes() {
         </DialogContent>
       </Dialog>
 
-      {/* View Editor Dialog - Full Featured */}
-      <Dialog open={showViewEditor} onOpenChange={(o) => { if (!o) { setShowViewEditor(false); setEditorMode("list"); } }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editorMode === "list" ? "Views" : editorMode === "new" ? "New View" : `Edit: ${editingView?.name}`}</DialogTitle>
-          </DialogHeader>
 
-          {editorMode === "list" && (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">Use the views menu to manage</p>
-            </div>
-          )}
-
-          {(editorMode === "new" || editorMode === "edit") && (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">View Name</Label>
-                <Input value={viewFormName} onChange={(e) => setViewFormName(e.target.value)} placeholder="e.g. Sales View" autoFocus />
-              </div>
-
-              <Tabs value={editorTab} onValueChange={setEditorTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="columns" className="flex-1 text-xs">Columns</TabsTrigger>
-                  <TabsTrigger value="filters" className="flex-1 text-xs">Filters</TabsTrigger>
-                  <TabsTrigger value="roles" className="flex-1 text-xs">Roles</TabsTrigger>
-                </TabsList>
-
-                {/* COLUMNS */}
-                <TabsContent value="columns" className="mt-3">
-                  <div className="mb-2">
-                    <Input value={columnSearch} onChange={(e) => setColumnSearch(e.target.value)} placeholder="Search columns…" className="h-7 text-xs" />
-                  </div>
-                  {(() => {
-                    const allFields = activeSection === "technical" 
-                      ? ["color", "code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group", "commercial"] 
-                      : ["color", "code", "name", "type", "technical_color"];
-                    const q = columnSearch.toLowerCase();
-                    const checked = viewFormColumns.map(id => ({ id, label: id.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) }));
-                    const unchecked = allFields.filter(f => !viewFormColumns.includes(f)).map(id => ({ id, label: id.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) }));
-                    const filteredChecked = q ? checked.filter(c => c.label.toLowerCase().includes(q)) : checked;
-                    const filteredUnchecked = q ? unchecked.filter(c => c.label.toLowerCase().includes(q)) : unchecked;
-                    const handleDragEnd = (result) => {
-                      if (!result.destination) return;
-                      const newIds = [...viewFormColumns];
-                      const [removed] = newIds.splice(result.source.index, 1);
-                      newIds.splice(result.destination.index, 0, removed);
-                      setViewFormColumns(newIds);
-                    };
-                    const pinnedCols = filteredChecked.filter(c => viewFormFixedColumnIds.includes(c.id));
-                    const unpinnedCols = filteredChecked.filter(c => !viewFormFixedColumnIds.includes(c.id));
-                    return (
-                      <div className="border border-border rounded-lg overflow-hidden">
-                        <DragDropContext onDragEnd={handleDragEnd}>
-                          <Droppable droppableId="columns-checked">
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.droppableProps} className="max-h-44 overflow-y-auto divide-y divide-border">
-                                {pinnedCols.map((col, index) => (
-                                  <Draggable key={col.id} draggableId={col.id} index={index}>
-                                    {(drag, snapshot) => (
-                                      <div ref={drag.innerRef} {...drag.draggableProps} style={drag.draggableProps.style} className={`flex items-center gap-2.5 px-3 py-2 bg-primary/5 ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}>
-                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"><GripVertical className="w-3.5 h-3.5" /></div>
-                                        <Checkbox checked={true} onCheckedChange={() => setViewFormColumns(viewFormColumns.filter(c => c !== col.id))} id={`col-${col.id}`} />
-                                        <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
-                                        <button type="button" title="Unpin column" onClick={() => setViewFormFixedColumnIds((prev) => prev.filter((id) => id !== col.id))} className="p-0.5 rounded hover:bg-muted transition-colors text-primary"><Pin className="w-3 h-3" /></button>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {unpinnedCols.map((col, index) => (
-                                  <Draggable key={col.id} draggableId={col.id} index={pinnedCols.length + index}>
-                                    {(drag, snapshot) => (
-                                      <div ref={drag.innerRef} {...drag.draggableProps} style={drag.draggableProps.style} className={`flex items-center gap-2.5 px-3 py-2 bg-card ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}>
-                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"><GripVertical className="w-3.5 h-3.5" /></div>
-                                        <Checkbox checked={true} onCheckedChange={() => setViewFormColumns(viewFormColumns.filter(c => c !== col.id))} id={`col-${col.id}`} />
-                                        <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
-                                        <button type="button" title="Pin column" onClick={() => setViewFormFixedColumnIds((prev) => [...prev, col.id])} className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground"><Pin className="w-3 h-3" /></button>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
-                        {filteredUnchecked.length > 0 && (
-                          <div className="border-t border-border max-h-24 overflow-y-auto divide-y divide-border">
-                            {filteredUnchecked.map((col) => (
-                              <div key={col.id} className="flex items-center gap-2.5 px-3 py-2 opacity-50">
-                                <div className="w-3.5 h-3.5 shrink-0" />
-                                <Checkbox checked={false} onCheckedChange={() => setViewFormColumns([...viewFormColumns, col.id])} id={`col-${col.id}`} />
-                                <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </TabsContent>
-
-                {/* FILTERS */}
-                <TabsContent value="filters" className="mt-3 space-y-3">
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {viewFormFilters.filters.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No filters yet. Add one below.</p>}
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setViewFormFilters((f) => ({ ...f, filters: [...f.filters, { field: "", operator: "and", values: [] }] }))} className="gap-1.5 text-xs w-full"><Plus className="w-3.5 h-3.5" /> Add Filter</Button>
-                </TabsContent>
-
-                {/* ROLES */}
-                <TabsContent value="roles" className="mt-3 space-y-3">
-                  <p className="text-xs text-muted-foreground">Restrict this view to specific user roles. Leave empty to allow all roles.</p>
-                  <div className="flex gap-2">
-                    <Input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (roleInput.trim() && !viewFormRoles.includes(roleInput.trim())) { setViewFormRoles([...viewFormRoles, roleInput.trim()]); setRoleInput(""); } } }} placeholder="e.g. admin, manager…" className="h-8 text-xs flex-1" />
-                    <Button type="button" variant="outline" size="sm" onClick={() => { if (roleInput.trim() && !viewFormRoles.includes(roleInput.trim())) { setViewFormRoles([...viewFormRoles, roleInput.trim()]); setRoleInput(""); } }} className="h-8 text-xs gap-1"><Plus className="w-3.5 h-3.5" /> Add</Button>
-                  </div>
-                  {viewFormRoles.length === 0 ? (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground border border-dashed border-border rounded-lg p-3"><ShieldCheck className="w-4 h-4" /> Visible to all roles</div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {viewFormRoles.map((r) => (
-                        <div key={r} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full border border-primary/20"><ShieldCheck className="w-3 h-3" />{r}<button type="button" onClick={() => setViewFormRoles(viewFormRoles.filter(rr => rr !== r))} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button></div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEditorMode("list")}>Back</Button>
-                <Button onClick={async () => { if (!viewFormName.trim()) return; setSaving(true); const newView = { id: editingView?.id || `view_${Date.now()}`, name: viewFormName, page_key: activeSection === "technical" ? "technical_colors" : "commercial_colors", column_ids: viewFormColumns, fixed_column_ids: viewFormFixedColumnIds, filters_config: viewFormFilters, allowed_roles: viewFormRoles }; try { if (editingView) { await base44.entities.ListViewConfig.update(editingView.id, newView); } else { await base44.entities.ListViewConfig.create(newView); } } catch (err) { console.error("Error saving view:", err); } setActiveViewId(newView.id); setShowViewEditor(false); setSaving(false); }} disabled={saving || !viewFormName.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editorMode === "new" ? "Create & Apply" : "Save"}</Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Commercial Color Dialog */}
       <Dialog open={showCommDialog} onOpenChange={setShowCommDialog}>
