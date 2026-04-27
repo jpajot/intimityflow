@@ -3,7 +3,7 @@ import { X, LayoutGrid, List } from "lucide-react";
 import DataTable from "./DataTable";
 import PaletteColorCard from "./PaletteColorCard";
 
-export default function PaletteColorSection({ paletteColors, getColorHex, getColorLabel, getColorCode, getColorSubType, getLinkedCommColor, getLinkedHexes, onRemove, view, onViewChange }) {
+export default function PaletteColorSection({ paletteColors, getColorHex, getColorLabel, getColorCode, getColorSubType, getLinkedCommColor, getLinkedHexes, onRemove, view, onViewChange, paletteSize = "md" }) {
   if (paletteColors.length === 0) {
     return (
       <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -88,30 +88,14 @@ export default function PaletteColorSection({ paletteColors, getColorHex, getCol
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Colors ({paletteColors.length})</h3>
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => onViewChange("gallery")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "gallery" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Gallery view"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewChange("table")}
-            className={`px-2.5 py-1.5 transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            title="Table view"
-          >
-            <List className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <h3 className="font-semibold">Colors ({paletteColors.length})</h3>
 
       {view === "gallery" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className={`grid gap-3 ${
+          paletteSize === "sm" ? "grid-cols-4 sm:grid-cols-6 lg:grid-cols-8" :
+          paletteSize === "md" ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" :
+          "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3"
+        }`}>
           {paletteColors.map((entry) => (
             <PaletteColorCard
               key={entry.id}

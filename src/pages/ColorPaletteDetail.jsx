@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, X, LayoutGrid, List } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, X, LayoutGrid, List, Download } from "lucide-react";
 import PaletteColorSection from "../components/PaletteColorSection";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import { usePageOptions } from "@/lib/PageOptionsContext";
 
 export default function ColorPaletteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { setOptions } = usePageOptions();
 
   const [palette, setPalette] = useState(null);
   const [paletteColors, setPaletteColors] = useState([]);
@@ -36,8 +38,40 @@ export default function ColorPaletteDetail() {
 
   const [saving, setSaving] = useState(false);
   const [colorView, setColorView] = useState("gallery");
+  const [paletteSize, setPaletteSize] = useState("md");
 
   useEffect(() => { loadData(); }, [id]);
+
+  // Set up options menu
+  useEffect(() => {
+    if (!palette || paletteColors.length === 0) {
+      setOptions({ items: [{ label: "Add Color", icon: Plus, onClick: () => setShowAddDialog(true), className: "text-primary hover:bg-primary/10" }] });
+      return;
+    }
+
+    const handleExport = async () => {
+      const colors = paletteColors.map((entry) => {
+        const hex = entry.color_type === "technical" 
+          ? colorToHex(techColors.find((t) => t.id === entry.color_id))
+          : techColors.find((t) => t.id === commColors.find((c) => c.id === entry.color_id)?.main_technical_color_id)?.hex || "#ffffff";
+        return { hex: hex.replace("#", ""), name: getColorLabel(entry) };
+      });
+      const ase = generateASE(colors, palette.name);
+      downloadASE(ase, `${palette.name}.ase`);
+    };
+
+    setOptions({
+      items: [
+        { label: "Add Color", icon: Plus, onClick: () => setShowAddDialog(true), className: "text-primary hover:bg-primary/10" },
+        { divider: true },
+        { label: "S", onClick: () => setPaletteSize("sm"), className: `px-2 py-1 text-xs font-medium rounded border ${paletteSize === "sm" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+        { label: "M", onClick: () => setPaletteSize("md"), className: `px-2 py-1 text-xs font-medium rounded border ${paletteSize === "md" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+        { label: "L", onClick: () => setPaletteSize("lg"), className: `px-2 py-1 text-xs font-medium rounded border ${paletteSize === "lg" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+        { divider: true },
+        { label: "Export .ase", icon: Download, onClick: handleExport }
+      ]
+    });
+  }, [palette, paletteColors, paletteSize, setOptions]);
 
   const loadData = async () => {
     const [pal, pc, proj, tc, cc] = await Promise.all([
@@ -153,6 +187,43 @@ export default function ColorPaletteDetail() {
     return c.linked_technical_color_ids.map((id) => { const t = techColors.find((t) => t.id === id); return t ? colorToHex(t) : "#ccc"; });
   };
 
+  const generateASE = (colors, paletteName) => {
+    const buffer = new ArrayBuffer(28 + colors.reduce((sum, c) => sum + 24 + c.name.length * 2 + 2, 0));
+    const view = new DataView(buffer);
+    let offset = 0;
+    view.setUint32(offset, 0x41534546, false); offset += 4;
+    view.setUint16(offset, 1, false); offset += 2;
+    view.setUint16(offset, 0, false); offset += 2;
+    view.setUint32(offset, colors.length, false); offset += 4;
+    colors.forEach((color) => {
+      view.setUint16(offset, 1, false); offset += 2;
+      const nameLen = (color.name.length + 1) * 2;
+      view.setUint32(offset, 22 + nameLen, false); offset += 4;
+      for (let i = 0; i < color.name.length; i++) {
+        view.setUint16(offset, color.name.charCodeAt(i), false); offset += 2;
+      }
+      view.setUint16(offset, 0, false); offset += 2;
+      const r = parseInt(color.hex.substring(0, 2), 16) / 255;
+      const g = parseInt(color.hex.substring(2, 4), 16) / 255;
+      const b = parseInt(color.hex.substring(4, 6), 16) / 255;
+      view.setFloat32(offset, r, false); offset += 4;
+      view.setFloat32(offset, g, false); offset += 4;
+      view.setFloat32(offset, b, false); offset += 4;
+      offset += 4;
+    });
+    return buffer;
+  };
+
+  const downloadASE = (buffer, filename) => {
+    const blob = new Blob([buffer], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredTech = techColors.filter((t) => {
     const key = `technical:${t.id}`;
     if (linkedColorIds.has(key)) return false;
@@ -184,9 +255,6 @@ export default function ColorPaletteDetail() {
           <h1 className="font-display text-2xl font-semibold tracking-tight">{palette.name}</h1>
           {project && <p className="text-sm text-muted-foreground mt-0.5">{project.name}</p>}
         </div>
-        <Button onClick={() => { setShowAddDialog(true); setColorSearch(""); }} className="gap-2">
-          <Plus className="w-4 h-4" /> Add Color
-        </Button>
       </div>
 
       {/* Palette settings */}
@@ -231,6 +299,7 @@ export default function ColorPaletteDetail() {
         onRemove={handleRemove}
         view={colorView}
         onViewChange={setColorView}
+        paletteSize={paletteSize}
       />
 
       {/* Add Color Dialog */}
