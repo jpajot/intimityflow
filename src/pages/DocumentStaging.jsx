@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, ArrowLeft, Loader2, Check, AlertCircle, RefreshCw, X, ArrowRight } from "lucide-react";
+import { Search, ArrowLeft, Loader2, Check, AlertCircle, RefreshCw, X, ArrowRight, Pencil } from "lucide-react";
 import DataTable from "../components/DataTable";
-import ViewSelector from "../components/ViewSelector";
+import ViewDrawerContent from "../components/ViewDrawerContent";
+import { usePageOptions } from "@/lib/PageOptionsContext";
+import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -129,15 +131,71 @@ export default function DocumentStaging() {
   const [reparsing, setReparsing] = useState(false);
   const [result, setResult] = useState(null);
   const [search, setSearch] = useState("");
+  const [activeViewId, setActiveViewId] = useState("default");
   const [visibleColumns, setVisibleColumns] = useState(null);
   const [editingRow, setEditingRow] = useState(null);
   const [createdRowIds, setCreatedRowIds] = useState(new Set()); // id → "created" | "updated"
+  const [showViewMenu, setShowViewMenu] = useState(false);
 
   // diff-modal state
   const [diffModal, setDiffModal] = useState(null); // { row, existingProduct }
   const [diffSaving, setDiffSaving] = useState(false);
 
+  const { setOptions } = usePageOptions();
+  useRegisterSubNav([], null, () => {}, doc?.original_filename || "Document");
+
   useEffect(() => { loadData(); }, [docId]);
+
+  // Register Options menu items
+  useEffect(() => {
+    if (!data) { setOptions({ items: [] }); return; }
+    setOptions({
+      items: [
+        {
+          label: reparsing ? "Re-parsing…" : "Re-parse",
+          icon: RefreshCw,
+          onClick: () => handleReparse(),
+        },
+        {
+          label: processing ? "Processing…" : isProcessed ? "Already Processed" : "Create All Styles",
+          icon: Check,
+          onClick: () => handleProcess(),
+        },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu((v) => !v), custom: true },
+      ],
+      customContent: showViewMenu ? (
+        <ViewDrawerContent
+          pageKey="document_staging"
+          activeViewId={activeViewId}
+          onSelectView={(vid) => {
+            setActiveViewId(vid);
+            if (vid === "default") {
+              setVisibleColumns(null);
+            } else {
+              base44.entities.ListViewConfig.filter({ id: vid }).then((res) => {
+                if (res.length > 0) setVisibleColumns(res[0].column_ids?.length > 0 ? res[0].column_ids : null);
+              });
+            }
+          }}
+          currentViewType="list"
+          allFields={[
+            { id: "slide", label: "Slide" },
+            { id: "style_code", label: "Style Code" },
+            { id: "style_name", label: "Style Name" },
+            { id: "image", label: "Image" },
+            { id: "colors", label: "Technical Colors" },
+            { id: "edit", label: "Edit" },
+            { id: "create", label: "Create/Update" },
+          ]}
+        />
+      ) : null,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, reparsing, processing, showViewMenu, activeViewId]);
+
+  // Track isProcessed for the options menu
+  const isProcessed = doc?.status === "processed";
 
   const loadData = async () => {
     setLoading(true);
@@ -551,7 +609,7 @@ export default function DocumentStaging() {
     if (!existing) return sum;
     return sum + (row["Style Technical Color Codes"] || []).filter(code => tcxAlreadyOnProduct(existing.id, code)).length;
   }, 0);
-  const isProcessed = doc.status === "processed";
+  const isProcessedRender = doc.status === "processed";
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -597,8 +655,8 @@ export default function DocumentStaging() {
           )}
           <div className="flex-1" />
           {data.collection && <Badge variant="outline" className="font-mono text-xs">{data.collection}</Badge>}
-          <Badge variant={isProcessed ? "default" : "secondary"} className="text-xs">
-            {isProcessed ? "Processed" : "Staged"}
+          <Badge variant={isProcessedRender ? "default" : "secondary"} className="text-xs">
+            {isProcessedRender ? "Processed" : "Staged"}
           </Badge>
         </div>
       )}
@@ -610,16 +668,6 @@ export default function DocumentStaging() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search code, name, color…" className="pl-8 h-9 text-xs" />
           </div>
-          {filteredRows.length > 0 && <ViewSelector pageKey="document_staging" allColumns={columns} onColumnsChange={setVisibleColumns} />}
-          <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={handleReparse} disabled={reparsing || isProcessed} className="gap-1.5 shrink-0">
-            {reparsing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Re-parse
-          </Button>
-          <Button onClick={handleProcess} disabled={processing || isProcessed || !data} className="gap-2 shrink-0">
-            {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            {isProcessed ? "Already Processed" : "Create All Styles"}
-          </Button>
         </div>
       )}
 
@@ -639,6 +687,8 @@ export default function DocumentStaging() {
         </div>
       )}
 
+      {/* Result toast */}
+
       {data && (
         <>
           {renderEditPanel()}
@@ -647,7 +697,13 @@ export default function DocumentStaging() {
               <p className="text-sm text-muted-foreground">{allRows.length === 0 ? "No styles found." : "No results match your search."}</p>
             </div>
           ) : (
-            <DataTable columns={visibleColumns || columns} rows={filteredRows} hideColumnToggle />
+            <DataTable
+              columns={visibleColumns
+                ? visibleColumns.map((id) => columns.find((c) => c.id === id)).filter(Boolean)
+                : columns}
+              rows={filteredRows}
+              hideColumnToggle
+            />
           )}
         </>
       )}
