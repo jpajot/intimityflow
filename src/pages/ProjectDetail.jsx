@@ -111,8 +111,11 @@ export default function ProjectDetail() {
       setOptions({
         items: [
           { label: stylesViewMode === "list" ? "View: Grid" : "View: List", icon: stylesViewMode === "list" ? LayoutGrid : List, onClick: () => {
-            setStylesViewMode(stylesViewMode === "list" ? "grid" : "list");
-            stylesViewRef.current?.setView(stylesViewMode === "list" ? "grid" : "list");
+            setStylesViewMode((prev) => {
+              const next = prev === "list" ? "grid" : "list";
+              stylesViewRef.current?.setView(next);
+              return next;
+            });
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true },
@@ -138,8 +141,11 @@ export default function ProjectDetail() {
       setOptions({
         items: [
           { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => {
-            setColorwaysViewMode(colorwaysViewMode === "list" ? "grid" : "list");
-            colorwaysViewRef.current?.setView(colorwaysViewMode === "list" ? "grid" : "list");
+            setColorwaysViewMode((prev) => {
+              const next = prev === "list" ? "grid" : "list";
+              colorwaysViewRef.current?.setView(next);
+              return next;
+            });
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
@@ -167,8 +173,11 @@ export default function ProjectDetail() {
           { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
           { divider: true },
           { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => {
-            setVariationsViewMode(variationsViewMode === "list" ? "grid" : "list");
-            variationsViewRef.current?.setView(variationsViewMode === "list" ? "grid" : "list");
+            setVariationsViewMode((prev) => {
+              const next = prev === "list" ? "grid" : "list";
+              variationsViewRef.current?.setView(next);
+              return next;
+            });
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
@@ -203,8 +212,11 @@ export default function ProjectDetail() {
           { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
           { divider: true },
           { label: dcViewMode === "list" ? "View: Grid" : "View: List", icon: dcViewMode === "list" ? LayoutGrid : List, onClick: () => {
-            setDCViewMode(dcViewMode === "list" ? "grid" : "list");
-            window.dcPerCOTView?.setView(dcViewMode === "list" ? "grid" : "list");
+            setDCViewMode((prev) => {
+              const next = prev === "list" ? "grid" : "list";
+              window.dcPerCOTView?.setView(next);
+              return next;
+            });
           }},
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu(!showDCViewMenu), custom: true },
