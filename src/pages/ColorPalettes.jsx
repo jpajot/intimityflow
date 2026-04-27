@@ -12,7 +12,6 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
-import ViewSelector from "@/components/ViewSelector";
 
 
 export default function ColorPalettes() {
@@ -71,38 +70,36 @@ export default function ColorPalettes() {
         ]
       });
     } else if (activeSection === "technical") {
-      const techColumns = [
-        { id: "color", label: "Color", width: 60, render: (c) => <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /> },
-        { id: "code", label: "Code", width: 120, sortKey: (c) => c.code || "", render: (c) => <span className="text-xs font-mono">{c.code}</span> },
-        { id: "name", label: "Name", width: 150, sortKey: (c) => c.name || "", render: (c) => <span className="text-xs">{c.name}</span> },
-        { id: "hex", label: "Hex", width: 120, sortKey: (c) => c.hex || "", render: (c) => <span className="text-xs font-mono text-muted-foreground">{colorToHex(c)}</span> }
-      ];
       setOptions({
-        items: showViewsMenu ? [
+        items: [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(false) }
-        ] : [
-          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(!showViewsMenu) }
         ],
-        customContent: showViewsMenu ? <ViewSelector pageKey="technical_colors" allColumns={techColumns} onColumnsChange={setVisibleTechColumns} /> : null
+        customContent: showViewsMenu ? (
+          <div className="space-y-3 border-t border-border pt-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
+            <div className="space-y-2">
+              <button onClick={() => setShowViewsMenu(false)} className="w-full bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium">Default View</button>
+            </div>
+            <Button onClick={() => {}} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+          </div>
+        ) : null
       });
     } else if (activeSection === "commercial") {
-      const commColumns = [
-        { id: "color", label: "Color", width: 60, render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /> } },
-        { id: "code", label: "Code", width: 120, sortKey: (c) => c.code || "", render: (c) => <span className="text-xs font-mono">{c.code}</span> },
-        { id: "name", label: "Name", width: 150, sortKey: (c) => c.color_name || "", render: (c) => <span className="text-xs">{c.color_name}</span> },
-        { id: "type", label: "Type", width: 100, sortKey: (c) => c.sub_type || "", render: (c) => <span className="text-xs">{c.sub_type}</span> }
-      ];
       setOptions({
-        items: showViewsMenu ? [
+        items: [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(false) }
-        ] : [
-          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(!showViewsMenu) }
         ],
-        customContent: showViewsMenu ? <ViewSelector pageKey="commercial_colors" allColumns={commColumns} onColumnsChange={setVisibleCommColumns} /> : null
+        customContent: showViewsMenu ? (
+          <div className="space-y-3 border-t border-border pt-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
+            <div className="space-y-2">
+              <button onClick={() => setShowViewsMenu(false)} className="w-full bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium">Default View</button>
+            </div>
+            <Button onClick={() => {}} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+          </div>
+        ) : null
       });
     } else {
       setOptions({ items: [] });
