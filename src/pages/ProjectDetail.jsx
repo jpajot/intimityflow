@@ -118,7 +118,20 @@ export default function ProjectDetail() {
           { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true },
         ],
         customContent: showStylesViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} allFields={[]} currentViewType={stylesViewMode} />
+          <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode} allFields={[
+            { id: "image", label: "Image" },
+            { id: "code", label: "Code" },
+            { id: "name", label: "Name" },
+            { id: "type", label: "Type" },
+            { id: "sub_type", label: "Sub-type" },
+            { id: "category", label: "Category" },
+            { id: "sub_category", label: "Sub-Category" },
+            { id: "customer_need", label: "Customer Need" },
+            { id: "size_grid", label: "Size Grid" },
+            { id: "creation_project", label: "Creation Project" },
+            { id: "linked_projects", label: "Linked Projects" },
+            { id: "created_by", label: "Created By" },
+          ]} />
         ) : null,
       });
     } else if (activeSection === "colorways") {
@@ -132,7 +145,20 @@ export default function ProjectDetail() {
           { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
         ],
         customContent: showColorwaysViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode} />
+          <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode} allFields={[
+            { id: "style_image", label: "Style" },
+            { id: "style_name", label: "Style Name" },
+            { id: "cw_image", label: "Colorway" },
+            { id: "style_sub_type", label: "Style: Sub-type" },
+            { id: "color_name", label: "Color Name" },
+            { id: "comm_code", label: "Commercial Code" },
+            { id: "comm_color_status", label: "Commercial Color" },
+            { id: "tech_code", label: "Technical Code" },
+            { id: "link_forecasted_qty", label: "Fcst. Qty" },
+            { id: "link_channels", label: "Channels of Trade" },
+            { id: "link_status", label: "Project Status" },
+            { id: "link_notes", label: "Project Notes" },
+          ]} />
         ) : null,
       });
     } else if (activeSection === "variations") {
@@ -148,7 +174,25 @@ export default function ProjectDetail() {
           { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
         ],
         customContent: showVariationsViewMenu ? (
-          <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode} />
+          <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode} allFields={[
+            { id: "style_image", label: "Style Image" },
+            { id: "style_name", label: "Style Name" },
+            { id: "cw_image", label: "Colorway" },
+            { id: "style_sub_type", label: "Style: Sub-type" },
+            { id: "cw_color_name", label: "Colorway Name" },
+            { id: "cw_code", label: "Colorway Code" },
+            { id: "sequence", label: "Seq." },
+            { id: "name", label: "Variation Name" },
+            { id: "pack_code", label: "Pack Code" },
+            { id: "variant", label: "Variant" },
+            { id: "creation_project", label: "Creation Project" },
+            { id: "linked_projects", label: "Linked Projects" },
+            { id: "link_forecasted_qty", label: "Fcst. Qty" },
+            { id: "link_channels", label: "Channels of Trade" },
+            { id: "link_dist_channels", label: "Distribution Channels" },
+            { id: "link_status", label: "Project Status" },
+            { id: "link_notes", label: "Project Notes" },
+          ]} />
         ) : null,
       });
     } else if (activeSection === "dc_per_cot") {
