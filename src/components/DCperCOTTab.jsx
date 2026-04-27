@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Zap, LayoutGrid, List, FileDown, BarChart2 } from "lucide-react";
+import { Loader2, Zap, LayoutGrid, List, FileDown, BarChart2, Search } from "lucide-react";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
@@ -471,36 +471,57 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative min-w-40 flex-1">
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="h-8 text-xs" />
+      {/* Toolbar - Row 1 */}
+      <div className="flex items-center gap-2 flex-wrap justify-between">
+        <div className="flex items-center gap-2 flex-1 flex-wrap">
+          <Select value={filterDC} onValueChange={setFilterDC}>
+            <SelectTrigger className="h-8 text-xs flex-1 sm:flex-initial sm:w-40">
+              <SelectValue placeholder="DC" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All DC</SelectItem>
+              {allDCs.map((dc) => <SelectItem key={dc} value={dc}>{dc}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterCoT} onValueChange={setFilterCoT}>
+            <SelectTrigger className="h-8 text-xs flex-1 sm:flex-initial sm:w-40">
+              <SelectValue placeholder="CoT" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All CoT</SelectItem>
+              {allCoTs.map((cot) => <SelectItem key={cot} value={cot}>{cot}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
-        <Select value={filterDC} onValueChange={setFilterDC}>
-          <SelectTrigger className="h-8 text-xs w-44">
-            <SelectValue placeholder="Distribution Channel" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All DC</SelectItem>
-            {allDCs.map((dc) => <SelectItem key={dc} value={dc}>{dc}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <button
+          type="button"
+          onClick={() => {
+            const input = document.querySelector('[data-dc-search-input]');
+            if (input) {
+              input.classList.toggle('hidden');
+              if (!input.classList.contains('hidden')) input.focus();
+            }
+          }}
+          className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title="Search"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      </div>
 
-        <Select value={filterCoT} onValueChange={setFilterCoT}>
-          <SelectTrigger className="h-8 text-xs w-40">
-            <SelectValue placeholder="Channel of Trade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All CoT</SelectItem>
-            {allCoTs.map((cot) => <SelectItem key={cot} value={cot}>{cot}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      {/* Search Bar - Row 2 (collapsed) */}
+      <div className="relative hidden" data-dc-search-input>
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="h-8 text-xs" autoFocus />
+      </div>
 
+      {/* Toolbar - Row 3 */}
+      <div className="flex items-center gap-2 flex-wrap">
         <Button
-          variant={showStats ? "secondary" : "outline"}
+          variant="outline"
           size="sm"
-          className="h-8 gap-1.5 text-xs"
+          className="h-8 gap-1.5 text-xs text-primary hover:bg-primary/10"
           onClick={() => setShowStats((v) => !v)}
         >
           <BarChart2 className="w-3.5 h-3.5" />
