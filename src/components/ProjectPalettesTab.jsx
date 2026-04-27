@@ -371,7 +371,7 @@ export default function ProjectPalettesTab({
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)] overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-120px)] overflow-hidden">
       {/* Left: Palette list */}
       <div className="bg-muted/30 rounded-xl border border-border p-4 space-y-3 flex flex-col h-full">
         <div className="flex items-center justify-between flex-shrink-0">

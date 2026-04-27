@@ -419,7 +419,7 @@ export default function ColorPalettes() {
       </div>
 
       {activeSection === "palettes" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)] overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)] overflow-hidden">
             {/* Palettes Panel */}
             <div className="bg-card rounded-xl border border-border p-5 space-y-4 flex flex-col h-full">
               <div className="flex items-center justify-between flex-shrink-0">
