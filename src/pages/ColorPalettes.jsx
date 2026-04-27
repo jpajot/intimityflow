@@ -32,7 +32,7 @@ export default function ColorPalettes() {
   const [colorTab, setColorTab] = useState("technical");
   const [selectedColorIds, setSelectedColorIds] = useState(new Set());
   const [addingColors, setAddingColors] = useState(false);
-  const [paletteCardSize, setPaletteCardSize] = useState(() => { try { return localStorage.getItem("palette_card_size") || "M"; } catch { return "M"; } });
+  const [paletteCardSize, setPaletteCardSize] = useState(() => {try {return localStorage.getItem("palette_card_size") || "M";} catch {return "M";}});
   const [showTechDialog, setShowTechDialog] = useState(false);
   const [showCommDialog, setShowCommDialog] = useState(false);
   const [linkingTechColor, setLinkingTechColor] = useState(null);
@@ -41,16 +41,16 @@ export default function ColorPalettes() {
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {loadData();}, []);
 
   const loadData = async () => {
     const [pal, proj, pc, tc, cc] = await Promise.all([
-      base44.entities.ColorPalette.list("-created_date", 200),
-      base44.entities.Project.list("name", 200),
-      base44.entities.ColorPaletteColor.list("-created_date", 2000),
-      base44.entities.TechnicalColor.list("code", 2000),
-      base44.entities.CommercialColor.list("code", 2000),
-    ]);
+    base44.entities.ColorPalette.list("-created_date", 200),
+    base44.entities.Project.list("name", 200),
+    base44.entities.ColorPaletteColor.list("-created_date", 2000),
+    base44.entities.TechnicalColor.list("code", 2000),
+    base44.entities.CommercialColor.list("code", 2000)]
+    );
     setPalettes(pal);
     setProjects(proj);
     setPaletteColors(pc);
@@ -109,9 +109,9 @@ export default function ColorPalettes() {
     setShowColorPicker(true);
     // Refresh colors in case new ones were added in Color Library
     const [tc, cc] = await Promise.all([
-      base44.entities.TechnicalColor.list("code", 2000),
-      base44.entities.CommercialColor.list("code", 2000),
-    ]);
+    base44.entities.TechnicalColor.list("code", 2000),
+    base44.entities.CommercialColor.list("code", 2000)]
+    );
     setTechColors(tc);
     setCommColors(cc);
   };
@@ -138,16 +138,16 @@ export default function ColorPalettes() {
       ...f,
       main_technical_color_id: techId,
       color_name: f.color_name || tech?.name || "",
-      linked_technical_color_ids: f.linked_technical_color_ids.includes(techId)
-        ? f.linked_technical_color_ids
-        : [...f.linked_technical_color_ids, techId],
+      linked_technical_color_ids: f.linked_technical_color_ids.includes(techId) ?
+      f.linked_technical_color_ids :
+      [...f.linked_technical_color_ids, techId]
     }));
   };
 
   const toggleColorSelection = (key) => {
     setSelectedColorIds((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);else next.add(key);
       return next;
     });
   };
@@ -192,17 +192,17 @@ export default function ColorPalettes() {
       if (color_type === "commercial") {
         const comm = commColors.find((c) => c.id === color_id);
         if (comm?.main_technical_color_id && !alreadyInPalette.has(comm.main_technical_color_id) &&
-            !toAdd.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id) &&
-            !companions.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id)) {
+        !toAdd.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id) &&
+        !companions.some((e) => e.color_type === "technical" && e.color_id === comm.main_technical_color_id)) {
           companions.push({ palette_id: selectedPaletteId, color_type: "technical", color_id: comm.main_technical_color_id });
         }
       } else if (color_type === "technical") {
         const comm = commColors.find((c) =>
-          c.main_technical_color_id === color_id || (c.linked_technical_color_ids || []).includes(color_id)
+        c.main_technical_color_id === color_id || (c.linked_technical_color_ids || []).includes(color_id)
         );
         if (comm && !alreadyInPalette.has(comm.id) &&
-            !toAdd.some((e) => e.color_type === "commercial" && e.color_id === comm.id) &&
-            !companions.some((e) => e.color_type === "commercial" && e.color_id === comm.id)) {
+        !toAdd.some((e) => e.color_type === "commercial" && e.color_id === comm.id) &&
+        !companions.some((e) => e.color_type === "commercial" && e.color_id === comm.id)) {
           companions.push({ palette_id: selectedPaletteId, color_type: "commercial", color_id: comm.id });
         }
       }
@@ -224,7 +224,7 @@ export default function ColorPalettes() {
     }));
     // Persist to backend
     await Promise.all(orderedEntryIds.map((id, idx) =>
-      base44.entities.ColorPaletteColor.update(id, { sort_order: idx })
+    base44.entities.ColorPaletteColor.update(id, { sort_order: idx })
     ));
   };
 
@@ -243,7 +243,7 @@ export default function ColorPalettes() {
 
     const hexToRgbFloat = (hex) => {
       const h = (hex || "#cccccc").replace("#", "");
-      return [parseInt(h.substring(0,2),16)/255, parseInt(h.substring(2,4),16)/255, parseInt(h.substring(4,6),16)/255];
+      return [parseInt(h.substring(0, 2), 16) / 255, parseInt(h.substring(2, 4), 16) / 255, parseInt(h.substring(4, 6), 16) / 255];
     };
 
     const colorBlocks = swatches.map((s) => {
@@ -255,44 +255,44 @@ export default function ColorPalettes() {
       const block = new ArrayBuffer(2 + 4 + blockDataSize);
       const v = new DataView(block);
       let o = 0;
-      v.setUint16(o, 0x0001); o += 2;
-      v.setUint32(o, blockDataSize); o += 4;
-      v.setUint16(o, nameCharCount); o += 2;
-      for (let i = 0; i < colorName.length; i++) { v.setUint16(o, colorName.charCodeAt(i)); o += 2; }
-      v.setUint16(o, 0); o += 2;
-      v.setUint8(o,0x52); v.setUint8(o+1,0x47); v.setUint8(o+2,0x42); v.setUint8(o+3,0x20); o += 4;
-      v.setFloat32(o, r); o += 4;
-      v.setFloat32(o, g); o += 4;
-      v.setFloat32(o, b); o += 4;
-      v.setUint16(o, 0); o += 2;
+      v.setUint16(o, 0x0001);o += 2;
+      v.setUint32(o, blockDataSize);o += 4;
+      v.setUint16(o, nameCharCount);o += 2;
+      for (let i = 0; i < colorName.length; i++) {v.setUint16(o, colorName.charCodeAt(i));o += 2;}
+      v.setUint16(o, 0);o += 2;
+      v.setUint8(o, 0x52);v.setUint8(o + 1, 0x47);v.setUint8(o + 2, 0x42);v.setUint8(o + 3, 0x20);o += 4;
+      v.setFloat32(o, r);o += 4;
+      v.setFloat32(o, g);o += 4;
+      v.setFloat32(o, b);o += 4;
+      v.setUint16(o, 0);o += 2;
       return block;
     });
 
     const header = new ArrayBuffer(12);
     const hv = new DataView(header);
-    hv.setUint8(0,0x41); hv.setUint8(1,0x53); hv.setUint8(2,0x45); hv.setUint8(3,0x46);
-    hv.setUint16(4,1); hv.setUint16(6,0);
+    hv.setUint8(0, 0x41);hv.setUint8(1, 0x53);hv.setUint8(2, 0x45);hv.setUint8(3, 0x46);
+    hv.setUint16(4, 1);hv.setUint16(6, 0);
     hv.setUint32(8, colorBlocks.length);
 
-    const totalSize = header.byteLength + colorBlocks.reduce((s,b) => s + b.byteLength, 0);
+    const totalSize = header.byteLength + colorBlocks.reduce((s, b) => s + b.byteLength, 0);
     const combined = new Uint8Array(totalSize);
     let offset = 0;
-    combined.set(new Uint8Array(header), offset); offset += header.byteLength;
-    for (const block of colorBlocks) { combined.set(new Uint8Array(block), offset); offset += block.byteLength; }
+    combined.set(new Uint8Array(header), offset);offset += header.byteLength;
+    for (const block of colorBlocks) {combined.set(new Uint8Array(block), offset);offset += block.byteLength;}
 
     const blob = new Blob([combined], { type: "application/octet-stream" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${selectedPalette?.name?.replace(/\s+/g,"_") || "palette"}.ase`;
+    a.download = `${selectedPalette?.name?.replace(/\s+/g, "_") || "palette"}.ase`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const getSwatchData = (paletteId) => {
-    const entries = paletteColors
-      .filter((pc) => pc.palette_id === paletteId)
-      .sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
+    const entries = paletteColors.
+    filter((pc) => pc.palette_id === paletteId).
+    sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
 
     const commEntries = entries.filter((e) => e.color_type === "commercial");
     const commColorIdsInPalette = new Set(commEntries.map((e) => e.color_id));
@@ -304,17 +304,17 @@ export default function ColorPalettes() {
       const c = commColors.find((c) => c.id === e.color_id);
       if (!c) continue;
       const t = techColors.find((t) => t.id === c.main_technical_color_id);
-      const linkedHexes = c.linked_technical_color_ids?.length > 1
-        ? c.linked_technical_color_ids.map((id) => { const lt = techColors.find((t) => t.id === id); return lt?.hex || "#ccc"; })
-        : null;
+      const linkedHexes = c.linked_technical_color_ids?.length > 1 ?
+      c.linked_technical_color_ids.map((id) => {const lt = techColors.find((t) => t.id === id);return lt?.hex || "#ccc";}) :
+      null;
       result.push({ id: e.id, hex: t?.hex || "#ccc", name: c.color_name || "", code: c.code || "", commCode: null, linkedHexes, isUnlinked: false });
     }
 
     // Only truly unlinked technical colors (no commercial in this palette references them)
     for (const e of entries.filter((e) => e.color_type === "technical")) {
       const linkedComm = commColors.find((c) =>
-        (c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id)) &&
-        commColorIdsInPalette.has(c.id)
+      (c.main_technical_color_id === e.color_id || (c.linked_technical_color_ids || []).includes(e.color_id)) &&
+      commColorIdsInPalette.has(c.id)
       );
       if (linkedComm) continue; // already represented by its commercial entry
       const t = techColors.find((c) => c.id === e.color_id);
@@ -357,11 +357,11 @@ export default function ColorPalettes() {
   if (loading) return (
     <div className="flex items-center justify-center py-32">
       <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-    </div>
-  );
+    </div>);
+
 
   return (
-    <div className="space-y-6">
+    <div className="px-2 py-2 space-y-6">
       <div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Color Studio</h1>
       </div>
@@ -386,12 +386,12 @@ export default function ColorPalettes() {
                 placeholder="Search palettes…"
                 value={paletteSearch}
                 onChange={(e) => setPaletteSearch(e.target.value)}
-                className="h-8 text-xs"
-              />
+                className="h-8 text-xs" />
+              
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {filtered.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-6">No palettes yet</p>
-                )}
+                {filtered.length === 0 &&
+                <p className="text-sm text-muted-foreground text-center py-6">No palettes yet</p>
+                }
                 {filtered.map((p) => {
                   const swatches = getSwatchData(p.id);
                   const project = projects.find((pr) => pr.id === p.project_id);
@@ -400,72 +400,72 @@ export default function ColorPalettes() {
                       key={p.id}
                       onClick={() => setSelectedPaletteId(p.id)}
                       className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedPaletteId === p.id
-                          ? "bg-primary/10 border-primary"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
+                      selectedPaletteId === p.id ?
+                      "bg-primary/10 border-primary" :
+                      "border-border hover:bg-muted"}`
+                      }>
+                      
                       <div className="h-6 rounded-md overflow-hidden flex mb-2">
-                        {swatches.length === 0 ? (
-                          <div className="w-full bg-muted" />
-                        ) : (
-                          swatches.slice(0, 10).map((s, i) => (
-                            s.linkedHexes?.length > 1 ? (
-                              <div key={i} className="flex-1 flex overflow-hidden">
+                        {swatches.length === 0 ?
+                        <div className="w-full bg-muted" /> :
+
+                        swatches.slice(0, 10).map((s, i) =>
+                        s.linkedHexes?.length > 1 ?
+                        <div key={i} className="flex-1 flex overflow-hidden">
                                 {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                              </div>
-                            ) : (
-                              <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
-                            )
-                          ))
-                        )}
+                              </div> :
+
+                        <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} />
+
+                        )
+                        }
                       </div>
                       <div className={`font-medium text-sm ${selectedPaletteId === p.id ? "text-primary" : ""}`}>{p.name}</div>
-                      {project && (
-                        <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      {project &&
+                      <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                           <FolderOpen className="w-3 h-3" />{project.name}
                         </div>
-                      )}
+                      }
                       <div className="text-xs text-muted-foreground mt-1">{swatches.length} color{swatches.length !== 1 ? "s" : ""}</div>
                       <div className="flex gap-1 mt-2">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(p); }}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation();openEdit(p);}}>
                           <Pencil className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(p); }}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => {e.stopPropagation();handleDelete(p);}}>
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
-                    </div>
-                  );
+                    </div>);
+
                 })}
               </div>
             </div>
 
             {/* Detail Panel */}
             <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
-              {!selectedPalette ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
+              {!selectedPalette ?
+              <div className="flex flex-col items-center justify-center py-20 text-center">
                   <Palette className="w-10 h-10 text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">Select a palette to see its colors</p>
-                </div>
-              ) : (
-                <>
+                </div> :
+
+              <>
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-semibold">{selectedPalette.name}</h3>
-                      {selectedProject && (
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      {selectedProject &&
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                           <FolderOpen className="w-3 h-3" />{selectedProject.name}
                         </p>
-                      )}
+                    }
                     </div>
                     <div className="flex items-center gap-2">
-                      <SizeControl size={paletteCardSize} onChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }} />
-                      {selectedSwatches.length > 0 && (
-                        <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
+                      <SizeControl size={paletteCardSize} onChange={(s) => {setPaletteCardSize(s);try {localStorage.setItem("palette_card_size", s);} catch {}}} />
+                      {selectedSwatches.length > 0 &&
+                    <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
                           <Download className="w-3.5 h-3.5" /> Export .ase
                         </Button>
-                      )}
+                    }
                       <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
                         <Plus className="w-3.5 h-3.5" /> Add Color
                       </Button>
@@ -474,29 +474,29 @@ export default function ColorPalettes() {
 
                   {/* Color Picker */}
                   {showColorPicker && (() => {
-                    const { techFiltered, commFiltered } = getAvailableColors();
-                    const items = colorTab === "technical"
-                      ? techFiltered.map((t) => {
-                          const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
-                          return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
-                        })
-                      : commFiltered.map((c) => {
-                          const mainTech = techColors.find((t) => t.id === c.main_technical_color_id);
-                          const linkedHexes = (c.linked_technical_color_ids?.length > 1)
-                            ? (c.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean)
-                            : null;
-                          const techCode = mainTech?.code;
-                          return { key: `commercial:${c.id}`, hex: mainTech?.hex || "#ccc", linkedHexes, label: c.color_name, sub: c.code, techCode };
-                        });
-                    return (
-                      <div className="border border-border rounded-lg overflow-hidden">
+                  const { techFiltered, commFiltered } = getAvailableColors();
+                  const items = colorTab === "technical" ?
+                  techFiltered.map((t) => {
+                    const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
+                    return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
+                  }) :
+                  commFiltered.map((c) => {
+                    const mainTech = techColors.find((t) => t.id === c.main_technical_color_id);
+                    const linkedHexes = c.linked_technical_color_ids?.length > 1 ?
+                    (c.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean) :
+                    null;
+                    const techCode = mainTech?.code;
+                    return { key: `commercial:${c.id}`, hex: mainTech?.hex || "#ccc", linkedHexes, label: c.color_name, sub: c.code, techCode };
+                  });
+                  return (
+                    <div className="border border-border rounded-lg overflow-hidden">
                         <div className="flex border-b border-border">
                           <button type="button" onClick={() => setColorTab("technical")}
-                            className={`flex-1 py-2 text-xs font-medium transition-colors ${ colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground" }`}>
+                        className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
                             Technical ({techFiltered.length})
                           </button>
                           <button type="button" onClick={() => setColorTab("commercial")}
-                            className={`flex-1 py-2 text-xs font-medium transition-colors ${ colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground" }`}>
+                        className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
                             Commercial ({commFiltered.length})
                           </button>
                         </div>
@@ -505,18 +505,18 @@ export default function ColorPalettes() {
                         </div>
                         <div className="max-h-52 overflow-y-auto">
                           {items.map((item) => {
-                            const selected = selectedColorIds.has(item.key);
-                            return (
-                              <button key={item.key} type="button"
-                                onClick={() => toggleColorSelection(item.key)}
-                                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${ selected ? "bg-primary/10" : "hover:bg-muted" }`}>
-                                {item.linkedHexes?.length > 1 ? (
-                                  <div className="w-5 h-5 rounded-sm border border-border shrink-0 overflow-hidden flex">
+                          const selected = selectedColorIds.has(item.key);
+                          return (
+                            <button key={item.key} type="button"
+                            onClick={() => toggleColorSelection(item.key)}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}>
+                                {item.linkedHexes?.length > 1 ?
+                              <div className="w-5 h-5 rounded-sm border border-border shrink-0 overflow-hidden flex">
                                     {item.linkedHexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                                  </div>
-                                ) : (
-                                  <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
-                                )}
+                                  </div> :
+
+                              <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                              }
                                 <div className="flex-1 min-w-0">
                                   <span className="text-xs font-medium block truncate">{item.label}</span>
                                   <span className="text-[10px] text-muted-foreground font-mono">
@@ -526,9 +526,9 @@ export default function ColorPalettes() {
                                   </span>
                                 </div>
                                 {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
-                              </button>
-                            );
-                          })}
+                              </button>);
+
+                        })}
                           {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
                         </div>
                         <div className="p-2 border-t border-border flex gap-2">
@@ -541,40 +541,40 @@ export default function ColorPalettes() {
                           </Button>
                           <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
                         </div>
-                      </div>
-                    );
-                  })()}
+                      </div>);
+
+                })()}
 
                   {/* Full color strip */}
-                  {selectedSwatches.length > 0 && (
-                    <div className="h-12 rounded-lg overflow-hidden flex border border-border">
-                      {selectedSwatches.map((s, i) => (
-                        s.linkedHexes?.length > 1 ? (
-                          <div key={i} className="flex-1 flex overflow-hidden" title={s.name || s.code}>
+                  {selectedSwatches.length > 0 &&
+                <div className="h-12 rounded-lg overflow-hidden flex border border-border">
+                      {selectedSwatches.map((s, i) =>
+                  s.linkedHexes?.length > 1 ?
+                  <div key={i} className="flex-1 flex overflow-hidden" title={s.name || s.code}>
                             {s.linkedHexes.map((h, j) => <div key={j} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                          </div>
-                        ) : (
-                          <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
-                        )
-                      ))}
-                    </div>
+                          </div> :
+
+                  <div key={i} className="flex-1" style={{ backgroundColor: s.hex }} title={s.name || s.code} />
+
                   )}
+                    </div>
+                }
 
                   {/* Color cards grid — commercial-led layout via shared component */}
                   <PaletteColorGrid
-                    paletteColors={paletteColors}
-                    paletteId={selectedPaletteId}
-                    techColors={techColors}
-                    commColors={commColors}
-                    swatches={selectedSwatches}
-                    onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
-                    onLinkTech={(tech) => setLinkingTechColor(tech)}
-                    onReorder={handleReorderColors}
-                    size={paletteCardSize}
-                    onSizeChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }}
-                  />
+                  paletteColors={paletteColors}
+                  paletteId={selectedPaletteId}
+                  techColors={techColors}
+                  commColors={commColors}
+                  swatches={selectedSwatches}
+                  onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
+                  onLinkTech={(tech) => setLinkingTechColor(tech)}
+                  onReorder={handleReorderColors}
+                  size={paletteCardSize}
+                  onSizeChange={(s) => {setPaletteCardSize(s);try {localStorage.setItem("palette_card_size", s);} catch {}}} />
+                
                 </>
-              )}
+              }
             </div>
           </div>
         </TabsContent>
@@ -585,17 +585,17 @@ export default function ColorPalettes() {
       </Tabs>
 
       {/* Link Commercial Color dialog */}
-      {linkingTechColor && (
-        <LinkCommercialColorDialog
-          techColor={linkingTechColor}
-          commColors={commColors}
-          setCommColors={setCommColors}
-          onClose={() => setLinkingTechColor(null)}
-        />
-      )}
+      {linkingTechColor &&
+      <LinkCommercialColorDialog
+        techColor={linkingTechColor}
+        commColors={commColors}
+        setCommColors={setCommColors}
+        onClose={() => setLinkingTechColor(null)} />
+
+      }
 
       {/* Palette Dialog */}
-      <Dialog open={showDialog} onOpenChange={(o) => { if (!o) { setShowDialog(false); setEditingPalette(null); } }}>
+      <Dialog open={showDialog} onOpenChange={(o) => {if (!o) {setShowDialog(false);setEditingPalette(null);}}}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>{editingPalette ? "Edit Palette" : "New Color Palette"}</DialogTitle>
@@ -616,7 +616,7 @@ export default function ColorPalettes() {
               <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Spring Collection Palette" required />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setShowDialog(false); setEditingPalette(null); }}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => {setShowDialog(false);setEditingPalette(null);}}>Cancel</Button>
               <Button type="submit" disabled={saving} className="gap-2">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}{editingPalette ? "Save" : "Create"}
               </Button>
@@ -674,32 +674,32 @@ export default function ColorPalettes() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Main Technical Color</Label>
-              {commForm.main_technical_color_id ? (
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
-                  {(() => { const t = techColors.find(t => t.id === commForm.main_technical_color_id); return t ? (<><div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} /><span className="text-xs flex-1">{tcxDisplayName(t)}</span></>) : null; })()}
-                  <button type="button" onClick={() => { setCommForm(f => ({ ...f, main_technical_color_id: "" })); setTechSearch(""); }} className="text-xs text-muted-foreground hover:text-foreground ml-auto">✕</button>
-                </div>
-              ) : (
-                <div className="border border-border rounded-lg overflow-hidden">
+              {commForm.main_technical_color_id ?
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
+                  {(() => {const t = techColors.find((t) => t.id === commForm.main_technical_color_id);return t ? <><div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} /><span className="text-xs flex-1">{tcxDisplayName(t)}</span></> : null;})()}
+                  <button type="button" onClick={() => {setCommForm((f) => ({ ...f, main_technical_color_id: "" }));setTechSearch("");}} className="text-xs text-muted-foreground hover:text-foreground ml-auto">✕</button>
+                </div> :
+
+              <div className="border border-border rounded-lg overflow-hidden">
                   <div className="p-2 border-b border-border">
                     <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search by code or name…" className="h-8 text-xs" />
                   </div>
                   <div className="max-h-44 overflow-y-auto">
-                    {techColors
-                      .filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase()))
-                      .map((t) => (
-                        <button key={t.id} type="button" onClick={() => handleTechSelectForComm(t.id)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                    {techColors.
+                  filter((t) => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase())).
+                  map((t) =>
+                  <button key={t.id} type="button" onClick={() => handleTechSelectForComm(t.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
                           <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
                           <span className="text-xs">{tcxDisplayName(t)}</span>
                         </button>
-                      ))}
-                    {techColors.filter(t => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase())).length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-4">No colors found</p>
-                    )}
+                  )}
+                    {techColors.filter((t) => !techSearch || t.code?.toLowerCase().includes(techSearch.toLowerCase()) || t.name?.toLowerCase().includes(techSearch.toLowerCase())).length === 0 &&
+                  <p className="text-xs text-muted-foreground text-center py-4">No colors found</p>
+                  }
                   </div>
                 </div>
-              )}
+              }
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Color Name</Label>
@@ -707,42 +707,42 @@ export default function ColorPalettes() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Linked Technical Colors</Label>
-              {commForm.linked_technical_color_ids.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
+              {commForm.linked_technical_color_ids.length > 0 &&
+              <div className="flex flex-wrap gap-1.5 mb-2">
                   {commForm.linked_technical_color_ids.map((id) => {
-                    const t = techColors.find((c) => c.id === id);
-                    if (!t) return null;
-                    const isMain = id === commForm.main_technical_color_id;
-                    return (
-                      <div key={id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted border border-border text-xs">
+                  const t = techColors.find((c) => c.id === id);
+                  if (!t) return null;
+                  const isMain = id === commForm.main_technical_color_id;
+                  return (
+                    <div key={id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted border border-border text-xs">
                         <div className="w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: colorToHex(t) }} />
                         <span>{tcxDisplayName(t)}</span>
                         {isMain && <span className="text-[10px] text-primary font-medium">(main)</span>}
                         <button type="button" onClick={() => setCommForm((f) => ({ ...f, linked_technical_color_ids: f.linked_technical_color_ids.filter((i) => i !== id) }))} className="text-muted-foreground hover:text-destructive ml-0.5">×</button>
-                      </div>
-                    );
-                  })}
+                      </div>);
+
+                })}
                 </div>
-              )}
+              }
               <div className="border border-border rounded-lg overflow-hidden">
                 <div className="p-2 border-b border-border">
                   <Input value={linkedTechSearch} onChange={(e) => setLinkedTechSearch(e.target.value)} placeholder="Search to add more technical colors…" className="h-8 text-xs" />
                 </div>
                 <div className="max-h-36 overflow-y-auto">
-                  {techColors
-                    .filter((t) => !commForm.linked_technical_color_ids.includes(t.id))
-                    .filter((t) => !linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))
-                    .map((t) => (
-                      <button key={t.id} type="button"
-                        onClick={() => { setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, t.id] })); setLinkedTechSearch(""); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
+                  {techColors.
+                  filter((t) => !commForm.linked_technical_color_ids.includes(t.id)).
+                  filter((t) => !linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase())).
+                  map((t) =>
+                  <button key={t.id} type="button"
+                  onClick={() => {setCommForm((f) => ({ ...f, linked_technical_color_ids: [...f.linked_technical_color_ids, t.id] }));setLinkedTechSearch("");}}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted text-left transition-colors">
                         <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: colorToHex(t) }} />
                         <span className="text-xs">{tcxDisplayName(t)}</span>
                       </button>
-                    ))}
-                  {techColors.filter((t) => !commForm.linked_technical_color_ids.includes(t.id) && (!linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))).length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-3">No more colors to add</p>
                   )}
+                  {techColors.filter((t) => !commForm.linked_technical_color_ids.includes(t.id) && (!linkedTechSearch || t.code?.toLowerCase().includes(linkedTechSearch.toLowerCase()) || t.name?.toLowerCase().includes(linkedTechSearch.toLowerCase()))).length === 0 &&
+                  <p className="text-xs text-muted-foreground text-center py-3">No more colors to add</p>
+                  }
                 </div>
               </div>
             </div>
@@ -753,6 +753,6 @@ export default function ColorPalettes() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
