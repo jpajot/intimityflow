@@ -141,6 +141,22 @@ export default function DocumentStaging() {
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [activeViewId, setActiveViewId] = useState("default");
 
+  const handleSelectView = (viewId) => {
+    setActiveViewId(viewId);
+    if (!viewId || viewId === "default") {
+      setVisibleColumns(null);
+    } else {
+      base44.entities.ListViewConfig.filter({ id: viewId }).then((results) => {
+        if (results.length > 0) {
+          const cfg = results[0];
+          setVisibleColumns(cfg.column_ids?.length > 0 ? cfg.column_ids : null);
+        } else {
+          setVisibleColumns(null);
+        }
+      });
+    }
+  };
+
   const { setOptions } = usePageOptions();
 
   useEffect(() => { loadData(); }, [docId]);
@@ -158,7 +174,7 @@ export default function DocumentStaging() {
         <ViewDrawerContent
           pageKey="document_staging"
           activeViewId={activeViewId}
-          onSelectView={setActiveViewId}
+          onSelectView={handleSelectView}
           currentViewType="list"
           allFields={[
             { id: "slide", label: "Slide" },
@@ -174,18 +190,7 @@ export default function DocumentStaging() {
     });
   }, [doc?.status, reparsing, processing, showViewMenu, activeViewId]);
 
-  // Apply view config when activeViewId changes
-  useEffect(() => {
-    if (!activeViewId || activeViewId === "default") {
-      setVisibleColumns(null);
-    } else {
-      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
-        if (results.length > 0) {
-          setVisibleColumns(results[0].column_ids?.length > 0 ? results[0].column_ids : null);
-        }
-      });
-    }
-  }, [activeViewId]);
+
 
   const loadData = async () => {
     setLoading(true);
