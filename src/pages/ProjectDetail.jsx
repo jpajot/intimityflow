@@ -65,7 +65,7 @@ export default function ProjectDetail() {
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
   const [showStylesViewMenu, setShowStylesViewMenu] = useState(false);
   const [stylesActiveViewId, setStylesActiveViewId] = useState("default");
-  const [stylesViewMode, setStylesViewMode] = useState("grid");
+  const [stylesViewMode, setStylesViewMode] = useState("list");
   const [showColorwaysViewMenu, setShowColorwaysViewMenu] = useState(false);
   const [colorwaysActiveViewId, setColorwaysActiveViewId] = useState("default");
   const [colorwaysViewMode, setColorwaysViewMode] = useState("grid");
