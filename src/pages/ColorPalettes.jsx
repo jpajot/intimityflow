@@ -1,19 +1,22 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
+import { usePageOptions } from "@/lib/PageOptionsContext";
+import { useSubNav } from "@/lib/SubNavContext";
 import ColorLibrary from "./ColorLibrary";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid, { SizeControl } from "../components/PaletteColorGrid";
 
 export default function ColorPalettes() {
-  const [mainTab, setMainTab] = useState("palettes");
+  const { setOptions } = usePageOptions();
+  const { registerNav } = useSubNav();
+  const [activeSection, setActiveSection] = useState("palettes");
   const [palettes, setPalettes] = useState([]);
   const [projects, setProjects] = useState([]);
   const [paletteColors, setPaletteColors] = useState([]);
@@ -40,6 +43,33 @@ export default function ColorPalettes() {
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
+
+  useEffect(() => {
+    registerNav({
+      items: [
+        { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
+        { id: "technical", label: "Technical Colors", count: techColors.length, icon: SwatchBook },
+        { id: "commercial", label: "Commercial Colors", count: commColors.length, icon: SwatchBook },
+      ],
+      activeId: activeSection,
+      onChange: setActiveSection,
+      pageTitle: "Color Studio"
+    });
+  }, [activeSection, palettes.length, techColors.length, commColors.length, registerNav]);
+
+  useEffect(() => {
+    if (activeSection === "palettes" && selectedPaletteId) {
+      setOptions({
+        items: [
+          { label: "Add Color", icon: Plus, onClick: () => openColorPicker(), className: "text-primary hover:bg-primary/10" },
+          { divider: true },
+          ...(selectedSwatches.length > 0 ? [{ label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
+        ]
+      });
+    } else {
+      setOptions({ items: [] });
+    }
+  }, [activeSection, selectedPaletteId, selectedSwatches.length, setOptions]);
 
   useEffect(() => {loadData();}, []);
 
@@ -366,13 +396,7 @@ export default function ColorPalettes() {
         <h1 className="font-display text-3xl font-semibold tracking-tight">Color Studio</h1>
       </div>
 
-      <Tabs value={mainTab} onValueChange={setMainTab}>
-        <TabsList>
-          <TabsTrigger value="palettes">Palettes</TabsTrigger>
-          <TabsTrigger value="library">Color Library</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="palettes" className="mt-4">
+      {activeSection === "palettes" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Palettes Panel */}
             <div className="bg-card rounded-xl border border-border p-5 space-y-4">
@@ -461,14 +485,6 @@ export default function ColorPalettes() {
                     </div>
                     <div className="flex items-center gap-2">
                       <SizeControl size={paletteCardSize} onChange={(s) => {setPaletteCardSize(s);try {localStorage.setItem("palette_card_size", s);} catch {}}} />
-                      {selectedSwatches.length > 0 &&
-                    <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
-                          <Download className="w-3.5 h-3.5" /> Export .ase
-                        </Button>
-                    }
-                      <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
-                        <Plus className="w-3.5 h-3.5" /> Add Color
-                      </Button>
                     </div>
                   </div>
 
@@ -577,12 +593,15 @@ export default function ColorPalettes() {
               }
             </div>
           </div>
-        </TabsContent>
+      )}
 
-        <TabsContent value="library" className="mt-4">
-          <ColorLibrary hideTitle />
-        </TabsContent>
-      </Tabs>
+      {activeSection === "technical" && (
+        <ColorLibrary hideTitle colorType="technical" />
+      )}
+
+      {activeSection === "commercial" && (
+        <ColorLibrary hideTitle colorType="commercial" />
+      )}
 
       {/* Link Commercial Color dialog */}
       {linkingTechColor &&
