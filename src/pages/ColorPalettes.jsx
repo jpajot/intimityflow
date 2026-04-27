@@ -46,6 +46,8 @@ export default function ColorPalettes() {
   const [techView, setTechView] = useState("table");
   const [commView, setCommView] = useState("table");
   const [commSearch, setCommSearch] = useState("");
+  const [visibleTechColumns, setVisibleTechColumns] = useState(null);
+  const [visibleCommColumns, setVisibleCommColumns] = useState(null);
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -67,18 +69,32 @@ export default function ColorPalettes() {
         ]
       });
     } else if (activeSection === "technical") {
+      const techColumns = [
+        { id: "color", label: "Color", width: 60, render: (c) => <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /> },
+        { id: "code", label: "Code", width: 120, sortKey: (c) => c.code || "", render: (c) => <span className="text-xs font-mono">{c.code}</span> },
+        { id: "name", label: "Name", width: 150, sortKey: (c) => c.name || "", render: (c) => <span className="text-xs">{c.name}</span> },
+        { id: "hex", label: "Hex", width: 120, sortKey: (c) => c.hex || "", render: (c) => <span className="text-xs font-mono text-muted-foreground">{colorToHex(c)}</span> }
+      ];
       setOptions({
-        customContent: <ViewSelector pageKey="technical_colors" allColumns={[]} onColumnsChange={() => {}} />,
         items: [
-          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" }
-        ]
+          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
+          { divider: true }
+        ],
+        customContent: techColors.length > 0 ? <ViewSelector pageKey="technical_colors" allColumns={techColumns} onColumnsChange={setVisibleTechColumns} /> : null
       });
     } else if (activeSection === "commercial") {
+      const commColumns = [
+        { id: "color", label: "Color", width: 60, render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /> } },
+        { id: "code", label: "Code", width: 120, sortKey: (c) => c.code || "", render: (c) => <span className="text-xs font-mono">{c.code}</span> },
+        { id: "name", label: "Name", width: 150, sortKey: (c) => c.color_name || "", render: (c) => <span className="text-xs">{c.color_name}</span> },
+        { id: "type", label: "Type", width: 100, sortKey: (c) => c.sub_type || "", render: (c) => <span className="text-xs">{c.sub_type}</span> }
+      ];
       setOptions({
-        customContent: <ViewSelector pageKey="commercial_colors" allColumns={[]} onColumnsChange={() => {}} />,
         items: [
-          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" }
-        ]
+          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
+          { divider: true }
+        ],
+        customContent: commColors.length > 0 ? <ViewSelector pageKey="commercial_colors" allColumns={commColumns} onColumnsChange={setVisibleCommColumns} /> : null
       });
     } else {
       setOptions({ items: [] });
@@ -404,10 +420,12 @@ export default function ColorPalettes() {
     </div>);
 
 
+  const pageTitle = activeSection === "technical" ? "Technical Color" : activeSection === "commercial" ? "Commercial Colors" : "Color Studio";
+
   return (
     <div className="px-2 py-2 space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Color Studio</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">{pageTitle}</h1>
       </div>
 
       {activeSection === "palettes" && (
