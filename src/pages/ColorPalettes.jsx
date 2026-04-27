@@ -11,7 +11,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import ColorLibrary from "./ColorLibrary";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
-import PaletteColorGrid, { SizeControl } from "../components/PaletteColorGrid";
+import PaletteColorGrid from "../components/PaletteColorGrid";
 
 export default function ColorPalettes() {
   const { setOptions } = usePageOptions();
@@ -56,13 +56,16 @@ export default function ColorPalettes() {
         items: [
           { label: "Add Color", icon: Plus, onClick: () => openColorPicker(), className: "text-primary hover:bg-primary/10" },
           { divider: true },
-          ...(swatches.length > 0 ? [{ label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
+          { label: "S", onClick: () => { setPaletteCardSize("S"); try { localStorage.setItem("palette_card_size", "S"); } catch {} }, className: `px-2 py-1 text-xs font-medium rounded border ${paletteCardSize === "S" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+          { label: "M", onClick: () => { setPaletteCardSize("M"); try { localStorage.setItem("palette_card_size", "M"); } catch {} }, className: `px-2 py-1 text-xs font-medium rounded border ${paletteCardSize === "M" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+          { label: "L", onClick: () => { setPaletteCardSize("L"); try { localStorage.setItem("palette_card_size", "L"); } catch {} }, className: `px-2 py-1 text-xs font-medium rounded border ${paletteCardSize === "L" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+          ...(swatches.length > 0 ? [{ divider: true }, { label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
         ]
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, setOptions]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions]);
 
   useEffect(() => {loadData();}, []);
 
@@ -467,18 +470,13 @@ export default function ColorPalettes() {
                 </div> :
 
               <>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold">{selectedPalette.name}</h3>
-                      {selectedProject &&
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <FolderOpen className="w-3 h-3" />{selectedProject.name}
-                        </p>
-                    }
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <SizeControl size={paletteCardSize} onChange={(s) => {setPaletteCardSize(s);try {localStorage.setItem("palette_card_size", s);} catch {}}} />
-                    </div>
+                  <div>
+                    <h3 className="font-semibold">{selectedPalette.name}</h3>
+                    {selectedProject &&
+                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <FolderOpen className="w-3 h-3" />{selectedProject.name}
+                      </p>
+                  }
                   </div>
 
                   {/* Color Picker */}
@@ -571,16 +569,15 @@ export default function ColorPalettes() {
 
                   {/* Color cards grid — commercial-led layout via shared component */}
                   <PaletteColorGrid
-                  paletteColors={paletteColors}
-                  paletteId={selectedPaletteId}
-                  techColors={techColors}
-                  commColors={commColors}
-                  swatches={selectedSwatches}
-                  onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
-                  onLinkTech={(tech) => setLinkingTechColor(tech)}
-                  onReorder={handleReorderColors}
-                  size={paletteCardSize}
-                  onSizeChange={(s) => {setPaletteCardSize(s);try {localStorage.setItem("palette_card_size", s);} catch {}}} />
+                   paletteColors={paletteColors}
+                   paletteId={selectedPaletteId}
+                   techColors={techColors}
+                   commColors={commColors}
+                   swatches={selectedSwatches}
+                   onRemove={(entryId, linkedTechEntryIds) => handleRemoveColor({ id: entryId, linkedTechEntryIds })}
+                   onLinkTech={(tech) => setLinkingTechColor(tech)}
+                   onReorder={handleReorderColors}
+                   size={paletteCardSize} />
                 
                 </>
               }
