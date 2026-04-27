@@ -576,7 +576,10 @@ export default function ProjectPalettesTab({
                         <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
                         <div className="flex-1 min-w-0">
                          <span className="text-xs font-medium block truncate">{item.label}</span>
-                         <span className="text-[10px] text-muted-foreground font-mono">{item.sub}{item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}</span>
+                         <div className="text-[10px] text-muted-foreground font-mono space-y-0.5">
+                           <div>{item.sub}</div>
+                           {item.commCode && <div className="text-primary/70">→ {item.commCode}</div>}
+                         </div>
                         </div>
                         {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
                       </button>
