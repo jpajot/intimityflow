@@ -59,17 +59,18 @@ export default function ColorPalettes() {
 
   useEffect(() => {
     if (activeSection === "palettes" && selectedPaletteId) {
+      const swatches = getSwatchData(selectedPaletteId);
       setOptions({
         items: [
           { label: "Add Color", icon: Plus, onClick: () => openColorPicker(), className: "text-primary hover:bg-primary/10" },
           { divider: true },
-          ...(selectedSwatches.length > 0 ? [{ label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
+          ...(swatches.length > 0 ? [{ label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
         ]
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, selectedSwatches.length, setOptions]);
+  }, [activeSection, selectedPaletteId, setOptions]);
 
   useEffect(() => {loadData();}, []);
 
