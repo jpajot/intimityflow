@@ -281,11 +281,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
         searchPlaceholder="Search colorways…"
         hideViewToggle
         moreItems={[]}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="mat_colorways_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={colorways} entityNames={["ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+      />
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
@@ -445,11 +441,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
         searchPlaceholder="Search variations…"
         hideViewToggle
         moreItems={[]}
-      >
-        {view === "list" && (
-          <ViewSelector pageKey="mat_more_variations_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={variations} entityNames={["ProductColorAndMore", "ProductColor", "Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
-        )}
-      </ListToolbar>
+      />
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
