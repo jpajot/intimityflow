@@ -140,18 +140,22 @@ export default function DocumentStaging() {
 
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [activeViewId, setActiveViewId] = useState("default");
+  const [pinnedCols, setPinnedCols] = useState([]);
 
   const handleSelectView = (viewId) => {
     setActiveViewId(viewId);
     if (!viewId || viewId === "default") {
       setVisibleColumns(null);
+      setPinnedCols([]);
     } else {
       base44.entities.ListViewConfig.filter({ id: viewId }).then((results) => {
         if (results.length > 0) {
           const cfg = results[0];
           setVisibleColumns(cfg.column_ids?.length > 0 ? cfg.column_ids : null);
+          setPinnedCols(cfg.fixed_column_ids || []);
         } else {
           setVisibleColumns(null);
+          setPinnedCols([]);
         }
       });
     }
@@ -696,6 +700,7 @@ export default function DocumentStaging() {
                 : columns}
               rows={filteredRows}
               hideColumnToggle
+              fixedColumns={pinnedCols}
             />
           )}
         </>
