@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
@@ -74,14 +74,25 @@ function usePopover() {
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
   const { subNav } = useSubNav();
   const { options } = usePageOptions();
+  const pendingSubNavId = useRef(null);
 
   const mainDrawer = usePopover();
   const pinnedDrawer = usePopover();
   const subNavDrawer = usePopover();
   const optionsDrawer = usePopover();
+
+  // Activate pending sub-nav section after navigation
+  useEffect(() => {
+    if (pendingSubNavId.current && subNav) {
+      const id = pendingSubNavId.current;
+      pendingSubNavId.current = null;
+      subNav.onChange(id);
+    }
+  }, [subNav, location.pathname]);
 
   // Cross-device sync
   useEffect(() => {
@@ -105,12 +116,33 @@ export default function Layout() {
   const activeDrawerItem = DRAWER_ITEMS.find((item) => isDrawerItemActive(item, location.pathname));
   const DrawerIcon = activeDrawerItem?.icon ?? StylesIcon;
 
-  const hasPinnedActive = pinnedItems.some(
-    (item) => location.pathname === item.path || location.pathname.startsWith(item.path + "/")
-  );
+  const hasPinnedActive = pinnedItems.some((item) => {
+    const pathMatch = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+    if (!pathMatch) return false;
+    if (item.subNavId && subNav) return item.subNavId === subNav.activeId;
+    return pathMatch;
+  });
 
-  const unpin = (path) => {
-    const updated = pinnedItems.filter((p) => p.path !== path);
+  const unpin = (key) => {
+    const updated = pinnedItems.filter((p) => (p.subNavId ? `${p.path}#${p.subNavId}` : p.path) !== key);
+    setPinnedItems(updated);
+    setPinnedItemsState(updated);
+    window.dispatchEvent(new Event("pinned-items-changed"));
+  };
+
+  const pinSubNavItem = (item) => {
+    const current = getPinnedItems();
+    const key = `${location.pathname}#${item.id}`;
+    const alreadyPinned = current.some((p) => p.subNavId === item.id && p.path === location.pathname);
+    let updated;
+    if (alreadyPinned) {
+      updated = current.filter((p) => !(p.subNavId === item.id && p.path === location.pathname));
+    } else {
+      if (current.length >= 6) return;
+      // Build a nice label: "Page > Section"
+      const pageLabel = DRAWER_ITEMS.find((d) => isDrawerItemActive(d, location.pathname))?.label || location.pathname.split("/").filter(Boolean).pop() || "Page";
+      updated = [...current, { path: location.pathname, label: `${pageLabel} › ${item.label}`, subNavId: item.id }];
+    }
     setPinnedItems(updated);
     setPinnedItemsState(updated);
     window.dispatchEvent(new Event("pinned-items-changed"));
@@ -144,21 +176,40 @@ export default function Layout() {
 
   const PinnedDrawerPopover = () => (
     <div ref={pinnedDrawer.popoverRef} style={pinnedDrawer.style}
-      className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[196px]">
+      className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
       {pinnedItems.length === 0 ? (
         <p className="px-4 py-3 text-xs text-muted-foreground">No pinned items yet.</p>
       ) : pinnedItems.map((item) => {
-        const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+        const key = item.subNavId ? `${item.path}#${item.subNavId}` : item.path;
+        const pathMatch = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+        const isActive = pathMatch && (!item.subNavId || item.subNavId === subNav?.activeId);
+        const handleClick = () => {
+          pinnedDrawer.close();
+          if (item.subNavId) {
+            pendingSubNavId.current = item.subNavId;
+            navigate(item.path);
+          }
+        };
         return (
-          <div key={item.path} className="group flex items-center">
-            <Link to={item.path} onClick={pinnedDrawer.close}
-              className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-              }`}>
-              <Pin className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </Link>
-            <button type="button" onClick={() => unpin(item.path)}
+          <div key={key} className="group flex items-center">
+            {item.subNavId ? (
+              <button type="button" onClick={handleClick}
+                className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
+                  isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
+                }`}>
+                <Pin className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </button>
+            ) : (
+              <Link to={item.path} onClick={pinnedDrawer.close}
+                className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
+                }`}>
+                <Pin className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            )}
+            <button type="button" onClick={() => unpin(key)}
               className="pr-3 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity" title="Unpin">
               <PinOff className="w-3.5 h-3.5" />
             </button>
@@ -172,7 +223,7 @@ export default function Layout() {
     if (!subNav) return null;
     return (
       <div ref={subNavDrawer.popoverRef} style={subNavDrawer.style}
-        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
+        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[230px]">
         <div className="px-4 pb-1.5 pt-0.5 border-b border-border mb-1">
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <span className="font-semibold text-foreground/70">{activeDrawerItem?.label ?? "Current"}</span>
@@ -183,20 +234,29 @@ export default function Layout() {
         {subNav.items.map((item) => {
           const Icon = item.icon;
           const isActive = item.id === subNav.activeId;
+          const isPinnedItem = pinnedItems.some((p) => p.subNavId === item.id && p.path === location.pathname);
           return (
-            <button key={item.id} type="button"
-              onClick={() => { subNav.onChange(item.id); subNavDrawer.close(); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
-                isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-              }`}>
-              {Icon && <Icon className="w-4 h-4 shrink-0" />}
-              <span className="flex-1">{item.label}</span>
-              {item.count !== undefined && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {item.count}
-                </span>
-              )}
-            </button>
+            <div key={item.id} className="group flex items-center">
+              <button type="button"
+                onClick={() => { subNav.onChange(item.id); subNavDrawer.close(); }}
+                className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
+                  isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
+                }`}>
+                {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                <span className="flex-1">{item.label}</span>
+                {item.count !== undefined && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    {item.count}
+                  </span>
+                )}
+              </button>
+              <button type="button"
+                onClick={() => pinSubNavItem(item)}
+                title={isPinnedItem ? "Unpin" : "Pin to sidebar"}
+                className={`pr-3 transition-all ${isPinnedItem ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary"}`}>
+                {isPinnedItem ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           );
         })}
       </div>
