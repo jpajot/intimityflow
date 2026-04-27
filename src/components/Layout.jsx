@@ -152,145 +152,6 @@ export default function Layout() {
   const activeSubNavItem = subNav?.items?.find((i) => i.id === subNav.activeId);
   const SubNavIcon = activeSubNavItem?.icon;
 
-  // ── Popovers ──────────────────────────────────────────────────────────────
-
-  const MainDrawerPopover = () => (
-    <div ref={mainDrawer.popoverRef} style={mainDrawer.style}
-      className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
-      <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Navigate to</p>
-      {DRAWER_ITEMS.map((item) => {
-        const Icon = item.icon;
-        const isActive = isDrawerItemActive(item, location.pathname);
-        return (
-          <Link key={item.path} to={item.path} onClick={mainDrawer.close}
-            className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-              isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-            }`}>
-            <Icon className="w-4 h-4 shrink-0" />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </div>
-  );
-
-  const PinnedDrawerPopover = () => (
-    <div ref={pinnedDrawer.popoverRef} style={pinnedDrawer.style}
-      className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
-      {pinnedItems.length === 0 ? (
-        <p className="px-4 py-3 text-xs text-muted-foreground">No pinned items yet.</p>
-      ) : pinnedItems.map((item) => {
-        const key = item.subNavId ? `${item.path}#${item.subNavId}` : item.path;
-        const pathMatch = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
-        const isActive = pathMatch && (!item.subNavId || item.subNavId === subNav?.activeId);
-        const handleClick = () => {
-          pinnedDrawer.close();
-          if (item.subNavId) {
-            pendingSubNavId.current = item.subNavId;
-            navigate(item.path);
-          }
-        };
-        return (
-          <div key={key} className="group flex items-center">
-            {item.subNavId ? (
-              <button type="button" onClick={handleClick}
-                className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
-                  isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-                }`}>
-                <Pin className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </button>
-            ) : (
-              <Link to={item.path} onClick={pinnedDrawer.close}
-                className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                  isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-                }`}>
-                <Pin className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </Link>
-            )}
-            <button type="button" onClick={() => unpin(key)}
-              className="pr-3 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity" title="Unpin">
-              <PinOff className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const SubNavPopover = () => {
-    if (!subNav) return null;
-    return (
-      <div ref={subNavDrawer.popoverRef} style={subNavDrawer.style}
-        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[230px]">
-        <div className="px-4 pb-1.5 pt-0.5 border-b border-border mb-1">
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <span className="font-semibold text-foreground/70">{activeDrawerItem?.label ?? "Current"}</span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="uppercase tracking-widest font-semibold">Sections</span>
-          </div>
-        </div>
-        {subNav.items.map((item) => {
-          const Icon = item.icon;
-          const isActive = item.id === subNav.activeId;
-          const isPinnedItem = pinnedItems.some((p) => p.subNavId === item.id && p.path === location.pathname);
-          return (
-            <div key={item.id} className="group flex items-center">
-              <button type="button"
-                onClick={() => { subNav.onChange(item.id); subNavDrawer.close(); }}
-                className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
-                  isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-                }`}>
-                {Icon && <Icon className="w-4 h-4 shrink-0" />}
-                <span className="flex-1">{item.label}</span>
-                {item.count !== undefined && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    {item.count}
-                  </span>
-                )}
-              </button>
-              <button type="button"
-                onClick={() => pinSubNavItem(item)}
-                title={isPinnedItem ? "Unpin" : "Pin to sidebar"}
-                className={`pr-3 transition-all ${isPinnedItem ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary"}`}>
-                {isPinnedItem ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const OptionsPopover = () => {
-    if (!options) return null;
-    return (
-      <div ref={optionsDrawer.popoverRef} style={optionsDrawer.style}
-        className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[240px] max-h-[80vh] overflow-y-auto">
-        <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Options</p>
-        {options.items && options.items.map((item, idx) => (
-          <div key={idx}>
-            {item.divider ? (
-              <div className="my-1 border-t border-border" />
-            ) : (
-              <button type="button" onClick={() => { item.onClick?.(); if (!item.custom) optionsDrawer.close(); }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors text-left">
-                {item.icon && <item.icon className="w-4 h-4 shrink-0 text-muted-foreground" />}
-                <span className="flex-1">{item.label}</span>
-              </button>
-            )}
-          </div>
-        ))}
-        {options.customContent && (
-          <div className="px-4 py-3 border-t border-border">
-            {options.customContent}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -454,10 +315,124 @@ export default function Layout() {
       </div>
 
       {/* Portals */}
-       {mainDrawer.open && createPortal(<MainDrawerPopover />, document.body)}
-       {pinnedDrawer.open && createPortal(<PinnedDrawerPopover />, document.body)}
-       {subNavDrawer.open && createPortal(<SubNavPopover />, document.body)}
-       {optionsDrawer.open && createPortal(<OptionsPopover />, document.body)}
+       {mainDrawer.open && createPortal(
+         <div ref={mainDrawer.popoverRef} style={mainDrawer.style}
+           className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
+           <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Navigate to</p>
+           {DRAWER_ITEMS.map((item) => {
+             const Icon = item.icon;
+             const isActive = isDrawerItemActive(item, location.pathname);
+             return (
+               <Link key={item.path} to={item.path} onClick={mainDrawer.close}
+                 className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"}`}>
+                 <Icon className="w-4 h-4 shrink-0" />
+                 <span>{item.label}</span>
+               </Link>
+             );
+           })}
+         </div>,
+         document.body
+       )}
+
+       {pinnedDrawer.open && createPortal(
+         <div ref={pinnedDrawer.popoverRef} style={pinnedDrawer.style}
+           className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[210px]">
+           {pinnedItems.length === 0 ? (
+             <p className="px-4 py-3 text-xs text-muted-foreground">No pinned items yet.</p>
+           ) : pinnedItems.map((item) => {
+             const key = item.subNavId ? `${item.path}#${item.subNavId}` : item.path;
+             const pathMatch = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+             const isActive = pathMatch && (!item.subNavId || item.subNavId === subNav?.activeId);
+             const handleClick = () => {
+               pinnedDrawer.close();
+               if (item.subNavId) { pendingSubNavId.current = item.subNavId; navigate(item.path); }
+             };
+             return (
+               <div key={key} className="group flex items-center">
+                 {item.subNavId ? (
+                   <button type="button" onClick={handleClick}
+                     className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"}`}>
+                     <Pin className="w-3.5 h-3.5 shrink-0" />
+                     <span className="truncate">{item.label}</span>
+                   </button>
+                 ) : (
+                   <Link to={item.path} onClick={pinnedDrawer.close}
+                     className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"}`}>
+                     <Pin className="w-3.5 h-3.5 shrink-0" />
+                     <span className="truncate">{item.label}</span>
+                   </Link>
+                 )}
+                 <button type="button" onClick={() => unpin(key)}
+                   className="pr-3 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity" title="Unpin">
+                   <PinOff className="w-3.5 h-3.5" />
+                 </button>
+               </div>
+             );
+           })}
+         </div>,
+         document.body
+       )}
+
+       {subNavDrawer.open && subNav && createPortal(
+         <div ref={subNavDrawer.popoverRef} style={subNavDrawer.style}
+           className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[230px]">
+           <div className="px-4 pb-1.5 pt-0.5 border-b border-border mb-1">
+             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+               <span className="font-semibold text-foreground/70">{activeDrawerItem?.label ?? "Current"}</span>
+               <ChevronRight className="w-3 h-3" />
+               <span className="uppercase tracking-widest font-semibold">Sections</span>
+             </div>
+           </div>
+           {subNav.items.map((item) => {
+             const Icon = item.icon;
+             const isActive = item.id === subNav.activeId;
+             const isPinnedItem = pinnedItems.some((p) => p.subNavId === item.id && p.path === location.pathname);
+             return (
+               <div key={item.id} className="group flex items-center">
+                 <button type="button"
+                   onClick={() => { subNav.onChange(item.id); subNavDrawer.close(); }}
+                   className={`flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"}`}>
+                   {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                   <span className="flex-1">{item.label}</span>
+                   {item.count !== undefined && (
+                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{item.count}</span>
+                   )}
+                 </button>
+                 <button type="button" onClick={() => pinSubNavItem(item)}
+                   title={isPinnedItem ? "Unpin" : "Pin to sidebar"}
+                   className={`pr-3 transition-all ${isPinnedItem ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary"}`}>
+                   {isPinnedItem ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                 </button>
+               </div>
+             );
+           })}
+         </div>,
+         document.body
+       )}
+
+       {optionsDrawer.open && options && createPortal(
+         <div ref={optionsDrawer.popoverRef} style={optionsDrawer.style}
+           className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[240px] max-h-[80vh] overflow-y-auto">
+           <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Options</p>
+           {options.items && options.items.map((item, idx) => (
+             <div key={idx}>
+               {item.divider ? (
+                 <div className="my-1 border-t border-border" />
+               ) : (
+                 <button type="button" onClick={() => { item.onClick?.(); if (!item.custom) optionsDrawer.close(); }}
+                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors text-left">
+                   {item.icon && <item.icon className="w-4 h-4 shrink-0 text-muted-foreground" />}
+                   <span className="flex-1">{item.label}</span>
+                 </button>
+               )}
+             </div>
+           ))}
+           {options.customContent && (
+             <div className="px-4 py-3 border-t border-border">{options.customContent}</div>
+           )}
+         </div>,
+         document.body
+       )}
       </div>
       );
       }
