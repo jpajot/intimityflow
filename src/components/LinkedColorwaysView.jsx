@@ -178,6 +178,8 @@ export default function LinkedColorwaysView({
   const [tableLightbox, setTableLightbox] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
 
+
+
   useEffect(() => {
     onViewRef?.({ view, setView: (v) => { onViewChange(v); }, activeColumns, setActiveColumns: onColumnsChange, pinnedCols, setPinnedCols });
   }, [view, activeColumns, pinnedCols, onViewRef, onViewChange, onColumnsChange]);
@@ -411,6 +413,25 @@ export default function LinkedColorwaysView({
       </button>
   }];
 
+
+  // Load and apply view config when activeViewId changes (placed after columns is defined)
+  useEffect(() => {
+    if (!activeViewId || activeViewId === "default") {
+      onColumnsChange(null);
+      setPinnedCols([]);
+    } else {
+      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+        if (results.length > 0) {
+          const viewConfig = results[0];
+          const colIds = viewConfig.column_ids || [];
+          const mapped = colIds.map((id) => columns.find((c) => c.id === id)).filter(Boolean);
+          onColumnsChange(mapped.length > 0 ? mapped : null);
+          setPinnedCols(viewConfig.fixed_column_ids || []);
+        }
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeViewId]);
 
   const visibleColumns = activeColumns || columns;
 
