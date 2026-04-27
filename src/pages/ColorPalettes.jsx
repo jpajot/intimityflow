@@ -12,7 +12,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
-import ViewSelector from "@/components/ViewSelector";
+
 
 export default function ColorPalettes() {
   const { setOptions } = usePageOptions();
@@ -73,7 +73,6 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowManageViewsDialog(true) }
         ]
       });
@@ -81,7 +80,6 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowManageViewsDialog(true) }
         ]
       });
