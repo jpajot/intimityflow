@@ -17,7 +17,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import ColorLibrary from './pages/ColorLibrary';
 import ColorPalettes from './pages/ColorPalettes';
-import ColorPaletteDetail from './pages/ColorPaletteDetail';
+
 import SizeLibrary from './pages/SizeLibrary';
 import SizeGridLibrary from './pages/SizeGridLibrary';
 import ListOfValuesLibrary from './pages/ListOfValuesLibrary';
@@ -79,7 +79,7 @@ const AuthenticatedApp = () => {
         <Route path="/list-view" element={<ListView />} />
         <Route path="/color-library" element={<ColorLibrary />} />
         <Route path="/color-palettes" element={<ColorPalettes />} />
-        <Route path="/color-palettes/:id" element={<ColorPaletteDetail />} />
+
         <Route path="/size-library" element={<SizeLibrary />} />
         <Route path="/size-grid-library" element={<SizeGridLibrary />} />
         <Route path="/list-of-values" element={<ListOfValuesLibrary />} />
