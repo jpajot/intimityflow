@@ -150,6 +150,19 @@ export default function ColorPalettes() {
     loadViews();
   }, [activeSection]);
 
+  useEffect(() => {
+    if (activeViewId === "default") {
+      return;
+    }
+    const viewList = activeSection === "technical" ? techViews : commViews;
+    const view = viewList.find((v) => v.id === activeViewId);
+    if (view) {
+      setVisibleTechColumns(activeSection === "technical" ? (view.column_ids || []).map((id) => ({ id })) : null);
+      setVisibleCommColumns(activeSection === "commercial" ? (view.column_ids || []).map((id) => ({ id })) : null);
+      setViewFormFixedColumnIds(view.fixed_column_ids || []);
+    }
+  }, [activeViewId, activeSection, techViews, commViews]);
+
   const loadData = async () => {
     const [pal, proj, pc, tc, cc] = await Promise.all([
     base44.entities.ColorPalette.list("-created_date", 200),
