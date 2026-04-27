@@ -140,6 +140,16 @@ export default function ColorPalettes() {
 
   useEffect(() => {loadData();}, []);
 
+  useEffect(() => {
+    const loadViews = async () => {
+      const pageKey = activeSection === "technical" ? "technical_colors" : "commercial_colors";
+      const views = await base44.entities.ListViewConfig.filter({ page_key: pageKey });
+      if (activeSection === "technical") setTechViews(views);
+      else setCommViews(views);
+    };
+    loadViews();
+  }, [activeSection]);
+
   const loadData = async () => {
     const [pal, proj, pc, tc, cc] = await Promise.all([
     base44.entities.ColorPalette.list("-created_date", 200),
