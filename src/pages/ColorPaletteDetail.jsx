@@ -13,6 +13,7 @@ import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
 export default function ColorPaletteDetail() {
+  // Palette detail editor with options menu
   const { id } = useParams();
   const navigate = useNavigate();
   const { setOptions } = usePageOptions();
