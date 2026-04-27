@@ -102,7 +102,7 @@ export default function ProjectDetail() {
     { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
     { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
   ];
-  useRegisterSubNav(subNavItems, activeSection, setActiveSection);
+  useRegisterSubNav(subNavItems, activeSection, setActiveSection, project?.name);
 
   const { setOptions } = usePageOptions();
 

@@ -139,8 +139,8 @@ export default function Layout() {
       updated = current.filter((p) => !(p.subNavId === item.id && p.path === location.pathname));
     } else {
       if (current.length >= 6) return;
-      // Build a nice label: "Page > Section"
-      const pageLabel = DRAWER_ITEMS.find((d) => isDrawerItemActive(d, location.pathname))?.label || location.pathname.split("/").filter(Boolean).pop() || "Page";
+      // Use the page's own title (e.g. project name) if available, otherwise fall back to drawer label
+      const pageLabel = subNav?.pageTitle || DRAWER_ITEMS.find((d) => isDrawerItemActive(d, location.pathname))?.label || location.pathname.split("/").filter(Boolean).pop() || "Page";
       updated = [...current, { path: location.pathname, label: `${pageLabel} › ${item.label}`, subNavId: item.id }];
     }
     setPinnedItems(updated);
@@ -345,7 +345,15 @@ export default function Layout() {
              const isActive = pathMatch && (!item.subNavId || item.subNavId === subNav?.activeId);
              const handleClick = () => {
                pinnedDrawer.close();
-               if (item.subNavId) { pendingSubNavId.current = item.subNavId; navigate(item.path); }
+               if (item.subNavId) {
+                 const alreadyOnPage = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+                 if (alreadyOnPage && subNav) {
+                   subNav.onChange(item.subNavId);
+                 } else {
+                   pendingSubNavId.current = item.subNavId;
+                   navigate(item.path);
+                 }
+               }
              };
              return (
                <div key={key} className="group flex items-center">

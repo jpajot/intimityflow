@@ -7,12 +7,12 @@ import { useSubNav } from "@/lib/SubNavContext";
  * activeId: current active tab string
  * onChange: (id) => void
  */
-export function useRegisterSubNav(items, activeId, onChange) {
+export function useRegisterSubNav(items, activeId, onChange, pageTitle) {
   const { registerSubNav, clearSubNav } = useSubNav();
 
   useEffect(() => {
-    registerSubNav({ items, activeId, onChange });
+    registerSubNav({ items, activeId, onChange, pageTitle });
     return () => clearSubNav();
     // Re-register whenever active changes so button reflects current section
-  }, [activeId, JSON.stringify(items.map((i) => ({ id: i.id, label: i.label, count: i.count })))]);
+  }, [activeId, pageTitle, JSON.stringify(items.map((i) => ({ id: i.id, label: i.label, count: i.count })))]);
 }
