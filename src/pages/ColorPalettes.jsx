@@ -12,6 +12,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
+import ViewSelector from "@/components/ViewSelector";
 
 
 export default function ColorPalettes() {
@@ -48,7 +49,7 @@ export default function ColorPalettes() {
   const [commSearch, setCommSearch] = useState("");
   const [visibleTechColumns, setVisibleTechColumns] = useState(null);
   const [visibleCommColumns, setVisibleCommColumns] = useState(null);
-  const [showManageViewsDialog, setShowManageViewsDialog] = useState(false);
+  const [showViewsMenu, setShowViewsMenu] = useState(false);
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -70,18 +71,38 @@ export default function ColorPalettes() {
         ]
       });
     } else if (activeSection === "technical") {
+      const techColumns = [
+        { id: "color", label: "Color", width: 60, render: (c) => <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /> },
+        { id: "code", label: "Code", width: 120, sortKey: (c) => c.code || "", render: (c) => <span className="text-xs font-mono">{c.code}</span> },
+        { id: "name", label: "Name", width: 150, sortKey: (c) => c.name || "", render: (c) => <span className="text-xs">{c.name}</span> },
+        { id: "hex", label: "Hex", width: 120, sortKey: (c) => c.hex || "", render: (c) => <span className="text-xs font-mono text-muted-foreground">{colorToHex(c)}</span> }
+      ];
       setOptions({
-        items: [
+        items: showViewsMenu ? [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowManageViewsDialog(true) }
-        ]
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(false) }
+        ] : [
+          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
+        ],
+        customContent: showViewsMenu ? <ViewSelector pageKey="technical_colors" allColumns={techColumns} onColumnsChange={setVisibleTechColumns} /> : null
       });
     } else if (activeSection === "commercial") {
+      const commColumns = [
+        { id: "color", label: "Color", width: 60, render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /> } },
+        { id: "code", label: "Code", width: 120, sortKey: (c) => c.code || "", render: (c) => <span className="text-xs font-mono">{c.code}</span> },
+        { id: "name", label: "Name", width: 150, sortKey: (c) => c.color_name || "", render: (c) => <span className="text-xs">{c.color_name}</span> },
+        { id: "type", label: "Type", width: 100, sortKey: (c) => c.sub_type || "", render: (c) => <span className="text-xs">{c.sub_type}</span> }
+      ];
       setOptions({
-        items: [
+        items: showViewsMenu ? [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowManageViewsDialog(true) }
-        ]
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(false) }
+        ] : [
+          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
+        ],
+        customContent: showViewsMenu ? <ViewSelector pageKey="commercial_colors" allColumns={commColumns} onColumnsChange={setVisibleCommColumns} /> : null
       });
     } else {
       setOptions({ items: [] });
@@ -775,33 +796,6 @@ export default function ColorPalettes() {
               <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create & Add</Button>
             </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Manage Views Dialog */}
-      <Dialog open={showManageViewsDialog} onOpenChange={setShowManageViewsDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Manage Views</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-xs text-muted-foreground rounded-lg border border-dashed border-border p-3">
-              Default view showing all columns with no filters
-            </div>
-            {activeSection === "technical" && (
-              <Button onClick={() => {}} variant="outline" className="w-full gap-2 text-xs">
-                <Plus className="w-3.5 h-3.5" /> New View
-              </Button>
-            )}
-            {activeSection === "commercial" && (
-              <Button onClick={() => {}} variant="outline" className="w-full gap-2 text-xs">
-                <Plus className="w-3.5 h-3.5" /> New View
-              </Button>
-            )}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setShowManageViewsDialog(false)}>Close</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
