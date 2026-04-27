@@ -3,8 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, Download, X } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import LinkCommercialColorDialog from "./LinkCommercialColorDialog";
 import PaletteColorGrid, { SizeControl } from "./PaletteColorGrid";
@@ -453,63 +453,7 @@ export default function ProjectPalettesTab({
 
             </div>
 
-            {/* Inline color picker */}
-            {showColorPicker && (() => {
-              const { techFiltered, commFiltered } = getAvailableColors();
-              const items = colorTab === "technical"
-                ? techFiltered.map((t) => {
-                    const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
-                    return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
-                  })
-                : commFiltered.map((c) => {
-                    const t = techColors.find((t) => t.id === c.main_technical_color_id);
-                    return { key: `commercial:${c.id}`, hex: t?.hex || "#ccc", label: c.color_name, sub: c.code };
-                  });
-              return (
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <div className="flex border-b border-border">
-                    <button type="button" onClick={() => setColorTab("technical")}
-                      className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
-                      Technical ({techFiltered.length})
-                    </button>
-                    <button type="button" onClick={() => setColorTab("commercial")}
-                      className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
-                      Commercial ({commFiltered.length})
-                    </button>
-                  </div>
-                  <div className="p-2 border-b border-border">
-                    <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
-                  </div>
-                  <div className="max-h-52 overflow-y-auto">
-                    {items.map((item) => {
-                      const selected = selectedColorIds.has(item.key);
-                      return (
-                        <button key={item.key} type="button" onClick={() => toggleColorSelection(item.key)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}>
-                          <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
-                          <div className="flex-1 min-w-0">
-                           <span className="text-xs font-medium block truncate">{item.label}</span>
-                           <span className="text-[10px] text-muted-foreground font-mono">{item.sub}{item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}</span>
-                          </div>
-                          {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
-                        </button>
-                      );
-                    })}
-                    {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
-                  </div>
-                  <div className="p-2 border-t border-border flex gap-2">
-                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? (setShowTechDialog(true), setTechForm({ code: "", name: "", hex: "#cccccc" })) : openNewComm()}>
-                      <Plus className="w-3 h-3" /> New
-                    </Button>
-                    <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors} onClick={handleAddSelectedColors}>
-                      {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
-                      Add {selectedColorIds.size > 0 ? `(${selectedColorIds.size})` : ""}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
-                  </div>
-                </div>
-              );
-            })()}
+
 
             {/* Color strip */}
             {selectedSwatches.length > 0 && (
@@ -595,6 +539,71 @@ export default function ProjectPalettesTab({
           onClose={() => setLinkingTechColor(null)}
         />
       )}
+
+      {/* Add Colors Modal */}
+      <Dialog open={showColorPicker} onOpenChange={setShowColorPicker}>
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add Colors to Palette</DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const { techFiltered, commFiltered } = getAvailableColors();
+            const items = colorTab === "technical"
+              ? techFiltered.map((t) => {
+                  const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
+                  return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
+                })
+              : commFiltered.map((c) => {
+                  const t = techColors.find((t) => t.id === c.main_technical_color_id);
+                  return { key: `commercial:${c.id}`, hex: t?.hex || "#ccc", label: c.color_name, sub: c.code };
+                });
+            return (
+              <div className="flex flex-col gap-3 flex-1 overflow-hidden">
+                <div className="flex border border-border rounded-lg overflow-hidden">
+                  <button type="button" onClick={() => setColorTab("technical")}
+                    className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
+                    Technical ({techFiltered.length})
+                  </button>
+                  <button type="button" onClick={() => setColorTab("commercial")}
+                    className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
+                    Commercial ({commFiltered.length})
+                  </button>
+                </div>
+                <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
+                <div className="flex-1 overflow-y-auto border border-border rounded-lg">
+                  {items.map((item) => {
+                    const selected = selectedColorIds.has(item.key);
+                    return (
+                      <button key={item.key} type="button" onClick={() => toggleColorSelection(item.key)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors border-b border-border last:border-b-0 ${selected ? "bg-primary/10" : "hover:bg-muted"}`}>
+                        <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                        <div className="flex-1 min-w-0">
+                         <span className="text-xs font-medium block truncate">{item.label}</span>
+                         <span className="text-[10px] text-muted-foreground font-mono">{item.sub}{item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}</span>
+                        </div>
+                        {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
+                      </button>
+                    );
+                  })}
+                  {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? (setShowTechDialog(true), setTechForm({ code: "", name: "", hex: "#cccccc" })) : openNewComm()}>
+                    <Plus className="w-3 h-3" /> New
+                  </Button>
+                  <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors} onClick={handleAddSelectedColors}>
+                    {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Add {selectedColorIds.size > 0 ? `(${selectedColorIds.size})` : ""}
+                  </Button>
+                  <DialogClose asChild>
+                    <Button variant="ghost" size="sm" className="text-xs">Cancel</Button>
+                  </DialogClose>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* New Commercial Color dialog */}
       <Dialog open={showCommDialog} onOpenChange={setShowCommDialog}>
