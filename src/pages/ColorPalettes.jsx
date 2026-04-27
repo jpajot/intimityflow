@@ -78,7 +78,8 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { divider: true }
+          { divider: true },
+          { label: "Manage Views", icon: Settings2, onClick: () => {}, custom: true }
         ],
         customContent: techColors.length > 0 ? <ViewSelector pageKey="technical_colors" allColumns={techColumns} onColumnsChange={setVisibleTechColumns} /> : null
       });
@@ -92,7 +93,8 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { divider: true }
+          { divider: true },
+          { label: "Manage Views", icon: Settings2, onClick: () => {}, custom: true }
         ],
         customContent: commColors.length > 0 ? <ViewSelector pageKey="commercial_colors" allColumns={commColumns} onColumnsChange={setVisibleCommColumns} /> : null
       });
