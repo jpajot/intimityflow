@@ -156,7 +156,7 @@ export default function ColorPalettes() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, showViewsMenu, techColors]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors]);
 
   useEffect(() => {loadData();}, []);
 
@@ -481,8 +481,6 @@ export default function ColorPalettes() {
   const selectedPalette = palettes.find((p) => p.id === selectedPaletteId);
   const selectedSwatches = selectedPaletteId ? getSwatchData(selectedPaletteId) : [];
   const selectedProject = selectedPalette ? projects.find((p) => p.id === selectedPalette.project_id) : null;
-  
-  const activeView = activeViewId === "default" ? null : null;
 
   if (loading) return (
     <div className="flex items-center justify-center py-32">
@@ -699,22 +697,22 @@ export default function ColorPalettes() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                    {!activeView || activeView.column_ids.includes("color") && <th className="px-4 py-2 text-left text-xs font-medium">Color</th>}
-                    {!activeView || activeView.column_ids.includes("code") && <th className="px-4 py-2 text-left text-xs font-medium">Code</th>}
-                    {!activeView || activeView.column_ids.includes("name") && <th className="px-4 py-2 text-left text-xs font-medium">Name</th>}
-                    {!activeView || activeView.column_ids.includes("hex") && <th className="px-4 py-2 text-left text-xs font-medium">Hex</th>}
-                    <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
-                  </tr>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Hex</th>
+                     <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
+                   </tr>
                 </thead>
                 <tbody>
                   {techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase())).map(c => (
                     <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                      {!activeView || activeView.column_ids.includes("color") && <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td>}
-                      {!activeView || activeView.column_ids.includes("code") && <td className="px-4 py-2 text-xs font-mono">{c.code}</td>}
-                      {!activeView || activeView.column_ids.includes("name") && <td className="px-4 py-2 text-xs">{c.name}</td>}
-                      {!activeView || activeView.column_ids.includes("hex") && <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td>}
-                      <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
-                    </tr>
+                       <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td>
+                       <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
+                       <td className="px-4 py-2 text-xs">{c.name}</td>
+                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td>
+                       <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
+                     </tr>
                   ))}
                 </tbody>
               </table>
@@ -744,24 +742,24 @@ export default function ColorPalettes() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                    {!activeView || activeView.column_ids.includes("color") && <th className="px-4 py-2 text-left text-xs font-medium">Color</th>}
-                    {!activeView || activeView.column_ids.includes("code") && <th className="px-4 py-2 text-left text-xs font-medium">Code</th>}
-                    {!activeView || activeView.column_ids.includes("name") && <th className="px-4 py-2 text-left text-xs font-medium">Name</th>}
-                    {!activeView || activeView.column_ids.includes("type") && <th className="px-4 py-2 text-left text-xs font-medium">Type</th>}
-                    <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
-                  </tr>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
+                     <th className="px-4 py-2 text-left text-xs font-medium">Type</th>
+                     <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
+                   </tr>
                 </thead>
                 <tbody>
                   {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
                     const tech = techColors.find(t => t.id === c.main_technical_color_id);
                     return (
                       <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                        {!activeView || activeView.column_ids.includes("color") && <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td>}
-                        {!activeView || activeView.column_ids.includes("code") && <td className="px-4 py-2 text-xs font-mono">{c.code}</td>}
-                        {!activeView || activeView.column_ids.includes("name") && <td className="px-4 py-2 text-xs">{c.color_name}</td>}
-                        {!activeView || activeView.column_ids.includes("type") && <td className="px-4 py-2 text-xs">{c.sub_type}</td>}
-                        <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
-                      </tr>
+                         <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td>
+                         <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
+                         <td className="px-4 py-2 text-xs">{c.color_name}</td>
+                         <td className="px-4 py-2 text-xs">{c.sub_type}</td>
+                         <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
+                       </tr>
                     );
                   })}
                 </tbody>
