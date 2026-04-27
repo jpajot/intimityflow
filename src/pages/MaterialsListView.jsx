@@ -434,7 +434,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   const visibleColumns = activeColumns || columns;
 
   return (
-    <div className="space-y-4">
+    <div className="px-2 py-2 space-y-4">
       <ListToolbar
         search={search}
         onSearch={setSearch}
