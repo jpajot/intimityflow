@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Pencil, Plus, Trash2, Loader2, X, Badge, ShieldCheck, GripVertical, Search } from "lucide-react";
+import { Pencil, Plus, Trash2, Loader2, X, ShieldCheck, GripVertical, Search, Pin, PinOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView, allFields = [], currentViewType = null }) {
   const [views, setViews] = useState([]);
@@ -126,11 +128,39 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
   };
 
   const toggleField = (fieldId) => {
-    setFormFieldIds((prev) => prev.includes(fieldId) ? prev.filter((x) => x !== fieldId) : [...prev, fieldId]);
+    setFormFieldIds((prev) => {
+      if (prev.includes(fieldId)) {
+        // also unpin when removing
+        setFormFixedFieldIds((p) => p.filter((x) => x !== fieldId));
+        return prev.filter((x) => x !== fieldId);
+      }
+      return [...prev, fieldId];
+    });
   };
 
   const toggleFixedField = (fieldId) => {
-    setFormFixedFieldIds((prev) => prev.includes(fieldId) ? prev.filter((x) => x !== fieldId) : [...prev, fieldId]);
+    setFormFixedFieldIds((prev) => {
+      const isPinning = !prev.includes(fieldId);
+      const next = isPinning ? [...prev, fieldId] : prev.filter((x) => x !== fieldId);
+      if (isPinning) {
+        // move pinned field to the top of formFieldIds
+        setFormFieldIds((fields) => {
+          if (!fields.includes(fieldId)) return fields;
+          return [fieldId, ...fields.filter((x) => x !== fieldId)];
+        });
+      }
+      return next;
+    });
+  };
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    setFormFieldIds((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(result.source.index, 1);
+      next.splice(result.destination.index, 0, moved);
+      return next;
+    });
   };
 
   const handleDelete = async (view) => {
@@ -268,35 +298,68 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
                   </div>
                   {(() => {
                     const q = fieldSearch.toLowerCase();
-                    const checked = formFieldIds.map((id) => allFields.find((f) => f.id === id)).filter(Boolean);
+                    const activeFields = formFieldIds.map((id) => allFields.find((f) => f.id === id)).filter(Boolean);
                     const unchecked = allFields.filter((f) => !formFieldIds.includes(f.id));
-                    const filteredChecked = q ? checked.filter((f) => f.label.toLowerCase().includes(q)) : checked;
+                    const filteredActive = q ? activeFields.filter((f) => f.label.toLowerCase().includes(q)) : activeFields;
                     const filteredUnchecked = q ? unchecked.filter((f) => f.label.toLowerCase().includes(q)) : unchecked;
                     return (
                       <div className="border border-border rounded-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                        <div className="max-h-44 overflow-y-auto divide-y divide-border">
-                          <div className="bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground">Active Fields</div>
-                          {filteredChecked.length === 0 ? (
-                            <div className="px-3 py-2 text-xs text-muted-foreground">No fields selected</div>
-                          ) : (
-                            filteredChecked.map((field) => (
-                              <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors" onMouseDown={(e) => e.stopPropagation()}>
-                                <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onMouseDown={(e) => e.stopPropagation()} />
-                                <label htmlFor={`f-${field.id}`} className="flex-1 text-xs cursor-pointer" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); toggleField(field.id); }}>{field.label}</label>
-                                {formFixedFieldIds.includes(field.id) && (
-                                  <Badge className="text-[10px] h-4 px-1">#</Badge>
-                                )}
-                                {currentViewType !== 'grid' && (
-                                  <button type="button" onClick={(e) => { e.stopPropagation(); toggleFixedField(field.id); }} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors" title={formFixedFieldIds.includes(field.id) ? "Unpin column" : "Pin column"}>
-                                    {formFixedFieldIds.includes(field.id) ? "📌" : "○"}
-                                  </button>
-                                )}
-                              </div>
-                            ))
-                          )}
+                        {/* Active fields — draggable */}
+                        <div className="bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                          Active Fields
+                          <span className="text-[10px] font-normal text-muted-foreground/70 ml-1">· drag to reorder</span>
                         </div>
+                        {filteredActive.length === 0 ? (
+                          <div className="px-3 py-2 text-xs text-muted-foreground">No fields selected</div>
+                        ) : (
+                          <DragDropContext onDragEnd={q ? () => {} : handleDragEnd}>
+                            <Droppable droppableId="active-fields">
+                              {(provided) => (
+                                <div ref={provided.innerRef} {...provided.droppableProps} className="divide-y divide-border max-h-52 overflow-y-auto">
+                                  {filteredActive.map((field, index) => {
+                                    const isPinned = formFixedFieldIds.includes(field.id);
+                                    // find the true index in formFieldIds for drag
+                                    const trueIndex = formFieldIds.indexOf(field.id);
+                                    return (
+                                      <Draggable key={field.id} draggableId={field.id} index={q ? index : trueIndex}>
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            className={`flex items-center gap-2 px-2 py-2 transition-colors ${snapshot.isDragging ? "bg-accent shadow-md rounded" : "hover:bg-muted/50"}`}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                          >
+                                            <div {...provided.dragHandleProps} className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing" onMouseDown={(e) => e.stopPropagation()}>
+                                              <GripVertical className="w-3.5 h-3.5" />
+                                            </div>
+                                            <Checkbox checked={true} onCheckedChange={() => toggleField(field.id)} id={`f-${field.id}`} onMouseDown={(e) => e.stopPropagation()} />
+                                            <label htmlFor={`f-${field.id}`} className={`flex-1 text-xs cursor-pointer select-none ${isPinned ? "font-medium" : ""}`} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); toggleField(field.id); }}>
+                                              {field.label}
+                                            </label>
+                                            {currentViewType !== 'grid' && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); toggleFixedField(field.id); }}
+                                                className={`p-0.5 transition-colors rounded ${isPinned ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
+                                                title={isPinned ? "Unpin column" : "Pin column (sticks to left)"}
+                                              >
+                                                {isPinned ? <Pin className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    );
+                                  })}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </DragDropContext>
+                        )}
+                        {/* Available (unchecked) fields */}
                         {filteredUnchecked.length > 0 && (
-                          <div className="max-h-24 overflow-y-auto divide-y divide-border">
+                          <div className="max-h-24 overflow-y-auto divide-y divide-border border-t border-border">
                             <div className="bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground">Available Fields</div>
                             {filteredUnchecked.map((field) => (
                               <div key={field.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60 hover:opacity-100 transition-opacity" onMouseDown={(e) => e.stopPropagation()}>
