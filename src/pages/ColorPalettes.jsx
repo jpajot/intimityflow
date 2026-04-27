@@ -49,6 +49,12 @@ export default function ColorPalettes() {
   const [visibleTechColumns, setVisibleTechColumns] = useState(null);
   const [visibleCommColumns, setVisibleCommColumns] = useState(null);
   const [showViewsMenu, setShowViewsMenu] = useState(false);
+  const [techViews, setTechViews] = useState([]);
+  const [commViews, setCommViews] = useState([]);
+  const [activeViewId, setActiveViewId] = useState("default");
+  const [showViewEditor, setShowViewEditor] = useState(false);
+  const [editingView, setEditingView] = useState(null);
+  const [viewForm, setViewForm] = useState({ name: "", fields: ["color", "code", "name", "hex"] });
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -73,15 +79,21 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(!showViewsMenu) }
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
         ],
         customContent: showViewsMenu ? (
           <div className="space-y-3 border-t border-border pt-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
             <div className="space-y-2">
-              <button onClick={() => setShowViewsMenu(false)} className="w-full bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium">Default View</button>
+              <button onClick={() => { setActiveViewId("default"); setShowViewsMenu(false); }} className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeViewId === "default" ? "bg-primary text-primary-foreground" : "hover:bg-muted border border-border"}`}>Default View</button>
+              {techViews.map((v) => (
+                <div key={v.id} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border hover:bg-muted">
+                  <button onClick={() => { setActiveViewId(v.id); setShowViewsMenu(false); }} className="flex-1 text-left text-sm">{v.name}</button>
+                  <button onClick={() => { setEditingView(v); setViewForm(v); setShowViewEditor(true); }} className="text-xs text-muted-foreground hover:text-foreground">✏️</button>
+                </div>
+              ))}
             </div>
-            <Button onClick={() => {}} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+            <Button onClick={() => { setEditingView(null); setViewForm({ name: "", fields: ["color", "code", "name", "hex"] }); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
         ) : null
       });
@@ -89,15 +101,21 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(!showViewsMenu) }
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
         ],
         customContent: showViewsMenu ? (
           <div className="space-y-3 border-t border-border pt-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
             <div className="space-y-2">
-              <button onClick={() => setShowViewsMenu(false)} className="w-full bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium">Default View</button>
+              <button onClick={() => { setActiveViewId("default"); setShowViewsMenu(false); }} className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeViewId === "default" ? "bg-primary text-primary-foreground" : "hover:bg-muted border border-border"}`}>Default View</button>
+              {commViews.map((v) => (
+                <div key={v.id} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border hover:bg-muted">
+                  <button onClick={() => { setActiveViewId(v.id); setShowViewsMenu(false); }} className="flex-1 text-left text-sm">{v.name}</button>
+                  <button onClick={() => { setEditingView(v); setViewForm(v); setShowViewEditor(true); }} className="text-xs text-muted-foreground hover:text-foreground">✏️</button>
+                </div>
+              ))}
             </div>
-            <Button onClick={() => {}} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+            <Button onClick={() => { setEditingView(null); setViewForm({ name: "", fields: ["color", "code", "name", "type"] }); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
         ) : null
       });
@@ -791,6 +809,73 @@ export default function ColorPalettes() {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowTechDialog(false)}>Cancel</Button>
               <Button type="submit" disabled={saving} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create & Add</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Editor Dialog */}
+      <Dialog open={showViewEditor} onOpenChange={setShowViewEditor}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editingView ? `Edit: ${editingView.name}` : "New View"}</DialogTitle></DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setSaving(true);
+            const newView = { id: editingView?.id || Date.now().toString(), ...viewForm };
+            if (activeSection === "technical") {
+              if (editingView) {
+                setTechViews(techViews.map(v => v.id === newView.id ? newView : v));
+              } else {
+                setTechViews([...techViews, newView]);
+              }
+            } else {
+              if (editingView) {
+                setCommViews(commViews.map(v => v.id === newView.id ? newView : v));
+              } else {
+                setCommViews([...commViews, newView]);
+              }
+            }
+            setShowViewEditor(false);
+            setActiveViewId(newView.id);
+            setShowViewsMenu(false);
+            setSaving(false);
+          }} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">View Name</Label>
+              <Input value={viewForm.name} onChange={(e) => setViewForm({ ...viewForm, name: e.target.value })} placeholder="e.g. Sales View" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Columns</Label>
+              <div className="border border-border rounded-lg p-2 space-y-2 max-h-40 overflow-y-auto">
+                {activeSection === "technical" && ["color", "code", "name", "hex"].map(field => (
+                  <label key={field} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" checked={viewForm.fields.includes(field)} onChange={(e) => {
+                      if (e.target.checked) {
+                        setViewForm({ ...viewForm, fields: [...viewForm.fields, field] });
+                      } else {
+                        setViewForm({ ...viewForm, fields: viewForm.fields.filter(f => f !== field) });
+                      }
+                    }} />
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                ))}
+                {activeSection === "commercial" && ["color", "code", "name", "type"].map(field => (
+                  <label key={field} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" checked={viewForm.fields.includes(field)} onChange={(e) => {
+                      if (e.target.checked) {
+                        setViewForm({ ...viewForm, fields: [...viewForm.fields, field] });
+                      } else {
+                        setViewForm({ ...viewForm, fields: viewForm.fields.filter(f => f !== field) });
+                      }
+                    }} />
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowViewEditor(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving || !viewForm.name.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save</Button>
             </DialogFooter>
           </form>
         </DialogContent>
