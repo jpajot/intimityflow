@@ -371,10 +371,10 @@ export default function ProjectPalettesTab({
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)] overflow-hidden">
       {/* Left: Palette list */}
-      <div className="bg-muted/30 rounded-xl border border-border p-4 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="bg-muted/30 rounded-xl border border-border p-4 space-y-3 flex flex-col h-full">
+        <div className="flex items-center justify-between flex-shrink-0">
           <h3 className="font-semibold text-sm">Palettes ({palettes.length})</h3>
           <Button onClick={openNew} size="sm" className="gap-1.5 h-7 text-xs">
             <Plus className="w-3.5 h-3.5" /> Add
@@ -384,9 +384,9 @@ export default function ProjectPalettesTab({
           placeholder="Search palettes…"
           value={paletteSearch}
           onChange={(e) => setPaletteSearch(e.target.value)}
-          className="h-8 text-xs"
+          className="h-8 text-xs flex-shrink-0"
         />
-        <div className="space-y-2 max-h-[520px] overflow-y-auto">
+        <div className="space-y-2 overflow-y-auto flex-1">
           {filtered.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-6">No palettes yet</p>
           )}
@@ -435,7 +435,7 @@ export default function ProjectPalettesTab({
       </div>
 
       {/* Right: Color detail */}
-      <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4">
+      <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4 flex flex-col h-full overflow-y-auto">
         {!selectedPalette ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Palette className="w-10 h-10 text-muted-foreground mb-3" />
