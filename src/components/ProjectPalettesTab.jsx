@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ export default function ProjectPalettesTab({
   paletteColors, setPaletteColors,
   techColors, setTechColors,
   commColors, setCommColors,
+  setOptions,
 }) {
   const [selectedPaletteId, setSelectedPaletteId] = useState(null);
   const [paletteSearch, setPaletteSearch] = useState("");
@@ -46,6 +47,24 @@ export default function ProjectPalettesTab({
 
   // Link commercial color dialog
   const [linkingTechColor, setLinkingTechColor] = useState(null); // TechnicalColor object
+
+  // Update options menu when selected palette or card size changes
+  useEffect(() => {
+    if (!selectedPaletteId || !setOptions) return;
+    const selectedPalette = palettes.find((p) => p.id === selectedPaletteId);
+    const swatches = selectedPalette ? getSwatchData(selectedPaletteId) : [];
+    
+    setOptions({
+      items: [
+        { label: "Add Color", icon: Plus, onClick: () => openColorPicker(), className: "text-primary hover:bg-primary/10" },
+        { divider: true },
+        { label: "S", onClick: () => { setPaletteCardSize("S"); try { localStorage.setItem("palette_card_size", "S"); } catch {} }, className: `px-2 py-1 text-xs font-medium rounded border ${paletteCardSize === "S" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+        { label: "M", onClick: () => { setPaletteCardSize("M"); try { localStorage.setItem("palette_card_size", "M"); } catch {} }, className: `px-2 py-1 text-xs font-medium rounded border ${paletteCardSize === "M" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+        { label: "L", onClick: () => { setPaletteCardSize("L"); try { localStorage.setItem("palette_card_size", "L"); } catch {} }, className: `px-2 py-1 text-xs font-medium rounded border ${paletteCardSize === "L" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}` },
+        ...(swatches.length > 0 ? [{ divider: true }, { label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
+      ]
+    });
+  }, [selectedPaletteId, paletteCardSize, palettes, paletteColors, setOptions, techColors, commColors]);
 
   // ── Palette CRUD ─────────────────────────────────────────────────────────────
 
@@ -431,17 +450,7 @@ export default function ProjectPalettesTab({
                   <FolderOpen className="w-3 h-3" />{projectName}
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <SizeControl size={paletteCardSize} onChange={(s) => { setPaletteCardSize(s); try { localStorage.setItem("palette_card_size", s); } catch {} }} />
-                {selectedSwatches.length > 0 && (
-                  <Button size="sm" variant="outline" className="gap-1 h-8 text-xs px-2" onClick={exportASE} title="Export as Adobe Swatch Exchange (.ase)">
-                    <Download className="w-3.5 h-3.5" /> .ase
-                  </Button>
-                )}
-                <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={openColorPicker}>
-                  <Plus className="w-3.5 h-3.5" /> Add Color
-                </Button>
-              </div>
+
             </div>
 
             {/* Inline color picker */}

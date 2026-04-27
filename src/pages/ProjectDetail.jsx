@@ -508,7 +508,9 @@ export default function ProjectDetail() {
         techColors={techColors}
         setTechColors={setTechColors}
         commColors={commColors}
-        setCommColors={setCommColors} />
+        setCommColors={setCommColors}
+        setOptions={setOptions}
+      />
 
       }
 
