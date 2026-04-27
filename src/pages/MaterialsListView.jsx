@@ -545,7 +545,7 @@ export default function MaterialsListView() {
           { divider: true },
           { label: isPinned("/materials") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials") ? PinOff : Pin, onClick: () => togglePin("/materials", "Materials Lists") },
         ],
-        customContent: showMaterialsViewMenu ? (
+        customContent: showMaterialsViewMenu ? () => (
           <ViewDrawerContent pageKey="mat_styles_list" activeViewId={materialsActiveViewId} onSelectView={setMaterialsActiveViewId} allFields={[]} currentViewType={materialsViewMode === "grid" ? "grid" : null} />
         ) : null,
       });
@@ -558,7 +558,7 @@ export default function MaterialsListView() {
           { divider: true },
           { label: isPinned("/materials-colorways") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-colorways") ? PinOff : Pin, onClick: () => togglePin("/materials-colorways", "Materials Lists: Colorways") },
         ],
-        customContent: showColorwaysViewMenu ? (
+        customContent: showColorwaysViewMenu ? () => (
           <ViewDrawerContent pageKey="mat_colorways_list" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} />
         ) : null,
       });
@@ -571,7 +571,7 @@ export default function MaterialsListView() {
           { divider: true },
           { label: isPinned("/materials-variations") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-variations") ? PinOff : Pin, onClick: () => togglePin("/materials-variations", "Materials Lists: Variations") },
         ],
-        customContent: showVariationsViewMenu ? (
+        customContent: showVariationsViewMenu ? () => (
           <ViewDrawerContent pageKey="mat_more_variations_list" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode === "grid" ? "grid" : null} />
         ) : null,
       });
