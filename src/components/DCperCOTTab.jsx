@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Zap, LayoutGrid, List, FileDown } from "lucide-react";
+import { Loader2, Zap, LayoutGrid, List, FileDown, BarChart2 } from "lucide-react";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
@@ -57,6 +57,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [tableLightbox, setTableLightbox] = useState(null);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
     onGenerateRef?.(handleGenerate);
@@ -496,6 +497,16 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
           </SelectContent>
         </Select>
 
+        <Button
+          variant={showStats ? "secondary" : "outline"}
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          onClick={() => setShowStats((v) => !v)}
+        >
+          <BarChart2 className="w-3.5 h-3.5" />
+          Stats
+        </Button>
+
         <input
           type="file"
           accept=".xlsx,.xls"
@@ -522,7 +533,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
         </div>
       ) : view === "list" ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+          {showStats && <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
             {/* Forecast Progress */}
             <div className="bg-card rounded-lg border border-border p-4">
               <div className="text-xs font-semibold text-muted-foreground mb-2">Forecast Progress</div>
@@ -575,7 +586,7 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
                 )}
               </div>
             </div>
-          </div>
+          </div>}
 
           <DataTable
             columns={[
