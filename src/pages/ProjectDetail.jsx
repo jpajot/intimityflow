@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ import { Download, Upload as UploadIcon, Pencil, Plus } from "lucide-react";
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [project, setProject] = useState(null);
   const [palettes, setPalettes] = useState([]);
@@ -49,7 +50,7 @@ export default function ProjectDetail() {
   const [docTypes, setDocTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeSection, setActiveSection] = useState("details");
+  const [activeSection, setActiveSection] = useState(() => location.state?.section || "details");
   const [cwSearch, setCwSearch] = useState("");
   const stylesViewRef = useRef(null);
   const colorwaysViewRef = useRef(null);
