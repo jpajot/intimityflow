@@ -107,7 +107,7 @@ export default function ColorPalettes() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, showViewsMenu, techColors]);
 
   useEffect(() => {loadData();}, []);
 
