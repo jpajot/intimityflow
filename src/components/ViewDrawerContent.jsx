@@ -91,7 +91,11 @@ export default function ViewDrawerContent({ pageKey, activeViewId, onSelectView,
     if (editingView) {
       await base44.entities.ListViewConfig.update(editingView.id, data);
       setViews(views.map((v) => v.id === editingView.id ? { ...v, ...data } : v));
-      if (activeViewId === editingView.id) onSelectView(editingView.id);
+      // Force re-apply by toggling to default then back, so useEffect re-fires even if same ID
+      if (activeViewId === editingView.id) {
+        onSelectView("default");
+        setTimeout(() => onSelectView(editingView.id), 0);
+      }
     } else {
       const created = await base44.entities.ListViewConfig.create(data);
       setViews([...views, created]);

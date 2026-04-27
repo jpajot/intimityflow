@@ -180,6 +180,22 @@ export default function LinkedColorwaysView({
 
 
 
+  // Load view config when activeViewId changes
+  useEffect(() => {
+    if (!activeViewId || activeViewId === "default") {
+      onColumnsChange(null);
+      setPinnedCols([]);
+    } else {
+      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+        if (results.length > 0) {
+          const viewConfig = results[0];
+          onColumnsChange(viewConfig.column_ids?.length > 0 ? viewConfig.column_ids : null);
+          setPinnedCols(viewConfig.fixed_column_ids || []);
+        }
+      });
+    }
+  }, [activeViewId]);
+
   useEffect(() => {
     onViewRef?.({ view, setView: (v) => { onViewChange(v); }, activeColumns, setActiveColumns: onColumnsChange, pinnedCols, setPinnedCols });
   }, [view, activeColumns, pinnedCols, onViewRef, onViewChange, onColumnsChange]);
@@ -414,26 +430,9 @@ export default function LinkedColorwaysView({
   }];
 
 
-  // Load and apply view config when activeViewId changes (placed after columns is defined)
-  useEffect(() => {
-    if (!activeViewId || activeViewId === "default") {
-      onColumnsChange(null);
-      setPinnedCols([]);
-    } else {
-      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
-        if (results.length > 0) {
-          const viewConfig = results[0];
-          const colIds = viewConfig.column_ids || [];
-          const mapped = colIds.map((id) => columns.find((c) => c.id === id)).filter(Boolean);
-          onColumnsChange(mapped.length > 0 ? mapped : null);
-          setPinnedCols(viewConfig.fixed_column_ids || []);
-        }
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeViewId]);
-
-  const visibleColumns = activeColumns || columns;
+  const visibleColumns = activeColumns
+    ? activeColumns.map((id) => columns.find((c) => c.id === id)).filter(Boolean)
+    : columns;
 
   const linkAllFields = [
   { id: "link_forecasted_qty", label: "Fcst. Qty (Project)", getValue: (cw) => linkMap[cw.id]?.forecasted_quantity ?? "—", render: (cw) => linkMap[cw.id]?.forecasted_quantity ?? "—" },
@@ -525,7 +524,7 @@ export default function LinkedColorwaysView({
         onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)} /> :
 
 
-      <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle />
+      <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
       }
 
       {tableLightbox && <ImageLightbox src={tableLightbox} onClose={() => setTableLightbox(null)} />}
