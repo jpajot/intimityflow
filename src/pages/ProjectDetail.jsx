@@ -111,7 +111,7 @@ export default function ProjectDetail() {
     if (activeSection === "styles") {
       setOptions({
         items: [
-        { label: stylesViewMode === "list" ? "View: Grid" : "View: List", icon: stylesViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: stylesViewMode === "grid" ? "View: List" : "View: Grid", icon: stylesViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setStylesViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               stylesViewRef.current?.setView(next);
@@ -141,7 +141,7 @@ export default function ProjectDetail() {
     } else if (activeSection === "colorways") {
       setOptions({
         items: [
-        { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: colorwaysViewMode === "grid" ? "View: List" : "View: Grid", icon: colorwaysViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setColorwaysViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               colorwaysViewRef.current?.setView(next);
@@ -173,7 +173,7 @@ export default function ProjectDetail() {
         items: [
         { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")) },
         { divider: true },
-        { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => {
+        { label: variationsViewMode === "grid" ? "View: List" : "View: Grid", icon: variationsViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setVariationsViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
               variationsViewRef.current?.setView(next);

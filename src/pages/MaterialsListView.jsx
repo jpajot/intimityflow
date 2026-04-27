@@ -539,40 +539,40 @@ export default function MaterialsListView() {
     if (activeSection === "materials") {
       setOptions({
         items: [
-          { label: materialsViewMode === "list" ? "View: Grid" : "View: List", icon: materialsViewMode === "list" ? LayoutGrid : List, onClick: () => setMaterialsViewMode(materialsViewMode === "list" ? "grid" : "list") },
+          { label: materialsViewMode === "grid" ? "View: List" : "View: Grid", icon: materialsViewMode === "grid" ? List : LayoutGrid, onClick: () => setMaterialsViewMode(materialsViewMode === "list" ? "grid" : "list") },
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowMaterialsViewMenu(!showMaterialsViewMenu), custom: true },
           { divider: true },
           { label: isPinned("/materials") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials") ? PinOff : Pin, onClick: () => togglePin("/materials", "Materials Lists") },
         ],
         customContent: showMaterialsViewMenu ? (
-          <ViewDrawerContent pageKey="mat_styles_list" activeViewId={materialsActiveViewId} onSelectView={setMaterialsActiveViewId} allFields={[]} currentViewType={materialsViewMode} />
+          <ViewDrawerContent pageKey="mat_styles_list" activeViewId={materialsActiveViewId} onSelectView={setMaterialsActiveViewId} allFields={[]} currentViewType={materialsViewMode === "grid" ? "grid" : null} />
         ) : null,
       });
     } else if (activeSection === "colorways") {
       setOptions({
         items: [
-          { label: colorwaysViewMode === "list" ? "View: Grid" : "View: List", icon: colorwaysViewMode === "list" ? LayoutGrid : List, onClick: () => setColorwaysViewMode(colorwaysViewMode === "list" ? "grid" : "list") },
+          { label: colorwaysViewMode === "grid" ? "View: List" : "View: Grid", icon: colorwaysViewMode === "grid" ? List : LayoutGrid, onClick: () => setColorwaysViewMode(colorwaysViewMode === "list" ? "grid" : "list") },
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
           { divider: true },
           { label: isPinned("/materials-colorways") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-colorways") ? PinOff : Pin, onClick: () => togglePin("/materials-colorways", "Materials Lists: Colorways") },
         ],
         customContent: showColorwaysViewMenu ? (
-          <ViewDrawerContent pageKey="mat_colorways_list" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode} />
+          <ViewDrawerContent pageKey="mat_colorways_list" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} />
         ) : null,
       });
     } else if (activeSection === "variations") {
       setOptions({
         items: [
-          { label: variationsViewMode === "list" ? "View: Grid" : "View: List", icon: variationsViewMode === "list" ? LayoutGrid : List, onClick: () => setVariationsViewMode(variationsViewMode === "list" ? "grid" : "list") },
+          { label: variationsViewMode === "grid" ? "View: List" : "View: Grid", icon: variationsViewMode === "grid" ? List : LayoutGrid, onClick: () => setVariationsViewMode(variationsViewMode === "list" ? "grid" : "list") },
           { divider: true },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
           { divider: true },
           { label: isPinned("/materials-variations") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-variations") ? PinOff : Pin, onClick: () => togglePin("/materials-variations", "Materials Lists: Variations") },
         ],
         customContent: showVariationsViewMenu ? (
-          <ViewDrawerContent pageKey="mat_more_variations_list" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode} />
+          <ViewDrawerContent pageKey="mat_more_variations_list" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode === "grid" ? "grid" : null} />
         ) : null,
       });
     } else {

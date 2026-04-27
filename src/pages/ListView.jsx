@@ -64,13 +64,12 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
       items: [
       { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       { divider: true },
-      { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
-      { label: "View: List", icon: List, onClick: () => setView("list") },
+      { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => setView((v) => v === "grid" ? "list" : "grid") },
       { divider: true },
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view} /> :
+      <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view === "grid" ? "grid" : null} /> :
       null
     });
   }, [setOptions, navigate, showViewMenu, activeViewId, view, viewKey]);
@@ -261,13 +260,12 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   useEffect(() => {
     setOptions({
       items: [
-      { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
-      { label: "View: List", icon: List, onClick: () => setView("list") },
+      { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => setView((v) => v === "grid" ? "list" : "grid") },
       { divider: true },
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} allFields={[]} /> :
+      <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
       null
     });
   }, [setOptions, showViewMenu, activeViewId, view]);
@@ -485,13 +483,12 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
   useEffect(() => {
     setOptions({
       items: [
-      { label: "View: Grid", icon: LayoutGrid, onClick: () => setView("grid") },
-      { label: "View: List", icon: List, onClick: () => setView("list") },
+      { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => setView((v) => v === "grid" ? "list" : "grid") },
       { divider: true },
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view} allFields={[]} /> :
+      <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
       null
     });
   }, [setOptions, showViewMenu, activeViewId, view]);
