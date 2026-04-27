@@ -104,7 +104,7 @@ export default function ColorPalettes() {
                 </div>
               ))}
             </div>
-            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "hex"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "hex"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewsMenu(false); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
         ) : null
       });
@@ -126,7 +126,7 @@ export default function ColorPalettes() {
                 </div>
               ))}
             </div>
-            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewsMenu(false); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
         ) : null
       });
@@ -869,10 +869,12 @@ export default function ColorPalettes() {
                     <Input value={columnSearch} onChange={(e) => setColumnSearch(e.target.value)} placeholder="Search columns…" className="h-7 text-xs" />
                   </div>
                   {(() => {
-                    const allFields = activeSection === "technical" ? ["color", "code", "name", "hex"] : ["color", "code", "name", "type"];
+                    const allFields = activeSection === "technical" 
+                      ? ["color", "code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group", "commercial"] 
+                      : ["color", "code", "name", "type", "technical_color"];
                     const q = columnSearch.toLowerCase();
-                    const checked = viewFormColumns.map(id => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
-                    const unchecked = allFields.filter(f => !viewFormColumns.includes(f)).map(id => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
+                    const checked = viewFormColumns.map(id => ({ id, label: id.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) }));
+                    const unchecked = allFields.filter(f => !viewFormColumns.includes(f)).map(id => ({ id, label: id.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) }));
                     const filteredChecked = q ? checked.filter(c => c.label.toLowerCase().includes(q)) : checked;
                     const filteredUnchecked = q ? unchecked.filter(c => c.label.toLowerCase().includes(q)) : unchecked;
                     const handleDragEnd = (result) => {
