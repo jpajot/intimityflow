@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, Download, X } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import LinkCommercialColorDialog from "./LinkCommercialColorDialog";
@@ -559,16 +560,12 @@ export default function ProjectPalettesTab({
                 });
             return (
               <div className="flex flex-col gap-3 flex-1 overflow-hidden">
-                <div className="flex border border-border rounded-lg overflow-hidden">
-                  <button type="button" onClick={() => setColorTab("technical")}
-                    className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
-                    Technical ({techFiltered.length})
-                  </button>
-                  <button type="button" onClick={() => setColorTab("commercial")}
-                    className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
-                    Commercial ({commFiltered.length})
-                  </button>
-                </div>
+                <Tabs value={colorTab} onValueChange={setColorTab}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="technical" className="flex-1 text-xs">Technical ({techFiltered.length})</TabsTrigger>
+                    <TabsTrigger value="commercial" className="flex-1 text-xs">Commercial ({commFiltered.length})</TabsTrigger>
+                  </TabsList>
+                </Tabs>
                 <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
                 <div className="flex-1 overflow-y-auto border border-border rounded-lg">
                   {items.map((item) => {
