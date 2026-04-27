@@ -168,19 +168,16 @@ export default function ColorPalettes() {
         return;
       }
       try {
-        const view = await base44.entities.ListViewConfig.list();
-        const selectedView = view.find((v) => v.id === activeViewId);
-        if (selectedView) {
-          if (activeSection === "technical" || activeSection === "commercial") {
-            const allFields = activeSection === "technical"
-              ? ["color", "code", "name", "hex", "rgb", "cmyk", "color_group", "color_sub_group", "commercial"]
-              : ["color", "code", "name", "type", "technical_color"];
-            const visibleCols = (selectedView.column_ids || [])
-              .filter((id) => allFields.includes(id))
-              .map((id) => ({ id, label: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) }));
-            if (activeSection === "technical") setVisibleTechColumns(visibleCols);
-            else setVisibleCommColumns(visibleCols);
-          }
+        const pageKey = activeSection === "technical" ? "technical_colors" : "commercial_colors";
+        const views = await base44.entities.ListViewConfig.filter({ page_key: pageKey });
+        const selectedView = views.find((v) => v.id === activeViewId);
+        if (selectedView && selectedView.column_ids) {
+          const visibleCols = selectedView.column_ids.map((id) => ({
+            id,
+            label: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+          }));
+          if (activeSection === "technical") setVisibleTechColumns(visibleCols);
+          else setVisibleCommColumns(visibleCols);
         }
       } catch (err) {
         console.error("Error loading view:", err);
