@@ -69,7 +69,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      () => <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view === "grid" ? "grid" : null} /> :
+      <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view === "grid" ? "grid" : null} /> :
       null
     });
   }, [setOptions, navigate, showViewMenu, activeViewId, view, viewKey]);
@@ -265,7 +265,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      () => <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
+      <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
       null
     });
   }, [setOptions, showViewMenu, activeViewId, view]);
@@ -388,7 +388,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   columns;
 
   return (
-    <div className="space-y-4">
+    <div className="px-2 py-2 space-y-4">
       {/* Search bar */}
       <div className="relative">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
@@ -488,7 +488,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      () => <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
+      <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
       null
     });
   }, [setOptions, showViewMenu, activeViewId, view]);
