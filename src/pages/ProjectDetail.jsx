@@ -514,21 +514,25 @@ export default function ProjectDetail() {
 
       {activeSection === "documents" &&
       <div className="space-y-4">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap justify-between">
+            <div />
             <button
               type="button"
               onClick={() => {
                 const input = document.querySelector('[data-doc-search-input]');
-                if (input) input.focus();
+                if (input) {
+                  input.classList.toggle('hidden');
+                  if (!input.classList.contains('hidden')) input.focus();
+                }
               }}
               className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               title="Search documents"
             >
               <Search className="w-4 h-4" />
             </button>
-            <div className="relative flex-1 max-w-sm hidden group-focus-within:flex" style={{display: 'flex'}}>
-              <Input value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search documents…" className="h-9 text-xs" data-doc-search-input />
-            </div>
+          </div>
+          <div className="relative max-w-sm hidden" data-doc-search-input>
+            <Input value={docSearch} onChange={(e) => setDocSearch(e.target.value)} placeholder="Search documents…" className="h-9 text-xs" autoFocus />
           </div>
           {filteredDocs.length === 0 ?
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
