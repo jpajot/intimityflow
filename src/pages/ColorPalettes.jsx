@@ -8,14 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import { usePageOptions } from "@/lib/PageOptionsContext";
-import { useSubNav } from "@/lib/SubNavContext";
+import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import ColorLibrary from "./ColorLibrary";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid, { SizeControl } from "../components/PaletteColorGrid";
 
 export default function ColorPalettes() {
   const { setOptions } = usePageOptions();
-  const { registerNav } = useSubNav();
   const [activeSection, setActiveSection] = useState("palettes");
   const [palettes, setPalettes] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -44,18 +43,11 @@ export default function ColorPalettes() {
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
 
-  useEffect(() => {
-    registerNav({
-      items: [
-        { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
-        { id: "technical", label: "Technical Colors", count: techColors.length, icon: SwatchBook },
-        { id: "commercial", label: "Commercial Colors", count: commColors.length, icon: SwatchBook },
-      ],
-      activeId: activeSection,
-      onChange: setActiveSection,
-      pageTitle: "Color Studio"
-    });
-  }, [activeSection, palettes.length, techColors.length, commColors.length, registerNav]);
+  useRegisterSubNav([
+    { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
+    { id: "technical", label: "Technical Colors", count: techColors.length, icon: SwatchBook },
+    { id: "commercial", label: "Commercial Colors", count: commColors.length, icon: SwatchBook },
+  ], activeSection, setActiveSection, "Color Studio");
 
   useEffect(() => {
     if (activeSection === "palettes" && selectedPaletteId) {
