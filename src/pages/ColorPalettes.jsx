@@ -104,7 +104,7 @@ export default function ColorPalettes() {
                 </div>
               ))}
             </div>
-            <Button onClick={() => { setEditingView(null); setViewForm({ name: "", fields: ["color", "code", "name", "hex"] }); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "hex"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
         ) : null
       });
@@ -126,7 +126,7 @@ export default function ColorPalettes() {
                 </div>
               ))}
             </div>
-            <Button onClick={() => { setEditingView(null); setViewForm({ name: "", fields: ["color", "code", "name", "type"] }); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
+            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
         ) : null
       });
