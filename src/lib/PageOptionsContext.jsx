@@ -1,16 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { createContext, useContext, useState } from 'react';
 
 const PageOptionsContext = createContext(null);
 
 export function PageOptionsProvider({ children }) {
   const [options, setOptions] = useState(null);
-  const location = useLocation();
-
-  // Clear stale options whenever the route changes
-  useEffect(() => {
-    setOptions(null);
-  }, [location.pathname]);
 
   return (
     <PageOptionsContext.Provider value={{ options, setOptions }}>

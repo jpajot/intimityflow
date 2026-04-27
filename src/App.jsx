@@ -1,11 +1,12 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useParams, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SubNavProvider } from '@/lib/SubNavContext';
-import { PageOptionsProvider } from '@/lib/PageOptionsContext';
+import { PageOptionsProvider, usePageOptions } from '@/lib/PageOptionsContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Products from './pages/Products';
@@ -30,6 +31,13 @@ import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
 import BoardEditor from './pages/BoardEditor';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
+
+const PageOptionsClearer = () => {
+  const location = useLocation();
+  const { setOptions } = usePageOptions();
+  useEffect(() => { setOptions(null); }, [location.pathname]);
+  return null;
+};
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +64,8 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <>
+    <PageOptionsClearer />
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/list-view" replace />} />
@@ -82,6 +92,7 @@ const AuthenticatedApp = () => {
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
+    </>
   );
 };
 
