@@ -93,7 +93,7 @@ export default function ColorPalettes() {
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
         ],
-        customContent: showViewsMenu ? (
+        customContent: (
           <div className="space-y-3 border-t border-border pt-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
             <div className="space-y-2">
@@ -108,7 +108,7 @@ export default function ColorPalettes() {
             </div>
             <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "hex"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setViewFormFixedColumnIds([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
-        ) : null
+        )
       });
     } else if (activeSection === "commercial") {
       setOptions({
@@ -116,7 +116,7 @@ export default function ColorPalettes() {
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
           { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
         ],
-        customContent: showViewsMenu ? (
+        customContent: (
           <div className="space-y-3 border-t border-border pt-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
             <div className="space-y-2">
@@ -131,7 +131,7 @@ export default function ColorPalettes() {
             </div>
             <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setViewFormFixedColumnIds([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
           </div>
-        ) : null
+        )
       });
     } else {
       setOptions({ items: [] });
@@ -887,27 +887,38 @@ export default function ColorPalettes() {
                       newIds.splice(result.destination.index, 0, removed);
                       setViewFormColumns(newIds);
                     };
+                    const pinnedCols = filteredChecked.filter(c => viewFormFixedColumnIds.includes(c.id));
+                    const unpinnedCols = filteredChecked.filter(c => !viewFormFixedColumnIds.includes(c.id));
                     return (
                       <div className="border border-border rounded-lg overflow-hidden">
                         <DragDropContext onDragEnd={handleDragEnd}>
                           <Droppable droppableId="columns-checked">
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.droppableProps} className="max-h-44 overflow-y-auto divide-y divide-border">
-                                {filteredChecked.map((col, index) => {
-                                  const isPinned = viewFormFixedColumnIds.includes(col.id);
-                                  return (
-                                    <Draggable key={col.id} draggableId={col.id} index={index}>
-                                      {(drag, snapshot) => (
-                                        <div ref={drag.innerRef} {...drag.draggableProps} style={drag.draggableProps.style} className={`flex items-center gap-2.5 px-3 py-2 bg-card ${isPinned ? "bg-primary/5" : ""} ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}>
-                                          <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"><GripVertical className="w-3.5 h-3.5" /></div>
-                                          <Checkbox checked={true} onCheckedChange={() => setViewFormColumns(viewFormColumns.filter(c => c !== col.id))} id={`col-${col.id}`} />
-                                          <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
-                                          <button type="button" title={isPinned ? "Unpin column" : "Pin column"} onClick={() => setViewFormFixedColumnIds((prev) => isPinned ? prev.filter((id) => id !== col.id) : [...prev, col.id])} className={`p-0.5 rounded hover:bg-muted transition-colors ${isPinned ? "text-primary" : "text-muted-foreground"}`}><Pin className="w-3 h-3" /></button>
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  );
-                                })}
+                                {pinnedCols.map((col, index) => (
+                                  <Draggable key={col.id} draggableId={col.id} index={index}>
+                                    {(drag, snapshot) => (
+                                      <div ref={drag.innerRef} {...drag.draggableProps} style={drag.draggableProps.style} className={`flex items-center gap-2.5 px-3 py-2 bg-primary/5 ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}>
+                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"><GripVertical className="w-3.5 h-3.5" /></div>
+                                        <Checkbox checked={true} onCheckedChange={() => setViewFormColumns(viewFormColumns.filter(c => c !== col.id))} id={`col-${col.id}`} />
+                                        <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                                        <button type="button" title="Unpin column" onClick={() => setViewFormFixedColumnIds((prev) => prev.filter((id) => id !== col.id))} className="p-0.5 rounded hover:bg-muted transition-colors text-primary"><Pin className="w-3 h-3" /></button>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {unpinnedCols.map((col, index) => (
+                                  <Draggable key={col.id} draggableId={col.id} index={pinnedCols.length + index}>
+                                    {(drag, snapshot) => (
+                                      <div ref={drag.innerRef} {...drag.draggableProps} style={drag.draggableProps.style} className={`flex items-center gap-2.5 px-3 py-2 bg-card ${snapshot.isDragging ? "shadow-lg border border-border" : ""}`}>
+                                        <div {...drag.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"><GripVertical className="w-3.5 h-3.5" /></div>
+                                        <Checkbox checked={true} onCheckedChange={() => setViewFormColumns(viewFormColumns.filter(c => c !== col.id))} id={`col-${col.id}`} />
+                                        <label htmlFor={`col-${col.id}`} className="flex-1 text-sm cursor-pointer">{col.label}</label>
+                                        <button type="button" title="Pin column" onClick={() => setViewFormFixedColumnIds((prev) => [...prev, col.id])} className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground"><Pin className="w-3 h-3" /></button>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
                                 {provided.placeholder}
                               </div>
                             )}
@@ -958,7 +969,7 @@ export default function ColorPalettes() {
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setEditorMode("list")}>Back</Button>
-                <Button onClick={async () => { if (!viewFormName.trim()) return; setSaving(true); const newView = { id: editingView?.id || `view_${Date.now()}`, name: viewFormName, column_ids: viewFormColumns, fixed_column_ids: viewFormFixedColumnIds, filters_config: viewFormFilters, allowed_roles: viewFormRoles }; if (activeSection === "technical") { if (editingView) { setTechViews(techViews.map(v => v.id === newView.id ? newView : v)); } else { setTechViews([...techViews, newView]); } } else { if (editingView) { setCommViews(commViews.map(v => v.id === newView.id ? newView : v)); } else { setCommViews([...commViews, newView]); } } setActiveViewId(newView.id); setShowViewEditor(false); setSaving(false); }} disabled={saving || !viewFormName.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editorMode === "new" ? "Create & Apply" : "Save"}</Button>
+                <Button onClick={async () => { if (!viewFormName.trim()) return; setSaving(true); const newView = { id: editingView?.id || `view_${Date.now()}`, name: viewFormName, page_key: activeSection === "technical" ? "technical_colors" : "commercial_colors", column_ids: viewFormColumns, fixed_column_ids: viewFormFixedColumnIds, filters_config: viewFormFilters, allowed_roles: viewFormRoles }; try { if (editingView) { await base44.entities.ListViewConfig.update(editingView.id, newView); } else { await base44.entities.ListViewConfig.create(newView); } } catch (err) { console.error("Error saving view:", err); } if (activeSection === "technical") { if (editingView) { setTechViews(techViews.map(v => v.id === newView.id ? newView : v)); } else { setTechViews([...techViews, newView]); } } else { if (editingView) { setCommViews(commViews.map(v => v.id === newView.id ? newView : v)); } else { setCommViews([...commViews, newView]); } } setActiveViewId(newView.id); setShowViewEditor(false); setSaving(false); }} disabled={saving || !viewFormName.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editorMode === "new" ? "Create & Apply" : "Save"}</Button>
               </DialogFooter>
             </div>
           )}
