@@ -107,6 +107,14 @@ export default function ProjectDetail() {
 
   const { setOptions } = usePageOptions();
 
+  // Reset view menus when switching sections so stale customContent is never shown
+  useEffect(() => {
+    setShowStylesViewMenu(false);
+    setShowColorwaysViewMenu(false);
+    setShowVariationsViewMenu(false);
+    setShowDCViewMenu(false);
+  }, [activeSection]);
+
   useEffect(() => {
     if (activeSection === "styles") {
       setOptions({
@@ -119,10 +127,10 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu((v) => !v), custom: true }],
 
         customContent: showStylesViewMenu ?
-        <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode === "grid" ? "grid" : null} allFields={[
+        () => <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode === "grid" ? "grid" : null} allFields={[
         { id: "image", label: "Image" },
         { id: "code", label: "Code" },
         { id: "name", label: "Name" },
@@ -149,10 +157,10 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu((v) => !v), custom: true }],
 
         customContent: showColorwaysViewMenu ?
-        <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} allFields={[
+        () => <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} allFields={[
         { id: "style_image", label: "Style" },
         { id: "style_name", label: "Style Name" },
         { id: "cw_image", label: "Colorway" },
@@ -181,10 +189,10 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu((v) => !v), custom: true }],
 
         customContent: showVariationsViewMenu ?
-        <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode === "grid" ? "grid" : null} allFields={[
+        () => <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode === "grid" ? "grid" : null} allFields={[
         { id: "style_image", label: "Style Image" },
         { id: "style_name", label: "Style Name" },
         { id: "cw_image", label: "Colorway" },
@@ -220,10 +228,10 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu(!showDCViewMenu), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu((v) => !v), custom: true }],
 
         customContent: showDCViewMenu ?
-        <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={dcViewMode} /> :
+        () => <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={dcViewMode} /> :
         null
       });
     } else {

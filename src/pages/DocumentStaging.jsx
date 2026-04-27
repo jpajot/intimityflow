@@ -174,7 +174,7 @@ export default function DocumentStaging() {
         { divider: true },
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(v => !v), custom: true },
       ],
-      customContent: showViewMenu ? (
+      customContent: showViewMenu ? () => (
         <ViewDrawerContent
           pageKey="document_staging"
           activeViewId={activeViewId}

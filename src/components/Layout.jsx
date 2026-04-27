@@ -436,7 +436,9 @@ export default function Layout() {
              </div>
            ))}
            {options.customContent && (
-             <div className="px-4 py-3 border-t border-border">{options.customContent}</div>
+             <div className="px-4 py-3 border-t border-border">
+               {typeof options.customContent === 'function' ? options.customContent() : options.customContent}
+             </div>
            )}
          </div>,
          document.body

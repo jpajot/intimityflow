@@ -69,7 +69,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view === "grid" ? "grid" : null} /> :
+      () => <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view === "grid" ? "grid" : null} /> :
       null
     });
   }, [setOptions, navigate, showViewMenu, activeViewId, view, viewKey]);
@@ -265,7 +265,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
+      () => <ViewDrawerContent pageKey="colorways_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
       null
     });
   }, [setOptions, showViewMenu, activeViewId, view]);
@@ -488,7 +488,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
       { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
 
       customContent: showViewMenu ?
-      <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
+      () => <ViewDrawerContent pageKey="variations_list" activeViewId={activeViewId} onSelectView={setActiveViewId} currentViewType={view === "grid" ? "grid" : null} allFields={[]} /> :
       null
     });
   }, [setOptions, showViewMenu, activeViewId, view]);
