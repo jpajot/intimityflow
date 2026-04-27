@@ -122,7 +122,7 @@ export default function ProjectDetail() {
         { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu(!showStylesViewMenu), custom: true }],
 
         customContent: showStylesViewMenu ?
-        <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode} allFields={[
+        <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode === "grid" ? "grid" : null} allFields={[
         { id: "image", label: "Image" },
         { id: "code", label: "Code" },
         { id: "name", label: "Name" },
@@ -152,7 +152,7 @@ export default function ProjectDetail() {
         { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true }],
 
         customContent: showColorwaysViewMenu ?
-        <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode} allFields={[
+        <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} allFields={[
         { id: "style_image", label: "Style" },
         { id: "style_name", label: "Style Name" },
         { id: "cw_image", label: "Colorway" },
@@ -184,7 +184,7 @@ export default function ProjectDetail() {
         { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true }],
 
         customContent: showVariationsViewMenu ?
-        <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode} allFields={[
+        <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode === "grid" ? "grid" : null} allFields={[
         { id: "style_image", label: "Style Image" },
         { id: "style_name", label: "Style Name" },
         { id: "cw_image", label: "Colorway" },
