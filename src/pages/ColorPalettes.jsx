@@ -5,11 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
-import ColorLibrary from "./ColorLibrary";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
 
@@ -42,6 +41,9 @@ export default function ColorPalettes() {
   const [commForm, setCommForm] = useState({ sub_type: "Solid", code: "", main_technical_color_id: "", linked_technical_color_ids: [], color_name: "" });
   const [techSearch, setTechSearch] = useState("");
   const [linkedTechSearch, setLinkedTechSearch] = useState("");
+  const [techView, setTechView] = useState("table");
+  const [commView, setCommView] = useState("table");
+  const [commSearch, setCommSearch] = useState("");
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -62,10 +64,26 @@ export default function ColorPalettes() {
           ...(swatches.length > 0 ? [{ divider: true }, { label: "Export .ase", icon: Download, onClick: () => exportASE() }] : [])
         ]
       });
+    } else if (activeSection === "technical") {
+      setOptions({
+        items: [
+          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
+          { divider: true },
+          { label: techView === "gallery" ? "View: Table" : "View: Gallery", icon: techView === "gallery" ? List : LayoutGrid, onClick: () => setTechView(techView === "table" ? "gallery" : "table") }
+        ]
+      });
+    } else if (activeSection === "commercial") {
+      setOptions({
+        items: [
+          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
+          { divider: true },
+          { label: commView === "gallery" ? "View: Table" : "View: Gallery", icon: commView === "gallery" ? List : LayoutGrid, onClick: () => setCommView(commView === "table" ? "gallery" : "table") }
+        ]
+      });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, techView, commView, setOptions]);
 
   useEffect(() => {loadData();}, []);
 
@@ -586,11 +604,100 @@ export default function ColorPalettes() {
       )}
 
       {activeSection === "technical" && (
-        <ColorLibrary hideTitle />
+        <div className="space-y-4">
+          <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search technical colors…" className="max-w-sm h-8 text-xs" />
+          {techView === "table" ? (
+            <div className="border border-border rounded-lg overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 border-b border-border">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Hex</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase())).map(c => (
+                    <tr key={c.id} className="border-b border-border hover:bg-muted/50">
+                      <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td>
+                      <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
+                      <td className="px-4 py-2 text-xs">{c.name}</td>
+                      <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td>
+                      <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase())).map(c => (
+                <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                  <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
+                  <div className="p-2 space-y-1">
+                    <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                    <p className="text-xs text-muted-foreground truncate">{c.name}</p>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {activeSection === "commercial" && (
-        <ColorLibrary hideTitle />
+        <div className="space-y-4">
+          <Input value={commSearch} onChange={(e) => setCommSearch(e.target.value)} placeholder="Search commercial colors…" className="max-w-sm h-8 text-xs" />
+          {commView === "table" ? (
+            <div className="border border-border rounded-lg overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 border-b border-border">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium">Type</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
+                    const tech = techColors.find(t => t.id === c.main_technical_color_id);
+                    return (
+                      <tr key={c.id} className="border-b border-border hover:bg-muted/50">
+                        <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td>
+                        <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
+                        <td className="px-4 py-2 text-xs">{c.color_name}</td>
+                        <td className="px-4 py-2 text-xs">{c.sub_type}</td>
+                        <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
+                const tech = techColors.find(t => t.id === c.main_technical_color_id);
+                return (
+                  <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                    <div className="aspect-square" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />
+                    <div className="p-2 space-y-1">
+                      <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
+                      <p className="text-[10px] text-muted-foreground text-center">{c.sub_type}</p>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Link Commercial Color dialog */}
