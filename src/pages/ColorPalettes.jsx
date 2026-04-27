@@ -15,6 +15,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
+import ColorPalettesViewsMenu from "../components/ColorPalettesViewsMenu";
 
 
 export default function ColorPalettes() {
@@ -51,9 +52,6 @@ export default function ColorPalettes() {
   const [commSearch, setCommSearch] = useState("");
   const [visibleTechColumns, setVisibleTechColumns] = useState(null);
   const [visibleCommColumns, setVisibleCommColumns] = useState(null);
-  const [showViewsMenu, setShowViewsMenu] = useState(false);
-  const [techViews, setTechViews] = useState([]);
-  const [commViews, setCommViews] = useState([]);
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewEditor, setShowViewEditor] = useState(false);
   const [editingView, setEditingView] = useState(null);
@@ -91,46 +89,68 @@ export default function ColorPalettes() {
       setOptions({
         items: [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewEditor(true) }
         ],
         customContent: (
-          <div className="space-y-3 border-t border-border pt-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
-            <div className="space-y-2">
-              <button onClick={() => { setActiveViewId("default"); setShowViewsMenu(false); }} className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeViewId === "default" ? "bg-primary text-primary-foreground" : "hover:bg-muted border border-border"}`}>Default View</button>
-              {techViews.map((v) => (
-                <div key={v.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted">
-                  <button onClick={() => { setActiveViewId(v.id); setShowViewsMenu(false); }} className="flex-1 text-left text-sm">{v.name}</button>
-                  <button onClick={() => { setEditingView(v); setViewFormName(v.name); setViewFormColumns(v.column_ids || []); setViewFormFilters(v.filters_config || DEFAULT_FILTERS); setViewFormRoles(v.allowed_roles || []); setViewFormFixedColumnIds(v.fixed_column_ids || []); setEditorTab("columns"); setEditorMode("edit"); setShowViewEditor(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={async () => { setSaving(true); await base44.entities.ListViewConfig.delete(v.id); if (activeSection === "technical") { setTechViews(techViews.filter(vv => vv.id !== v.id)); } else { setCommViews(commViews.filter(vv => vv.id !== v.id)); } if (activeViewId === v.id) setActiveViewId("default"); setSaving(false); }} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
-                </div>
-              ))}
-            </div>
-            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "hex"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setViewFormFixedColumnIds([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
-          </div>
+          <ColorPalettesViewsMenu
+            activeSection={activeSection}
+            activeViewId={activeViewId}
+            onViewSelect={setActiveViewId}
+            onManageClick={(view) => {
+              if (view?.id) {
+                setEditingView(view);
+                setViewFormName(view.name);
+                setViewFormColumns(view.column_ids || []);
+                setViewFormFilters(view.filters_config || DEFAULT_FILTERS);
+                setViewFormRoles(view.allowed_roles || []);
+                setViewFormFixedColumnIds(view.fixed_column_ids || []);
+              } else {
+                setEditingView(null);
+                setViewFormName("");
+                setViewFormColumns(["color", "code", "name", "hex"]);
+                setViewFormFilters(DEFAULT_FILTERS);
+                setViewFormRoles([]);
+                setViewFormFixedColumnIds([]);
+              }
+              setEditorTab("columns");
+              setEditorMode(view?.id ? "edit" : "new");
+              setShowViewEditor(true);
+            }}
+          />
         )
       });
     } else if (activeSection === "commercial") {
       setOptions({
         items: [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewsMenu(true) }
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowViewEditor(true) }
         ],
         customContent: (
-          <div className="space-y-3 border-t border-border pt-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Select View</p>
-            <div className="space-y-2">
-              <button onClick={() => { setActiveViewId("default"); setShowViewsMenu(false); }} className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeViewId === "default" ? "bg-primary text-primary-foreground" : "hover:bg-muted border border-border"}`}>Default View</button>
-              {commViews.map((v) => (
-                <div key={v.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted">
-                  <button onClick={() => { setActiveViewId(v.id); setShowViewsMenu(false); }} className="flex-1 text-left text-sm">{v.name}</button>
-                  <button onClick={() => { setEditingView(v); setViewFormName(v.name); setViewFormColumns(v.column_ids || []); setViewFormFilters(v.filters_config || DEFAULT_FILTERS); setViewFormRoles(v.allowed_roles || []); setViewFormFixedColumnIds(v.fixed_column_ids || []); setEditorTab("columns"); setEditorMode("edit"); setShowViewEditor(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={async () => { setSaving(true); await base44.entities.ListViewConfig.delete(v.id); if (activeSection === "technical") { setTechViews(techViews.filter(vv => vv.id !== v.id)); } else { setCommViews(commViews.filter(vv => vv.id !== v.id)); } if (activeViewId === v.id) setActiveViewId("default"); setSaving(false); }} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
-                </div>
-              ))}
-            </div>
-            <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setViewFormFixedColumnIds([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); setShowViewEditor(true); }} variant="outline" className="w-full gap-2 text-xs"><Plus className="w-3.5 h-3.5" /> New View</Button>
-          </div>
+          <ColorPalettesViewsMenu
+            activeSection={activeSection}
+            activeViewId={activeViewId}
+            onViewSelect={setActiveViewId}
+            onManageClick={(view) => {
+              if (view?.id) {
+                setEditingView(view);
+                setViewFormName(view.name);
+                setViewFormColumns(view.column_ids || []);
+                setViewFormFilters(view.filters_config || DEFAULT_FILTERS);
+                setViewFormRoles(view.allowed_roles || []);
+                setViewFormFixedColumnIds(view.fixed_column_ids || []);
+              } else {
+                setEditingView(null);
+                setViewFormName("");
+                setViewFormColumns(["color", "code", "name", "type"]);
+                setViewFormFilters(DEFAULT_FILTERS);
+                setViewFormRoles([]);
+                setViewFormFixedColumnIds([]);
+              }
+              setEditorTab("columns");
+              setEditorMode(view?.id ? "edit" : "new");
+              setShowViewEditor(true);
+            }}
+          />
         )
       });
     } else {
@@ -141,28 +161,13 @@ export default function ColorPalettes() {
   useEffect(() => {loadData();}, []);
 
   useEffect(() => {
-    const loadViews = async () => {
-      const pageKey = activeSection === "technical" ? "technical_colors" : "commercial_colors";
-      const views = await base44.entities.ListViewConfig.filter({ page_key: pageKey });
-      if (activeSection === "technical") {
-        setTechViews(views);
-      } else {
-        setCommViews(views);
-      }
-      setActiveViewId("default");
-    };
-    loadViews();
-  }, [activeSection]);
-
-  useEffect(() => {
-    const viewList = activeSection === "technical" ? techViews : commViews;
-    const view = viewList.find((v) => v.id === activeViewId);
-    if (view) {
-      setVisibleTechColumns(activeSection === "technical" ? (view.column_ids || []).map((id) => ({ id })) : null);
-      setVisibleCommColumns(activeSection === "commercial" ? (view.column_ids || []).map((id) => ({ id })) : null);
-      setViewFormFixedColumnIds(view.fixed_column_ids || []);
+    if (activeViewId === "default") {
+      setVisibleTechColumns(null);
+      setVisibleCommColumns(null);
+      return;
     }
-  }, [activeViewId, activeSection, techViews, commViews]);
+    // Views will be applied via the component state
+  }, [activeViewId, activeSection]);
 
 
 
@@ -477,11 +482,7 @@ export default function ColorPalettes() {
   const selectedSwatches = selectedPaletteId ? getSwatchData(selectedPaletteId) : [];
   const selectedProject = selectedPalette ? projects.find((p) => p.id === selectedPalette.project_id) : null;
   
-  const getActiveView = () => {
-    if (activeViewId === "default") return null;
-    return activeSection === "technical" ? techViews.find((v) => v.id === activeViewId) : commViews.find((v) => v.id === activeViewId);
-  };
-  const activeView = getActiveView();
+  const activeView = activeViewId === "default" ? null : null;
 
   if (loading) return (
     <div className="flex items-center justify-center py-32">
@@ -868,19 +869,8 @@ export default function ColorPalettes() {
           </DialogHeader>
 
           {editorMode === "list" && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 p-2.5 rounded-lg border border-border bg-muted/30">
-                <span className="flex-1 text-sm font-medium">Default</span>
-              </div>
-              {(activeSection === "technical" ? techViews : commViews).map((v) => (
-                <div key={v.id} className="flex items-center gap-2 p-2.5 rounded-lg border border-border">
-                  <span className="flex-1 text-sm font-medium">{v.name}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingView(v); setViewFormName(v.name); setViewFormColumns(v.column_ids || []); setViewFormFilters(v.filters_config || DEFAULT_FILTERS); setViewFormRoles(v.allowed_roles || []); setEditorTab("columns"); setEditorMode("edit"); }}><Pencil className="w-3.5 h-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={async () => { setSaving(true); await base44.entities.ListViewConfig.delete(v.id); if (activeSection === "technical") { setTechViews(techViews.filter(vv => vv.id !== v.id)); } else { setCommViews(commViews.filter(vv => vv.id !== v.id)); } if (activeViewId === v.id) setActiveViewId("default"); setSaving(false); }}><Trash2 className="w-3.5 h-3.5" /></Button>
-                </div>
-              ))}
-              {(activeSection === "technical" ? techViews : commViews).length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No custom views yet</p>}
-              <Button onClick={() => { setEditingView(null); setViewFormName(""); setViewFormColumns(activeSection === "technical" ? ["color", "code", "name", "hex"] : ["color", "code", "name", "type"]); setViewFormFilters(DEFAULT_FILTERS); setViewFormRoles([]); setRoleInput(""); setEditorTab("columns"); setEditorMode("new"); }} className="gap-2 w-full" variant="outline"><Plus className="w-4 h-4" /> New View</Button>
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Use the views menu to manage</p>
             </div>
           )}
 
@@ -1001,7 +991,7 @@ export default function ColorPalettes() {
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setEditorMode("list")}>Back</Button>
-                <Button onClick={async () => { if (!viewFormName.trim()) return; setSaving(true); const newView = { id: editingView?.id || `view_${Date.now()}`, name: viewFormName, page_key: activeSection === "technical" ? "technical_colors" : "commercial_colors", column_ids: viewFormColumns, fixed_column_ids: viewFormFixedColumnIds, filters_config: viewFormFilters, allowed_roles: viewFormRoles }; try { if (editingView) { await base44.entities.ListViewConfig.update(editingView.id, newView); } else { await base44.entities.ListViewConfig.create(newView); } } catch (err) { console.error("Error saving view:", err); } if (activeSection === "technical") { if (editingView) { setTechViews(techViews.map(v => v.id === newView.id ? newView : v)); } else { setTechViews([...techViews, newView]); } } else { if (editingView) { setCommViews(commViews.map(v => v.id === newView.id ? newView : v)); } else { setCommViews([...commViews, newView]); } } setActiveViewId(newView.id); setShowViewEditor(false); setSaving(false); }} disabled={saving || !viewFormName.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editorMode === "new" ? "Create & Apply" : "Save"}</Button>
+                <Button onClick={async () => { if (!viewFormName.trim()) return; setSaving(true); const newView = { id: editingView?.id || `view_${Date.now()}`, name: viewFormName, page_key: activeSection === "technical" ? "technical_colors" : "commercial_colors", column_ids: viewFormColumns, fixed_column_ids: viewFormFixedColumnIds, filters_config: viewFormFilters, allowed_roles: viewFormRoles }; try { if (editingView) { await base44.entities.ListViewConfig.update(editingView.id, newView); } else { await base44.entities.ListViewConfig.create(newView); } } catch (err) { console.error("Error saving view:", err); } setActiveViewId(newView.id); setShowViewEditor(false); setSaving(false); }} disabled={saving || !viewFormName.trim()} className="gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editorMode === "new" ? "Create & Apply" : "Save"}</Button>
               </DialogFooter>
             </div>
           )}
