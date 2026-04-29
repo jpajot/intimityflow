@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,9 +50,10 @@ export default function ColorPalettes() {
   const [techView, setTechView] = useState("table");
   const [commView, setCommView] = useState("table");
   const [commSearch, setCommSearch] = useState("");
-  const [techViewMode, setTechViewMode] = useState("grid");
+  const [techViewMode, setTechViewMode] = useState("list");
   const [showTechViewMenu, setShowTechViewMenu] = useState(false);
-  const [techActiveViewId, setTechActiveViewId] = useState(null);
+  const [techActiveViewId, setTechActiveViewId] = useState("default");
+  const [techActiveColumns, setTechActiveColumns] = useState(null); // null = all columns
   const techViewRef = useRef(null);
 
 
@@ -86,7 +87,7 @@ export default function ColorPalettes() {
             onClick: () => {
               setTechViewMode((prev) => {
                 const next = prev === "list" ? "grid" : "list";
-                techViewRef.current?.setView(next);
+                setTechView(next === "grid" ? "grid" : "table");
                 return next;
               });
             }
@@ -124,6 +125,22 @@ export default function ColorPalettes() {
   }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, techActiveViewId]);
 
   useEffect(() => {loadData();}, []);
+
+  // Apply selected view config for technical colors
+  useEffect(() => {
+    if (!techActiveViewId || techActiveViewId === "default") {
+      setTechActiveColumns(null);
+      return;
+    }
+    base44.entities.ListViewConfig.filter({ page_key: "technical_colors" }).then((views) => {
+      const view = views.find((v) => v.id === techActiveViewId);
+      if (view?.column_ids?.length) {
+        setTechActiveColumns(view.column_ids);
+      } else {
+        setTechActiveColumns(null);
+      }
+    });
+  }, [techActiveViewId]);
 
 
 
@@ -647,7 +664,22 @@ export default function ColorPalettes() {
           </div>
       )}
 
-      {activeSection === "technical" && (
+      {activeSection === "technical" && (() => {
+        // All possible columns for the table view
+        const ALL_TECH_COLS = [
+          { id: "code", label: "Code", render: (c) => <td className="px-4 py-2 text-xs font-mono">{c.code}</td> },
+          { id: "name", label: "Name", render: (c) => <td className="px-4 py-2 text-xs">{c.name}</td> },
+          { id: "hex", label: "Hex Color", render: (c) => <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td> },
+          { id: "rgb", label: "RGB", render: (c) => <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.rgb || "—"}</td> },
+          { id: "cmyk", label: "CMYK", render: (c) => <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.cmyk || "—"}</td> },
+          { id: "color_group", label: "Color Group", render: (c) => <td className="px-4 py-2 text-xs">{c.color_group || "—"}</td> },
+          { id: "color_sub_group", label: "Sub-Group", render: (c) => <td className="px-4 py-2 text-xs">{c.color_sub_group || "—"}</td> },
+        ];
+        const visibleCols = techActiveColumns
+          ? ALL_TECH_COLS.filter((col) => techActiveColumns.includes(col.id))
+          : ALL_TECH_COLS;
+        const filteredTech = techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase()));
+        return (
         <div className="space-y-4">
           <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search technical colors…" className="max-w-sm h-8 text-xs" />
           {techView === "table" ? (
@@ -656,27 +688,17 @@ export default function ColorPalettes() {
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
                      <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Hex</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">RGB</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">CMYK</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Color Group</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Sub-Group</th>
+                     {visibleCols.map((col) => (
+                       <th key={col.id} className="px-4 py-2 text-left text-xs font-medium">{col.label}</th>
+                     ))}
                      <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
                    </tr>
                 </thead>
                 <tbody>
-                  {techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase())).map(c => (
+                  {filteredTech.map(c => (
                     <tr key={c.id} className="border-b border-border hover:bg-muted/50">
                        <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td>
-                       <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
-                       <td className="px-4 py-2 text-xs">{c.name}</td>
-                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td>
-                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.rgb || "—"}</td>
-                       <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.cmyk || "—"}</td>
-                       <td className="px-4 py-2 text-xs">{c.color_group || "—"}</td>
-                       <td className="px-4 py-2 text-xs">{c.color_sub_group || "—"}</td>
+                       {visibleCols.map((col) => <React.Fragment key={col.id}>{col.render(c)}</React.Fragment>)}
                        <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
                      </tr>
                   ))}
@@ -685,7 +707,7 @@ export default function ColorPalettes() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase())).map(c => (
+              {filteredTech.map(c => (
                 <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
                   <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
                   <div className="p-2 space-y-1">
@@ -698,7 +720,8 @@ export default function ColorPalettes() {
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {activeSection === "commercial" && (
         <div className="space-y-4">
