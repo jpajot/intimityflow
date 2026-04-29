@@ -13,7 +13,7 @@ export default function ProductCard({ product, colorVariants = [] }) {
   return (
     <Link
       to={`/products/${product.id}`}
-      className="group block bg-card rounded-xl border border-transparent overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all duration-300"
+      className="group block bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all duration-300"
     >
       <div className="aspect-square relative overflow-hidden">
         {firstImage ? (
