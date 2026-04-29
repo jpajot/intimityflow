@@ -86,11 +86,13 @@ export default function Layout() {
   const optionsDrawer = usePopover();
 
   // Activate pending sub-nav section after navigation
+  // Fires whenever subNav becomes available OR location changes — whichever comes last
   useEffect(() => {
     if (pendingSubNavId.current && subNav) {
       const id = pendingSubNavId.current;
       pendingSubNavId.current = null;
-      subNav.onChange(id);
+      // Small delay to let the page finish mounting its subnav items
+      setTimeout(() => subNav.onChange(id), 0);
     }
   }, [subNav, location.pathname]);
 
@@ -350,8 +352,11 @@ export default function Layout() {
                  if (alreadyOnPage && subNav) {
                    subNav.onChange(item.subNavId);
                  } else {
+                   // Always set pending so the effect catches it after mount/navigation
                    pendingSubNavId.current = item.subNavId;
-                   navigate(item.path);
+                   if (!alreadyOnPage) {
+                     navigate(item.path);
+                   }
                  }
                }
              };
