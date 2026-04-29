@@ -324,7 +324,7 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="w-full max-w-6xl mx-auto space-y-4 px-2 sm:px-4 pb-20 sm:pb-4">
       {/* Header */}
       <div className="flex items-center gap-4 relative z-50">
         <Button variant="ghost" size="icon" onClick={() => navigate(product.type === "Material" ? "/materials" : "/")}>
