@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Loader2, List, LayoutGrid } from "lucide-react";
-import { useRef } from "react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
@@ -25,14 +24,16 @@ export default function SizeLibrary({ hideTitle = false }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [viewMode, setViewMode] = useState("grid");
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [activeViewId, setActiveViewId] = useState("default");
   const [activeColumns, setActiveColumns] = useState(null);
-  const viewRef = useRef(null);
+
+  const openNew = useCallback(() => { setEditing(null); setForm(emptyForm); setShowDialog(true); }, []);
+  const toggleViewMenu = useCallback(() => setShowViewMenu((v) => !v), []);
 
   useEffect(() => { loadData(); }, []);
 
+  // Apply selected view config
   useEffect(() => {
     if (!activeViewId || activeViewId === "default") {
       setActiveColumns(null);
@@ -44,38 +45,25 @@ export default function SizeLibrary({ hideTitle = false }) {
     });
   }, [activeViewId]);
 
+  // Sync page options whenever relevant state changes
   useEffect(() => {
     setOptions({
       items: [
-        { label: "Add Size", icon: Plus, onClick: () => openNew(), className: "text-primary hover:bg-primary/10" },
+        { label: "Add Size", icon: Plus, onClick: openNew, className: "text-primary hover:bg-primary/10" },
         { divider: true },
-        {
-          label: viewMode === "grid" ? "View: List" : "View: Grid",
-          icon: viewMode === "grid" ? List : LayoutGrid,
-          onClick: () => {
-            setViewMode((prev) => {
-              const next = prev === "list" ? "grid" : "list";
-              viewRef.current?.setView(next);
-              return next;
-            });
-          }
-        },
-        { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu((v) => !v), custom: true },
+        { label: "Manage Views", icon: Pencil, onClick: toggleViewMenu, custom: true },
       ],
       customContent: showViewMenu
-        ? () => (
-            <ViewDrawerContent
-              pageKey="size_library"
-              activeViewId={activeViewId}
-              onSelectView={setActiveViewId}
-              currentViewType={viewMode === "grid" ? "grid" : null}
-              allFields={SIZE_LIBRARY_FIELDS}
-            />
-          )
+        ? <ViewDrawerContent
+            pageKey="size_library"
+            activeViewId={activeViewId}
+            onSelectView={setActiveViewId}
+            currentViewType={null}
+            allFields={SIZE_LIBRARY_FIELDS}
+          />
         : null,
     });
-  }, [setOptions, viewMode, showViewMenu, activeViewId]);
+  }, [showViewMenu, activeViewId, openNew, toggleViewMenu]);
 
   const loadData = async () => {
     const s = await base44.entities.Size.list("size_code", 500);
@@ -83,7 +71,6 @@ export default function SizeLibrary({ hideTitle = false }) {
     setLoading(false);
   };
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setShowDialog(true); };
   const openEdit = (s) => {
     setEditing(s);
     setForm({ size_code: s.size_code, name: s.name });
