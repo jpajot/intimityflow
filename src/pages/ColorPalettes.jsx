@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2, GripVertical, ShieldCheck, Pin } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2, GripVertical, ShieldCheck, Pin, Layers } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -18,6 +18,70 @@ import PaletteColorGrid from "../components/PaletteColorGrid";
 import ViewDrawerContent from "../components/ViewDrawerContent";
 import DataTable from "../components/DataTable";
 
+
+// ── Grid grouping helpers ─────────────────────────────────────────────────────
+
+function buildColorGridGroups(rows, groupCols, keyGetters, depth = 0) {
+  if (depth >= groupCols.length) return rows;
+  const getKey = keyGetters[groupCols[depth]] || ((r) => r[groupCols[depth]] || "—");
+  const map = {};
+  for (const row of rows) {
+    const k = String(getKey(row) || "—");
+    if (!map[k]) map[k] = [];
+    map[k].push(row);
+  }
+  return Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, items]) => ({
+      key: `${depth}-${key}`,
+      label: key,
+      depth,
+      items: depth + 1 < groupCols.length ? null : items,
+      children: depth + 1 < groupCols.length ? buildColorGridGroups(items, groupCols, keyGetters, depth + 1) : null,
+    }));
+}
+
+function ColorGridGroup({ group, expandedGroups, toggleGroup, children, depth = 0 }) {
+  const isExpanded = expandedGroups.has(group.key);
+  const count = group.items ? group.items.length : countGroupLeaves(group.children || []);
+  return (
+    <div style={{ marginLeft: depth * 12 }}>
+      <button type="button" onClick={() => toggleGroup(group.key)}
+        className="w-full flex items-center justify-between px-3 py-2 mb-2 bg-muted/60 rounded-lg hover:bg-muted transition-colors">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.label} <span className="font-normal">({count})</span></span>
+        <span className="text-sm text-muted-foreground">{isExpanded ? "−" : "+"}</span>
+      </button>
+      {isExpanded && (
+        group.children
+          ? <div className="space-y-3 ml-3">{group.children.map(child => <ColorGridGroup key={child.key} group={child} expandedGroups={expandedGroups} toggleGroup={toggleGroup} depth={depth + 1}>{children}</ColorGridGroup>)}</div>
+          : children(group.items || [])
+      )}
+    </div>
+  );
+}
+
+function countGroupLeaves(groups) {
+  return groups.reduce((s, g) => s + (g.items ? g.items.length : countGroupLeaves(g.children || [])), 0);
+}
+
+function GridGroupContextMenu({ x, y, fieldLabel, onGroup, onClose }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [onClose]);
+  return (
+    <div ref={ref} style={{ position: "fixed", top: y, left: x, zIndex: 9999 }}
+      className="bg-popover border border-border rounded-md shadow-lg py-1 min-w-[180px]">
+      <button type="button" onClick={() => { onGroup(); onClose(); }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left">
+        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+        Group by <span className="font-medium ml-1">{fieldLabel}</span>
+      </button>
+    </div>
+  );
+}
 
 export default function ColorPalettes() {
   const { setOptions } = usePageOptions();
@@ -66,6 +130,15 @@ export default function ColorPalettes() {
   const [pinnedCommCols, setPinnedCommCols] = useState([]);
   const commViewRef = useRef(null);
 
+  // Grid grouping state — Technical
+  const [techGroupCols, setTechGroupCols] = useState([]);
+  const [techExpandedGroups, setTechExpandedGroups] = useState(new Set());
+  const [techContextMenu, setTechContextMenu] = useState(null);
+
+  // Grid grouping state — Commercial
+  const [commGroupCols, setCommGroupCols] = useState([]);
+  const [commExpandedGroups, setCommExpandedGroups] = useState(new Set());
+  const [commContextMenu, setCommContextMenu] = useState(null);
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -747,19 +820,65 @@ export default function ColorPalettes() {
               />
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                {filteredTech.map(c => (
-                  <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
-                    <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
-                    <div className="p-2 space-y-1">
-                      <p className="text-xs font-mono font-medium truncate">{c.code}</p>
-                      <p className="text-xs text-muted-foreground truncate">{c.name}</p>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
+              {/* Grouping pills */}
+              {techGroupCols.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1"><Layers className="w-3.5 h-3.5" /> Grouped by:</span>
+                  {techGroupCols.map((id, idx) => {
+                    const labels = { code: "Code", name: "Name", hex: "Hex", color_group: "Color Group", color_sub_group: "Sub-Group" };
+                    return (
+                      <div key={id} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
+                        {idx > 0 && <span className="text-muted-foreground mr-1">›</span>}
+                        {labels[id] || id}
+                        <button type="button" onClick={() => { setTechGroupCols(p => p.filter(x => x !== id)); setTechExpandedGroups(new Set()); }} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button>
+                      </div>
+                    );
+                  })}
+                  <button type="button" onClick={() => { setTechGroupCols([]); setTechExpandedGroups(new Set()); }} className="text-xs text-muted-foreground hover:text-destructive underline-offset-2 hover:underline">Clear</button>
+                </div>
+              )}
+              {/* Context menu */}
+              {techContextMenu && (
+                <GridGroupContextMenu x={techContextMenu.x} y={techContextMenu.y} fieldLabel={techContextMenu.label}
+                  onGroup={() => { setTechGroupCols(p => p.includes(techContextMenu.id) || p.length >= 3 ? p : [...p, techContextMenu.id]); setTechExpandedGroups(new Set()); }}
+                  onClose={() => setTechContextMenu(null)} />
+              )}
+              {techGroupCols.length > 0 ? (
+                buildColorGridGroups(filteredTech, techGroupCols, { code: c => c.code, name: c => c.name, color_group: c => c.color_group || "—", color_sub_group: c => c.color_sub_group || "—" })
+                  .map(group => (
+                    <ColorGridGroup key={group.key} group={group} expandedGroups={techExpandedGroups} toggleGroup={(k) => setTechExpandedGroups(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; })}>
+                      {(items) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                          {items.map(c => (
+                            <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                              <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
+                              <div className="p-2 space-y-1">
+                                <p className="text-xs font-mono font-medium truncate" onContextMenu={e => { e.preventDefault(); setTechContextMenu({ x: e.clientX, y: e.clientY, id: "code", label: "Code" }); }}>{c.code}</p>
+                                <p className="text-xs text-muted-foreground truncate" onContextMenu={e => { e.preventDefault(); setTechContextMenu({ x: e.clientX, y: e.clientY, id: "name", label: "Name" }); }}>{c.name}</p>
+                                <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ColorGridGroup>
+                  ))
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {filteredTech.map(c => (
+                    <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                      <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
+                      <div className="p-2 space-y-1">
+                        <p className="text-xs font-mono font-medium truncate" onContextMenu={e => { e.preventDefault(); setTechContextMenu({ x: e.clientX, y: e.clientY, id: "code", label: "Code" }); }}>{c.code}</p>
+                        <p className="text-xs text-muted-foreground truncate" onContextMenu={e => { e.preventDefault(); setTechContextMenu({ x: e.clientX, y: e.clientY, id: "name", label: "Name" }); }}>{c.name}</p>
+                        {c.color_group && <p className="text-[10px] text-muted-foreground truncate" onContextMenu={e => { e.preventDefault(); setTechContextMenu({ x: e.clientX, y: e.clientY, id: "color_group", label: "Color Group" }); }}>{c.color_group}</p>}
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -795,23 +914,72 @@ export default function ColorPalettes() {
               />
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                {filteredComm.map(c => {
-                  const tech = techColors.find(t => t.id === c.main_technical_color_id);
-                  return (
-                    <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
-                      <div className="aspect-square" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />
-                      <div className="p-2 space-y-1">
-                        <p className="text-xs font-mono font-medium truncate">{c.code}</p>
-                        <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
-                        <p className="text-[10px] text-muted-foreground text-center">{c.sub_type}</p>
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
+              {/* Grouping pills */}
+              {commGroupCols.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1"><Layers className="w-3.5 h-3.5" /> Grouped by:</span>
+                  {commGroupCols.map((id, idx) => {
+                    const labels = { code: "Code", color_name: "Name", sub_type: "Type" };
+                    return (
+                      <div key={id} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
+                        {idx > 0 && <span className="text-muted-foreground mr-1">›</span>}
+                        {labels[id] || id}
+                        <button type="button" onClick={() => { setCommGroupCols(p => p.filter(x => x !== id)); setCommExpandedGroups(new Set()); }} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                  <button type="button" onClick={() => { setCommGroupCols([]); setCommExpandedGroups(new Set()); }} className="text-xs text-muted-foreground hover:text-destructive underline-offset-2 hover:underline">Clear</button>
+                </div>
+              )}
+              {/* Context menu */}
+              {commContextMenu && (
+                <GridGroupContextMenu x={commContextMenu.x} y={commContextMenu.y} fieldLabel={commContextMenu.label}
+                  onGroup={() => { setCommGroupCols(p => p.includes(commContextMenu.id) || p.length >= 3 ? p : [...p, commContextMenu.id]); setCommExpandedGroups(new Set()); }}
+                  onClose={() => setCommContextMenu(null)} />
+              )}
+              {commGroupCols.length > 0 ? (
+                buildColorGridGroups(filteredComm, commGroupCols, { code: c => c.code, color_name: c => c.color_name || "—", sub_type: c => c.sub_type || "—" })
+                  .map(group => (
+                    <ColorGridGroup key={group.key} group={group} expandedGroups={commExpandedGroups} toggleGroup={(k) => setCommExpandedGroups(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; })}>
+                      {(items) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                          {items.map(c => {
+                            const tech = techColors.find(t => t.id === c.main_technical_color_id);
+                            return (
+                              <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                                <div className="aspect-square" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />
+                                <div className="p-2 space-y-1">
+                                  <p className="text-xs font-mono font-medium truncate" onContextMenu={e => { e.preventDefault(); setCommContextMenu({ x: e.clientX, y: e.clientY, id: "code", label: "Code" }); }}>{c.code}</p>
+                                  <p className="text-xs text-muted-foreground truncate" onContextMenu={e => { e.preventDefault(); setCommContextMenu({ x: e.clientX, y: e.clientY, id: "color_name", label: "Name" }); }}>{c.color_name}</p>
+                                  <p className="text-[10px] text-muted-foreground text-center" onContextMenu={e => { e.preventDefault(); setCommContextMenu({ x: e.clientX, y: e.clientY, id: "sub_type", label: "Type" }); }}>{c.sub_type}</p>
+                                  <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </ColorGridGroup>
+                  ))
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {filteredComm.map(c => {
+                    const tech = techColors.find(t => t.id === c.main_technical_color_id);
+                    return (
+                      <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                        <div className="aspect-square" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />
+                        <div className="p-2 space-y-1">
+                          <p className="text-xs font-mono font-medium truncate" onContextMenu={e => { e.preventDefault(); setCommContextMenu({ x: e.clientX, y: e.clientY, id: "code", label: "Code" }); }}>{c.code}</p>
+                          <p className="text-xs text-muted-foreground truncate" onContextMenu={e => { e.preventDefault(); setCommContextMenu({ x: e.clientX, y: e.clientY, id: "color_name", label: "Name" }); }}>{c.color_name}</p>
+                          <p className="text-[10px] text-muted-foreground text-center" onContextMenu={e => { e.preventDefault(); setCommContextMenu({ x: e.clientX, y: e.clientY, id: "sub_type", label: "Type" }); }}>{c.sub_type}</p>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
