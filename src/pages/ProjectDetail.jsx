@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, Pin, PinOff, Info, Zap, LayoutGrid, List } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, FileText, Upload, Search, Palette, SwatchBook, Layers, Pin, PinOff, Info, Zap, LayoutGrid, List, Filter } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
 import PresenceIndicator from "../components/PresenceIndicator";
@@ -24,6 +24,7 @@ import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
 import ViewDrawerContent from "../components/ViewDrawerContent";
+import QuickFiltersPanel from "../components/QuickFiltersPanel";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { Download, Upload as UploadIcon, Pencil, Plus } from "lucide-react";
 
@@ -76,6 +77,14 @@ export default function ProjectDetail() {
   const [dcActiveViewId, setDCActiveViewId] = useState("default");
   const [dcViewMode, setDCViewMode] = useState("list");
 
+  // Quick filters per section
+  const [stylesQuickFilters, setStylesQuickFilters] = useState([]);
+  const [colorwaysQuickFilters, setColorwaysQuickFilters] = useState([]);
+  const [variationsQuickFilters, setVariationsQuickFilters] = useState([]);
+  const [showStylesQF, setShowStylesQF] = useState(false);
+  const [showColorwaysQF, setShowColorwaysQF] = useState(false);
+  const [showVariationsQF, setShowVariationsQF] = useState(false);
+
   const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
 
   const togglePin = () => {
@@ -107,18 +116,46 @@ export default function ProjectDetail() {
 
   const { setOptions } = usePageOptions();
 
-  // Reset view menus when switching sections so stale customContent is never shown
+  // Reset view menus and QF panels when switching sections
   useEffect(() => {
     setShowStylesViewMenu(false);
     setShowColorwaysViewMenu(false);
     setShowVariationsViewMenu(false);
     setShowDCViewMenu(false);
+    setShowStylesQF(false);
+    setShowColorwaysQF(false);
+    setShowVariationsQF(false);
   }, [activeSection]);
 
   useEffect(() => {
+    const STYLES_QF_FIELDS = [
+      { id: "category", label: "Category", getValue: (p) => p.category },
+      { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
+      { id: "sub_type", label: "Sub-type", getValue: (p) => p.sub_type },
+      { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
+      { id: "name", label: "Name", getValue: (p) => p.name },
+      { id: "code", label: "Code", getValue: (p) => p.code },
+    ];
+    const COLORWAYS_QF_FIELDS = [
+      { id: "color_name", label: "Color Name", getValue: (cw) => cw.color_name },
+      { id: "colorway_code", label: "Colorway Code", getValue: (cw) => cw.colorway_code },
+      { id: "style_name", label: "Style Name", getValue: (cw) => linkedProducts.find((p) => p.id === cw.product_id)?.name },
+      { id: "style_sub_type", label: "Style: Sub-type", getValue: (cw) => linkedProducts.find((p) => p.id === cw.product_id)?.sub_type },
+      { id: "style_category", label: "Style: Category", getValue: (cw) => linkedProducts.find((p) => p.id === cw.product_id)?.category },
+    ];
+    const VARIATIONS_QF_FIELDS = [
+      { id: "name", label: "Variation Name", getValue: (v) => v.name },
+      { id: "sequence", label: "Sequence", getValue: (v) => v.sequence },
+      { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code },
+      { id: "variant", label: "Variant", getValue: (v) => v.variant },
+      { id: "style_name", label: "Style Name", getValue: (v) => { const cw = allColorways.find((c) => c.id === v.product_color_id); return allStyleProducts.find((p) => p.id === cw?.product_id)?.name; } },
+      { id: "color_name", label: "Colorway Name", getValue: (v) => allColorways.find((c) => c.id === v.product_color_id)?.color_name },
+    ];
+
     if (activeSection === "styles") {
       setOptions({
         items: [
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowStylesQF((v) => !v); setShowStylesViewMenu(false); }, custom: true },
         { label: stylesViewMode === "grid" ? "View: List" : "View: Grid", icon: stylesViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setStylesViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
@@ -127,9 +164,11 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowStylesViewMenu((v) => !v), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowStylesViewMenu((v) => !v); setShowStylesQF(false); }, custom: true }],
 
-        customContent: showStylesViewMenu ?
+        customContent: showStylesQF
+        ? () => <QuickFiltersPanel fields={STYLES_QF_FIELDS} activeFilters={stylesQuickFilters} onApply={(f) => { setStylesQuickFilters(f); }} />
+        : showStylesViewMenu ?
         () => <ViewDrawerContent pageKey="project_linked_styles" activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} currentViewType={stylesViewMode === "grid" ? "grid" : null} allFields={[
         { id: "image", label: "Image" },
         { id: "code", label: "Code" },
@@ -149,6 +188,7 @@ export default function ProjectDetail() {
     } else if (activeSection === "colorways") {
       setOptions({
         items: [
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowColorwaysQF((v) => !v); setShowColorwaysViewMenu(false); }, custom: true },
         { label: colorwaysViewMode === "grid" ? "View: List" : "View: Grid", icon: colorwaysViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setColorwaysViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
@@ -157,9 +197,11 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu((v) => !v), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowColorwaysViewMenu((v) => !v); setShowColorwaysQF(false); }, custom: true }],
 
-        customContent: showColorwaysViewMenu ?
+        customContent: showColorwaysQF
+        ? () => <QuickFiltersPanel fields={COLORWAYS_QF_FIELDS} activeFilters={colorwaysQuickFilters} onApply={(f) => { setColorwaysQuickFilters(f); }} />
+        : showColorwaysViewMenu ?
         () => <ViewDrawerContent pageKey="project_linked_colorways" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} allFields={[
         { id: "style_image", label: "Style" },
         { id: "style_name", label: "Style Name" },
@@ -181,6 +223,7 @@ export default function ProjectDetail() {
         items: [
         { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")), className: "text-primary hover:bg-primary/10" },
         { divider: true },
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowVariationsQF((v) => !v); setShowVariationsViewMenu(false); }, custom: true },
         { label: variationsViewMode === "grid" ? "View: List" : "View: Grid", icon: variationsViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setVariationsViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
@@ -189,9 +232,11 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu((v) => !v), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowVariationsViewMenu((v) => !v); setShowVariationsQF(false); }, custom: true }],
 
-        customContent: showVariationsViewMenu ?
+        customContent: showVariationsQF
+        ? () => <QuickFiltersPanel fields={VARIATIONS_QF_FIELDS} activeFilters={variationsQuickFilters} onApply={(f) => { setVariationsQuickFilters(f); }} />
+        : showVariationsViewMenu ?
         () => <ViewDrawerContent pageKey="project_linked_variations" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} currentViewType={variationsViewMode === "grid" ? "grid" : null} allFields={[
         { id: "style_image", label: "Style Image" },
         { id: "style_name", label: "Style Name" },
@@ -244,7 +289,7 @@ export default function ProjectDetail() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId, stylesViewMode, colorwaysViewMode, variationsViewMode, dcViewMode]);
+  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId, stylesViewMode, colorwaysViewMode, variationsViewMode, dcViewMode, showStylesQF, showColorwaysQF, showVariationsQF, stylesQuickFilters, colorwaysQuickFilters, variationsQuickFilters, linkedProducts]);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
@@ -578,15 +623,16 @@ export default function ProjectDetail() {
         onLinked={loadData}
         onViewRef={(state) => {colorwaysViewRef.current = state;}}
         activeViewId={colorwaysActiveViewId}
-        onSelectView={setColorwaysActiveViewId} />
+        onSelectView={setColorwaysActiveViewId}
+        quickFilters={colorwaysQuickFilters} />
 
       }
 
       {activeSection === "styles" &&
-      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {stylesViewRef.current = state;}} activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} />
+      <LinkedStylesView styles={linkedStyles} navigate={navigate} projects={allProjects} sizeGrids={sizeGrids} projectId={id} allStyles={allStyleProducts} allColorways={allColorways} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {stylesViewRef.current = state;}} activeViewId={stylesActiveViewId} onSelectView={setStylesActiveViewId} quickFilters={stylesQuickFilters} />
       }
       {activeSection === "variations" &&
-      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {variationsViewRef.current = state;}} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} />
+      <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {variationsViewRef.current = state;}} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} quickFilters={variationsQuickFilters} />
       }
       {activeSection === "dc_per_cot" &&
       <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => {window.dcPerCOTGenerate = handler;}} onExportRef={(handler) => {window.dcPerCOTExport = handler;}} onImportRef={(handler) => {window.dcPerCOTImport = handler;}} onViewRef={(viewState) => {window.dcPerCOTView = viewState;}} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} />

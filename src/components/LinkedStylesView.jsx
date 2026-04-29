@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 
 import { Plus, X } from "lucide-react";
+import { applyQuickFilters } from "./QuickFiltersPanel";
 import ListToolbar from "./ListToolbar";
 import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
@@ -9,7 +10,7 @@ import GalleryView from "./GalleryView";
 import ViewSelector from "./ViewSelector";
 import ImageLightbox from "./ImageLightbox";
 
-export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked, onViewRef, activeViewId, onSelectView }) {
+export default function LinkedStylesView({ styles, navigate, projects = [], sizeGrids = [], projectId, allStyles = [], allColorways = [], allVariations = [], onLinked, onViewRef, activeViewId, onSelectView, quickFilters = [] }) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
@@ -85,15 +86,18 @@ export default function LinkedStylesView({ styles, navigate, projects = [], size
   })), [allStyles]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return styles;
-    const q = search.toLowerCase();
-    return styles.filter((s) =>
-      s.name?.toLowerCase().includes(q) ||
-      s.category?.toLowerCase().includes(q) ||
-      s.sub_category?.toLowerCase().includes(q) ||
-      s.customer_need?.toLowerCase().includes(q)
-    );
-  }, [styles, search]);
+    let result = styles;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((s) =>
+        s.name?.toLowerCase().includes(q) ||
+        s.category?.toLowerCase().includes(q) ||
+        s.sub_category?.toLowerCase().includes(q) ||
+        s.customer_need?.toLowerCase().includes(q)
+      );
+    }
+    return applyQuickFilters(result, quickFilters);
+  }, [styles, search, quickFilters]);
 
   const columns = [
     {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import ImageLightbox from "./ImageLightbox";
-
+import { applyQuickFilters } from "./QuickFiltersPanel";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -170,7 +170,7 @@ const CHANNELS_OPTIONS = ["Wholesale", "Retail", "E-commerce", "Outlet", "Travel
 export default function LinkedColorwaysView({
   colorways, products, techColors, commColors, navigate,
   search, onSearchChange, view, onViewChange, activeColumns, onColumnsChange,
-  projectId, allColorways = [], onLinked, onViewRef, activeViewId, onSelectView
+  projectId, allColorways = [], onLinked, onViewRef, activeViewId, onSelectView, quickFilters = []
 }) {
   const [showLink, setShowLink] = useState(false);
   const [linkMap, setLinkMap] = useState({});
@@ -288,20 +288,22 @@ export default function LinkedColorwaysView({
   };
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return colorways;
-    const q = search.toLowerCase();
-    return colorways.filter((cw) => {
-      const prod = products.find((p) => p.id === cw.product_id);
-      const tc = techColors.find((t) => t.id === cw.linked_tech_color_id);
-      return (
-        cw.color_name?.toLowerCase().includes(q) ||
-        cw.colorway_code?.toLowerCase().includes(q) ||
-        prod?.name?.toLowerCase().includes(q) ||
-        tc?.code?.toLowerCase().includes(q) ||
-        tc?.name?.toLowerCase().includes(q));
-
-    });
-  }, [colorways, search, products, techColors]);
+    let result = colorways;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((cw) => {
+        const prod = products.find((p) => p.id === cw.product_id);
+        const tc = techColors.find((t) => t.id === cw.linked_tech_color_id);
+        return (
+          cw.color_name?.toLowerCase().includes(q) ||
+          cw.colorway_code?.toLowerCase().includes(q) ||
+          prod?.name?.toLowerCase().includes(q) ||
+          tc?.code?.toLowerCase().includes(q) ||
+          tc?.name?.toLowerCase().includes(q));
+      });
+    }
+    return applyQuickFilters(result, quickFilters);
+  }, [colorways, search, products, techColors, quickFilters]);
 
   const columns = [
   {

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
 import { Input } from "@/components/ui/input";
-import { LayoutGrid, List, Loader2, Palette, Layers, Plus, Pencil } from "lucide-react";
+import { LayoutGrid, List, Loader2, Palette, Layers, Plus, Pencil, Filter } from "lucide-react";
 import StylesIcon from "../components/icons/StylesIcon";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import { usePageOptions } from "@/lib/PageOptionsContext";
@@ -11,6 +11,7 @@ import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
 import ViewDrawerContent from "../components/ViewDrawerContent";
+import QuickFiltersPanel, { applyQuickFilters } from "../components/QuickFiltersPanel";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
 function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids, projects }) {
@@ -22,6 +23,8 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const [pinnedCols, setPinnedCols] = useState([]);
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewMenu, setShowViewMenu] = useState(false);
+  const [showQF, setShowQF] = useState(false);
+  const [quickFilters, setQuickFilters] = useState([]);
 
   // Load and apply selected view configuration
   useEffect(() => {
@@ -58,44 +61,49 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
 
   const viewKey = `styles_list_${view}`;
 
+  const STYLES_QF_FIELDS = [
+    { id: "name", label: "Name", getValue: (p) => p.name },
+    { id: "code", label: "Code", getValue: (p) => p.code },
+    { id: "category", label: "Category", getValue: (p) => p.category },
+    { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
+    { id: "sub_type", label: "Sub-type", getValue: (p) => p.sub_type },
+    { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
+  ];
+
   // Set page options on mount/update
   useEffect(() => {
     setOptions({
       items: [
       { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       { divider: true },
+      { label: "Quick Filters", icon: Filter, onClick: () => { setShowQF((v) => !v); setShowViewMenu(false); }, custom: true },
       { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => setView((v) => v === "grid" ? "list" : "grid") },
       { divider: true },
-      { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(!showViewMenu), custom: true }],
+      { label: "Manage Views", icon: Pencil, onClick: () => { setShowViewMenu((v) => !v); setShowQF(false); }, custom: true }],
 
-      customContent: showViewMenu ?
+      customContent: showQF
+      ? <QuickFiltersPanel fields={STYLES_QF_FIELDS} activeFilters={quickFilters} onApply={(f) => setQuickFilters(f)} />
+      : showViewMenu ?
       <ViewDrawerContent pageKey={viewKey} activeViewId={activeViewId} onSelectView={setActiveViewId} allFields={allAvailableFields} currentViewType={view === "grid" ? "grid" : null} /> :
       null
     });
-  }, [setOptions, navigate, showViewMenu, activeViewId, view, viewKey]);
+  }, [setOptions, navigate, showViewMenu, showQF, quickFilters, activeViewId, view, viewKey]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return products;
-    const q = search.toLowerCase();
-    return products.filter((p) => {
-      if (
-      p.name?.toLowerCase().includes(q) ||
-      p.category?.toLowerCase().includes(q) ||
-      p.sub_category?.toLowerCase().includes(q))
-      return true;
-      // Also search by colorway name/code or tech color code
-      const pColorways = colorVariants.filter((cv) => cv.product_id === p.id);
-      return pColorways.some((cv) => {
-        const tc = techColors.find((t) => t.id === cv.linked_tech_color_id);
-        return (
-          cv.color_name?.toLowerCase().includes(q) ||
-          cv.colorway_code?.toLowerCase().includes(q) ||
-          tc?.code?.toLowerCase().includes(q) ||
-          tc?.name?.toLowerCase().includes(q));
-
+    let result = products;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((p) => {
+        if (p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || p.sub_category?.toLowerCase().includes(q)) return true;
+        const pColorways = colorVariants.filter((cv) => cv.product_id === p.id);
+        return pColorways.some((cv) => {
+          const tc = techColors.find((t) => t.id === cv.linked_tech_color_id);
+          return (cv.color_name?.toLowerCase().includes(q) || cv.colorway_code?.toLowerCase().includes(q) || tc?.code?.toLowerCase().includes(q) || tc?.name?.toLowerCase().includes(q));
+        });
       });
-    });
-  }, [products, search, colorVariants, techColors]);
+    }
+    return applyQuickFilters(result, quickFilters);
+  }, [products, search, colorVariants, techColors, quickFilters]);
 
   const columns = [
   {
@@ -253,9 +261,10 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   const [view, setView] = useState("list");
   const [activeColumns, setActiveColumns] = useState(null);
   const [pinnedCols, setPinnedCols] = useState([]);
-
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewMenu, setShowViewMenu] = useState(false);
+  const [showQF, setShowQF] = useState(false);
+  const [quickFilters, setQuickFilters] = useState([]);
 
   useEffect(() => {
     setOptions({

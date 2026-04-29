@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 
 import { Plus, X } from "lucide-react";
+import { applyQuickFilters } from "./QuickFiltersPanel";
 import ListToolbar from "./ListToolbar";
 import LinkToProjectModal from "./LinkToProjectModal";
 import DataTable from "./DataTable";
@@ -125,7 +126,7 @@ const LINK_STATUS_OPTIONS = ["Development", "Confirmed", "Dropped", "On Hold"];
 const CHANNEL_LOV_CODE = "ChannelOfTrade";
 const DIST_CHANNEL_OPTIONS = ["Wholesale", "Direct To Customer"];
 
-export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked, onViewRef, activeViewId, onSelectView }) {
+export default function LinkedMoreVariationsView({ variations, colorways, products, projects, navigate, projectId, allVariations = [], onLinked, onViewRef, activeViewId, onSelectView, quickFilters = [] }) {
   const [linkMap, setLinkMap] = useState({});
   const [channelOptions, setChannelOptions] = useState([]);
   const [tableLightbox, setTableLightbox] = useState(null);
@@ -258,22 +259,25 @@ export default function LinkedMoreVariationsView({ variations, colorways, produc
   };
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return variations;
-    const q = search.toLowerCase();
-    return variations.filter((v) => {
-      const cw = getColorway(v);
-      const prod = getProduct(v);
-      return (
-        v.name?.toLowerCase().includes(q) ||
-        v.sequence?.toLowerCase().includes(q) ||
-        v.pack_code?.toLowerCase().includes(q) ||
-        v.variant?.toLowerCase().includes(q) ||
-        cw?.color_name?.toLowerCase().includes(q) ||
-        cw?.colorway_code?.toLowerCase().includes(q) ||
-        prod?.name?.toLowerCase().includes(q)
-      );
-    });
-  }, [variations, search]);
+    let result = variations;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((v) => {
+        const cw = getColorway(v);
+        const prod = getProduct(v);
+        return (
+          v.name?.toLowerCase().includes(q) ||
+          v.sequence?.toLowerCase().includes(q) ||
+          v.pack_code?.toLowerCase().includes(q) ||
+          v.variant?.toLowerCase().includes(q) ||
+          cw?.color_name?.toLowerCase().includes(q) ||
+          cw?.colorway_code?.toLowerCase().includes(q) ||
+          prod?.name?.toLowerCase().includes(q)
+        );
+      });
+    }
+    return applyQuickFilters(result, quickFilters);
+  }, [variations, search, quickFilters]);
 
   const columns = [
     {

@@ -15,6 +15,7 @@ export default function LinkedColorwaysManager({
   onViewRef,
   activeViewId,
   onSelectView,
+  quickFilters = [],
 }) {
   const [view, setView] = useState("grid");
   const [activeColumns, setActiveColumns] = useState(null);
@@ -38,6 +39,7 @@ export default function LinkedColorwaysManager({
       onViewRef={onViewRef}
       activeViewId={activeViewId}
       onSelectView={onSelectView}
+      quickFilters={quickFilters}
     />
   );
 }
