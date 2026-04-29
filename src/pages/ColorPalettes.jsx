@@ -56,6 +56,12 @@ export default function ColorPalettes() {
   const [techActiveColumns, setTechActiveColumns] = useState(null); // null = all columns
   const techViewRef = useRef(null);
 
+  // Commercial colors view state
+  const [commViewMode, setCommViewMode] = useState("grid");
+  const [showCommViewMenu, setShowCommViewMenu] = useState(false);
+  const [commActiveViewId, setCommActiveViewId] = useState("default");
+  const commViewRef = useRef(null);
+
 
   useRegisterSubNav([
     { id: "palettes", label: "Palettes", count: palettes.length, icon: Palette },
@@ -116,13 +122,44 @@ export default function ColorPalettes() {
     } else if (activeSection === "commercial") {
       setOptions({
         items: [
-          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" }
-        ]
+          { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
+          { divider: true },
+          {
+            label: commViewMode === "grid" ? "View: List" : "View: Grid",
+            icon: commViewMode === "grid" ? List : LayoutGrid,
+            onClick: () => {
+              setCommViewMode((prev) => {
+                const next = prev === "list" ? "grid" : "list";
+                setCommView(next === "grid" ? "grid" : "table");
+                return next;
+              });
+            }
+          },
+          { divider: true },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowCommViewMenu((v) => !v), custom: true }
+        ],
+        customContent: showCommViewMenu
+          ? () => (
+              <ViewDrawerContent
+                pageKey="commercial_colors"
+                activeViewId={commActiveViewId}
+                onSelectView={setCommActiveViewId}
+                currentViewType={commViewMode === "grid" ? "grid" : null}
+                allFields={[
+                  { id: "code", label: "Code" },
+                  { id: "color_name", label: "Name" },
+                  { id: "sub_type", label: "Type" },
+                  { id: "main_technical_color_id", label: "Tech Color" },
+                  { id: "linked_technical_color_ids", label: "Linked Tech Colors" },
+                ]}
+              />
+            )
+          : null
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, techActiveViewId]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, techActiveViewId, commViewMode, showCommViewMenu, commActiveViewId]);
 
   useEffect(() => {loadData();}, []);
 
