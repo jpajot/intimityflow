@@ -60,6 +60,7 @@ export default function ColorPalettes() {
   const [commViewMode, setCommViewMode] = useState("grid");
   const [showCommViewMenu, setShowCommViewMenu] = useState(false);
   const [commActiveViewId, setCommActiveViewId] = useState("default");
+  const [commActiveColumns, setCommActiveColumns] = useState(null); // null = all columns
   const commViewRef = useRef(null);
 
 
@@ -178,6 +179,22 @@ export default function ColorPalettes() {
       }
     });
   }, [techActiveViewId]);
+
+  // Apply selected view config for commercial colors
+  useEffect(() => {
+    if (!commActiveViewId || commActiveViewId === "default") {
+      setCommActiveColumns(null);
+      return;
+    }
+    base44.entities.ListViewConfig.filter({ page_key: "commercial_colors" }).then((views) => {
+      const view = views.find((v) => v.id === commActiveViewId);
+      if (view?.column_ids?.length) {
+        setCommActiveColumns(view.column_ids);
+      } else {
+        setCommActiveColumns(null);
+      }
+    });
+  }, [commActiveViewId]);
 
 
 
@@ -762,7 +779,20 @@ export default function ColorPalettes() {
         );
       })()}
 
-      {activeSection === "commercial" && (
+      {activeSection === "commercial" && (() => {
+        const ALL_COMM_COLS = [
+          { id: "code", label: "Code", render: (c) => <td className="px-4 py-2 text-xs font-mono">{c.code}</td> },
+          { id: "color_name", label: "Name", render: (c) => <td className="px-4 py-2 text-xs">{c.color_name}</td> },
+          { id: "sub_type", label: "Type", render: (c) => <td className="px-4 py-2 text-xs">{c.sub_type}</td> },
+          { id: "main_technical_color_id", label: "Tech Color", render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <td className="px-4 py-2 text-xs">{tech?.name || "—"}</td>; } },
+          { id: "tech_code", label: "Tech Code", render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <td className="px-4 py-2 text-xs font-mono">{tech?.code || "—"}</td>; } },
+          { id: "linked_technical_color_ids", label: "Linked Tech Colors", render: (c) => { const linkedTechs = (c.linked_technical_color_ids || []).map(id => techColors.find(t => t.id === id)?.code).filter(Boolean); return <td className="px-4 py-2 text-xs">{linkedTechs.length > 0 ? linkedTechs.join(", ") : "—"}</td>; } },
+        ];
+        const visibleCommCols = commActiveColumns
+          ? ALL_COMM_COLS.filter(col => commActiveColumns.includes(col.id))
+          : ALL_COMM_COLS;
+        const filteredComm = commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase()));
+        return (
         <div className="flex flex-col flex-1 min-h-0 gap-3">
           <Input value={commSearch} onChange={(e) => setCommSearch(e.target.value)} placeholder="Search commercial colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
           {commView === "table" ? (
@@ -771,28 +801,19 @@ export default function ColorPalettes() {
                 <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
                   <tr>
                      <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Name</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Type</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Tech Color</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Tech Code</th>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Linked Tech Colors</th>
+                     {visibleCommCols.map(col => (
+                       <th key={col.id} className="px-4 py-2 text-left text-xs font-medium">{col.label}</th>
+                     ))}
                      <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
                    </tr>
                 </thead>
                 <tbody>
-                  {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
+                  {filteredComm.map(c => {
                     const tech = techColors.find(t => t.id === c.main_technical_color_id);
-                    const linkedTechs = (c.linked_technical_color_ids || []).map(id => techColors.find(t => t.id === id)?.code).filter(Boolean);
                     return (
                       <tr key={c.id} className="border-b border-border hover:bg-muted/50">
                          <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td>
-                         <td className="px-4 py-2 text-xs font-mono">{c.code}</td>
-                         <td className="px-4 py-2 text-xs">{c.color_name}</td>
-                         <td className="px-4 py-2 text-xs">{c.sub_type}</td>
-                         <td className="px-4 py-2 text-xs">{tech?.name || "—"}</td>
-                         <td className="px-4 py-2 text-xs font-mono">{tech?.code || "—"}</td>
-                         <td className="px-4 py-2 text-xs">{linkedTechs.length > 0 ? linkedTechs.join(", ") : "—"}</td>
+                         {visibleCommCols.map(col => <React.Fragment key={col.id}>{col.render(c)}</React.Fragment>)}
                          <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
                        </tr>
                     );
@@ -821,7 +842,8 @@ export default function ColorPalettes() {
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Link Commercial Color dialog */}
       {linkingTechColor &&
