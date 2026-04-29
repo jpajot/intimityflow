@@ -10,10 +10,12 @@ import { Plus, Pencil, Trash2, Loader2, X, Ruler, Grid3X3 } from "lucide-react";
 import SizeLibrary from "./SizeLibrary";
 import DataTable from "@/components/DataTable";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
+import { usePageOptions } from "@/lib/PageOptionsContext";
 
 const emptyForm = { code: "", name: "", active: true, sample_size_id: "", base_size_id: "" };
 
 export default function SizeGridLibrary() {
+  const { setOptions } = usePageOptions();
   const [activeSection, setActiveSection] = useState("grids");
   const [grids, setGrids] = useState([]);
   const [sizes, setSizes] = useState([]);
@@ -125,6 +127,13 @@ export default function SizeGridLibrary() {
     { id: "grids", label: "Size Grids", count: grids.length, icon: Grid3X3 },
     { id: "library", label: "Size Library", icon: Ruler },
   ], activeSection, setActiveSection, "Size Studio");
+
+  // Clear options when on grids section (library section manages its own options)
+  useEffect(() => {
+    if (activeSection === "grids") {
+      setOptions({ items: [] });
+    }
+  }, [activeSection, setOptions]);
 
   if (loading) return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
 

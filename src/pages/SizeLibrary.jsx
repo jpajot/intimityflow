@@ -6,18 +6,59 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import DataTable from "@/components/DataTable";
+import { usePageOptions } from "@/lib/PageOptionsContext";
+import ViewDrawerContent from "@/components/ViewDrawerContent";
 
 const emptyForm = { size_code: "", name: "" };
 
+const SIZE_LIBRARY_FIELDS = [
+  { id: "size_code", label: "Code" },
+  { id: "name", label: "Name" },
+];
+
 export default function SizeLibrary({ hideTitle = false }) {
+  const { setOptions } = usePageOptions();
   const [sizes, setSizes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [showViewMenu, setShowViewMenu] = useState(false);
+  const [activeViewId, setActiveViewId] = useState("default");
+  const [activeColumns, setActiveColumns] = useState(null);
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (activeViewId === "default") {
+      setActiveColumns(null);
+    } else {
+      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+        setActiveColumns(results[0]?.column_ids?.length ? results[0].column_ids : null);
+      });
+    }
+  }, [activeViewId]);
+
+  useEffect(() => {
+    setOptions({
+      items: [
+        { label: "Add Size", icon: Plus, onClick: () => openNew(), className: "text-primary hover:bg-primary/10" },
+        { divider: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu((v) => !v), custom: true },
+      ],
+      customContent: showViewMenu
+        ? () => (
+            <ViewDrawerContent
+              pageKey="size_library"
+              activeViewId={activeViewId}
+              onSelectView={setActiveViewId}
+              allFields={SIZE_LIBRARY_FIELDS}
+            />
+          )
+        : null,
+    });
+  }, [setOptions, showViewMenu, activeViewId]);
 
   const loadData = async () => {
     const s = await base44.entities.Size.list("size_code", 500);
@@ -81,20 +122,21 @@ export default function SizeLibrary({ hideTitle = false }) {
     },
   ];
 
+  const visibleColumns = activeColumns
+    ? columns.filter((c) => c.id === "actions" || activeColumns.includes(c.id))
+    : columns;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {!hideTitle && (
-          <div>
-            <h1 className="font-display text-3xl font-semibold tracking-tight">Size Library</h1>
-            <p className="text-muted-foreground mt-1">{sizes.length} sizes</p>
-          </div>
-        )}
-        <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" />Add Size</Button>
-      </div>
+      {!hideTitle && (
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Size Library</h1>
+          <p className="text-muted-foreground mt-1">{sizes.length} sizes</p>
+        </div>
+      )}
 
       <DataTable
-        columns={columns}
+        columns={visibleColumns}
         rows={sizes}
         fixedColumns={["size_code"]}
         filterFields={[
