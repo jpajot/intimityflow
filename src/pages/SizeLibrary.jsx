@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, List, LayoutGrid } from "lucide-react";
+import { useRef } from "react";
 import DataTable from "@/components/DataTable";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
@@ -24,9 +25,11 @@ export default function SizeLibrary({ hideTitle = false }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [viewMode, setViewMode] = useState("grid");
   const [showViewMenu, setShowViewMenu] = useState(false);
-  const [activeViewId, setActiveViewId] = useState("default");
+  const [activeViewId, setActiveViewId] = useState(null);
   const [activeColumns, setActiveColumns] = useState(null);
+  const viewRef = useRef(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -45,6 +48,18 @@ export default function SizeLibrary({ hideTitle = false }) {
       items: [
         { label: "Add Size", icon: Plus, onClick: () => openNew(), className: "text-primary hover:bg-primary/10" },
         { divider: true },
+        {
+          label: viewMode === "grid" ? "View: List" : "View: Grid",
+          icon: viewMode === "grid" ? List : LayoutGrid,
+          onClick: () => {
+            setViewMode((prev) => {
+              const next = prev === "list" ? "grid" : "list";
+              viewRef.current?.setView(next);
+              return next;
+            });
+          }
+        },
+        { divider: true },
         { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu((v) => !v), custom: true },
       ],
       customContent: showViewMenu
@@ -53,12 +68,13 @@ export default function SizeLibrary({ hideTitle = false }) {
               pageKey="size_library"
               activeViewId={activeViewId}
               onSelectView={setActiveViewId}
+              currentViewType={viewMode === "grid" ? "grid" : null}
               allFields={SIZE_LIBRARY_FIELDS}
             />
           )
         : null,
     });
-  }, [setOptions, showViewMenu, activeViewId]);
+  }, [setOptions, viewMode, showViewMenu, activeViewId]);
 
   const loadData = async () => {
     const s = await base44.entities.Size.list("size_code", 500);
