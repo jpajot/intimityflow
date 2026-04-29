@@ -34,13 +34,14 @@ export default function SizeLibrary({ hideTitle = false }) {
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
-    if (activeViewId === "default") {
+    if (!activeViewId || activeViewId === "default") {
       setActiveColumns(null);
-    } else {
-      base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
-        setActiveColumns(results[0]?.column_ids?.length ? results[0].column_ids : null);
-      });
+      return;
     }
+    base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+      const view = results[0];
+      setActiveColumns(view?.column_ids?.length ? view.column_ids : null);
+    });
   }, [activeViewId]);
 
   useEffect(() => {
