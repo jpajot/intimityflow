@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate, useParams, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SubNavProvider } from '@/lib/SubNavContext';
@@ -35,7 +35,11 @@ const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Nav
 const PageOptionsClearer = () => {
   const location = useLocation();
   const { setOptions } = usePageOptions();
-  useEffect(() => { setOptions(null); }, [location.pathname]);
+  const isFirstRun = useRef(true);
+  useEffect(() => {
+    if (isFirstRun.current) { isFirstRun.current = false; return; }
+    setOptions(null);
+  }, [location.pathname]);
   return null;
 };
 

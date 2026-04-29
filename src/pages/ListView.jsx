@@ -90,6 +90,8 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
     });
   }, [setOptions, navigate, showViewMenu, showQF, quickFilters, activeViewId, view, viewKey]);
 
+
+
   const filtered = useMemo(() => {
     let result = products;
     if (search.trim()) {
