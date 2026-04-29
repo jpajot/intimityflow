@@ -159,7 +159,7 @@ export default function ProjectDetail() {
     if (activeSection === "styles") {
       setOptions({
         items: [
-        { label: "Quick Filters", icon: Filter, onClick: () => { setShowStylesQF((v) => !v); setShowStylesViewMenu(false); }, custom: true },
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowStylesQF((v) => !v); setShowStylesViewMenu(false); }, custom: true, badge: stylesQuickFilters.length > 0 ? stylesQuickFilters.length : null },
         { label: stylesViewMode === "grid" ? "View: List" : "View: Grid", icon: stylesViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setStylesViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
@@ -192,7 +192,7 @@ export default function ProjectDetail() {
     } else if (activeSection === "colorways") {
       setOptions({
         items: [
-        { label: "Quick Filters", icon: Filter, onClick: () => { setShowColorwaysQF((v) => !v); setShowColorwaysViewMenu(false); }, custom: true },
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowColorwaysQF((v) => !v); setShowColorwaysViewMenu(false); }, custom: true, badge: colorwaysQuickFilters.length > 0 ? colorwaysQuickFilters.length : null },
         { label: colorwaysViewMode === "grid" ? "View: List" : "View: Grid", icon: colorwaysViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setColorwaysViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
@@ -227,7 +227,7 @@ export default function ProjectDetail() {
         items: [
         { label: "Add Variation", icon: Plus, onClick: () => window.dispatchEvent(new Event("addVariation")), className: "text-primary hover:bg-primary/10" },
         { divider: true },
-        { label: "Quick Filters", icon: Filter, onClick: () => { setShowVariationsQF((v) => !v); setShowVariationsViewMenu(false); }, custom: true },
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowVariationsQF((v) => !v); setShowVariationsViewMenu(false); }, custom: true, badge: variationsQuickFilters.length > 0 ? variationsQuickFilters.length : null },
         { label: variationsViewMode === "grid" ? "View: List" : "View: Grid", icon: variationsViewMode === "grid" ? List : LayoutGrid, onClick: () => {
             setVariationsViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
