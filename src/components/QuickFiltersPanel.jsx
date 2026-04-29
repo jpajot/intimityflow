@@ -91,7 +91,7 @@ export default function QuickFiltersPanel({ fields = [], activeFilters = [], onA
               <SelectTrigger className="h-7 text-xs">
                 <SelectValue placeholder="Select field…" />
               </SelectTrigger>
-              <SelectContent className="z-[99999]">
+              <SelectContent className="z-[99999]" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                  <SelectItem value="none">Select field…</SelectItem>
                  {fields.map((fd) => (
                    <SelectItem key={fd.id} value={fd.id}>{fd.label}</SelectItem>
@@ -109,7 +109,7 @@ export default function QuickFiltersPanel({ fields = [], activeFilters = [], onA
                   <SelectTrigger className="h-7 text-xs w-36 shrink-0">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="z-[99999]">
+                  <SelectContent className="z-[99999]" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                      {OPERATORS.map((op) => (
                        <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
                      ))}
