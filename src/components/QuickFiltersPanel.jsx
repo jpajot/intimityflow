@@ -91,12 +91,12 @@ export default function QuickFiltersPanel({ fields = [], activeFilters = [], onA
               <SelectTrigger className="h-7 text-xs">
                 <SelectValue placeholder="Select field…" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Select field…</SelectItem>
-                {fields.map((fd) => (
-                  <SelectItem key={fd.id} value={fd.id}>{fd.label}</SelectItem>
-                ))}
-              </SelectContent>
+              <SelectContent className="z-[99999]">
+                 <SelectItem value="none">Select field…</SelectItem>
+                 {fields.map((fd) => (
+                   <SelectItem key={fd.id} value={fd.id}>{fd.label}</SelectItem>
+                 ))}
+               </SelectContent>
             </Select>
 
             {f.field && (
@@ -109,11 +109,11 @@ export default function QuickFiltersPanel({ fields = [], activeFilters = [], onA
                   <SelectTrigger className="h-7 text-xs w-36 shrink-0">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {OPERATORS.map((op) => (
-                      <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent className="z-[99999]">
+                     {OPERATORS.map((op) => (
+                       <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
+                     ))}
+                   </SelectContent>
                 </Select>
 
                 {/* Value */}
