@@ -91,7 +91,7 @@ function GalleryCard({ row, activeFields, allFields, thumbSize, renderThumbnail,
   const ts = THUMB_SIZES.find((s) => s.id === thumbSize) || THUMB_SIZES[2];
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
-      <div className={`${ts.height} bg-muted relative overflow-hidden cursor-pointer`} onClick={() => onClickItem?.(row)}>
+      <div className={`${ts.height} relative overflow-hidden cursor-pointer`} onClick={() => onClickItem?.(row)}>
         {renderThumbnail(row)}
       </div>
       {activeFields.length > 0 && (
