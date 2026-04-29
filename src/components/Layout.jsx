@@ -444,6 +444,9 @@ export default function Layout() {
                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${item.className || "text-foreground hover:bg-muted"}`}>
                    {item.icon && <item.icon className="w-4 h-4 shrink-0 text-muted-foreground" />}
                    <span className="flex-1">{item.label}</span>
+                   {item.badge && (
+                     <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{item.badge}</span>
+                   )}
                  </button>
                )}
              </div>
