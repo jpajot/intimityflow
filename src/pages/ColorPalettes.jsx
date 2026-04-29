@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
+import ViewDrawerContent from "../components/ViewDrawerContent";
 
 
 export default function ColorPalettes() {
@@ -49,6 +50,10 @@ export default function ColorPalettes() {
   const [techView, setTechView] = useState("table");
   const [commView, setCommView] = useState("table");
   const [commSearch, setCommSearch] = useState("");
+  const [techViewMode, setTechViewMode] = useState("grid");
+  const [showTechViewMenu, setShowTechViewMenu] = useState(false);
+  const [techActiveViewId, setTechActiveViewId] = useState(null);
+  const techViewRef = useRef(null);
 
 
   useRegisterSubNav([
@@ -73,8 +78,39 @@ export default function ColorPalettes() {
     } else if (activeSection === "technical") {
       setOptions({
         items: [
-          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" }
-        ]
+          { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
+          { divider: true },
+          {
+            label: techViewMode === "grid" ? "View: List" : "View: Grid",
+            icon: techViewMode === "grid" ? List : LayoutGrid,
+            onClick: () => {
+              setTechViewMode((prev) => {
+                const next = prev === "list" ? "grid" : "list";
+                techViewRef.current?.setView(next);
+                return next;
+              });
+            }
+          },
+          { divider: true },
+          { label: "Manage Views", icon: Pencil, onClick: () => setShowTechViewMenu((v) => !v), custom: true }
+        ],
+        customContent: showTechViewMenu
+          ? () => (
+              <ViewDrawerContent
+                pageKey="technical_colors"
+                activeViewId={techActiveViewId}
+                onSelectView={setTechActiveViewId}
+                currentViewType={techViewMode === "grid" ? "grid" : null}
+                allFields={[
+                  { id: "code", label: "Code" },
+                  { id: "name", label: "Name" },
+                  { id: "hex", label: "Hex Color" },
+                  { id: "color_group", label: "Color Group" },
+                  { id: "color_sub_group", label: "Color Sub-Group" },
+                ]}
+              />
+            )
+          : null
       });
     } else if (activeSection === "commercial") {
       setOptions({
@@ -85,7 +121,7 @@ export default function ColorPalettes() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, techActiveViewId]);
 
   useEffect(() => {loadData();}, []);
 
