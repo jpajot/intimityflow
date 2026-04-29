@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2, GripVertical, ShieldCheck, Pin, Layers } from "lucide-react";
+import { Plus, Loader2, Palette, FolderOpen, Pencil, Trash2, X, Link, Download, SwatchBook, LayoutGrid, List, Settings2, GripVertical, ShieldCheck, Pin, Layers, Filter } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -17,6 +17,8 @@ import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
 import ViewDrawerContent from "../components/ViewDrawerContent";
 import DataTable from "../components/DataTable";
+import QuickFiltersPanel, { applyQuickFilters } from "../components/QuickFiltersPanel";
+import { usePersistedQuickFilters } from "../hooks/usePersistedQuickFilters";
 
 
 // ── Grid grouping helpers ─────────────────────────────────────────────────────
@@ -130,6 +132,12 @@ export default function ColorPalettes() {
   const [pinnedCommCols, setPinnedCommCols] = useState([]);
   const commViewRef = useRef(null);
 
+  // Quick filters
+  const [techQuickFilters, setTechQuickFilters] = usePersistedQuickFilters("technical_colors");
+  const [commQuickFilters, setCommQuickFilters] = usePersistedQuickFilters("commercial_colors");
+  const [showTechQF, setShowTechQF] = useState(false);
+  const [showCommQF, setShowCommQF] = useState(false);
+
   // Grid grouping state — Technical
   const [techGroupCols, setTechGroupCols] = useState([]);
   const [techExpandedGroups, setTechExpandedGroups] = useState(new Set());
@@ -145,6 +153,26 @@ export default function ColorPalettes() {
     { id: "technical", label: "Technical Colors", count: techColors.length, icon: SwatchBook },
     { id: "commercial", label: "Commercial Colors", count: commColors.length, icon: SwatchBook },
   ], activeSection, setActiveSection, "Color Studio");
+
+  // Reset QF panels on section change
+  useEffect(() => {
+    setShowTechQF(false);
+    setShowCommQF(false);
+    setShowTechViewMenu(false);
+    setShowCommViewMenu(false);
+  }, [activeSection]);
+
+  const TECH_QF_FIELDS = [
+    { id: "code", label: "Code", getValue: (c) => c.code },
+    { id: "name", label: "Name", getValue: (c) => c.name },
+    { id: "color_group", label: "Color Group", getValue: (c) => c.color_group },
+    { id: "color_sub_group", label: "Color Sub-Group", getValue: (c) => c.color_sub_group },
+  ];
+  const COMM_QF_FIELDS = [
+    { id: "code", label: "Code", getValue: (c) => c.code },
+    { id: "color_name", label: "Name", getValue: (c) => c.color_name },
+    { id: "sub_type", label: "Type", getValue: (c) => c.sub_type },
+  ];
 
   useEffect(() => {
     if (activeSection === "palettes" && selectedPaletteId) {
@@ -164,6 +192,7 @@ export default function ColorPalettes() {
         items: [
           { label: "Add Technical Color", icon: Plus, onClick: () => openNewTech(), className: "text-primary hover:bg-primary/10" },
           { divider: true },
+          { label: "Quick Filters", icon: Filter, onClick: () => { setShowTechQF((v) => !v); setShowTechViewMenu(false); }, custom: true, badge: techQuickFilters.length > 0 ? techQuickFilters.length : null },
           {
             label: techViewMode === "grid" ? "View: List" : "View: Grid",
             icon: techViewMode === "grid" ? List : LayoutGrid,
@@ -176,9 +205,11 @@ export default function ColorPalettes() {
             }
           },
           { divider: true },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowTechViewMenu((v) => !v), custom: true }
+          { label: "Manage Views", icon: Pencil, onClick: () => { setShowTechViewMenu((v) => !v); setShowTechQF(false); }, custom: true }
         ],
-        customContent: showTechViewMenu
+        customContent: showTechQF
+          ? () => <QuickFiltersPanel fields={TECH_QF_FIELDS} activeFilters={techQuickFilters} onApply={(f) => setTechQuickFilters(f)} />
+          : showTechViewMenu
           ? () => (
               <ViewDrawerContent
                 pageKey="technical_colors"
@@ -201,6 +232,7 @@ export default function ColorPalettes() {
         items: [
           { label: "Add Commercial Color", icon: Plus, onClick: () => openNewComm(), className: "text-primary hover:bg-primary/10" },
           { divider: true },
+          { label: "Quick Filters", icon: Filter, onClick: () => { setShowCommQF((v) => !v); setShowCommViewMenu(false); }, custom: true, badge: commQuickFilters.length > 0 ? commQuickFilters.length : null },
           {
             label: commViewMode === "grid" ? "View: List" : "View: Grid",
             icon: commViewMode === "grid" ? List : LayoutGrid,
@@ -213,9 +245,11 @@ export default function ColorPalettes() {
             }
           },
           { divider: true },
-          { label: "Manage Views", icon: Pencil, onClick: () => setShowCommViewMenu((v) => !v), custom: true }
+          { label: "Manage Views", icon: Pencil, onClick: () => { setShowCommViewMenu((v) => !v); setShowCommQF(false); }, custom: true }
         ],
-        customContent: showCommViewMenu
+        customContent: showCommQF
+          ? () => <QuickFiltersPanel fields={COMM_QF_FIELDS} activeFilters={commQuickFilters} onApply={(f) => setCommQuickFilters(f)} />
+          : showCommViewMenu
           ? () => (
               <ViewDrawerContent
                 pageKey="commercial_colors"
@@ -236,7 +270,7 @@ export default function ColorPalettes() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, techActiveViewId, commViewMode, showCommViewMenu, commActiveViewId]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, showTechQF, techQuickFilters, techActiveViewId, commViewMode, showCommViewMenu, showCommQF, commQuickFilters, commActiveViewId]);
 
   useEffect(() => {loadData();}, []);
 
@@ -805,7 +839,8 @@ export default function ColorPalettes() {
         const visibleTechCols = techActiveColumns
           ? [ALL_TECH_COLS[0], ...ALL_TECH_COLS.filter((col) => col.id !== "swatch" && col.id !== "actions" && techActiveColumns.includes(col.id)), ALL_TECH_COLS[ALL_TECH_COLS.length - 1]]
           : ALL_TECH_COLS;
-        const filteredTech = techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase()));
+        const baseTech = techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase()));
+        const filteredTech = applyQuickFilters(baseTech, techQuickFilters);
         return (
         <div className="flex flex-col flex-1 min-h-0 gap-3">
           <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search technical colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
@@ -899,7 +934,8 @@ export default function ColorPalettes() {
         const visibleCommCols = commActiveColumns
           ? [ALL_COMM_COLS[0], ...ALL_COMM_COLS.filter((col) => col.id !== "swatch" && col.id !== "actions" && commActiveColumns.includes(col.id)), ALL_COMM_COLS[ALL_COMM_COLS.length - 1]]
           : ALL_COMM_COLS;
-        const filteredComm = commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase()));
+        const baseComm = commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase()));
+        const filteredComm = applyQuickFilters(baseComm, commQuickFilters);
         return (
         <div className="flex flex-col flex-1 min-h-0 gap-3">
           <Input value={commSearch} onChange={(e) => setCommSearch(e.target.value)} placeholder="Search commercial colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
