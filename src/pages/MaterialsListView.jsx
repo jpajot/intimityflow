@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
-import { Loader2, Palette, Layers, Plus, LayoutGrid, List, Pencil, Pin, PinOff } from "lucide-react";
+import { Loader2, Palette, Layers, Plus, LayoutGrid, List, Pencil, Pin, PinOff, Filter } from "lucide-react";
 import FabricRollIcon from "../components/icons/FabricRollIcon";
 import ViewSelector from "../components/ViewSelector";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
@@ -10,11 +10,13 @@ import DataTable from "../components/DataTable";
 import GalleryView from "../components/GalleryView";
 import ListToolbar from "../components/ListToolbar";
 import ViewDrawerContent from "../components/ViewDrawerContent";
+import QuickFiltersPanel, { applyQuickFilters } from "../components/QuickFiltersPanel";
+import { usePersistedQuickFilters } from "../hooks/usePersistedQuickFilters";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
 
 // ─── Materials Tab ────────────────────────────────────────────────────────────
-function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects, viewMode, onViewModeChange }) {
+function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects, viewMode, onViewModeChange, quickFilters = [] }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState(viewMode);
@@ -25,7 +27,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
     setView(viewMode);
   }, [viewMode]);
 
-  const filtered = useMemo(() => {
+  const baseFiltered = useMemo(() => {
     if (!search.trim()) return products;
     const q = search.toLowerCase();
     return products.filter((p) => {
@@ -46,6 +48,8 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
       });
     });
   }, [products, search, colorVariants, techColors]);
+
+  const filtered = useMemo(() => applyQuickFilters(baseFiltered, quickFilters), [baseFiltered, quickFilters]);
 
   const columns = [
   {
@@ -169,7 +173,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
 }
 
 // ─── Colorways Tab ────────────────────────────────────────────────────────────
-function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, viewMode, onViewModeChange }) {
+function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, viewMode, onViewModeChange, quickFilters = [] }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState(viewMode);
@@ -183,7 +187,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
   const getProduct = (cw) => products.find((p) => p.id === cw.product_id);
   const getTechColor = (cw) => techColors.find((t) => t.id === cw.linked_tech_color_id);
 
-  const filtered = useMemo(() => {
+  const baseFiltered = useMemo(() => {
     if (!search.trim()) return colorways;
     const q = search.toLowerCase();
     return colorways.filter((cw) => {
@@ -197,6 +201,8 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
 
     });
   }, [colorways, search]);
+
+  const filtered = useMemo(() => applyQuickFilters(baseFiltered, quickFilters), [baseFiltered, quickFilters]);
 
   const columns = [
   {
@@ -328,7 +334,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
 }
 
 // ─── More Variations Tab ──────────────────────────────────────────────────────
-function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects, viewMode, onViewModeChange }) {
+function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects, viewMode, onViewModeChange, quickFilters = [] }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState(viewMode);
@@ -345,7 +351,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
     return cw ? products.find((p) => p.id === cw.product_id) : null;
   };
 
-  const filtered = useMemo(() => {
+  const baseFiltered = useMemo(() => {
     if (!search.trim()) return variations;
     const q = search.toLowerCase();
     return variations.filter((v) => {
@@ -359,6 +365,8 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
 
     });
   }, [variations, search]);
+
+  const filtered = useMemo(() => applyQuickFilters(baseFiltered, quickFilters), [baseFiltered, quickFilters]);
 
   const columns = [
   {
@@ -510,6 +518,13 @@ export default function MaterialsListView() {
   const [variationsViewMode, setVariationsViewMode] = useState("list");
   const [variationsActiveViewId, setVariationsActiveViewId] = useState("default");
 
+  const [materialsQuickFilters, setMaterialsQuickFilters] = usePersistedQuickFilters("materials_listview");
+  const [colorwaysQuickFilters, setColorwaysQuickFilters] = usePersistedQuickFilters("mat_colorways_listview");
+  const [variationsQuickFilters, setVariationsQuickFilters] = usePersistedQuickFilters("mat_variations_listview");
+  const [showMaterialsQF, setShowMaterialsQF] = useState(false);
+  const [showColorwaysQF, setShowColorwaysQF] = useState(false);
+  const [showVariationsQF, setShowVariationsQF] = useState(false);
+
   const { setOptions } = usePageOptions();
 
   const subNavItems = [
@@ -535,50 +550,91 @@ export default function MaterialsListView() {
     window.dispatchEvent(new Event("pinned-items-changed"));
   };
 
+  // Reset QF panels on section change
+  useEffect(() => {
+    setShowMaterialsQF(false);
+    setShowColorwaysQF(false);
+    setShowVariationsQF(false);
+    setShowMaterialsViewMenu(false);
+    setShowColorwaysViewMenu(false);
+    setShowVariationsViewMenu(false);
+  }, [activeSection]);
+
+  const MATERIALS_QF_FIELDS = [
+    { id: "name", label: "Name", getValue: (p) => p.name },
+    { id: "category", label: "Category", getValue: (p) => p.category },
+    { id: "sub_category", label: "Sub-Category", getValue: (p) => p.sub_category },
+    { id: "sub_type", label: "Sub-type", getValue: (p) => p.sub_type },
+    { id: "customer_need", label: "Customer Need", getValue: (p) => p.customer_need },
+  ];
+  const COLORWAYS_QF_FIELDS = [
+    { id: "color_name", label: "Color Name", getValue: (cw) => cw.color_name },
+    { id: "colorway_code", label: "Colorway Code", getValue: (cw) => cw.colorway_code },
+    { id: "mat_name", label: "Material Name", getValue: (cw) => products.find((p) => p.id === cw.product_id)?.name },
+    { id: "mat_category", label: "Material: Category", getValue: (cw) => products.find((p) => p.id === cw.product_id)?.category },
+    { id: "mat_sub_type", label: "Material: Sub-type", getValue: (cw) => products.find((p) => p.id === cw.product_id)?.sub_type },
+  ];
+  const VARIATIONS_QF_FIELDS = [
+    { id: "name", label: "Variation Name", getValue: (v) => v.name },
+    { id: "pack_code", label: "Pack Code", getValue: (v) => v.pack_code },
+    { id: "variant", label: "Variant", getValue: (v) => v.variant },
+    { id: "mat_name", label: "Material Name", getValue: (v) => { const cw = colorways.find((c) => c.id === v.product_color_id); return products.find((p) => p.id === cw?.product_id)?.name; } },
+    { id: "color_name", label: "Colorway Name", getValue: (v) => colorways.find((c) => c.id === v.product_color_id)?.color_name },
+  ];
+
   useEffect(() => {
     if (activeSection === "materials") {
       setOptions({
         items: [
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowMaterialsQF((v) => !v); setShowMaterialsViewMenu(false); }, custom: true, badge: materialsQuickFilters.length > 0 ? materialsQuickFilters.length : null },
         { label: materialsViewMode === "grid" ? "View: List" : "View: Grid", icon: materialsViewMode === "grid" ? List : LayoutGrid, onClick: () => setMaterialsViewMode(materialsViewMode === "list" ? "grid" : "list") },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowMaterialsViewMenu(!showMaterialsViewMenu), custom: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowMaterialsViewMenu((v) => !v); setShowMaterialsQF(false); }, custom: true },
         { divider: true },
         { label: isPinned("/materials") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials") ? PinOff : Pin, onClick: () => togglePin("/materials", "Materials Lists") }],
 
-        customContent: showMaterialsViewMenu ?
+        customContent: showMaterialsQF
+        ? <QuickFiltersPanel fields={MATERIALS_QF_FIELDS} activeFilters={materialsQuickFilters} onApply={(f) => setMaterialsQuickFilters(f)} />
+        : showMaterialsViewMenu ?
         <ViewDrawerContent pageKey="mat_styles_list" activeViewId={materialsActiveViewId} onSelectView={setMaterialsActiveViewId} allFields={[]} currentViewType={materialsViewMode === "grid" ? "grid" : null} /> :
         null
       });
     } else if (activeSection === "colorways") {
       setOptions({
         items: [
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowColorwaysQF((v) => !v); setShowColorwaysViewMenu(false); }, custom: true, badge: colorwaysQuickFilters.length > 0 ? colorwaysQuickFilters.length : null },
         { label: colorwaysViewMode === "grid" ? "View: List" : "View: Grid", icon: colorwaysViewMode === "grid" ? List : LayoutGrid, onClick: () => setColorwaysViewMode(colorwaysViewMode === "list" ? "grid" : "list") },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowColorwaysViewMenu(!showColorwaysViewMenu), custom: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowColorwaysViewMenu((v) => !v); setShowColorwaysQF(false); }, custom: true },
         { divider: true },
         { label: isPinned("/materials-colorways") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-colorways") ? PinOff : Pin, onClick: () => togglePin("/materials-colorways", "Materials Lists: Colorways") }],
 
-        customContent: showColorwaysViewMenu ?
+        customContent: showColorwaysQF
+        ? <QuickFiltersPanel fields={COLORWAYS_QF_FIELDS} activeFilters={colorwaysQuickFilters} onApply={(f) => setColorwaysQuickFilters(f)} />
+        : showColorwaysViewMenu ?
         <ViewDrawerContent pageKey="mat_colorways_list" activeViewId={colorwaysActiveViewId} onSelectView={setColorwaysActiveViewId} allFields={[]} currentViewType={colorwaysViewMode === "grid" ? "grid" : null} /> :
         null
       });
     } else if (activeSection === "variations") {
       setOptions({
         items: [
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowVariationsQF((v) => !v); setShowVariationsViewMenu(false); }, custom: true, badge: variationsQuickFilters.length > 0 ? variationsQuickFilters.length : null },
         { label: variationsViewMode === "grid" ? "View: List" : "View: Grid", icon: variationsViewMode === "grid" ? List : LayoutGrid, onClick: () => setVariationsViewMode(variationsViewMode === "list" ? "grid" : "list") },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowVariationsViewMenu(!showVariationsViewMenu), custom: true },
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowVariationsViewMenu((v) => !v); setShowVariationsQF(false); }, custom: true },
         { divider: true },
         { label: isPinned("/materials-variations") ? "Unpin from sidebar" : "Pin to sidebar", icon: isPinned("/materials-variations") ? PinOff : Pin, onClick: () => togglePin("/materials-variations", "Materials Lists: Variations") }],
 
-        customContent: showVariationsViewMenu ?
+        customContent: showVariationsQF
+        ? <QuickFiltersPanel fields={VARIATIONS_QF_FIELDS} activeFilters={variationsQuickFilters} onApply={(f) => setVariationsQuickFilters(f)} />
+        : showVariationsViewMenu ?
         <ViewDrawerContent pageKey="mat_more_variations_list" activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} allFields={[]} currentViewType={variationsViewMode === "grid" ? "grid" : null} /> :
         null
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, setOptions, showMaterialsViewMenu, showColorwaysViewMenu, showVariationsViewMenu, materialsActiveViewId, colorwaysActiveViewId, variationsActiveViewId, materialsViewMode, colorwaysViewMode, variationsViewMode, pinnedItems]);
+  }, [activeSection, setOptions, showMaterialsViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showMaterialsQF, showColorwaysQF, showVariationsQF, materialsActiveViewId, colorwaysActiveViewId, variationsActiveViewId, materialsViewMode, colorwaysViewMode, variationsViewMode, materialsQuickFilters, colorwaysQuickFilters, variationsQuickFilters, pinnedItems]);
 
   useEffect(() => {
     Promise.all([
@@ -614,13 +670,13 @@ export default function MaterialsListView() {
   return (
     <div className="space-y-4">
       {activeSection === "materials" &&
-      <MaterialsTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} projects={projects} viewMode={materialsViewMode} onViewModeChange={setMaterialsViewMode} />
+      <MaterialsTab products={products} colorVariants={colorways} techColors={techColors} sizeGrids={sizeGrids} projects={projects} viewMode={materialsViewMode} onViewModeChange={setMaterialsViewMode} quickFilters={materialsQuickFilters} />
       }
       {activeSection === "colorways" &&
-      <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} viewMode={colorwaysViewMode} onViewModeChange={setColorwaysViewMode} />
+      <ColorwaysTab colorways={colorways} products={products} techColors={techColors} sizeGrids={sizeGrids} projects={projects} viewMode={colorwaysViewMode} onViewModeChange={setColorwaysViewMode} quickFilters={colorwaysQuickFilters} />
       }
       {activeSection === "variations" &&
-      <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} viewMode={variationsViewMode} onViewModeChange={setVariationsViewMode} />
+      <MoreVariationsTab variations={variations} colorways={colorways} products={products} sizeGrids={sizeGrids} projects={projects} viewMode={variationsViewMode} onViewModeChange={setVariationsViewMode} quickFilters={variationsQuickFilters} />
       }
     </div>);
 
