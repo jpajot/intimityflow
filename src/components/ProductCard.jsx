@@ -15,7 +15,7 @@ export default function ProductCard({ product, colorVariants = [] }) {
       to={`/products/${product.id}`}
       className="group block bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all duration-300"
     >
-      <div className="aspect-square bg-muted relative overflow-hidden">
+      <div className="aspect-square relative overflow-hidden">
         {firstImage ? (
           <img
             src={firstImage}
