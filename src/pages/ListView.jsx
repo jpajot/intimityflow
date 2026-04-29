@@ -12,6 +12,7 @@ import GalleryView from "../components/GalleryView";
 import ProductCard from "../components/ProductCard";
 import ViewDrawerContent from "../components/ViewDrawerContent";
 import QuickFiltersPanel, { applyQuickFilters } from "../components/QuickFiltersPanel";
+import { usePersistedQuickFilters } from "../hooks/usePersistedQuickFilters";
 
 // ─── Styles Tab ───────────────────────────────────────────────────────────────
 function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids, projects }) {
@@ -24,7 +25,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showQF, setShowQF] = useState(false);
-  const [quickFilters, setQuickFilters] = useState([]);
+  const [quickFilters, setQuickFilters, clearQuickFilters] = usePersistedQuickFilters("styles_listview");
 
   // Load and apply selected view configuration
   useEffect(() => {
@@ -76,7 +77,7 @@ function StylesTab({ products, colorVariants, techColors, commColors, sizeGrids,
       items: [
       { label: "New Product", icon: Plus, onClick: () => navigate("/products/new") },
       { divider: true },
-      { label: "Quick Filters", icon: Filter, onClick: () => { setShowQF((v) => !v); setShowViewMenu(false); }, custom: true },
+      { label: "Quick Filters", icon: Filter, onClick: () => { setShowQF((v) => !v); setShowViewMenu(false); }, custom: true, badge: quickFilters.length > 0 ? quickFilters.length : null },
       { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => setView((v) => v === "grid" ? "list" : "grid") },
       { divider: true },
       { label: "Manage Views", icon: Pencil, onClick: () => { setShowViewMenu((v) => !v); setShowQF(false); }, custom: true }],
@@ -264,7 +265,7 @@ function ColorwaysTab({ colorways, products, techColors, commColors, sizeGrids, 
   const [activeViewId, setActiveViewId] = useState("default");
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showQF, setShowQF] = useState(false);
-  const [quickFilters, setQuickFilters] = useState([]);
+  const [quickFilters, setQuickFilters, clearQuickFilters] = usePersistedQuickFilters("colorways_listview");
 
   useEffect(() => {
     setOptions({

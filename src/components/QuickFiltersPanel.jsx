@@ -35,7 +35,7 @@ export function applyQuickFilters(rows, filters) {
 export default function QuickFiltersPanel({ fields = [], activeFilters = [], onApply }) {
   const [filters, setFilters] = useState(() =>
     activeFilters.length > 0
-      ? activeFilters.map((f) => ({ ...f }))
+      ? activeFilters.map(({ getValue, ...rest }) => rest)
       : [{ field: "", operator: "contains", value: "" }]
   );
 

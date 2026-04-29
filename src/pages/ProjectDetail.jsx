@@ -27,6 +27,7 @@ import ViewDrawerContent from "../components/ViewDrawerContent";
 import QuickFiltersPanel from "../components/QuickFiltersPanel";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { Download, Upload as UploadIcon, Pencil, Plus } from "lucide-react";
+import { usePersistedQuickFilters } from "../hooks/usePersistedQuickFilters";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -77,10 +78,10 @@ export default function ProjectDetail() {
   const [dcActiveViewId, setDCActiveViewId] = useState("default");
   const [dcViewMode, setDCViewMode] = useState("list");
 
-  // Quick filters per section
-  const [stylesQuickFilters, setStylesQuickFilters] = useState([]);
-  const [colorwaysQuickFilters, setColorwaysQuickFilters] = useState([]);
-  const [variationsQuickFilters, setVariationsQuickFilters] = useState([]);
+  // Quick filters per section — persisted per project+section
+  const [stylesQuickFilters, setStylesQuickFilters] = usePersistedQuickFilters(`project_${id}_styles`);
+  const [colorwaysQuickFilters, setColorwaysQuickFilters] = usePersistedQuickFilters(`project_${id}_colorways`);
+  const [variationsQuickFilters, setVariationsQuickFilters] = usePersistedQuickFilters(`project_${id}_variations`);
   const [showStylesQF, setShowStylesQF] = useState(false);
   const [showColorwaysQF, setShowColorwaysQF] = useState(false);
   const [showVariationsQF, setShowVariationsQF] = useState(false);
