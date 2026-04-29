@@ -133,7 +133,8 @@ export default function SizeGridLibrary() {
     if (activeSection === "grids") {
       setOptions({ items: [] });
     }
-  }, [activeSection, setOptions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
 
   if (loading) return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
 
