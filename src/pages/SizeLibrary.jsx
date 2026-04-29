@@ -153,24 +153,26 @@ export default function SizeLibrary({ hideTitle = false }) {
   const filteredSizes = applyQuickFilters(sizes, quickFilters);
 
   return (
-    <div className="space-y-6">
+    <div className="px-2 py-2 flex flex-col" style={{ height: "calc(100vh - 56px)" }}>
       {!hideTitle && (
-        <div>
+        <div className="flex-shrink-0 mb-4">
           <h1 className="font-display text-3xl font-semibold tracking-tight">Size Library</h1>
           <p className="text-muted-foreground mt-1">{sizes.length} sizes</p>
         </div>
       )}
 
-      <DataTable
-        columns={visibleColumns}
-        rows={filteredSizes}
-        fixedColumns={["size_code"]}
-        hideColumnToggle
-        filterFields={[
-          { getValue: (s) => s.size_code },
-          { getValue: (s) => s.name },
-        ]}
-      />
+      <div className="flex-1 min-h-0">
+        <DataTable
+          columns={visibleColumns}
+          rows={filteredSizes}
+          fixedColumns={["size_code"]}
+          hideColumnToggle
+          filterFields={[
+            { getValue: (s) => s.size_code },
+            { getValue: (s) => s.name },
+          ]}
+        />
+      </div>
 
       <Dialog open={showDialog} onOpenChange={(o) => !o && setShowDialog(false)}>
         <DialogContent className="max-w-sm">
