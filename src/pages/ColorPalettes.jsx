@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import LinkCommercialColorDialog from "../components/LinkCommercialColorDialog";
 import PaletteColorGrid from "../components/PaletteColorGrid";
 import ViewDrawerContent from "../components/ViewDrawerContent";
+import DataTable from "../components/DataTable";
 
 
 export default function ColorPalettes() {
@@ -54,6 +55,7 @@ export default function ColorPalettes() {
   const [showTechViewMenu, setShowTechViewMenu] = useState(false);
   const [techActiveViewId, setTechActiveViewId] = useState("default");
   const [techActiveColumns, setTechActiveColumns] = useState(null); // null = all columns
+  const [pinnedTechCols, setPinnedTechCols] = useState([]);
   const techViewRef = useRef(null);
 
   // Commercial colors view state
@@ -61,6 +63,7 @@ export default function ColorPalettes() {
   const [showCommViewMenu, setShowCommViewMenu] = useState(false);
   const [commActiveViewId, setCommActiveViewId] = useState("default");
   const [commActiveColumns, setCommActiveColumns] = useState(null); // null = all columns
+  const [pinnedCommCols, setPinnedCommCols] = useState([]);
   const commViewRef = useRef(null);
 
 
@@ -168,15 +171,13 @@ export default function ColorPalettes() {
   useEffect(() => {
     if (!techActiveViewId || techActiveViewId === "default") {
       setTechActiveColumns(null);
+      setPinnedTechCols([]);
       return;
     }
-    base44.entities.ListViewConfig.filter({ page_key: "technical_colors" }).then((views) => {
-      const view = views.find((v) => v.id === techActiveViewId);
-      if (view?.column_ids?.length) {
-        setTechActiveColumns(view.column_ids);
-      } else {
-        setTechActiveColumns(null);
-      }
+    base44.entities.ListViewConfig.filter({ id: techActiveViewId }).then((results) => {
+      const view = results[0];
+      setTechActiveColumns(view?.column_ids?.length ? view.column_ids : null);
+      setPinnedTechCols(view?.fixed_column_ids || []);
     });
   }, [techActiveViewId]);
 
@@ -184,15 +185,13 @@ export default function ColorPalettes() {
   useEffect(() => {
     if (!commActiveViewId || commActiveViewId === "default") {
       setCommActiveColumns(null);
+      setPinnedCommCols([]);
       return;
     }
-    base44.entities.ListViewConfig.filter({ page_key: "commercial_colors" }).then((views) => {
-      const view = views.find((v) => v.id === commActiveViewId);
-      if (view?.column_ids?.length) {
-        setCommActiveColumns(view.column_ids);
-      } else {
-        setCommActiveColumns(null);
-      }
+    base44.entities.ListViewConfig.filter({ id: commActiveViewId }).then((results) => {
+      const view = results[0];
+      setCommActiveColumns(view?.column_ids?.length ? view.column_ids : null);
+      setPinnedCommCols(view?.fixed_column_ids || []);
     });
   }, [commActiveViewId]);
 
@@ -719,45 +718,33 @@ export default function ColorPalettes() {
       )}
 
       {activeSection === "technical" && (() => {
-        // All possible columns for the table view
         const ALL_TECH_COLS = [
-          { id: "code", label: "Code", render: (c) => <td className="px-4 py-2 text-xs font-mono">{c.code}</td> },
-          { id: "name", label: "Name", render: (c) => <td className="px-4 py-2 text-xs">{c.name}</td> },
-          { id: "hex", label: "Hex Color", render: (c) => <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{colorToHex(c)}</td> },
-          { id: "rgb", label: "RGB", render: (c) => <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.rgb || "—"}</td> },
-          { id: "cmyk", label: "CMYK", render: (c) => <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{c.cmyk || "—"}</td> },
-          { id: "color_group", label: "Color Group", render: (c) => <td className="px-4 py-2 text-xs">{c.color_group || "—"}</td> },
-          { id: "color_sub_group", label: "Sub-Group", render: (c) => <td className="px-4 py-2 text-xs">{c.color_sub_group || "—"}</td> },
+          { id: "swatch", label: "Color", width: 60, render: (c) => <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /> },
+          { id: "code", label: "Code", width: 160, sortKey: (c) => c.code || "", render: (c) => <span className="font-mono text-xs">{c.code}</span> },
+          { id: "name", label: "Name", width: 180, sortKey: (c) => c.name || "", render: (c) => <span className="text-xs">{c.name}</span> },
+          { id: "hex", label: "Hex Color", width: 120, sortKey: (c) => colorToHex(c) || "", render: (c) => <span className="font-mono text-xs text-muted-foreground">{colorToHex(c)}</span> },
+          { id: "rgb", label: "RGB", width: 120, sortKey: (c) => c.rgb || "", render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.rgb || "—"}</span> },
+          { id: "cmyk", label: "CMYK", width: 140, sortKey: (c) => c.cmyk || "", render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.cmyk || "—"}</span> },
+          { id: "color_group", label: "Color Group", width: 150, sortKey: (c) => c.color_group || "", render: (c) => <span className="text-xs">{c.color_group || "—"}</span> },
+          { id: "color_sub_group", label: "Sub-Group", width: 150, sortKey: (c) => c.color_sub_group || "", render: (c) => <span className="text-xs">{c.color_sub_group || "—"}</span> },
+          { id: "actions", label: "", width: 50, render: (c) => <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button> },
         ];
-        const visibleCols = techActiveColumns
-          ? ALL_TECH_COLS.filter((col) => techActiveColumns.includes(col.id))
+        const visibleTechCols = techActiveColumns
+          ? [ALL_TECH_COLS[0], ...ALL_TECH_COLS.filter((col) => col.id !== "swatch" && col.id !== "actions" && techActiveColumns.includes(col.id)), ALL_TECH_COLS[ALL_TECH_COLS.length - 1]]
           : ALL_TECH_COLS;
         const filteredTech = techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase()));
         return (
         <div className="flex flex-col flex-1 min-h-0 gap-3">
           <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search technical colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
           {techView === "table" ? (
-            <div className="flex-1 min-h-0 border border-border rounded-lg overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
-                  <tr>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
-                     {visibleCols.map((col) => (
-                       <th key={col.id} className="px-4 py-2 text-left text-xs font-medium">{col.label}</th>
-                     ))}
-                     <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
-                   </tr>
-                </thead>
-                <tbody>
-                  {filteredTech.map(c => (
-                    <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                       <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: colorToHex(c)}} /></td>
-                       {visibleCols.map((col) => <React.Fragment key={col.id}>{col.render(c)}</React.Fragment>)}
-                       <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
-                     </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex-1 min-h-0 overflow-auto">
+              <DataTable
+                columns={visibleTechCols}
+                rows={filteredTech}
+                hideColumnToggle
+                fixedColumns={pinnedTechCols}
+                onPinColumn={(id) => setPinnedTechCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
+              />
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-y-auto">
@@ -781,50 +768,36 @@ export default function ColorPalettes() {
 
       {activeSection === "commercial" && (() => {
         const ALL_COMM_COLS = [
-          { id: "code", label: "Code", render: (c) => <td className="px-4 py-2 text-xs font-mono">{c.code}</td> },
-          { id: "color_name", label: "Name", render: (c) => <td className="px-4 py-2 text-xs">{c.color_name}</td> },
-          { id: "sub_type", label: "Type", render: (c) => <td className="px-4 py-2 text-xs">{c.sub_type}</td> },
-          { id: "main_technical_color_id", label: "Tech Color", render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <td className="px-4 py-2 text-xs">{tech?.name || "—"}</td>; } },
-          { id: "tech_code", label: "Tech Code", render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <td className="px-4 py-2 text-xs font-mono">{tech?.code || "—"}</td>; } },
-          { id: "linked_technical_color_ids", label: "Linked Tech Colors", render: (c) => { const linkedTechs = (c.linked_technical_color_ids || []).map(id => techColors.find(t => t.id === id)?.code).filter(Boolean); return <td className="px-4 py-2 text-xs">{linkedTechs.length > 0 ? linkedTechs.join(", ") : "—"}</td>; } },
+          { id: "swatch", label: "Color", width: 60, render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />; } },
+          { id: "code", label: "Code", width: 140, sortKey: (c) => c.code || "", render: (c) => <span className="font-mono text-xs">{c.code}</span> },
+          { id: "color_name", label: "Name", width: 180, sortKey: (c) => c.color_name || "", render: (c) => <span className="text-xs font-medium">{c.color_name}</span> },
+          { id: "sub_type", label: "Type", width: 100, sortKey: (c) => c.sub_type || "", render: (c) => <span className="text-xs">{c.sub_type}</span> },
+          { id: "main_technical_color_id", label: "Tech Color", width: 160, sortKey: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return tech?.name || ""; }, render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <span className="text-xs">{tech?.name || "—"}</span>; } },
+          { id: "tech_code", label: "Tech Code", width: 140, sortKey: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return tech?.code || ""; }, render: (c) => { const tech = techColors.find(t => t.id === c.main_technical_color_id); return <span className="font-mono text-xs text-muted-foreground">{tech?.code || "—"}</span>; } },
+          { id: "linked_technical_color_ids", label: "Linked Tech Colors", width: 200, sortKey: (c) => (c.linked_technical_color_ids || []).length.toString(), render: (c) => { const linkedTechs = (c.linked_technical_color_ids || []).map(id => techColors.find(t => t.id === id)?.code).filter(Boolean); return <span className="text-xs text-muted-foreground">{linkedTechs.length > 0 ? linkedTechs.join(", ") : "—"}</span>; } },
+          { id: "actions", label: "", width: 50, render: (c) => <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button> },
         ];
         const visibleCommCols = commActiveColumns
-          ? ALL_COMM_COLS.filter(col => commActiveColumns.includes(col.id))
+          ? [ALL_COMM_COLS[0], ...ALL_COMM_COLS.filter((col) => col.id !== "swatch" && col.id !== "actions" && commActiveColumns.includes(col.id)), ALL_COMM_COLS[ALL_COMM_COLS.length - 1]]
           : ALL_COMM_COLS;
         const filteredComm = commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase()));
         return (
         <div className="flex flex-col flex-1 min-h-0 gap-3">
           <Input value={commSearch} onChange={(e) => setCommSearch(e.target.value)} placeholder="Search commercial colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
           {commView === "table" ? (
-            <div className="flex-1 min-h-0 border border-border rounded-lg overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
-                  <tr>
-                     <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
-                     {visibleCommCols.map(col => (
-                       <th key={col.id} className="px-4 py-2 text-left text-xs font-medium">{col.label}</th>
-                     ))}
-                     <th className="px-4 py-2 text-right text-xs font-medium w-24">Actions</th>
-                   </tr>
-                </thead>
-                <tbody>
-                  {filteredComm.map(c => {
-                    const tech = techColors.find(t => t.id === c.main_technical_color_id);
-                    return (
-                      <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                         <td className="px-4 py-2"><div className="w-6 h-6 rounded-sm border border-border" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} /></td>
-                         {visibleCommCols.map(col => <React.Fragment key={col.id}>{col.render(c)}</React.Fragment>)}
-                         <td className="px-4 py-2 text-right"><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-3 h-3" /></Button></td>
-                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="flex-1 min-h-0 overflow-auto">
+              <DataTable
+                columns={visibleCommCols}
+                rows={filteredComm}
+                hideColumnToggle
+                fixedColumns={pinnedCommCols}
+                onPinColumn={(id) => setPinnedCommCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])}
+              />
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
+                {filteredComm.map(c => {
                   const tech = techColors.find(t => t.id === c.main_technical_color_id);
                   return (
                     <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
