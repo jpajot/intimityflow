@@ -466,13 +466,13 @@ export default function ColorPalettes() {
   const pageTitle = activeSection === "technical" ? "Technical Color" : activeSection === "commercial" ? "Commercial Colors" : "Color Studio";
 
   return (
-    <div className="px-2 py-2 space-y-6">
-      <div>
+    <div className="px-2 py-2 flex flex-col" style={{ height: "calc(100vh - 56px)" }}>
+      <div className="flex-shrink-0 mb-4">
         <h1 className="font-display text-3xl font-semibold tracking-tight">{pageTitle}</h1>
       </div>
 
       {activeSection === "palettes" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[calc(100vh-120px)] lg:overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-hidden">
             {/* Palettes Panel */}
             <div className="bg-card rounded-xl border border-border p-5 space-y-4 flex flex-col h-full">
               <div className="flex items-center justify-between flex-shrink-0">
@@ -680,12 +680,12 @@ export default function ColorPalettes() {
           : ALL_TECH_COLS;
         const filteredTech = techColors.filter(c => !techSearch || c.code?.toLowerCase().includes(techSearch.toLowerCase()) || c.name?.toLowerCase().includes(techSearch.toLowerCase()));
         return (
-        <div className="space-y-4">
-          <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search technical colors…" className="max-w-sm h-8 text-xs" />
+        <div className="flex flex-col flex-1 min-h-0 gap-3">
+          <Input value={techSearch} onChange={(e) => setTechSearch(e.target.value)} placeholder="Search technical colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
           {techView === "table" ? (
-            <div className="border border-border rounded-lg overflow-x-auto">
+            <div className="flex-1 min-h-0 border border-border rounded-lg overflow-auto">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b border-border">
+                <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
                   <tr>
                      <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
                      {visibleCols.map((col) => (
@@ -706,17 +706,19 @@ export default function ColorPalettes() {
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {filteredTech.map(c => (
-                <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
-                  <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
-                  <div className="p-2 space-y-1">
-                    <p className="text-xs font-mono font-medium truncate">{c.code}</p>
-                    <p className="text-xs text-muted-foreground truncate">{c.name}</p>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                {filteredTech.map(c => (
+                  <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                    <div className="aspect-square" style={{backgroundColor: colorToHex(c)}} />
+                    <div className="p-2 space-y-1">
+                      <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.name}</p>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.TechnicalColor.delete(c.id).then(() => setTechColors(prev => prev.filter(t => t.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -724,12 +726,12 @@ export default function ColorPalettes() {
       })()}
 
       {activeSection === "commercial" && (
-        <div className="space-y-4">
-          <Input value={commSearch} onChange={(e) => setCommSearch(e.target.value)} placeholder="Search commercial colors…" className="max-w-sm h-8 text-xs" />
+        <div className="flex flex-col flex-1 min-h-0 gap-3">
+          <Input value={commSearch} onChange={(e) => setCommSearch(e.target.value)} placeholder="Search commercial colors…" className="max-w-sm h-8 text-xs flex-shrink-0" />
           {commView === "table" ? (
-            <div className="border border-border rounded-lg overflow-x-auto">
+            <div className="flex-1 min-h-0 border border-border rounded-lg overflow-auto">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b border-border">
+                <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
                   <tr>
                      <th className="px-4 py-2 text-left text-xs font-medium">Color</th>
                      <th className="px-4 py-2 text-left text-xs font-medium">Code</th>
@@ -762,21 +764,23 @@ export default function ColorPalettes() {
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
-                const tech = techColors.find(t => t.id === c.main_technical_color_id);
-                return (
-                  <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
-                    <div className="aspect-square" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />
-                    <div className="p-2 space-y-1">
-                      <p className="text-xs font-mono font-medium truncate">{c.code}</p>
-                      <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
-                      <p className="text-[10px] text-muted-foreground text-center">{c.sub_type}</p>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                {commColors.filter(c => !commSearch || c.code?.toLowerCase().includes(commSearch.toLowerCase()) || c.color_name?.toLowerCase().includes(commSearch.toLowerCase())).map(c => {
+                  const tech = techColors.find(t => t.id === c.main_technical_color_id);
+                  return (
+                    <div key={c.id} className="rounded-lg border border-border overflow-hidden bg-card hover:shadow-md transition-shadow">
+                      <div className="aspect-square" style={{backgroundColor: tech ? colorToHex(tech) : "#ccc"}} />
+                      <div className="p-2 space-y-1">
+                        <p className="text-xs font-mono font-medium truncate">{c.code}</p>
+                        <p className="text-xs text-muted-foreground truncate">{c.color_name}</p>
+                        <p className="text-[10px] text-muted-foreground text-center">{c.sub_type}</p>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive mx-auto" onClick={() => base44.entities.CommercialColor.delete(c.id).then(() => setCommColors(prev => prev.filter(cc => cc.id !== c.id)))}><Trash2 className="w-2.5 h-2.5" /></Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
