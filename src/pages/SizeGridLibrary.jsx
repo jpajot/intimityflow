@@ -131,7 +131,7 @@ export default function SizeGridLibrary() {
   return (
     <div className="px-2 py-2 space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Size Studio</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">{activeSection === "library" ? "Size Library" : "Size Grids"}</h1>
       </div>
 
       {activeSection === "grids" && (
