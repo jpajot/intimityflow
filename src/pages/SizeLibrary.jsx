@@ -27,7 +27,7 @@ export default function SizeLibrary({ hideTitle = false }) {
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState("grid");
   const [showViewMenu, setShowViewMenu] = useState(false);
-  const [activeViewId, setActiveViewId] = useState(null);
+  const [activeViewId, setActiveViewId] = useState("default");
   const [activeColumns, setActiveColumns] = useState(null);
   const viewRef = useRef(null);
 
