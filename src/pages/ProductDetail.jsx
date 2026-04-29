@@ -330,13 +330,7 @@ export default function ProductDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate(product.type === "Material" ? "/materials" : "/")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        {!isNew && product.images?.[0] && (
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            className="h-10 w-auto object-contain"
-          />
-        )}
+
         <div className="flex-1">
           <h1 className="font-display text-2xl font-semibold tracking-tight">
             {isNew ? `New ${product.type}` : product.name}
@@ -372,60 +366,100 @@ export default function ProductDetail() {
 
       {/* Details / sub-nav content */}
       {(isNew || activeTab === "details") && (
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 py-4">
-            <div className="flex gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-              {/* 1/4 — Images */}
-              <div className="w-1/4 shrink-0">
-                <div className="bg-card rounded-xl border border-border p-4 space-y-3 sticky top-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Images</p>
-                    <label className={`flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
-                      {uploadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                      {uploadingImage ? "…" : "Add"}
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
-                        const files = Array.from(e.target.files || []);
-                        if (!files.length) return;
-                        setUploadingImage(true);
-                        const urls = await Promise.all(files.map(async (file) => {
-                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                          return file_url;
-                        }));
-                        updateField("images", [...(product.images || []), ...urls]);
-                        setUploadingImage(false);
-                        e.target.value = "";
-                      }} />
-                    </label>
-                  </div>
-                  {(product.images || []).length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {(product.images || []).map((url, idx) => (
-                        <div key={url} className="relative group/img aspect-square rounded-lg overflow-hidden border border-border">
-                          <img src={url} alt={`Style image ${idx + 1}`} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setLightboxImages({ images: product.images || [], index: idx })} />
-                          {idx === 0 && (
-                            <div className="absolute top-1 left-1 px-1 py-0.5 bg-primary text-primary-foreground text-[9px] font-semibold rounded">Main</div>
-                          )}
-                          <button type="button" onClick={() => updateField("images", (product.images || []).filter((_, i) => i !== idx))} className="absolute top-1 right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/img:flex">
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                          {idx > 0 && (
-                            <button type="button" onClick={() => { const imgs = [...(product.images || [])]; imgs.splice(idx, 1); imgs.unshift(url); updateField("images", imgs); }} className="absolute bottom-1 left-1 px-1 py-0.5 bg-background/80 text-foreground text-[9px] rounded hidden group-hover/img:block">Set main</button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="aspect-square flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-                      <p className="text-xs text-muted-foreground text-center px-2">No images yet</p>
-                    </div>
-                  )}
-                </div>
+        {/* LEFT — Image Album Panel */}
+        <div className="w-full lg:w-72 xl:w-80 shrink-0 lg:sticky lg:top-4">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            {/* Main image */}
+            {(product.images || []).length > 0 ? (
+              <div
+                className="relative aspect-square bg-muted/30 cursor-zoom-in"
+                onClick={() => setLightboxImages({ images: product.images || [], index: 0 })}
+              >
+                <img
+                  src={product.images[0]}
+                  alt="Main"
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-primary text-primary-foreground text-[9px] font-semibold rounded">Main</div>
               </div>
+            ) : (
+              <div className="aspect-square flex items-center justify-center bg-muted/30">
+                <p className="text-xs text-muted-foreground">No images yet</p>
+              </div>
+            )}
 
-              {/* 3/4 — Fields */}
-              <div className="flex-1 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+            {/* Thumbnail strip */}
+            {(product.images || []).length > 1 && (
+              <div className="flex gap-1.5 p-2 flex-wrap border-t border-border bg-muted/20">
+                {(product.images || []).slice(1).map((url, i) => {
+                  const idx = i + 1;
+                  return (
+                    <div key={url} className="relative group/img w-14 h-14 rounded-md overflow-hidden border border-border shrink-0">
+                      <img
+                        src={url}
+                        alt={`Image ${idx + 1}`}
+                        className="w-full h-full object-cover cursor-zoom-in"
+                        onClick={() => setLightboxImages({ images: product.images || [], index: idx })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { const imgs = [...(product.images || [])]; imgs.splice(idx, 1); imgs.unshift(url); updateField("images", imgs); }}
+                        className="absolute bottom-0 inset-x-0 bg-background/80 text-[8px] text-center py-0.5 hidden group-hover/img:block leading-none"
+                      >set main</button>
+                      <button
+                        type="button"
+                        onClick={() => updateField("images", (product.images || []).filter((_, ii) => ii !== idx))}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground items-center justify-center hidden group-hover/img:flex"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Remove main image button (only when there's a main) */}
+            {(product.images || []).length > 0 && (
+              <div className="px-3 pb-2 pt-1 flex items-center gap-2 border-t border-border bg-muted/10">
+                <button
+                  type="button"
+                  onClick={() => updateField("images", (product.images || []).slice(1))}
+                  className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Remove main
+                </button>
+              </div>
+            )}
+
+            {/* Upload button */}
+            <div className="px-3 py-2 border-t border-border">
+              <label className={`flex items-center justify-center gap-1.5 px-3 py-2 w-full rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {uploadingImage ? "Uploading…" : "Add images"}
+                <input type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (!files.length) return;
+                  setUploadingImage(true);
+                  const urls = await Promise.all(files.map(async (file) => {
+                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                    return file_url;
+                  }));
+                  updateField("images", [...(product.images || []), ...urls]);
+                  setUploadingImage(false);
+                  e.target.value = "";
+                }} />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — Fields Panel */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                   {/* Code */}
                   <div className="space-y-2">
@@ -564,10 +598,9 @@ export default function ProductDetail() {
                     Create
                   </Button>
                 )}
-              </div>
             </div>
+          </div>
         </div>
-      </div>
       )}
 
       {!isNew && activeTab === "colorways" && (
