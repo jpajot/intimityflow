@@ -42,7 +42,9 @@ function NumberCell({ value, onSave }) {
   );
 }
 
-export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef, onViewRef, activeViewId, onSelectView }) {
+import { applyQuickFilters } from "./QuickFiltersPanel";
+
+export default function DCperCOTTab({ projectId, linkedVariations, allVariations, colorways, products, techColors = [], commColors = [], onGenerateRef, onExportRef, onImportRef, onViewRef, activeViewId, onSelectView, quickFilters = [] }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -151,24 +153,36 @@ export default function DCperCOTTab({ projectId, linkedVariations, allVariations
   const allCoTs = useMemo(() => [...new Set(items.map((i) => i.channel_of_trade).filter(Boolean))].sort(), [items]);
 
   const filtered = useMemo(() => {
-    return items.filter((item) => {
-      if (filterDC !== "all" && item.distribution_channel !== filterDC) return false;
-      if (filterCoT !== "all" && item.channel_of_trade !== filterCoT) return false;
-      if (!search.trim()) return true;
+    // Enrich items with denormalized fields for quick filter access
+    const enriched = items.map((item) => {
       const v = getVariationForLink(item.project_link_id);
       const cw = getColorway(v);
       const prod = getProduct(v);
+      return {
+        ...item,
+        _style_name: prod?.name || "",
+        _pack_code: v?.pack_code || "",
+        _variant: v?.variant || "",
+        _color_name: cw?.color_name || "",
+      };
+    });
+
+    let result = enriched.filter((item) => {
+      if (filterDC !== "all" && item.distribution_channel !== filterDC) return false;
+      if (filterCoT !== "all" && item.channel_of_trade !== filterCoT) return false;
+      if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
         item.distribution_channel?.toLowerCase().includes(q) ||
         item.channel_of_trade?.toLowerCase().includes(q) ||
-        v?.sequence?.toLowerCase().includes(q) ||
-        v?.pack_code?.toLowerCase().includes(q) ||
-        cw?.color_name?.toLowerCase().includes(q) ||
-        prod?.name?.toLowerCase().includes(q)
+        item._style_name.toLowerCase().includes(q) ||
+        item._pack_code.toLowerCase().includes(q) ||
+        item._color_name.toLowerCase().includes(q)
       );
     });
-  }, [items, search, filterDC, filterCoT, getVariationForLink, getColorway, getProduct]);
+
+    return applyQuickFilters(result, quickFilters);
+  }, [items, search, filterDC, filterCoT, getVariationForLink, getColorway, getProduct, quickFilters]);
 
   const allFields = useMemo(() => [
     {

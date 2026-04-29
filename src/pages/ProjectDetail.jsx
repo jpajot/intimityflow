@@ -82,9 +82,11 @@ export default function ProjectDetail() {
   const [stylesQuickFilters, setStylesQuickFilters] = usePersistedQuickFilters(`project_${id}_styles`);
   const [colorwaysQuickFilters, setColorwaysQuickFilters] = usePersistedQuickFilters(`project_${id}_colorways`);
   const [variationsQuickFilters, setVariationsQuickFilters] = usePersistedQuickFilters(`project_${id}_variations`);
+  const [dcQuickFilters, setDcQuickFilters] = usePersistedQuickFilters(`project_${id}_dc_per_cot`);
   const [showStylesQF, setShowStylesQF] = useState(false);
   const [showColorwaysQF, setShowColorwaysQF] = useState(false);
   const [showVariationsQF, setShowVariationsQF] = useState(false);
+  const [showDCQF, setShowDCQF] = useState(false);
 
   const isPinned = pinnedItems.some((p) => p.path === `/projects/${id}`);
 
@@ -126,6 +128,7 @@ export default function ProjectDetail() {
     setShowStylesQF(false);
     setShowColorwaysQF(false);
     setShowVariationsQF(false);
+    setShowDCQF(false);
   }, [activeSection]);
 
   useEffect(() => {
@@ -267,12 +270,22 @@ export default function ProjectDetail() {
         customContent: null
       });
     } else if (activeSection === "dc_per_cot") {
+      const DC_QF_FIELDS = [
+        { id: "_style_name", label: "Style Name", getValue: (item) => item._style_name },
+        { id: "distribution_channel", label: "Distribution Channel", getValue: (item) => item.distribution_channel },
+        { id: "channel_of_trade", label: "Channel of Trade", getValue: (item) => item.channel_of_trade },
+        { id: "forecast_status", label: "Forecast Status", getValue: (item) => item.forecast_status || "Not Started" },
+        { id: "_pack_code", label: "Pack Code", getValue: (item) => item._pack_code },
+        { id: "_variant", label: "Variant", getValue: (item) => item._variant },
+        { id: "_color_name", label: "Colorway Name", getValue: (item) => item._color_name },
+      ];
       setOptions({
         items: [
         { label: "Generate DC per CoT", icon: Zap, onClick: () => window.dcPerCOTGenerate?.() },
         { label: "Export", icon: Download, onClick: () => window.dcPerCOTExport?.() },
         { label: "Import", icon: UploadIcon, onClick: () => window.dcPerCOTImport?.() },
         { divider: true },
+        { label: "Quick Filters", icon: Filter, onClick: () => { setShowDCQF((v) => !v); setShowDCViewMenu(false); }, custom: true, badge: dcQuickFilters.length > 0 ? dcQuickFilters.length : null },
         { label: dcViewMode === "list" ? "View: Grid" : "View: List", icon: dcViewMode === "list" ? LayoutGrid : List, onClick: () => {
             setDCViewMode((prev) => {
               const next = prev === "list" ? "grid" : "list";
@@ -281,16 +294,18 @@ export default function ProjectDetail() {
             });
           } },
         { divider: true },
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowDCViewMenu((v) => !v), custom: true }],
+        { label: "Manage Views", icon: Pencil, onClick: () => { setShowDCViewMenu((v) => !v); setShowDCQF(false); }, custom: true }],
 
-        customContent: showDCViewMenu ?
+        customContent: showDCQF
+        ? () => <QuickFiltersPanel fields={DC_QF_FIELDS} activeFilters={dcQuickFilters} onApply={(f) => setDcQuickFilters(f)} />
+        : showDCViewMenu ?
         () => <ViewDrawerContent pageKey="dc_per_cot" activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} allFields={[]} currentViewType={dcViewMode} /> :
         null
       });
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId, stylesViewMode, colorwaysViewMode, variationsViewMode, dcViewMode, showStylesQF, showColorwaysQF, showVariationsQF, stylesQuickFilters, colorwaysQuickFilters, variationsQuickFilters, linkedProducts]);
+  }, [activeSection, setOptions, showStylesViewMenu, showColorwaysViewMenu, showVariationsViewMenu, showDCViewMenu, stylesActiveViewId, colorwaysActiveViewId, variationsActiveViewId, dcActiveViewId, stylesViewMode, colorwaysViewMode, variationsViewMode, dcViewMode, showStylesQF, showColorwaysQF, showVariationsQF, showDCQF, stylesQuickFilters, colorwaysQuickFilters, variationsQuickFilters, dcQuickFilters, linkedProducts]);
 
   const SEASONS = ["SS25", "FW25", "SS26", "FW26", "Evergreen"];
   const STATUSES = ["Planning", "Active", "Archived"];
@@ -636,7 +651,7 @@ export default function ProjectDetail() {
       <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {variationsViewRef.current = state;}} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} quickFilters={variationsQuickFilters} />
       }
       {activeSection === "dc_per_cot" &&
-      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => {window.dcPerCOTGenerate = handler;}} onExportRef={(handler) => {window.dcPerCOTExport = handler;}} onImportRef={(handler) => {window.dcPerCOTImport = handler;}} onViewRef={(viewState) => {window.dcPerCOTView = viewState;}} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} />
+      <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => {window.dcPerCOTGenerate = handler;}} onExportRef={(handler) => {window.dcPerCOTExport = handler;}} onImportRef={(handler) => {window.dcPerCOTImport = handler;}} onViewRef={(viewState) => {window.dcPerCOTView = viewState;}} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} quickFilters={dcQuickFilters} />
       }
 
       {/* Upload Dialog */}
