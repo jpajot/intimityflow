@@ -90,7 +90,7 @@ function FieldContextMenu({ x, y, fieldLabel, onGroup, onClose }) {
 function GalleryCard({ row, activeFields, allFields, thumbSize, renderThumbnail, onClickItem, onFieldRightClick }) {
   const ts = THUMB_SIZES.find((s) => s.id === thumbSize) || THUMB_SIZES[2];
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
+    <div className="bg-card rounded-xl border border-transparent overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
       <div className={`${ts.height} relative overflow-hidden cursor-pointer`} onClick={() => onClickItem?.(row)}>
         {renderThumbnail(row)}
       </div>
