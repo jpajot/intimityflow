@@ -19,8 +19,8 @@ export default function ColorwayCard({ variant, techColor, productImage = "", on
 
   return (
     <>
-      <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
-        <div className="aspect-square bg-muted relative overflow-hidden">
+      <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all">
+        <div className="aspect-square relative overflow-hidden">
           {displayImage ? (
             <img
               src={displayImage}
