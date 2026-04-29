@@ -44,6 +44,8 @@ function usePopover() {
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
+      // Don't close if the click is inside a Radix portal (e.g. Select dropdown)
+      if (e.target.closest("[data-radix-popper-content-wrapper]")) return;
       if (
         popoverRef.current && !popoverRef.current.contains(e.target) &&
         desktopBtnRef.current && !desktopBtnRef.current.contains(e.target) &&
