@@ -69,7 +69,7 @@ export default function ProductDetail() {
     { id: "more", label: "More Variations", icon: Layers },
     { id: "suppliers", label: "Suppliers", icon: Building2 },
   ];
-  useRegisterSubNav(subNavItems, activeTab, setActiveTab);
+  useRegisterSubNav(subNavItems, activeTab, setActiveTab, product.name || (isNew ? `New ${product.type}` : ""));
 
   useEffect(() => {
     loadLovData();
