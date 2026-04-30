@@ -1,16 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 
-import { Plus } from "lucide-react";
+import { Plus, Library, LayoutGrid, List } from "lucide-react";
 import ListToolbar from "./ListToolbar";
 import ViewSelector from "./ViewSelector";
 import { base44 } from "@/api/base44Client";
 import DataTable from "./DataTable";
 import ColorwayCard from "./ColorwayCard";
 import ImageLightbox from "./ImageLightbox";
+import { usePageOptions } from "@/lib/PageOptionsContext";
 
 const STORAGE_KEY = "colorway_section_view";
 
 export default function ColorwaySection({ colorVariants, productImage = "", onEdit, onAddNew, onAddFromLibrary }) {
+  const { setOptions } = usePageOptions();
   const [view, setView] = useState(() => localStorage.getItem(STORAGE_KEY) || "grid");
 
   const handleSetView = (v) => {
@@ -31,6 +33,17 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
     base44.entities.Project.list("name", 500).then(setProjects);
     base44.entities.CommercialColor.list("code", 2000).then(setCommColors);
   }, []);
+
+  useEffect(() => {
+    setOptions({
+      items: [
+        { label: "Add Colorway", icon: Plus, onClick: onAddNew, className: "text-primary hover:bg-primary/10" },
+        { label: "Add from Library", icon: Library, onClick: onAddFromLibrary },
+        { divider: true },
+        { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => handleSetView(view === "grid" ? "list" : "grid") },
+      ],
+    });
+  }, [onAddNew, onAddFromLibrary, view]);
 
   const getTechColor = (id) => techColors.find((t) => t.id === id);
 
@@ -182,12 +195,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search colorways…"
-        view={colorVariants.length > 0 ? view : null}
-        onViewChange={handleSetView}
-        moreItems={[
-          { label: "From Library", onClick: onAddFromLibrary },
-          { label: "Add Colorway", icon: Plus, onClick: onAddNew },
-        ]}
+        moreItems={[]}
       >
         {colorVariants.length > 0 && view === "list" && (
           <ViewSelector pageKey="colorways" allColumns={columns} onColumnsChange={setActiveColumns} entityNames={["ProductColor"]} />
