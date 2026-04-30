@@ -257,7 +257,7 @@ export default function SupplierDetail() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Lead Time (days)</Label>
-                <Input type="number" value={supplier.lead_time_default_days || ""} onChange={(e) => updateField("lead_time_default_days", Number(e.target.value))} />
+                <Input type="number" value={supplier.lead_time_default_days ?? ""} onChange={(e) => { const v = e.target.value; updateField("lead_time_default_days", v === "" ? null : parseFloat(v)); }} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Default Currency</Label>
