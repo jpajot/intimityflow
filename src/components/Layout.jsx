@@ -32,6 +32,12 @@ const DRAWER_ITEMS = [
 function isDrawerItemActive(item, pathname) {
   if (item.path === "/color-palettes") return pathname.startsWith("/color-palettes");
   if (item.path === "/size-grid-library") return pathname.startsWith("/size-grid-library");
+  // For product detail pages, check the stored nav context to distinguish materials vs products
+  if (pathname.startsWith("/products/") && pathname !== "/products/new") {
+    const navContext = sessionStorage.getItem("productNavContext");
+    if (item.path === "/materials") return navContext === "materials";
+    if (item.path === "/list-view") return navContext !== "materials";
+  }
   return pathname === item.path || pathname.startsWith(item.path + "/");
 }
 

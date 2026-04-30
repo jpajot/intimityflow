@@ -168,6 +168,8 @@ export default function ProductDetail() {
     if (prod.length > 0) {
       setProduct(prod[0]);
       setOriginalSizeGridId(prod[0].size_grid_id || "");
+      // Set nav context so the sidebar highlights the correct drawer item
+      sessionStorage.setItem("productNavContext", prod[0].type === "Material" ? "materials" : "products");
     }
     setColorVariants(colors);
     setLoading(false);

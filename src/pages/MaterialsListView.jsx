@@ -18,6 +18,7 @@ import { getPinnedItems, setPinnedItems } from "../components/Layout";
 // ─── Materials Tab ────────────────────────────────────────────────────────────
 function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects, viewMode, onViewModeChange, quickFilters = [] }) {
   const navigate = useNavigate();
+  const navigateToProduct = (id) => { sessionStorage.setItem("productNavContext", "materials"); navigate(`/products/${id}`); };
   const [search, setSearch] = useState("");
   const [view, setView] = useState(viewMode);
   const [activeColumns, setActiveColumns] = useState(null);
@@ -60,7 +61,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
         </div> :
     <div className="w-10 h-10 rounded-md border border-border bg-muted" />
   },
-  { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigate(`/products/${p.id}`)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
+  { id: "name", label: "Name", width: 180, sortKey: (p) => p.name || "", render: (p) => <button type="button" onClick={() => navigateToProduct(p.id)} className="font-medium text-primary hover:underline text-left">{p.name}</button> },
   { id: "type", label: "Type", width: 100, sortKey: (p) => p.type || "", render: (p) => <span className="text-xs text-muted-foreground">{p.type}</span> },
   { id: "sub_type", label: "Sub-type", width: 130, sortKey: (p) => p.sub_type || "", render: (p) => <span className="text-xs">{p.sub_type || "—"}</span> },
   { id: "category", label: "Category", width: 140, sortKey: (p) => p.category || "", render: (p) => <span className="text-xs">{p.category || "—"}</span> },
@@ -161,7 +162,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
               </div>;
 
         }}
-        onClickItem={(p) => navigate(`/products/${p.id}`)} /> :
+        onClickItem={(p) => navigateToProduct(p.id)} /> :
 
 
       <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
@@ -173,6 +174,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
 // ─── Colorways Tab ────────────────────────────────────────────────────────────
 function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, viewMode, onViewModeChange, quickFilters = [] }) {
   const navigate = useNavigate();
+  const navigateToProduct = (id) => { sessionStorage.setItem("productNavContext", "materials"); navigate(`/products/${id}`); };
   const [search, setSearch] = useState("");
   const [view, setView] = useState(viewMode);
   const [activeColumns, setActiveColumns] = useState(null);
@@ -218,12 +220,12 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
   {
     id: "style_name", label: "Material Name", width: 160, sortKey: (cw) => getProduct(cw)?.name || "",
     render: (cw) => {
-      const prod = getProduct(cw);
-      return prod ?
-      <button type="button" onClick={() => navigate(`/products/${prod.id}`)} className="text-xs font-semibold text-primary hover:underline text-left">{prod.name}</button> :
-      "—";
+    const prod = getProduct(cw);
+    return prod ?
+    <button type="button" onClick={() => navigateToProduct(prod.id)} className="text-xs font-semibold text-primary hover:underline text-left">{prod.name}</button> :
+    "—";
     }
-  },
+    },
   { id: "style_category", label: "Material: Category", width: 140, sortKey: (cw) => getProduct(cw)?.category || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.category || "—"}</span> },
   { id: "style_sub_category", label: "Material: Sub-Category", width: 160, sortKey: (cw) => getProduct(cw)?.sub_category || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_category || "—"}</span> },
   { id: "style_sub_type", label: "Material: Sub-type", width: 130, sortKey: (cw) => getProduct(cw)?.sub_type || "", render: (cw) => <span className="text-xs text-muted-foreground">{getProduct(cw)?.sub_type || "—"}</span> },
@@ -322,7 +324,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
           <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw.color_hex || "#ccc" }} />;
 
         }}
-        onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)} /> :
+        onClickItem={(cw) => navigateToProduct(getProduct(cw)?.id)} /> :
 
 
       <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
@@ -334,6 +336,7 @@ function ColorwaysTab({ colorways, products, techColors, sizeGrids, projects, vi
 // ─── More Variations Tab ──────────────────────────────────────────────────────
 function MoreVariationsTab({ variations, colorways, products, sizeGrids, projects, viewMode, onViewModeChange, quickFilters = [] }) {
   const navigate = useNavigate();
+  const navigateToProduct = (id) => { sessionStorage.setItem("productNavContext", "materials"); navigate(`/products/${id}`); };
   const [search, setSearch] = useState("");
   const [view, setView] = useState(viewMode);
   const [activeColumns, setActiveColumns] = useState(null);
@@ -483,7 +486,7 @@ function MoreVariationsTab({ variations, colorways, products, sizeGrids, project
           <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: cw?.color_hex || "#ccc" }} />;
 
         }}
-        onClickItem={(v) => navigate(`/products/${getProduct(v)?.id}`)} /> :
+        onClickItem={(v) => navigateToProduct(getProduct(v)?.id)} /> :
 
 
       <DataTable columns={visibleColumns} rows={filtered} hideColumnToggle fixedColumns={pinnedCols} onPinColumn={(id) => setPinnedCols((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])} />
