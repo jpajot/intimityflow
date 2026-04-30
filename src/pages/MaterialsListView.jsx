@@ -103,9 +103,7 @@ function MaterialsTab({ products, colorVariants, techColors, sizeGrids, projects
         onSearch={setSearch}
         searchPlaceholder="Search materials…"
         hideViewToggle
-        moreItems={[
-        { label: "New Material", icon: Plus, onClick: () => navigate("/products/new") }]
-        }>
+        moreItems={[]}>
         
         {view === "list" &&
         <ViewSelector pageKey="mat_styles_list" allColumns={columns} onColumnsChange={setActiveColumns} filterableFields={filterableFields} rows={products} entityNames={["Product"]} fixedColumnIds={pinnedCols} onFixedColumnIdsChange={setPinnedCols} />
@@ -586,6 +584,8 @@ export default function MaterialsListView() {
     if (activeSection === "materials") {
       setOptions({
         items: [
+        { label: "New Material", icon: Plus, onClick: () => (window.location.href = "/products/new?type=Material"), className: "text-primary hover:bg-primary/10" },
+        { divider: true },
         { label: "Quick Filters", icon: Filter, onClick: () => { setShowMaterialsQF((v) => !v); setShowMaterialsViewMenu(false); }, custom: true, badge: materialsQuickFilters.length > 0 ? materialsQuickFilters.length : null },
         { label: materialsViewMode === "grid" ? "View: List" : "View: Grid", icon: materialsViewMode === "grid" ? List : LayoutGrid, onClick: () => setMaterialsViewMode(materialsViewMode === "list" ? "grid" : "list") },
         { divider: true },
