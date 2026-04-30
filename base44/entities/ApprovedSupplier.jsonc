@@ -1,0 +1,78 @@
+{
+  "name": "ApprovedSupplier",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier"
+    },
+    "rank": {
+      "type": "number",
+      "description": "1 = primary, 2+ = alternates",
+      "default": 1
+    },
+    "is_primary": {
+      "type": "boolean",
+      "default": false
+    },
+    "supplier_reference": {
+      "type": "string",
+      "description": "Supplier's own SKU/article code"
+    },
+    "unit_cost": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "description": "LOV: currency"
+    },
+    "moq": {
+      "type": "number"
+    },
+    "moq_uom": {
+      "type": "string",
+      "description": "LOV: moq_uom"
+    },
+    "lead_time_days": {
+      "type": "number"
+    },
+    "price_break_tiers": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Array of {min_qty, unit_cost}"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "description": "LOV: approved_supplier_status",
+      "default": "active"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "User email"
+    },
+    "approved_at": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "product_id",
+    "supplier_id"
+  ]
+}

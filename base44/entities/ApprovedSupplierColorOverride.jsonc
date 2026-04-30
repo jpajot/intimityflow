@@ -1,0 +1,37 @@
+{
+  "name": "ApprovedSupplierColorOverride",
+  "type": "object",
+  "properties": {
+    "approved_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 ApprovedSupplier (the override supplier)"
+    },
+    "product_color_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColor \u2014 unique within this entity"
+    },
+    "supplier_reference": {
+      "type": "string",
+      "description": "Override of parent ApprovedSupplier value"
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "null = inherit from approved_supplier"
+    },
+    "currency": {
+      "type": "string",
+      "description": "LOV: currency"
+    },
+    "lead_time_days": {
+      "type": "number",
+      "description": "null = inherit"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "approved_supplier_id",
+    "product_color_id"
+  ]
+}

@@ -29,6 +29,8 @@ import ProjectDocuments from './pages/ProjectDocuments';
 import DocumentStaging from './pages/DocumentStaging';
 import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
 import BoardEditor from './pages/BoardEditor';
+import Suppliers from './pages/Suppliers';
+import SupplierDetail from './pages/SupplierDetail';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -93,6 +95,8 @@ const AuthenticatedApp = () => {
         <Route path="/document-parsing-schemes" element={<DocumentParsingSchemes />} />
         <Route path="/entity-field-config" element={<EntityFieldConfigPage />} />
         <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />
+        <Route path="/suppliers" element={<Suppliers />} />
+        <Route path="/suppliers/:id" element={<SupplierDetail />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>

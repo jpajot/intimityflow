@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2 } from "lucide-react";
+import ProductSuppliersTab from "../components/ProductSuppliersTab";
 import ImageLightbox from "../components/ImageLightbox";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 
@@ -66,6 +67,7 @@ export default function ProductDetail() {
     { id: "colorways", label: "Colorways", count: colorVariants.length, icon: Palette },
     { id: "sizes", label: "Sizes", icon: Ruler },
     { id: "more", label: "More Variations", icon: Layers },
+    { id: "suppliers", label: "Suppliers", icon: Building2 },
   ];
   useRegisterSubNav(subNavItems, activeTab, setActiveTab);
 
@@ -617,6 +619,9 @@ export default function ProductDetail() {
       )}
       {!isNew && activeTab === "more" && (
         <MoreVariationsSection productId={product.id} colorVariants={colorVariants} projects={projects} />
+      )}
+      {!isNew && activeTab === "suppliers" && (
+        <ProductSuppliersTab product={product} colorVariants={colorVariants} />
       )}
 
       <ColorwayEditModal

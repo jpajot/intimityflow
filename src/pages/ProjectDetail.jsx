@@ -23,6 +23,8 @@ import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
+import ProjectSourcingDashboard from "../components/ProjectSourcingDashboard";
+import { Building2 } from "lucide-react";
 import ViewDrawerContent from "../components/ViewDrawerContent";
 import QuickFiltersPanel from "../components/QuickFiltersPanel";
 import { usePageOptions } from "@/lib/PageOptionsContext";
@@ -113,7 +115,8 @@ export default function ProjectDetail() {
   { id: "colorways", label: "Colorways", count: linkedColorways.length, icon: Palette },
   { id: "variations", label: "Variations", count: linkedVariations.length, icon: Layers },
   { id: "dc_per_cot", label: "DC per CoT", icon: DCperCOTIcon },
-  { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook }];
+  { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
+  { id: "sourcing", label: "Sourcing", icon: Building2 }];
 
   useRegisterSubNav(subNavItems, activeSection, setActiveSection, project?.name);
 
@@ -650,6 +653,12 @@ export default function ProjectDetail() {
       {activeSection === "variations" &&
       <LinkedMoreVariationsView variations={linkedVariations} colorways={allColorways} products={allStyleProducts} projects={allProjects} navigate={navigate} projectId={id} allVariations={allVariations} onLinked={loadData} onViewRef={(state) => {variationsViewRef.current = state;}} activeViewId={variationsActiveViewId} onSelectView={setVariationsActiveViewId} quickFilters={variationsQuickFilters} />
       }
+      {activeSection === "sourcing" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Sourcing Overview</h2>
+          <ProjectSourcingDashboard projectId={id} linkedStyles={linkedStyles} />
+        </div>
+      )}
       {activeSection === "dc_per_cot" &&
       <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => {window.dcPerCOTGenerate = handler;}} onExportRef={(handler) => {window.dcPerCOTExport = handler;}} onImportRef={(handler) => {window.dcPerCOTImport = handler;}} onViewRef={(viewState) => {window.dcPerCOTView = viewState;}} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} quickFilters={dcQuickFilters} />
       }

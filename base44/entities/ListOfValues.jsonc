@@ -1,0 +1,26 @@
+{
+  "name": "ListOfValues",
+  "type": "object",
+  "properties": {
+    "type_of_lov_id": {
+      "type": "string",
+      "description": "Parent TypeOfLOV ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Value name"
+    },
+    "depends_on_value_id": {
+      "type": "string",
+      "description": "Optional parent ListOfValues ID (from the parent LOV type)"
+    },
+    "category": {
+      "type": "string",
+      "description": "Shortcut category key matching TypeOfLOV.code \u2014 used for direct filtering e.g. supplier_capability, currency"
+    }
+  },
+  "required": [
+    "type_of_lov_id",
+    "name"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "SupplierRouting",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product"
+    },
+    "name": {
+      "type": "string",
+      "description": "e.g. EU production route"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "description": "LOV: approved_supplier_status",
+      "default": "active"
+    },
+    "total_lead_time_days": {
+      "type": "number",
+      "description": "Computed: sum of step lead times"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "product_id",
+    "name"
+  ]
+}

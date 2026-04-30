@@ -1,0 +1,79 @@
+{
+  "name": "Supplier",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Auto-generated code e.g. SUP00001"
+    },
+    "name": {
+      "type": "string",
+      "description": "Supplier trading name"
+    },
+    "legal_name": {
+      "type": "string",
+      "description": "Legal registered name"
+    },
+    "country": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string",
+      "description": "LOV: supplier_region"
+    },
+    "city": {
+      "type": "string"
+    },
+    "primary_contact_name": {
+      "type": "string"
+    },
+    "primary_contact_email": {
+      "type": "string"
+    },
+    "primary_contact_phone": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "LOV: supplier_capability"
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "LOV: supplier_certification"
+    },
+    "lead_time_default_days": {
+      "type": "number"
+    },
+    "moq_policy": {
+      "type": "string"
+    },
+    "payment_terms_default": {
+      "type": "string",
+      "description": "LOV: payment_terms"
+    },
+    "currency_default": {
+      "type": "string",
+      "description": "LOV: currency"
+    },
+    "status": {
+      "type": "string",
+      "description": "LOV: supplier_status",
+      "default": "active"
+    },
+    "status_reason": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

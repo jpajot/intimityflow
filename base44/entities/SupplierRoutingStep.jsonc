@@ -1,0 +1,57 @@
+{
+  "name": "SupplierRoutingStep",
+  "type": "object",
+  "properties": {
+    "supplier_routing_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRouting"
+    },
+    "sequence": {
+      "type": "number",
+      "description": "Order of operations: 1, 2, 3..."
+    },
+    "step_type": {
+      "type": "string",
+      "description": "LOV: routing_step_type"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this supplier does at this step"
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Cost for this operation only"
+    },
+    "currency": {
+      "type": "string",
+      "description": "LOV: currency"
+    },
+    "lead_time_days": {
+      "type": "number"
+    },
+    "ships_to_next": {
+      "type": "boolean",
+      "description": "True if this supplier ships output directly to next step",
+      "default": true
+    },
+    "input_description": {
+      "type": "string",
+      "description": "What arrives at this step"
+    },
+    "output_description": {
+      "type": "string",
+      "description": "What leaves this step"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "supplier_routing_id",
+    "sequence"
+  ]
+}

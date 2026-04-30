@@ -5,7 +5,7 @@ import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
 import SliderIcon from "./icons/SliderIcon";
-import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, ChevronDown } from "lucide-react";
+import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, ChevronDown, Building2 } from "lucide-react";
 import { useSubNav } from "@/lib/SubNavContext";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
@@ -26,6 +26,7 @@ const DRAWER_ITEMS = [
   { path: "/materials",         label: "Materials Lists", icon: FabricRollIcon },
   { path: "/color-palettes",    label: "Color Studio",    icon: SwatchBook },
   { path: "/size-grid-library", label: "Size Studio",     icon: Ruler },
+  { path: "/suppliers",         label: "Suppliers",       icon: Building2 },
 ];
 
 function isDrawerItemActive(item, pathname) {
