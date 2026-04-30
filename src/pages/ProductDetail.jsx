@@ -462,6 +462,15 @@ export default function ProductDetail() {
               </label>
             </div>
           </div>
+
+          {/* UOM Section — below image panel */}
+          {!isNew && (
+            <ProductUOMSection
+              product={product}
+              lovValues={allLovValues}
+              onUpdate={updateField}
+            />
+          )}
         </div>
 
         {/* RIGHT — Fields Panel */}
@@ -609,14 +618,6 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* UOM Section */}
-          {!isNew && (
-            <ProductUOMSection
-              product={product}
-              lovValues={allLovValues}
-              onUpdate={updateField}
-            />
-          )}
         </div>
       )}
 
