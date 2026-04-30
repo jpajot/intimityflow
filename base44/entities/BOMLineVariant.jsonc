@@ -1,0 +1,63 @@
+{
+  "name": "BOMLineVariant",
+  "type": "object",
+  "properties": {
+    "bom_line_id": {
+      "type": "string",
+      "description": "FK \u2192 BOMLine"
+    },
+    "product_color_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColor (parent product's colorway)"
+    },
+    "component_product_color_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColor (component's colorway for this parent colorway)"
+    },
+    "size_id": {
+      "type": "string",
+      "description": "FK \u2192 Size"
+    },
+    "product_color_and_more_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColorAndMore (parent product's ColorAndMore variation)"
+    },
+    "component_color_and_more_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColorAndMore (component's ColorAndMore \u2014 nullable)"
+    },
+    "approved_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 ApprovedSupplier (production BOMs)"
+    },
+    "color_override_id": {
+      "type": "string",
+      "description": "FK \u2192 ApprovedSupplierColorOverride"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Override quantity \u2014 null = inherit from BOMLine.base_quantity"
+    },
+    "unit_cost_override": {
+      "type": "number"
+    },
+    "currency_override": {
+      "type": "string",
+      "description": "LOV: currency"
+    },
+    "lead_time_override_days": {
+      "type": "number"
+    },
+    "wastage_pct": {
+      "type": "number",
+      "description": "Production BOMs, default 0",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "bom_line_id"
+  ]
+}

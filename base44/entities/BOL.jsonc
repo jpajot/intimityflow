@@ -1,0 +1,24 @@
+{
+  "name": "BOL",
+  "type": "object",
+  "properties": {
+    "bom_id": {
+      "type": "string",
+      "description": "FK \u2192 BOM (one BOL per Production BOM)"
+    },
+    "source_routing_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRouting"
+    },
+    "source_routing_snapshot_at": {
+      "type": "string",
+      "description": "ISO datetime of last sync"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "bom_id"
+  ]
+}

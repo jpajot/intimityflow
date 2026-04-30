@@ -55,6 +55,18 @@
         "type": "string"
       },
       "description": "IDs of Projects this style is linked to"
+    },
+    "default_uom": {
+      "type": "string",
+      "description": "Default unit of measure for consumption \u2014 LOV: uom (e.g. m, pcs, kg)"
+    },
+    "default_uom_for_purchasing": {
+      "type": "string",
+      "description": "Optional: UOM used when purchasing (e.g. roll). LOV: uom. Null = same as default_uom."
+    },
+    "uom_conversion_factor": {
+      "type": "number",
+      "description": "How many consumption units = 1 purchasing unit (e.g. 50 m per roll \u2192 50). Required when default_uom_for_purchasing differs from default_uom."
     }
   },
   "required": [

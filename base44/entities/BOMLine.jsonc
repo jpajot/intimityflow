@@ -1,0 +1,74 @@
+{
+  "name": "BOMLine",
+  "type": "object",
+  "properties": {
+    "bom_id": {
+      "type": "string",
+      "description": "FK \u2192 BOM"
+    },
+    "source_bom_line_id": {
+      "type": "string",
+      "description": "FK \u2192 BOMLine (back-link from prod line to dev line)"
+    },
+    "position": {
+      "type": "number",
+      "description": "Display order in matrix",
+      "default": 0
+    },
+    "component_role": {
+      "type": "string",
+      "description": "LOV: bom_line_role (main_fabric, lining, lace, etc.)"
+    },
+    "component_product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product (the Product playing the component role)"
+    },
+    "resolution_mode": {
+      "type": "string",
+      "description": "LOV: bom_line_resolution_mode (pinned, floating)"
+    },
+    "base_quantity": {
+      "type": "number",
+      "description": "Default quantity for all variants"
+    },
+    "uom": {
+      "type": "string",
+      "description": "LOV: uom \u2014 null = inherit from component_product_id.default_uom"
+    },
+    "uom_is_overridden": {
+      "type": "boolean",
+      "description": "True when line's uom differs from component Product default_uom",
+      "default": false
+    },
+    "varies_by_color": {
+      "type": "boolean",
+      "default": false
+    },
+    "varies_by_size": {
+      "type": "boolean",
+      "default": false
+    },
+    "varies_by_color_and_more": {
+      "type": "boolean",
+      "default": false
+    },
+    "varies_by_supplier": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_phantom": {
+      "type": "boolean",
+      "default": false
+    },
+    "reference_doc_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "bom_id",
+    "component_product_id"
+  ]
+}

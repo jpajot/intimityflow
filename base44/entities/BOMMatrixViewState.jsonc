@@ -1,0 +1,40 @@
+{
+  "name": "BOMMatrixViewState",
+  "type": "object",
+  "properties": {
+    "bom_id": {
+      "type": "string",
+      "description": "FK \u2192 BOM"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "FK \u2192 User"
+    },
+    "row_axis": {
+      "type": "string",
+      "description": "LOV: bom_matrix_axis",
+      "default": "bom_line"
+    },
+    "column_axis": {
+      "type": "string",
+      "description": "LOV: bom_matrix_axis",
+      "default": "color"
+    },
+    "secondary_column_axis": {
+      "type": "string",
+      "description": "LOV: bom_matrix_axis (nullable)"
+    },
+    "filter_config": {
+      "type": "object",
+      "description": "JSON filter state"
+    },
+    "last_used_at": {
+      "type": "string",
+      "description": "ISO datetime"
+    }
+  },
+  "required": [
+    "bom_id",
+    "user_id"
+  ]
+}

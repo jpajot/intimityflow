@@ -31,6 +31,7 @@ import DocumentParsingSchemes from './pages/DocumentParsingSchemes';
 import BoardEditor from './pages/BoardEditor';
 import Suppliers from './pages/Suppliers';
 import SupplierDetail from './pages/SupplierDetail';
+import BOMDetail from './pages/BOMDetail';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -97,6 +98,7 @@ const AuthenticatedApp = () => {
         <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/suppliers/:id" element={<SupplierDetail />} />
+        <Route path="/boms/:id" element={<BOMDetail />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>

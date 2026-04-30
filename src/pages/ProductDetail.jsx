@@ -28,6 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import PresenceIndicator from "../components/PresenceIndicator";
+import ProductUOMSection from "../components/ProductUOMSection";
 
 // Categories, sub-categories, and customer needs are now fetched from database
 
@@ -49,6 +50,7 @@ export default function ProductDetail() {
   const [lovTypes, setLovTypes] = useState({});
   const [lovTypesArray, setLovTypesArray] = useState([]);
   const [lovValues, setLovValues] = useState([]);
+  const [allLovValues, setAllLovValues] = useState([]);
   const [productTypeOptions, setProductTypeOptions] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
@@ -97,6 +99,7 @@ export default function ProductDetail() {
     setLovTypes(typeMap);
     setLovTypesArray(types);
     setLovValues(values);
+    setAllLovValues(values);
 
     // Load product type options from EntityTypes LOV filtered by Product entity
     const entityTypesLov = types.find((t) => t.code === "EntityTypes");
@@ -605,6 +608,15 @@ export default function ProductDetail() {
                 )}
             </div>
           </div>
+
+          {/* UOM Section */}
+          {!isNew && (
+            <ProductUOMSection
+              product={product}
+              lovValues={allLovValues}
+              onUpdate={updateField}
+            />
+          )}
         </div>
       )}
 

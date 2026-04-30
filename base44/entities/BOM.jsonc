@@ -1,0 +1,72 @@
+{
+  "name": "BOM",
+  "type": "object",
+  "properties": {
+    "bom_type": {
+      "type": "string",
+      "description": "LOV: bom_type (development, production)"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "FK \u2192 Project"
+    },
+    "revision_code": {
+      "type": "string",
+      "description": "e.g. A, B, C"
+    },
+    "version": {
+      "type": "number",
+      "description": "Pre-release iteration counter",
+      "default": 1
+    },
+    "status": {
+      "type": "string",
+      "description": "LOV: bom_status (draft, in_review, released, superseded, obsolete)",
+      "default": "draft"
+    },
+    "released_at": {
+      "type": "string",
+      "description": "ISO datetime"
+    },
+    "released_by": {
+      "type": "string",
+      "description": "User email"
+    },
+    "superseded_by_id": {
+      "type": "string",
+      "description": "FK \u2192 BOM (self-ref)"
+    },
+    "derived_from_bom_id": {
+      "type": "string",
+      "description": "FK \u2192 BOM (dev BOM this was derived from)"
+    },
+    "derived_from_revision_code": {
+      "type": "string",
+      "description": "Snapshot of source revision at derivation time"
+    },
+    "source_change_pending": {
+      "type": "boolean",
+      "default": false
+    },
+    "order_context": {
+      "type": "object",
+      "description": "JSON: factory_supplier_id, region, season_variant, customer_ref, target_quantity"
+    },
+    "selected_routing_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRouting (production BOMs only)"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "bom_type",
+    "product_id",
+    "project_id"
+  ]
+}
