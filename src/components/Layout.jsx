@@ -87,23 +87,12 @@ export default function Layout() {
   const [pinnedItems, setPinnedItemsState] = useState(() => getPinnedItems());
   const { subNav } = useSubNav();
   const { options } = usePageOptions();
-  const pendingSubNavId = useRef(null);
-
   const mainDrawer = usePopover();
   const pinnedDrawer = usePopover();
   const subNavDrawer = usePopover();
   const optionsDrawer = usePopover();
 
-  // Activate pending sub-nav section after navigation
-  // Fires whenever subNav becomes available OR location changes — whichever comes last
-  useEffect(() => {
-    if (pendingSubNavId.current && subNav) {
-      const id = pendingSubNavId.current;
-      pendingSubNavId.current = null;
-      // Small delay to let the page finish mounting its subnav items
-      setTimeout(() => subNav.onChange(id), 0);
-    }
-  }, [subNav, location.pathname]);
+
 
   // Cross-device sync
   useEffect(() => {
@@ -367,11 +356,9 @@ export default function Layout() {
                  if (alreadyOnPage && subNav) {
                    subNav.onChange(item.subNavId);
                  } else {
-                   // Always set pending so the effect catches it after mount/navigation
-                   pendingSubNavId.current = item.subNavId;
-                   if (!alreadyOnPage) {
-                     navigate(item.path);
-                   }
+                   // Store pending sub-nav ID in sessionStorage so the page picks it up on mount
+                   sessionStorage.setItem("pendingSubNavId", item.subNavId);
+                   navigate(item.path);
                  }
                }
              };

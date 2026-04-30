@@ -1,5 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSubNav } from "@/lib/SubNavContext";
+
+const PENDING_KEY = "pendingSubNavId";
 
 /**
  * Call this in any page to register a sub-nav into the sidebar.
@@ -9,8 +11,20 @@ import { useSubNav } from "@/lib/SubNavContext";
  */
 export function useRegisterSubNav(items, activeId, onChange, pageTitle) {
   const { registerSubNav, clearSubNav } = useSubNav();
+  const appliedPending = useRef(false);
 
   useEffect(() => {
+    // On first mount, check if there's a pending sub-nav ID to activate
+    if (!appliedPending.current) {
+      appliedPending.current = true;
+      const pending = sessionStorage.getItem(PENDING_KEY);
+      if (pending && items.some((i) => i.id === pending)) {
+        sessionStorage.removeItem(PENDING_KEY);
+        onChange(pending);
+        registerSubNav({ items, activeId: pending, onChange, pageTitle });
+        return;
+      }
+    }
     registerSubNav({ items, activeId, onChange, pageTitle });
     return () => clearSubNav();
     // Re-register whenever active changes so button reflects current section
