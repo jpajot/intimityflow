@@ -69,7 +69,8 @@ export default function ProductDetail() {
     { id: "more", label: "More Variations", icon: Layers },
     { id: "suppliers", label: "Suppliers", icon: Building2 },
   ];
-  useRegisterSubNav(subNavItems, activeTab, setActiveTab, product.name || (isNew ? `New ${product.type}` : ""));
+  const productTitle = isNew ? `New ${product.type}` : [product.code, product.name].filter(Boolean).join(" ");
+  useRegisterSubNav(subNavItems, activeTab, setActiveTab, productTitle);
 
   useEffect(() => {
     loadLovData();
@@ -335,7 +336,7 @@ export default function ProductDetail() {
 
         <div className="flex-1">
           <h1 className="font-display text-2xl font-semibold tracking-tight">
-            {isNew ? `New ${product.type}` : product.name}
+            {isNew ? `New ${product.type}` : [product.code, product.name].filter(Boolean).join(" ")}
           </h1>
         </div>
         {!isNew && (
