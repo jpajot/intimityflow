@@ -29,9 +29,22 @@ export default function StyleSizesSection({ product, onSizesChange }) {
       base44.entities.StyleSize.filter({ product_id: product.id }),
       base44.entities.Size.list("size_code", 500),
     ]);
-    setStyleSizes(ss);
     setSizes(sz);
     prevGridId.current = product.size_grid_id;
+
+    // If a grid is assigned but no StyleSizes exist yet, auto-populate from the grid
+    if (product.size_grid_id && ss.length === 0) {
+      const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
+      const activeSizes = gridSizes.filter((gs) => gs.active !== false);
+      const created = await Promise.all(
+        activeSizes.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: true }))
+      );
+      setStyleSizes(created);
+      if (onSizesChange) onSizesChange(created.length > 0);
+    } else {
+      setStyleSizes(ss);
+    }
+
     setLoading(false);
   };
 
