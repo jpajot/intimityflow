@@ -35,9 +35,8 @@ export default function StyleSizesSection({ product, onSizesChange }) {
     // If a grid is assigned but no StyleSizes exist yet, auto-populate from the grid
     if (product.size_grid_id && ss.length === 0) {
       const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
-      const activeSizes = gridSizes.filter((gs) => gs.active !== false);
       const created = await Promise.all(
-        activeSizes.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: true }))
+        gridSizes.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: gs.active !== false }))
       );
       setStyleSizes(created);
       if (onSizesChange) onSizesChange(created.length > 0);
@@ -53,25 +52,24 @@ export default function StyleSizesSection({ product, onSizesChange }) {
 
     // Get active sizes from the grid
     const gridSizes = await base44.entities.SizeGridSize.filter({ size_grid_id: product.size_grid_id });
-    const activeSizes = gridSizes.filter((gs) => gs.active !== false);
+    const allGridSizeIds = new Set(gridSizes.map((gs) => gs.size_id));
 
     // Get current style sizes
     const current = await base44.entities.StyleSize.filter({ product_id: product.id });
 
     const currentSizeIds = new Set(current.map((ss) => ss.size_id));
-    const gridSizeIds = new Set(activeSizes.map((gs) => gs.size_id));
 
-    // Add missing ones
-    const toAdd = activeSizes.filter((gs) => !currentSizeIds.has(gs.size_id));
+    // Add missing ones (all grid sizes, preserving their active status)
+    const toAdd = gridSizes.filter((gs) => !currentSizeIds.has(gs.size_id));
     const created = await Promise.all(
-      toAdd.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: true }))
+      toAdd.map((gs) => base44.entities.StyleSize.create({ product_id: product.id, size_id: gs.size_id, active: gs.active !== false }))
     );
 
     // Remove ones no longer in the grid
-    const toRemove = current.filter((ss) => !gridSizeIds.has(ss.size_id));
+    const toRemove = current.filter((ss) => !allGridSizeIds.has(ss.size_id));
     await Promise.all(toRemove.map((ss) => base44.entities.StyleSize.delete(ss.id)));
 
-    setStyleSizes([...current.filter((ss) => gridSizeIds.has(ss.size_id)), ...created]);
+    setStyleSizes([...current.filter((ss) => allGridSizeIds.has(ss.size_id)), ...created]);
   };
 
   const handleToggle = async (ss) => {
