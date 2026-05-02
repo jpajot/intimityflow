@@ -45,6 +45,7 @@ export default function BOMDetail() {
   const [allProductColors, setAllProductColors] = useState([]);
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
+  const [allSizes, setAllSizes] = useState([]);
   const [lovValues, setLovValues] = useState([]);
   const [changeLog, setChangeLog] = useState([]);
   const [bol, setBol] = useState(null);
@@ -111,13 +112,14 @@ export default function BOMDetail() {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const [prods, lovs, u, allPCs, tcs, ccs] = await Promise.all([
+      const [prods, lovs, u, allPCs, tcs, ccs, sizes] = await Promise.all([
         base44.entities.Product.list("-created_date", 2000),
         base44.entities.ListOfValues.list("name", 5000),
         base44.auth.me(),
         base44.entities.ProductColor.list("-created_date", 5000),
         base44.entities.TechnicalColor.list("code", 2000),
         base44.entities.CommercialColor.list("code", 2000),
+        base44.entities.Size.list("size_code", 500),
       ]);
       setAllProducts(prods);
       setLovValues(lovs);
@@ -125,6 +127,7 @@ export default function BOMDetail() {
       setAllProductColors(allPCs);
       setTechColors(tcs);
       setCommColors(ccs);
+      setAllSizes(sizes);
       await reload();
       setLoading(false);
     };
@@ -311,6 +314,7 @@ export default function BOMDetail() {
           techColors={techColors}
           commColors={commColors}
           lovValues={lovValues}
+          allSizes={allSizes}
           isReadOnly={isReadOnly}
           columnAxis={matrixColumnAxis}
           onColumnAxisChange={setMatrixColumnAxis}

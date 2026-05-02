@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, GripVertical, Plus, AlertTriangle } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import BOMVariantCellEditor from "./BOMVariantCellEditor.jsx";
 
 const AXIS_OPTIONS = [
@@ -11,21 +12,132 @@ const AXIS_OPTIONS = [
   { value: "color_and_more", label: "Color & More" },
 ];
 
+const SIZE_VARIATION_MODE_OPTIONS = [
+  { value: "consumption_grading", label: "Consumption grading" },
+  { value: "component_size_mapping", label: "Component size mapping" },
+  { value: "base_size_with_optional_grading", label: "Base size + optional grading" },
+  { value: "both", label: "Both" },
+];
+
+const BASE_SIZE_REQUIRED_MODES = ["base_size_with_optional_grading", "component_size_mapping"];
+
+/**
+ * Inline size-variation controls rendered below the component info when varies_by_size = true.
+ */
+function SizeVariationControls({ line, allSizes, styleSizes, isReadOnly, onUpdateLine }) {
+  // Component's own active sizes
+  const compSizes = useMemo(() => {
+    // styleSizes passed in are for the PARENT product. We need component sizes.
+    // They're loaded separately — passed as allSizes (full Size list) + compStyleSizeIds
+    return [];
+  }, []);
+
+  const mode = line.size_variation_mode;
+  const showBaseSizePicker = BASE_SIZE_REQUIRED_MODES.includes(mode);
+
+  // Load component's active StyleSizes
+  const [compStyleSizes, setCompStyleSizes] = useState([]);
+  useEffect(() => {
+    if (!line.component_product_id || !line.varies_by_size) return;
+    base44.entities.StyleSize.filter({ product_id: line.component_product_id })
+      .then((ss) => setCompStyleSizes(ss.filter((s) => s.active !== false)));
+  }, [line.component_product_id, line.varies_by_size]);
+
+  const getSizeName = (sizeId) => {
+    const s = allSizes.find((sz) => sz.id === sizeId);
+    return s?.name || s?.size_code || sizeId;
+  };
+
+  if (!line.varies_by_size) return null;
+
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-2 items-center">
+      {/* Mode picker */}
+      {!isReadOnly ? (
+        <Select
+          value={mode || ""}
+          onValueChange={(v) => onUpdateLine(line.id, { size_variation_mode: v })}
+        >
+          <SelectTrigger className="h-6 text-[10px] w-44 border-green-300 bg-green-50 text-green-800 px-1.5">
+            <SelectValue placeholder="Size variation mode…" />
+          </SelectTrigger>
+          <SelectContent>
+            {SIZE_VARIATION_MODE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        mode && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+            {SIZE_VARIATION_MODE_OPTIONS.find((o) => o.value === mode)?.label || mode}
+          </span>
+        )
+      )}
+
+      {/* Base size picker */}
+      {showBaseSizePicker && compStyleSizes.length > 0 && (
+        !isReadOnly ? (
+          <Select
+            value={line.base_component_size_id || ""}
+            onValueChange={(v) => onUpdateLine(line.id, { base_component_size_id: v || null })}
+          >
+            <SelectTrigger className="h-6 text-[10px] w-32 px-1.5">
+              <SelectValue placeholder="Base size…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null} className="text-xs text-muted-foreground">— none —</SelectItem>
+              {compStyleSizes.map((ss) => (
+                <SelectItem key={ss.size_id} value={ss.size_id} className="text-xs">
+                  {getSizeName(ss.size_id)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          line.base_component_size_id && (
+            <span className="text-[10px] text-muted-foreground">
+              Base: {getSizeName(line.base_component_size_id)}
+            </span>
+          )
+        )
+      )}
+
+      {/* Warning if mode requires base size but none set */}
+      {showBaseSizePicker && !line.base_component_size_id && !isReadOnly && compStyleSizes.length > 0 && (
+        <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
+          <AlertTriangle className="w-2.5 h-2.5" /> Pick a base size
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function BOMMatrixEditor({
   bom, bomLines, bomLineVariants, colorVariants, styleSizes, colorAndMores,
   allProducts, allProductColors, techColors, commColors,
   lovValues, isReadOnly, columnAxis, onColumnAxisChange,
   showAxisConfig, onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
+  allSizes = [],
 }) {
   const [search, setSearch] = useState("");
 
-  // Determine column headers based on axis
+  // Resolve size records for column headers
   const columnHeaders = useMemo(() => {
     if (columnAxis === "color") return colorVariants;
-    if (columnAxis === "size") return styleSizes.map((ss) => ({ id: ss.size_id, size_id: ss.size_id, label: ss.size_id }));
+    if (columnAxis === "size") {
+      return styleSizes.map((ss) => {
+        const sizeRecord = allSizes.find((s) => s.id === ss.size_id);
+        return {
+          id: ss.size_id,
+          size_id: ss.size_id,
+          label: sizeRecord?.name || sizeRecord?.size_code || ss.size_id,
+        };
+      });
+    }
     if (columnAxis === "color_and_more") return colorAndMores;
     return colorVariants;
-  }, [columnAxis, colorVariants, styleSizes, colorAndMores]);
+  }, [columnAxis, colorVariants, styleSizes, colorAndMores, allSizes]);
 
   const getColumnLabel = (col) => {
     if (columnAxis === "color") return col.color_name || col.colorway_code || "—";
@@ -172,6 +284,14 @@ export default function BOMMatrixEditor({
                         {line.varies_by_color_and_more && <span className="text-[10px] px-1 py-0.5 bg-orange-100 text-orange-700 rounded">×more</span>}
                         {line.varies_by_supplier && <span className="text-[10px] px-1 py-0.5 bg-pink-100 text-pink-700 rounded">×supplier</span>}
                       </div>
+                      {/* Size variation controls */}
+                      <SizeVariationControls
+                        line={line}
+                        allSizes={allSizes}
+                        styleSizes={styleSizes}
+                        isReadOnly={isReadOnly}
+                        onUpdateLine={onUpdateLine}
+                      />
                     </div>
                   </td>
                   {/* Base quantity */}
@@ -207,7 +327,6 @@ export default function BOMMatrixEditor({
                           allProductColors={allProductColors}
                           techColors={techColors}
                           commColors={commColors}
-                          projectId={bom?.project_id}
                           bomType={bom?.bom_type}
                           onUpsertVariant={onUpsertVariant}
                         />
