@@ -10,10 +10,6 @@
       "type": "string",
       "description": "FK \u2192 Product"
     },
-    "project_id": {
-      "type": "string",
-      "description": "FK \u2192 Project"
-    },
     "revision_code": {
       "type": "string",
       "description": "e.g. A, B, C"
@@ -27,6 +23,16 @@
       "type": "string",
       "description": "LOV: bom_status (draft, in_review, released, superseded, obsolete)",
       "default": "draft"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Start of validity window. Null = effective immediately upon release."
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "End of validity window. Null = no end date / effective indefinitely."
     },
     "released_at": {
       "type": "string",
@@ -66,7 +72,6 @@
   },
   "required": [
     "bom_type",
-    "product_id",
-    "project_id"
+    "product_id"
   ]
 }

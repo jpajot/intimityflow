@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function NewBOMDialog({ open, onClose, projectId, products, onCreated }) {
+export default function NewBOMDialog({ open, onClose, products, onCreated }) {
   const [bomType, setBomType] = useState("development");
   const [productSearch, setProductSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -24,7 +24,6 @@ export default function NewBOMDialog({ open, onClose, projectId, products, onCre
     const created = await base44.entities.BOM.create({
       bom_type: bomType,
       product_id: selectedProduct.id,
-      project_id: projectId,
       revision_code: "A",
       version: 1,
       status: "draft",

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Plus, RefreshCw, GitBranch, FileText, Settings2, ClipboardList } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, GitBranch, FileText, Settings2, ClipboardList } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
@@ -36,7 +36,6 @@ export default function BOMDetail() {
 
   const [bom, setBom] = useState(null);
   const [product, setProduct] = useState(null);
-  const [project, setProject] = useState(null);
   const [bomLines, setBomLines] = useState([]);
   const [bomLineVariants, setBomLineVariants] = useState([]);
   const [colorVariants, setColorVariants] = useState([]);
@@ -54,7 +53,7 @@ export default function BOMDetail() {
   const [showAddLine, setShowAddLine] = useState(false);
   const [activeTab, setActiveTab] = useState("matrix");
   const [showMatrixConfig, setShowMatrixConfig] = useState(false);
-  const [matrixColumnAxis, setMatrixColumnAxis] = useState("color"); // color | size | color_and_more | supplier
+  const [matrixColumnAxis, setMatrixColumnAxis] = useState("color");
   const [user, setUser] = useState(null);
 
   const isReadOnly = bom && !["draft", "in_review"].includes(bom.status);
@@ -83,20 +82,21 @@ export default function BOMDetail() {
     setBomLineVariants(variants.filter((v) => lineIds.has(v.bom_line_id)));
     setChangeLog(log.sort((a, z) => new Date(z.triggered_at) - new Date(a.triggered_at)));
     if (b) {
-      const [prod, proj] = await Promise.all([
+      const [prod] = await Promise.all([
         base44.entities.Product.filter({ id: b.product_id }),
-        base44.entities.Project.filter({ id: b.project_id }),
       ]);
       setProduct(prod[0] || null);
-      setProject(proj[0] || null);
-      const [cws, ss, cams] = await Promise.all([
+      // Product-centric: show all active colorways for this product (not project-filtered)
+      const ACTIVE_STATUSES = ["approved", "in_progress", "submitted_for_approval", "requested"];
+      const [allCws, ss, cams] = await Promise.all([
         base44.entities.ProductColor.filter({ product_id: b.product_id }),
         base44.entities.StyleSize.filter({ product_id: b.product_id }),
         base44.entities.ProductColorAndMore.list("-created_date", 2000),
       ]);
-      setColorVariants(cws);
-      setStyleSizes(ss);
-      setColorAndMores(cams.filter((c) => cws.some((cw) => cw.id === c.product_color_id)));
+      const activeCws = allCws.filter((c) => ACTIVE_STATUSES.includes(c.colorway_status || "approved"));
+      setColorVariants(activeCws);
+      setStyleSizes(ss.filter((s) => s.active !== false));
+      setColorAndMores(cams.filter((c) => activeCws.some((cw) => cw.id === c.product_color_id)));
       if (b.bom_type === "production") {
         const bols = await base44.entities.BOL.filter({ bom_id: id });
         if (bols[0]) {
@@ -137,8 +137,8 @@ export default function BOMDetail() {
     if (toStatus === "released") {
       updates.released_at = now;
       updates.released_by = user?.email || "";
-      const newRev = String.fromCharCode((bom.revision_code?.charCodeAt(0) || 64) + 1);
-      updates.revision_code = newRev;
+      // Default valid_from to today on release
+      if (!bom.valid_from) updates.valid_from = now.slice(0, 10);
     }
     await base44.entities.BOM.update(id, updates);
     await base44.entities.BOMChangeLog.create({
@@ -243,11 +243,14 @@ export default function BOMDetail() {
     return <div className="text-center py-20 text-muted-foreground">BOM not found</div>;
   }
 
+  // Diagnostic: parent product has no colorways at all
+  const hasNoColorwaysAtAll = !loading && colorVariants.length === 0;
+
   return (
     <div className="px-2 py-2 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${bom.project_id}`)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/boms")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="flex-1 min-w-0">
@@ -268,11 +271,32 @@ export default function BOMDetail() {
               </Badge>
             )}
           </div>
-          {project && <p className="text-xs text-muted-foreground mt-0.5">{project.name}</p>}
         </div>
       </div>
 
-      <BOMHeaderCard bom={bom} product={product} project={project} isReadOnly={isReadOnly} />
+      <BOMHeaderCard
+        bom={bom}
+        product={product}
+        isReadOnly={isReadOnly}
+        onBomUpdated={setBom}
+      />
+
+      {/* Diagnostic banner */}
+      {hasNoColorwaysAtAll && product && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs">
+          <span className="text-amber-500">⚠</span>
+          <span className="text-amber-800">
+            <strong>{product.code || product.name}</strong> has no colorways defined. The colorway matrix is empty.
+          </span>
+          <button
+            type="button"
+            className="ml-auto text-primary hover:underline"
+            onClick={() => navigate(`/products/${product.id}`)}
+          >
+            Manage colorways →
+          </button>
+        </div>
+      )}
 
       {activeTab === "matrix" && (
         <BOMMatrixEditor

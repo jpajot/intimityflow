@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, GitBranch, ChevronRight, Search } from "lucide-react";
-import { format } from "date-fns";
+import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import NewBOMDialog from "../components/bom/NewBOMDialog";
 
@@ -18,29 +18,33 @@ const STATUS_COLORS = {
   obsolete: "bg-red-100 text-red-700 border-red-300",
 };
 
+function isActiveToday(bom) {
+  if (bom.status !== "released") return false;
+  const today = new Date();
+  if (bom.valid_from && isBefore(today, parseISO(bom.valid_from))) return false;
+  if (bom.valid_until && isAfter(today, parseISO(bom.valid_until))) return false;
+  return true;
+}
+
 export default function BOMs() {
   const navigate = useNavigate();
   const { setOptions } = usePageOptions();
   const [boms, setBoms] = useState([]);
   const [products, setProducts] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterProject, setFilterProject] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterValidity, setFilterValidity] = useState("all");
   const [showNew, setShowNew] = useState(false);
-  const [newBomProjectId, setNewBomProjectId] = useState(null);
 
   useEffect(() => {
     Promise.all([
       base44.entities.BOM.list("-created_date", 500),
       base44.entities.Product.list("-created_date", 2000),
-      base44.entities.Project.list("name", 500),
-    ]).then(([b, p, pr]) => {
+    ]).then(([b, p]) => {
       setBoms(b);
       setProducts(p);
-      setProjects(pr);
       setLoading(false);
     });
   }, []);
@@ -56,34 +60,38 @@ export default function BOMs() {
   const filtered = useMemo(() => {
     return boms.filter((b) => {
       const prod = products.find((p) => p.id === b.product_id);
-      const proj = projects.find((p) => p.id === b.project_id);
-      if (filterProject !== "all" && b.project_id !== filterProject) return false;
       if (filterType !== "all" && b.bom_type !== filterType) return false;
       if (filterStatus !== "all" && b.status !== filterStatus) return false;
+      if (filterValidity !== "all") {
+        const today = new Date();
+        if (filterValidity === "active_today" && !isActiveToday(b)) return false;
+        if (filterValidity === "draft" && b.status !== "draft") return false;
+        if (filterValidity === "expired" && !(b.valid_until && isAfter(today, parseISO(b.valid_until)))) return false;
+        if (filterValidity === "future" && !(b.valid_from && isBefore(today, parseISO(b.valid_from)))) return false;
+      }
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
           prod?.name?.toLowerCase().includes(q) ||
           prod?.code?.toLowerCase().includes(q) ||
-          proj?.name?.toLowerCase().includes(q) ||
           b.status?.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [boms, search, filterProject, filterType, filterStatus, products, projects]);
+  }, [boms, search, filterType, filterStatus, filterValidity, products]);
 
-  // Group by project
+  // Group by product
   const grouped = useMemo(() => {
     const map = {};
     filtered.forEach((b) => {
-      const proj = projects.find((p) => p.id === b.project_id);
-      const key = b.project_id || "__none";
-      if (!map[key]) map[key] = { name: proj?.name || "No Project", items: [] };
+      const prod = products.find((p) => p.id === b.product_id);
+      const key = b.product_id || "__none";
+      if (!map[key]) map[key] = { name: prod ? `${prod.code || ""} ${prod.name}`.trim() : "Unknown Product", items: [] };
       map[key].items.push(b);
     });
-    return Object.values(map);
-  }, [filtered, projects]);
+    return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered, products]);
 
   const handleCreated = (newBom) => {
     setBoms((prev) => [newBom, ...prev]);
@@ -101,7 +109,7 @@ export default function BOMs() {
   return (
     <div className="px-4 py-4 space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="font-display text-2xl font-semibold tracking-tight flex-1">BOMs</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight flex-1">Bills of Materials</h1>
         <Button size="sm" onClick={() => setShowNew(true)} className="gap-1.5">
           <Plus className="w-3.5 h-3.5" /> New BOM
         </Button>
@@ -111,15 +119,8 @@ export default function BOMs() {
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[160px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="pl-8 h-8 text-xs" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search product…" className="pl-8 h-8 text-xs" />
         </div>
-        <Select value={filterProject} onValueChange={setFilterProject}>
-          <SelectTrigger className="h-8 text-xs w-40"><SelectValue placeholder="All Projects" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All Types" /></SelectTrigger>
           <SelectContent>
@@ -139,12 +140,22 @@ export default function BOMs() {
             <SelectItem value="obsolete">Obsolete</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterValidity} onValueChange={setFilterValidity}>
+          <SelectTrigger className="h-8 text-xs w-40"><SelectValue placeholder="Validity" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Validity</SelectItem>
+            <SelectItem value="active_today">Active Today</SelectItem>
+            <SelectItem value="draft">Draft (no validity)</SelectItem>
+            <SelectItem value="future">Future (not yet active)</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-20 bg-muted/30 rounded-xl border border-dashed border-border">
           <GitBranch className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">{boms.length === 0 ? "No BOMs yet. Create one from a project." : "No results match your filters."}</p>
+          <p className="text-sm text-muted-foreground">{boms.length === 0 ? "No BOMs yet. Create one to get started." : "No results match your filters."}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -155,7 +166,7 @@ export default function BOMs() {
               </p>
               <div className="space-y-1.5">
                 {group.items.map((bom) => {
-                  const prod = products.find((p) => p.id === bom.product_id);
+                  const active = isActiveToday(bom);
                   return (
                     <button
                       key={bom.id}
@@ -165,24 +176,22 @@ export default function BOMs() {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm truncate">
-                            {prod ? `${prod.code || ""} ${prod.name}`.trim() : "Unknown Product"}
-                          </span>
                           <span className="text-xs text-muted-foreground">Rev {bom.revision_code} · v{bom.version}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{bom.bom_type}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_COLORS[bom.status] || ""}`}>
                             {bom.status}
                           </Badge>
+                          {active && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" title="Active today" />}
                           {bom.source_change_pending && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-300">
                               ⚠ source changed
                             </Badge>
                           )}
-                          {bom.released_at && (
-                            <span className="text-[10px] text-muted-foreground">Released {format(new Date(bom.released_at), "dd MMM yyyy")}</span>
-                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap text-[10px] text-muted-foreground">
+                          {bom.valid_from && <span>From {format(new Date(bom.valid_from), "dd MMM yyyy")}</span>}
+                          {bom.valid_until && <span>Until {format(new Date(bom.valid_until), "dd MMM yyyy")}</span>}
+                          {bom.released_at && <span>Released {format(new Date(bom.released_at), "dd MMM yyyy")}</span>}
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
@@ -198,7 +207,6 @@ export default function BOMs() {
       <NewBOMDialog
         open={showNew}
         onClose={() => setShowNew(false)}
-        projectId={newBomProjectId || projects[0]?.id || ""}
         products={products}
         onCreated={handleCreated}
       />

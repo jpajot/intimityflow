@@ -38,8 +38,8 @@ export default function ComponentColorwayPicker({
   const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState(currentColorId || null);
 
-  // Default status filter based on BOM type
-  const defaultHidden = bomType === "production" ? [] : ["obsolete"];
+  // Default: exclude obsolete for dev, exclude all except approved for prod
+  const defaultExcluded = bomType === "production" ? ["requested", "in_progress", "submitted_for_approval", "rejected", "obsolete"] : ["obsolete"];
 
   useEffect(() => {
     if (!componentProductId) { setLoading(false); return; }
@@ -52,18 +52,10 @@ export default function ComponentColorwayPicker({
   const filtered = useMemo(() => {
     let list = colorways;
 
-    // Project filter (unless showAll)
-    if (!showAll && projectId) {
-      const linked = list.filter((c) => (c.project_ids || []).includes(projectId));
-      if (linked.length > 0) list = linked;
-    }
-
-    // Status filter
-    const hiddenStatuses = statusFilter.length > 0 ? [] : defaultHidden;
-    if (hiddenStatuses.length > 0) {
-      list = list.filter((c) => !hiddenStatuses.includes(c.colorway_status || "approved"));
-    }
-    if (statusFilter.length > 0) {
+    // Default status exclusion (no project filter — product-centric)
+    if (statusFilter.length === 0) {
+      list = list.filter((c) => !defaultExcluded.includes(c.colorway_status || "approved"));
+    } else {
       list = list.filter((c) => statusFilter.includes(c.colorway_status || "approved"));
     }
 
@@ -78,7 +70,7 @@ export default function ComponentColorwayPicker({
     }
 
     return list;
-  }, [colorways, search, statusFilter, showAll, projectId]);
+  }, [colorways, search, statusFilter]);
 
   const getTcxChips = (colorway) => {
     if (!colorway) return [];
@@ -154,15 +146,7 @@ export default function ComponentColorwayPicker({
             </button>
           ))}
         </div>
-        {!showAll && projectId && (
-          <button
-            type="button"
-            onClick={() => setShowAll(true)}
-            className="text-[10px] text-primary hover:underline mt-1"
-          >
-            Show all colorways (not just project-linked)
-          </button>
-        )}
+
       </div>
 
       {/* Body */}
