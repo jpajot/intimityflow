@@ -628,6 +628,12 @@ export default function ProductDetail() {
           onEdit={(cv) => setEditingColor(cv)}
           onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
           onAddFromLibrary={() => setShowLibraryPicker(true)}
+          onColorVariantsUpdated={(updates) => {
+            setColorVariants((prev) => prev.map((cv) => {
+              const u = updates.find((x) => x.id === cv.id);
+              return u ? { ...cv, ...u } : cv;
+            }));
+          }}
         />
       )}
       {!isNew && activeTab === "sizes" && (

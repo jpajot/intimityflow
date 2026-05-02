@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 
-import { Plus, Library, LayoutGrid, List } from "lucide-react";
+import { Plus, Library, LayoutGrid, List, RefreshCw } from "lucide-react";
+import BulkColorwayStatusModal from "./bom/BulkColorwayStatusModal.jsx";
 import ListToolbar from "./ListToolbar";
 import ViewSelector from "./ViewSelector";
 import { base44 } from "@/api/base44Client";
@@ -11,9 +12,10 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 
 const STORAGE_KEY = "colorway_section_view";
 
-export default function ColorwaySection({ colorVariants, productImage = "", onEdit, onAddNew, onAddFromLibrary }) {
+export default function ColorwaySection({ colorVariants, productImage = "", onEdit, onAddNew, onAddFromLibrary, onColorVariantsUpdated }) {
   const { setOptions } = usePageOptions();
   const [view, setView] = useState(() => localStorage.getItem(STORAGE_KEY) || "grid");
+  const [showBulkStatus, setShowBulkStatus] = useState(false);
 
   const handleSetView = (v) => {
     setView(v);
@@ -39,6 +41,8 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       items: [
         { label: "Add Colorway", icon: Plus, onClick: onAddNew, className: "text-primary hover:bg-primary/10" },
         { label: "Add from Library", icon: Library, onClick: onAddFromLibrary },
+        { divider: true },
+        { label: "Bulk Change Status", icon: RefreshCw, onClick: () => setShowBulkStatus(true) },
         { divider: true },
         { label: view === "grid" ? "View: List" : "View: Grid", icon: view === "grid" ? List : LayoutGrid, onClick: () => handleSetView(view === "grid" ? "list" : "grid") },
       ],
@@ -223,6 +227,15 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       {lightboxSrc && (
         <ImageLightbox src={lightboxSrc} alt={lightboxAlt} onClose={() => setLightboxSrc(null)} />
       )}
+
+      <BulkColorwayStatusModal
+        open={showBulkStatus}
+        onClose={() => setShowBulkStatus(false)}
+        colorVariants={colorVariants}
+        onUpdated={(updates) => {
+          if (onColorVariantsUpdated) onColorVariantsUpdated(updates);
+        }}
+      />
     </div>
   );
 }

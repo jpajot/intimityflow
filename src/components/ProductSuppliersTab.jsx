@@ -13,6 +13,7 @@ import {
   Building2, GitBranch, AlertTriangle, CheckCircle2, Pencil, GripVertical, X
 } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
+import ProductColorSupplierLinkMatrix from "./bom/ProductColorSupplierLinkMatrix";
 
 // ─── Sourcing Summary Banner ──────────────────────────────────────────────────
 function SourcingSummary({ approvedSuppliers, routings, colorOverrides, colorVariants, suppliers }) {
@@ -400,7 +401,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   const { setOptions } = usePageOptions();
   const [allSuppliers, setAllSuppliers] = useState([]);
   const [approvedSuppliers, setApprovedSuppliers] = useState([]);
-  const [colorOverrides, setColorOverrides] = useState([]);
+  const [colorOverrides, setColorOverrides] = useState([]); // legacy, kept for display compat
   const [routings, setRoutings] = useState([]);
   const [routingSteps, setRoutingSteps] = useState([]);
   const [lovValues, setLovValues] = useState([]);
@@ -741,41 +742,22 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
               </div>
             )}
 
-            {/* Color overrides */}
+            {/* Colorway × Supplier Links (ProductColorSupplierLink matrix) */}
             {colorVariants.length > 0 && approvedSuppliers.length > 0 && (
               <div>
                 <button type="button" onClick={() => setCollapseOverrides((v) => !v)}
                   className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors py-1">
                   {collapseOverrides ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  Color-Level Overrides ({colorOverrides.length})
+                  Colorway–Supplier Links
                 </button>
                 {!collapseOverrides && (
-                  <div className="mt-2 rounded-lg border border-border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-muted/40 border-b border-border">
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Colorway</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Supplier</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Reference</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Cost</th>
-                          <th className="w-16"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {colorVariants.map((cv) => (
-                          <ColorOverrideRow
-                            key={cv.id}
-                            colorway={cv}
-                            override={colorOverrides.find((o) => o.product_color_id === cv.id)}
-                            approvedSuppliers={approvedSuppliers}
-                            suppliers={allSuppliers}
-                            lovValues={lovValues}
-                            onSet={handleSetColorOverride}
-                            onRemove={handleRemoveColorOverride}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="mt-2">
+                    <ProductColorSupplierLinkMatrix
+                      colorVariants={colorVariants}
+                      approvedSuppliers={approvedSuppliers}
+                      allSuppliers={allSuppliers}
+                      lovValues={lovValues}
+                    />
                   </div>
                 )}
               </div>
