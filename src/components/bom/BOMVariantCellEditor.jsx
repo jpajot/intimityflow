@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Ban } from "lucide-react";
 import ComponentColorwayPicker from "./ComponentColorwayPicker.jsx";
@@ -28,6 +29,8 @@ export default function BOMVariantCellEditor({
   const [editing, setEditing] = useState(false);
   const [qty, setQty] = useState("");
   const [showPicker, setShowPicker] = useState(false);
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef(null);
 
   const isNA = variant?.is_not_applicable === true;
 
@@ -120,8 +123,18 @@ export default function BOMVariantCellEditor({
         {/* Color chip — click opens picker */}
         {!isReadOnly ? (
           <button
+            ref={triggerRef}
             type="button"
-            onClick={() => setShowPicker((v) => !v)}
+            onClick={() => {
+              if (!showPicker && triggerRef.current) {
+                const rect = triggerRef.current.getBoundingClientRect();
+                setPickerPos({
+                  top: rect.bottom + window.scrollY + 6,
+                  left: rect.left + window.scrollX + rect.width / 2,
+                });
+              }
+              setShowPicker((v) => !v);
+            }}
             className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-colors hover:border-primary ${
               compColor ? "border-border" : "border-dashed border-muted-foreground/40 hover:border-primary/60"
             }`}
@@ -174,9 +187,12 @@ export default function BOMVariantCellEditor({
           </button>
         )}
 
-        {/* Component colorway picker popover */}
-        {showPicker && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50">
+        {/* Component colorway picker — rendered in a portal to escape table overflow */}
+        {showPicker && createPortal(
+          <div
+            className="fixed z-[9999]"
+            style={{ top: pickerPos.top, left: pickerPos.left, transform: "translateX(-50%)" }}
+          >
             <ComponentColorwayPicker
               componentProductId={componentProductId}
               bomType={bomType}
@@ -193,7 +209,8 @@ export default function BOMVariantCellEditor({
               }}
               onClose={() => setShowPicker(false)}
             />
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     );
