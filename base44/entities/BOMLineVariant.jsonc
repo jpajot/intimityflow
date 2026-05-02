@@ -18,6 +18,10 @@
       "type": "string",
       "description": "FK \u2192 Size"
     },
+    "component_size_id": {
+      "type": "string",
+      "description": "FK \u2192 Size (the component's size mapped to this parent variant)"
+    },
     "product_color_and_more_id": {
       "type": "string",
       "description": "FK \u2192 ProductColorAndMore (parent product's ColorAndMore variation)"
@@ -30,9 +34,9 @@
       "type": "string",
       "description": "FK \u2192 ApprovedSupplier (production BOMs)"
     },
-    "color_override_id": {
+    "product_color_supplier_link_id": {
       "type": "string",
-      "description": "FK \u2192 ApprovedSupplierColorOverride"
+      "description": "FK \u2192 ProductColorSupplierLink (replaces color_override_id)"
     },
     "quantity": {
       "type": "number",
@@ -52,6 +56,15 @@
       "type": "number",
       "description": "Production BOMs, default 0",
       "default": 0
+    },
+    "is_not_applicable": {
+      "type": "boolean",
+      "description": "When true, this cell intersection is explicitly marked NA \u2014 the BOMLine does not consume any component for this parent variant",
+      "default": false
+    },
+    "na_reason": {
+      "type": "string",
+      "description": "Optional reason text when is_not_applicable = true"
     },
     "notes": {
       "type": "string"

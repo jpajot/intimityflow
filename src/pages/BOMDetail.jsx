@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Plus, RefreshCw, GitBranch, FileText, Settings2, ClipboardList } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
-import BOMMatrixEditor from "../components/bom/BOMMatrixEditor";
+import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
 import BOMLineAddDialog from "../components/bom/BOMLineAddDialog";
 import BOLEditorTab from "../components/bom/BOLEditorTab";
 import BOMChangeLogTab from "../components/bom/BOMChangeLogTab";
@@ -43,6 +43,9 @@ export default function BOMDetail() {
   const [styleSizes, setStyleSizes] = useState([]);
   const [colorAndMores, setColorAndMores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+  const [allProductColors, setAllProductColors] = useState([]);
+  const [techColors, setTechColors] = useState([]);
+  const [commColors, setCommColors] = useState([]);
   const [lovValues, setLovValues] = useState([]);
   const [changeLog, setChangeLog] = useState([]);
   const [bol, setBol] = useState(null);
@@ -108,14 +111,20 @@ export default function BOMDetail() {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const [prods, lovs, u] = await Promise.all([
+      const [prods, lovs, u, allPCs, tcs, ccs] = await Promise.all([
         base44.entities.Product.list("-created_date", 2000),
         base44.entities.ListOfValues.list("name", 5000),
         base44.auth.me(),
+        base44.entities.ProductColor.list("-created_date", 5000),
+        base44.entities.TechnicalColor.list("code", 2000),
+        base44.entities.CommercialColor.list("code", 2000),
       ]);
       setAllProducts(prods);
       setLovValues(lovs);
       setUser(u);
+      setAllProductColors(allPCs);
+      setTechColors(tcs);
+      setCommColors(ccs);
       await reload();
       setLoading(false);
     };
@@ -274,6 +283,9 @@ export default function BOMDetail() {
           styleSizes={styleSizes}
           colorAndMores={colorAndMores}
           allProducts={allProducts}
+          allProductColors={allProductColors}
+          techColors={techColors}
+          commColors={commColors}
           lovValues={lovValues}
           isReadOnly={isReadOnly}
           columnAxis={matrixColumnAxis}

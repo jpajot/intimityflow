@@ -1,0 +1,46 @@
+{
+  "name": "ProductColorSupplierLink",
+  "type": "object",
+  "properties": {
+    "product_color_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColor"
+    },
+    "approved_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 ApprovedSupplier (the product-supplier link this colorway-supplier link is scoped to)"
+    },
+    "colorway_supplier_reference": {
+      "type": "string",
+      "description": "The supplier's reference for this specific colorway (e.g. TPL-200-BK)"
+    },
+    "colorway_supplier_status": {
+      "type": "string",
+      "description": "LOV: colorway_supplier_status (available, not_applicable, pending_confirmation, discontinued)",
+      "default": "available"
+    },
+    "unit_cost_override": {
+      "type": "number",
+      "description": "null = inherit from ApprovedSupplier.unit_cost"
+    },
+    "currency_override": {
+      "type": "string",
+      "description": "LOV: currency"
+    },
+    "lead_time_override_days": {
+      "type": "number",
+      "description": "null = inherit"
+    },
+    "moq_override": {
+      "type": "number",
+      "description": "null = inherit"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "product_color_id",
+    "approved_supplier_id"
+  ]
+}

@@ -43,6 +43,34 @@
         "type": "string"
       },
       "description": "IDs of Projects this colorway is linked to"
+    },
+    "colorway_status": {
+      "type": "string",
+      "description": "LOV: productcolor_status \u2014 requested, in_progress, submitted_for_approval, approved, rejected, obsolete",
+      "default": "approved"
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Append-only audit trail: [{status, changed_at, changed_by, notes}]"
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "User email \u2014 set on creation when created from a BOM"
+    },
+    "requested_at": {
+      "type": "string",
+      "description": "ISO datetime"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "User email \u2014 set when status reaches approved"
+    },
+    "approved_at": {
+      "type": "string",
+      "description": "ISO datetime"
     }
   },
   "required": [

@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, GripVertical, Plus, RotateCcw, AlertTriangle } from "lucide-react";
-import BOMVariantCellEditor from "./BOMVariantCellEditor";
+import { Trash2, GripVertical, Plus, AlertTriangle } from "lucide-react";
+import BOMVariantCellEditor from "./BOMVariantCellEditor.jsx";
 
 const AXIS_OPTIONS = [
   { value: "color", label: "Colorway" },
@@ -13,16 +13,16 @@ const AXIS_OPTIONS = [
 
 export default function BOMMatrixEditor({
   bom, bomLines, bomLineVariants, colorVariants, styleSizes, colorAndMores,
-  allProducts, lovValues, isReadOnly, columnAxis, onColumnAxisChange,
+  allProducts, allProductColors, techColors, commColors,
+  lovValues, isReadOnly, columnAxis, onColumnAxisChange,
   showAxisConfig, onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
 }) {
-  const [editingCell, setEditingCell] = useState(null); // { lineId, colKey }
   const [search, setSearch] = useState("");
 
   // Determine column headers based on axis
   const columnHeaders = useMemo(() => {
     if (columnAxis === "color") return colorVariants;
-    if (columnAxis === "size") return styleSizes.map((ss) => ({ id: ss.size_id, label: ss.size_id }));
+    if (columnAxis === "size") return styleSizes.map((ss) => ({ id: ss.size_id, size_id: ss.size_id, label: ss.size_id }));
     if (columnAxis === "color_and_more") return colorAndMores;
     return colorVariants;
   }, [columnAxis, colorVariants, styleSizes, colorAndMores]);
@@ -55,15 +55,6 @@ export default function BOMMatrixEditor({
       if (columnAxis === "color_and_more") return v.product_color_and_more_id === col.id;
       return false;
     });
-  };
-
-  const handleCellSave = async (line, col, qty) => {
-    const variantData = { bom_line_id: line.id, quantity: qty };
-    if (columnAxis === "color") variantData.product_color_id = col.id;
-    if (columnAxis === "size") variantData.size_id = col.size_id || col.id;
-    if (columnAxis === "color_and_more") variantData.product_color_and_more_id = col.id;
-    await onUpsertVariant(variantData);
-    setEditingCell(null);
   };
 
   const uomLabel = (line) => {
@@ -111,17 +102,15 @@ export default function BOMMatrixEditor({
         <table className="w-full text-xs min-w-[600px]">
           <thead className="sticky top-0 z-10 bg-muted/60">
             <tr className="border-b border-border">
-              {/* Row header columns */}
               <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground w-8 sticky left-0 bg-muted/60 z-20"></th>
               <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground sticky left-8 bg-muted/60 z-20 min-w-[220px]">
                 Component
               </th>
               <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground w-20">Base Qty</th>
               <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground w-16">UOM</th>
-              {/* Column headers */}
               {columnHeaders.map((col) => (
-                <th key={col.id} className="px-2 py-2.5 text-center font-semibold text-muted-foreground min-w-[80px]">
-                  <div className="truncate max-w-[80px] mx-auto" title={getColumnLabel(col)}>
+                <th key={col.id} className="px-2 py-2.5 text-center font-semibold text-muted-foreground min-w-[96px]">
+                  <div className="truncate max-w-[96px] mx-auto" title={getColumnLabel(col)}>
                     {getColumnLabel(col)}
                   </div>
                   {columnAxis === "color" && col.color_hex && (
@@ -153,15 +142,18 @@ export default function BOMMatrixEditor({
               const roleValues = lovValues.filter((v) => v.category === "bom_line_role");
               const roleLabel = roleValues.find((v) => v.name === line.component_role)?.name || line.component_role || "—";
               return (
-                <tr key={line.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors group">
+                <tr key={line.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors group">
                   {/* Drag handle */}
-                  <td className="px-2 py-3 sticky left-0 bg-card z-10">
+                  <td className="px-2 py-2 sticky left-0 bg-card z-10">
                     <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 cursor-grab" />
                   </td>
                   {/* Component info */}
-                  <td className="px-3 py-3 sticky left-8 bg-card z-10 min-w-[220px]">
+                  <td className="px-3 py-2 sticky left-8 bg-card z-10 min-w-[220px]">
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5">
+                        {comp?.images?.[0] && (
+                          <img src={comp.images[0]} alt="" className="w-6 h-6 rounded object-cover border border-border shrink-0" />
+                        )}
                         <span className="inline-block px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-medium">
                           {roleLabel}
                         </span>
@@ -170,11 +162,11 @@ export default function BOMMatrixEditor({
                         )}
                       </div>
                       <div>
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground text-xs">
                           {comp ? `${comp.code || ""} ${comp.name}`.trim() : <span className="text-destructive flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Missing</span>}
                         </span>
                       </div>
-                      <div className="flex gap-1.5 flex-wrap">
+                      <div className="flex gap-1 flex-wrap">
                         {line.varies_by_color && <span className="text-[10px] px-1 py-0.5 bg-blue-100 text-blue-700 rounded">×color</span>}
                         {line.varies_by_size && <span className="text-[10px] px-1 py-0.5 bg-green-100 text-green-700 rounded">×size</span>}
                         {line.varies_by_color_and_more && <span className="text-[10px] px-1 py-0.5 bg-orange-100 text-orange-700 rounded">×more</span>}
@@ -183,9 +175,9 @@ export default function BOMMatrixEditor({
                     </div>
                   </td>
                   {/* Base quantity */}
-                  <td className="px-3 py-3 w-20">
+                  <td className="px-3 py-2 w-20">
                     {isReadOnly ? (
-                      <span className="text-foreground">{line.base_quantity ?? "—"}</span>
+                      <span className="text-foreground text-xs">{line.base_quantity ?? "—"}</span>
                     ) : (
                       <Input
                         type="number"
@@ -196,32 +188,34 @@ export default function BOMMatrixEditor({
                     )}
                   </td>
                   {/* UOM */}
-                  <td className="px-3 py-3 w-16">
+                  <td className="px-3 py-2 w-16">
                     {uomLabel(line)}
                   </td>
                   {/* Variant cells */}
                   {columnHeaders.map((col) => {
                     const variant = getVariantForCell(line.id, col);
-                    const isEditing = editingCell?.lineId === line.id && editingCell?.colKey === col.id;
                     const uom = getUom(line);
                     return (
-                      <td key={col.id} className="px-2 py-3 text-center min-w-[80px]">
+                      <td key={col.id} className="px-1.5 py-2 text-center min-w-[96px] align-top">
                         <BOMVariantCellEditor
                           variant={variant}
                           line={line}
                           col={col}
+                          columnAxis={columnAxis}
                           uom={uom}
                           isReadOnly={isReadOnly}
-                          isEditing={isEditing}
-                          onEdit={() => setEditingCell({ lineId: line.id, colKey: col.id })}
-                          onSave={(qty) => handleCellSave(line, col, qty)}
-                          onCancel={() => setEditingCell(null)}
+                          allProductColors={allProductColors}
+                          techColors={techColors}
+                          commColors={commColors}
+                          projectId={bom?.project_id}
+                          bomType={bom?.bom_type}
+                          onUpsertVariant={onUpsertVariant}
                         />
                       </td>
                     );
                   })}
                   {/* Row actions */}
-                  <td className="px-2 py-3 w-8">
+                  <td className="px-2 py-2 w-8">
                     {!isReadOnly && (
                       <button
                         type="button"
@@ -241,10 +235,25 @@ export default function BOMMatrixEditor({
       </div>
 
       {/* Legend */}
-      <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-border bg-muted/40 inline-block" /> Inherited (base qty)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-border bg-white inline-block" /> Override</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-destructive/60 bg-destructive/5 inline-block" /> Missing</span>
+      <div className="flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center">
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded border border-dashed border-amber-400 bg-amber-50/50 inline-block" />
+          Missing resolution
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded border border-border bg-card inline-block" />
+          Resolved
+        </span>
+        <span className="flex items-center gap-1">
+          <span
+            className="w-3 h-3 rounded inline-block"
+            style={{ background: "repeating-linear-gradient(-45deg, #f3f4f6, #f3f4f6 2px, #e5e7eb 2px, #e5e7eb 4px)" }}
+          />
+          N/A
+        </span>
+        <span className="flex items-center gap-1 text-amber-600">
+          Δ = quantity graded (differs from base)
+        </span>
       </div>
     </div>
   );

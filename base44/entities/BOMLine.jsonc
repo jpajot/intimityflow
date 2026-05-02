@@ -56,6 +56,14 @@
       "type": "boolean",
       "default": false
     },
+    "size_variation_mode": {
+      "type": "string",
+      "description": "LOV: bom_size_variation_mode \u2014 consumption_grading, component_size_mapping, base_size_with_optional_grading, both"
+    },
+    "base_component_size_id": {
+      "type": "string",
+      "description": "FK \u2192 Size (nullable; the component's default size used across all parent sizes when size_variation_mode = base_size_with_optional_grading)"
+    },
     "notes": {
       "type": "string"
     },

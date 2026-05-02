@@ -67,6 +67,11 @@
     "uom_conversion_factor": {
       "type": "number",
       "description": "How many consumption units = 1 purchasing unit (e.g. 50 m per roll \u2192 50). Required when default_uom_for_purchasing differs from default_uom."
+    },
+    "bom_workflow_pattern": {
+      "type": "string",
+      "description": "LOV: bom_workflow_pattern \u2014 dev_then_prod, direct_prod. Defaults to dev_then_prod.",
+      "default": "dev_then_prod"
     }
   },
   "required": [
