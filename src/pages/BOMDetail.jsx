@@ -18,6 +18,7 @@ import BOMAutoResolveDialog from "../components/bom/BOMAutoResolveDialog";
 import BOMBulkLineActionDialog from "../components/bom/BOMBulkLineActionDialog";
 import BOMCreateRevisionDialog from "../components/bom/BOMCreateRevisionDialog";
 import BOMExportDialog from "../components/bom/BOMExportDialog";
+import { DEFAULT_FILTER_CONFIG, isFilterActive, applyFilterConfig } from "../components/bom/BOMQuickFilterGroup";
 
 const STATUS_COLORS = {
   draft: "bg-slate-100 text-slate-700 border-slate-300",
@@ -65,7 +66,9 @@ export default function BOMDetail() {
   const [showSourcing, setShowSourcing] = useState(true);
   const [viewStateId, setViewStateId] = useState(null);
   const [user, setUser] = useState(null);
-  const [groupsExpanded, setGroupsExpanded] = useState({ view: false, lines: false, bom: false, export: false });
+  const [groupsExpanded, setGroupsExpanded] = useState({ view: false, quick_filter: false, lines: false, bom: false, export: false });
+  const [filterConfig, setFilterConfig] = useState(DEFAULT_FILTER_CONFIG);
+  const [projects, setProjects] = useState([]);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -151,16 +154,18 @@ export default function BOMDetail() {
       setAllSizes(sizes);
 
       // Batch 2: product catalogs (color libraries are large — separate batch)
-      const [prods, allPCs, tcs, ccs] = await Promise.all([
+      const [prods, allPCs, tcs, ccs, projs] = await Promise.all([
         base44.entities.Product.list("-created_date", 2000),
         base44.entities.ProductColor.list("-created_date", 5000),
         base44.entities.TechnicalColor.list("code", 2000),
         base44.entities.CommercialColor.list("code", 2000),
+        base44.entities.Project.list("name", 500),
       ]);
       setAllProducts(prods);
       setAllProductColors(allPCs);
       setTechColors(tcs);
       setCommColors(ccs);
+      setProjects(projs);
 
       // Batch 3: BOM-specific data
       await reload();
@@ -172,12 +177,20 @@ export default function BOMDetail() {
           setViewStateId(existing[0].id);
           setMatrixColumnAxis(existing[0].column_axis || "color");
           setMatrixSecondaryAxis(existing[0].secondary_column_axis || null);
-          const uiOpts = existing[0].filter_config?.ui_options;
+          const storedFilter = existing[0].filter_config;
+          const uiOpts = storedFilter?.ui_options;
           if (uiOpts && typeof uiOpts.show_sourcing_chain === "boolean") {
             setShowSourcing(uiOpts.show_sourcing_chain);
           }
+          // Load persisted filter config (exclude ui_options key)
+          if (storedFilter) {
+            const { ui_options, ...filterPart } = storedFilter;
+            if (Object.keys(filterPart).length > 0) {
+              setFilterConfig({ ...DEFAULT_FILTER_CONFIG, ...filterPart });
+            }
+          }
           if (existing[0].options_sidebar_groups_state) {
-            setGroupsExpanded({ view: false, lines: false, bom: false, export: false, ...existing[0].options_sidebar_groups_state });
+            setGroupsExpanded({ view: false, quick_filter: false, lines: false, bom: false, export: false, ...existing[0].options_sidebar_groups_state });
           }
         } else {
           const created = await base44.entities.BOMMatrixViewState.create({
@@ -186,8 +199,8 @@ export default function BOMDetail() {
             row_axis: "bom_line",
             column_axis: "color",
             secondary_column_axis: null,
-            filter_config: { ui_options: { show_sourcing_chain: true } },
-            options_sidebar_groups_state: { view: false, lines: false, bom: false, export: false },
+            filter_config: { ui_options: { show_sourcing_chain: true }, ...DEFAULT_FILTER_CONFIG },
+            options_sidebar_groups_state: { view: false, quick_filter: false, lines: false, bom: false, export: false },
             last_used_at: new Date().toISOString(),
           });
           setViewStateId(created.id);
@@ -287,6 +300,17 @@ export default function BOMDetail() {
     }
   };
 
+  const handleFilterChange = (newFilter) => {
+    setFilterConfig(newFilter);
+    if (viewStateId) {
+      // Persist: merge with existing ui_options
+      base44.entities.BOMMatrixViewState.update(viewStateId, {
+        filter_config: { ui_options: { show_sourcing_chain: showSourcing }, ...newFilter },
+        last_used_at: new Date().toISOString(),
+      });
+    }
+  };
+
   const handleGroupToggle = (group) => {
     setGroupsExpanded((prev) => {
       const next = { ...prev, [group]: !prev[group] };
@@ -347,6 +371,8 @@ export default function BOMDetail() {
     });
   };
 
+  const filtersActive = isFilterActive(filterConfig);
+
   useEffect(() => {
     if (!bom) return;
     const transitions = STATUS_TRANSITIONS[bom.status] || [];
@@ -355,7 +381,8 @@ export default function BOMDetail() {
         label: t.label,
         onClick: () => handleStatusTransition(t.to),
       })),
-      customContent: (
+      filterBadge: filtersActive,
+      customContent: ({ close } = {}) => (
         <BOMOptionsContent
           matrixColumnAxis={matrixColumnAxis}
           matrixSecondaryAxis={matrixSecondaryAxis}
@@ -379,10 +406,20 @@ export default function BOMDetail() {
           onMarkObsolete={() => handleStatusTransition("obsolete")}
           onRefreshSourcing={() => {/* deferred */}}
           onExportMatrix={() => setShowExport(true)}
+          onClose={close}
+          filterConfig={filterConfig}
+          onFilterChange={handleFilterChange}
+          colorVariants={colorVariants}
+          styleSizes={styleSizes}
+          colorAndMores={colorAndMores}
+          techColors={techColors}
+          commColors={commColors}
+          projects={projects}
+          allSizes={allSizes}
         />
       ),
     });
-  }, [bom, isReadOnly, bomLines, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing, groupsExpanded]);
+  }, [bom, isReadOnly, bomLines, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing, groupsExpanded, filterConfig, colorVariants, styleSizes, colorAndMores, techColors, commColors, projects, allSizes, filtersActive]);
 
   const getUom = (line) => {
     if (line.uom) return line.uom;
@@ -403,6 +440,17 @@ export default function BOMDetail() {
   }
 
   const hasNoColorwaysAtAll = !loading && colorVariants.length === 0;
+
+  // Apply quick filters to axis members
+  const { filteredColors, filteredSizes, filteredCam } = applyFilterConfig(filterConfig, {
+    colorVariants,
+    styleSizes,
+    colorAndMores,
+    allSizes,
+    techColors,
+    commColors,
+    approvedSuppliers: [],
+  });
 
   // pass search value down into BOMMatrixEditor via a prop-drilled approach
   // (BOMMatrixEditor already has its own search state; we sync from header)
@@ -500,9 +548,9 @@ export default function BOMDetail() {
             bom={bom}
             bomLines={bomLines}
             bomLineVariants={bomLineVariants}
-            colorVariants={colorVariants}
-            styleSizes={styleSizes}
-            colorAndMores={colorAndMores}
+            colorVariants={filteredColors}
+            styleSizes={filteredSizes}
+            colorAndMores={filteredCam}
             allProducts={allProducts}
             allProductColors={allProductColors}
             techColors={techColors}

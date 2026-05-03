@@ -3,6 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronDown, Plus } from "lucide-react";
+import BOMQuickFilterGroup from "./BOMQuickFilterGroup.jsx";
 
 const AXIS_OPTIONS = [
   { value: "color", label: "Colorway" },
@@ -12,7 +13,7 @@ const AXIS_OPTIONS = [
 ];
 
 // All groups collapsed by default
-const DEFAULT_GROUPS = { view: false, lines: false, bom: false, export: false };
+const DEFAULT_GROUPS = { view: false, quick_filter: false, lines: false, bom: false, export: false };
 
 function CollapsibleGroup({ label, expanded, onToggle, children }) {
   return (
@@ -80,6 +81,16 @@ export default function BOMOptionsContent({
   onRefreshSourcing,
   onExportMatrix,
   onClose,
+  // Quick filter props
+  filterConfig,
+  onFilterChange,
+  colorVariants,
+  styleSizes,
+  colorAndMores,
+  techColors,
+  commColors,
+  projects,
+  allSizes,
 }) {
   const expanded = { ...DEFAULT_GROUPS, ...groupsExpanded };
 
@@ -89,7 +100,8 @@ export default function BOMOptionsContent({
   const canCreateProd = isDev && isReleased;
   const isNotTerminal = bom && !["superseded", "obsolete"].includes(bom.status);
 
-  const wrap = (fn) => () => { fn?.(); onClose?.(); };
+  // Option A: close sidebar first, then open the action pop-up
+  const wrap = (fn) => () => { onClose?.(); setTimeout(() => fn?.(), 50); };
 
   // Lines group: "Add line" is promoted — only 7 remaining actions
   const linesActions = !isReadOnly ? [
@@ -173,6 +185,24 @@ export default function BOMOptionsContent({
           </div>
         </div>
       </CollapsibleGroup>
+
+      {/* QUICK FILTER GROUP */}
+      <div className="border-t border-border" />
+      <BOMQuickFilterGroup
+        expanded={expanded.quick_filter}
+        onToggle={() => onGroupToggle("quick_filter")}
+        filterConfig={filterConfig}
+        onFilterChange={onFilterChange}
+        columnAxis={matrixColumnAxis}
+        secondaryAxis={matrixSecondaryAxis}
+        colorVariants={colorVariants || []}
+        styleSizes={styleSizes || []}
+        colorAndMores={colorAndMores || []}
+        techColors={techColors || []}
+        commColors={commColors || []}
+        projects={projects || []}
+        allSizes={allSizes || []}
+      />
 
       {/* LINES GROUP */}
       {linesActions.length > 0 && (
