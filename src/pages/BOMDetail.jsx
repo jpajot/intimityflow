@@ -94,47 +94,57 @@ export default function BOMDetail() {
 
   const reload = useCallback(async () => {
     if (!id) return;
-    const [boms, lines, log] = await Promise.all([
-      base44.entities.BOM.filter({ id }),
-      base44.entities.BOMLine.filter({ bom_id: id }),
-      base44.entities.BOMChangeLog.filter({ bom_id: id }),
-    ]);
+    // Sequential loading to avoid rate limits
+    const boms = await base44.entities.BOM.filter({ id });
     const b = boms[0];
-    const sortedLines = lines.sort((a, z) => (a.position || 0) - (z.position || 0));
+    if (!b) return;
     setBom(b);
+
+    // Load lines
+    const lines = await base44.entities.BOMLine.filter({ bom_id: id });
+    const sortedLines = lines.sort((a, z) => (a.position || 0) - (z.position || 0));
     setBomLines(sortedLines);
-    // Fetch all variants for this BOM in one large request, then filter client-side
+
+    // Load variants for this BOM only (filtered query, not bulk)
     let variants = [];
     if (sortedLines.length > 0) {
-      const lineIds = new Set(sortedLines.map((l) => l.id));
-      const allVariants = await base44.entities.BOMLineVariant.list("-created_date", 5000);
-      variants = allVariants.filter((v) => lineIds.has(v.bom_line_id));
+      const lineIds = sortedLines.map((l) => l.id);
+      // Fetch variants filtered by BOM line IDs (more efficient than loading all)
+      variants = await base44.entities.BOMLineVariant.filter({ bom_line_id: { $in: lineIds } });
     }
     setBomLineVariants(variants);
+
+    // Load change log
+    const log = await base44.entities.BOMChangeLog.filter({ bom_id: id });
     setChangeLog(log.sort((a, z) => new Date(z.triggered_at) - new Date(a.triggered_at)));
-    if (b) {
-      const [prod] = await Promise.all([
-        base44.entities.Product.filter({ id: b.product_id }),
-      ]);
-      setProduct(prod[0] || null);
-      // Product-centric: show all active colorways for this product (not project-filtered)
+
+    // Load product
+    const prods = await base44.entities.Product.filter({ id: b.product_id });
+    const prod = prods[0] || null;
+    setProduct(prod);
+
+    // Product-centric: show all active colorways for this product (not project-filtered)
+    if (prod) {
       const ACTIVE_STATUSES = ["approved", "in_progress", "submitted_for_approval", "requested"];
-      const [allCws, ss, cams] = await Promise.all([
-        base44.entities.ProductColor.filter({ product_id: b.product_id }),
-        base44.entities.StyleSize.filter({ product_id: b.product_id }),
-        base44.entities.ProductColorAndMore.list("-created_date", 2000),
-      ]);
+      const allCws = await base44.entities.ProductColor.filter({ product_id: b.product_id });
       const activeCws = allCws.filter((c) => ACTIVE_STATUSES.includes(c.colorway_status || "approved"));
       setColorVariants(activeCws);
+
+      const ss = await base44.entities.StyleSize.filter({ product_id: b.product_id });
       setStyleSizes(ss.filter((s) => s.active !== false));
+
+      // Filter ColorAndMore by active colorways
+      const cams = await base44.entities.ProductColorAndMore.list("-created_date", 2000);
       setColorAndMores(cams.filter((c) => activeCws.some((cw) => cw.id === c.product_color_id)));
-      if (b.bom_type === "production") {
-        const bols = await base44.entities.BOL.filter({ bom_id: id });
-        if (bols[0]) {
-          setBol(bols[0]);
-          const ops = await base44.entities.BOLOperation.filter({ bol_id: bols[0].id });
-          setBolOperations(ops.sort((a, z) => a.sequence - z.sequence));
-        }
+    }
+
+    // Load BOL if production BOM
+    if (b.bom_type === "production") {
+      const bols = await base44.entities.BOL.filter({ bom_id: id });
+      if (bols[0]) {
+        setBol(bols[0]);
+        const ops = await base44.entities.BOLOperation.filter({ bol_id: bols[0].id });
+        setBolOperations(ops.sort((a, z) => a.sequence - z.sequence));
       }
     }
   }, [id]);
@@ -147,28 +157,30 @@ export default function BOMDetail() {
       const u = await base44.auth.me();
       setUser(u);
 
-      // Sequential lightweight lookups
-      const lovs = await base44.entities.ListOfValues.list("name", 2000);
+      // Load lightweight LOVs and sizes in parallel
+      const [lovs, sizes] = await Promise.all([
+        base44.entities.ListOfValues.list("name", 2000),
+        base44.entities.Size.list("size_code", 500),
+      ]);
       setLovValues(lovs);
-
-      const sizes = await base44.entities.Size.list("size_code", 500);
       setAllSizes(sizes);
 
-      // Sequential product data
-      const prods = await base44.entities.Product.list("-created_date", 2000);
+      // Load product data in parallel
+      const [prods, projs] = await Promise.all([
+        base44.entities.Product.list("-created_date", 2000),
+        base44.entities.Project.list("name", 500),
+      ]);
       setAllProducts(prods);
-
-      const projs = await base44.entities.Project.list("name", 500);
       setProjects(projs);
 
-      // Sequential color data
-      const allPCs = await base44.entities.ProductColor.list("-created_date", 3000);
+      // Load color data in parallel
+      const [allPCs, tcs, ccs] = await Promise.all([
+        base44.entities.ProductColor.list("-created_date", 3000),
+        base44.entities.TechnicalColor.list("code", 2000),
+        base44.entities.CommercialColor.list("code", 2000),
+      ]);
       setAllProductColors(allPCs);
-
-      const tcs = await base44.entities.TechnicalColor.list("code", 2000);
       setTechColors(tcs);
-
-      const ccs = await base44.entities.CommercialColor.list("code", 2000);
       setCommColors(ccs);
 
       // Finally, load BOM-specific data
