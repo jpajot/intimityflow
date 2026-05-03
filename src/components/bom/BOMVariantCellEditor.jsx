@@ -97,7 +97,10 @@ export default function BOMVariantCellEditor({
         {!isReadOnly && (
           <button
             type="button"
-            onClick={handleClearNA}
+            onClick={() => {
+              const payload = buildPayload({ is_not_applicable: false, component_product_color_id: null });
+              if (payload) onUpsertVariant(payload);
+            }}
             className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-background/70 rounded text-[10px] text-foreground transition-opacity"
           >
             Clear N/A
