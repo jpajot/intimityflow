@@ -42,7 +42,6 @@ export default function BOMGroupedMatrix({
   onAddLine,
   showSourcing,
 }) {
-  const [search, setSearch] = useState("");
   // Parent product's approved vendors (needed when supplier is one of the axes)
   const [parentVendors, setParentVendors] = useState([]);
   const [parentSupplierMap, setParentSupplierMap] = useState({});
@@ -112,14 +111,8 @@ export default function BOMGroupedMatrix({
     return member.id;
   };
 
-  const filteredLines = useMemo(() => {
-    if (!search.trim()) return bomLines;
-    const q = search.toLowerCase();
-    return bomLines.filter((line) => {
-      const comp = allProducts.find((p) => p.id === line.component_product_id);
-      return comp?.name?.toLowerCase().includes(q) || comp?.code?.toLowerCase().includes(q) || line.component_role?.toLowerCase().includes(q);
-    });
-  }, [bomLines, search, allProducts]);
+  // No filtering in grouped matrix view
+  const filteredLines = bomLines;
 
   // Resolve a variant for a (line, primaryMember, secondaryMember) cell
   const getVariant = (lineId, primaryMember, secondaryMember) => {
@@ -178,20 +171,14 @@ export default function BOMGroupedMatrix({
   const totalCols = primaryMembers.length * secondaryMembers.length;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search component lines…"
-          className="h-8 text-xs w-56"
-        />
-        <span className="text-xs text-muted-foreground bg-muted/60 border border-border rounded-lg px-3 py-1.5">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="shrink-0 px-2 py-1.5">
+        <span className="text-xs text-muted-foreground">
           {primaryMembers.length} × {secondaryMembers.length} = {totalCols} columns
         </span>
       </div>
 
-      <div className="rounded-xl border border-border overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto border border-border rounded-xl mx-2 mb-2">
         <table className="w-full text-xs min-w-[600px]">
           <thead className="sticky top-0 z-10 bg-muted/60">
             {/* Top row — primary axis spanning labels */}
@@ -489,8 +476,8 @@ export default function BOMGroupedMatrix({
         </table>
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center">
+      {/* Legend — sticky footer */}
+      <div className="shrink-0 flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center px-2 py-1.5 border-t border-border bg-background">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded inline-block" style={NA_STYLE} />N/A
         </span>
