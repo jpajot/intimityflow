@@ -169,6 +169,15 @@ export default function BOMVariantCellEditor({
           >
             <span className="text-[9px] text-amber-600 font-medium leading-tight">Pick colorway</span>
           </button>
+          <button
+            type="button"
+            onClick={handleMarkNA}
+            className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-destructive transition-colors"
+            title="Mark as N/A"
+          >
+            <Ban className="w-3 h-3" />
+            <span>N/A</span>
+          </button>
           {showPicker && createPortal(
             <div className="fixed z-[9999]" style={{ top: pickerPos.top, left: pickerPos.left, transform: "translateX(-50%)" }}>
               <ComponentColorwayPicker
