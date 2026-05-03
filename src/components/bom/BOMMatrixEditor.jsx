@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // still used for base_quantity cell
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -188,6 +188,68 @@ export default function BOMMatrixEditor({
   const [editingLine, setEditingLine] = useState(null);
   const [inlineConfirm, setInlineConfirm] = useState(null); // { lineId, field, newValue, cascadeIds, description }
 
+  // Drag-and-drop state
+  const [dragLineId, setDragLineId] = useState(null);   // id of row being dragged
+  const [dragOverLineId, setDragOverLineId] = useState(null); // id of row being hovered over
+  const dragSourceIndex = useRef(null);
+
+  const handleDragStart = (e, lineId, index) => {
+    if (isReadOnly) { e.preventDefault(); return; }
+    setDragLineId(lineId);
+    dragSourceIndex.current = index;
+    e.dataTransfer.effectAllowed = "move";
+    // Transparent drag image so the row itself appears to move
+    e.dataTransfer.setData("text/plain", lineId);
+  };
+
+  const handleDragOver = (e, lineId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (lineId !== dragLineId) setDragOverLineId(lineId);
+  };
+
+  const handleDragEnd = () => {
+    setDragLineId(null);
+    setDragOverLineId(null);
+    dragSourceIndex.current = null;
+  };
+
+  const handleDrop = async (e, targetLineId) => {
+    e.preventDefault();
+    setDragLineId(null);
+    setDragOverLineId(null);
+
+    if (!dragLineId || dragLineId === targetLineId) return;
+
+    // Reorder locally using the full bomLines array (not filtered)
+    const currentOrder = [...bomLines];
+    const fromIdx = currentOrder.findIndex((l) => l.id === dragLineId);
+    const toIdx = currentOrder.findIndex((l) => l.id === targetLineId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...currentOrder];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    // Assign sequential positions starting at 0
+    const updates = reordered.map((line, idx) => ({ ...line, position: idx }));
+
+    // Optimistic update via parent's onUpdateLine (which updates local state)
+    // We call it for each line that changed position
+    updates.forEach((line) => {
+      if (line.position !== bomLines.find((l) => l.id === line.id)?.position) {
+        onUpdateLine(line.id, { position: line.position });
+      }
+    });
+
+    // Persist all affected rows in parallel
+    await Promise.all(
+      updates
+        .filter((line) => line.position !== bomLines.find((l) => l.id === line.id)?.position)
+        .map((line) => base44.entities.BOMLine.update(line.id, { position: line.position }))
+    );
+  };
+
   // Inline flag toggle — checks for cascade before committing
   const handleFlagToggle = (line, flag, newValue) => {
     // Only turning OFF can be destructive
@@ -367,15 +429,37 @@ export default function BOMMatrixEditor({
                   ) : "No results match your search."}
                 </td>
               </tr>
-            ) : filteredLines.map((line) => {
+            ) : filteredLines.map((line, idx) => {
               const comp = allProducts.find((p) => p.id === line.component_product_id);
               const roleValues = lovValues.filter((v) => v.category === "bom_line_role");
               const roleLabel = roleValues.find((v) => v.name === line.component_role)?.name || line.component_role || "—";
               const uom = getUom(line);
+              const isDragging = dragLineId === line.id;
+              const isDragOver = dragOverLineId === line.id;
               return (
-                <tr key={line.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors group">
+                <tr
+                  key={line.id}
+                  onDragOver={(e) => handleDragOver(e, line.id)}
+                  onDrop={(e) => handleDrop(e, line.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`border-b border-border last:border-0 transition-colors group
+                    ${isDragging ? "opacity-40" : "hover:bg-muted/10"}
+                    ${isDragOver ? "border-t-2 border-t-primary" : ""}
+                  `}
+                >
                   <td className="px-2 py-2 sticky left-0 bg-card z-10">
-                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 cursor-grab" />
+                    {isReadOnly ? (
+                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/20" />
+                    ) : (
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, line.id, idx)}
+                        className="cursor-grab active:cursor-grabbing"
+                        title="Drag to reorder"
+                      >
+                        <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-2 sticky left-8 bg-card z-10 min-w-[220px]">
                     <div className="space-y-0.5">
