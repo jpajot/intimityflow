@@ -3,7 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Plus, GitBranch, FileText, Settings2, ClipboardList } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Loader2, Plus, GitBranch, FileText, ClipboardList } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
@@ -11,6 +13,13 @@ import BOMLineAddDialog from "../components/bom/BOMLineAddDialog";
 import BOLEditorTab from "../components/bom/BOLEditorTab";
 import BOMChangeLogTab from "../components/bom/BOMChangeLogTab";
 import BOMHeaderCard from "../components/bom/BOMHeaderCard";
+
+const AXIS_OPTIONS = [
+  { value: "color", label: "Colorway" },
+  { value: "size", label: "Size" },
+  { value: "color_and_more", label: "Color & More" },
+  { value: "supplier", label: "Supplier" },
+];
 
 const STATUS_COLORS = {
   draft: "bg-slate-100 text-slate-700 border-slate-300",
@@ -53,9 +62,9 @@ export default function BOMDetail() {
   const [loading, setLoading] = useState(true);
   const [showAddLine, setShowAddLine] = useState(false);
   const [activeTab, setActiveTab] = useState("matrix");
-  const [showMatrixConfig, setShowMatrixConfig] = useState(false);
   const [matrixColumnAxis, setMatrixColumnAxis] = useState("color");
   const [matrixSecondaryAxis, setMatrixSecondaryAxis] = useState(null);
+  const [showSourcing, setShowSourcing] = useState(true);
   const [viewStateId, setViewStateId] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -162,6 +171,10 @@ export default function BOMDetail() {
           setViewStateId(existing[0].id);
           setMatrixColumnAxis(existing[0].column_axis || "color");
           setMatrixSecondaryAxis(existing[0].secondary_column_axis || null);
+          const uiOpts = existing[0].filter_config?.ui_options;
+          if (uiOpts && typeof uiOpts.show_sourcing_chain === "boolean") {
+            setShowSourcing(uiOpts.show_sourcing_chain);
+          }
         } else {
           const created = await base44.entities.BOMMatrixViewState.create({
             bom_id: id,
@@ -169,7 +182,7 @@ export default function BOMDetail() {
             row_axis: "bom_line",
             column_axis: "color",
             secondary_column_axis: null,
-            filter_config: {},
+            filter_config: { ui_options: { show_sourcing_chain: true } },
             last_used_at: new Date().toISOString(),
           });
           setViewStateId(created.id);
@@ -242,7 +255,6 @@ export default function BOMDetail() {
 
   const handleColumnAxisChange = (axis) => {
     setMatrixColumnAxis(axis);
-    // Clear secondary if it conflicts
     if (matrixSecondaryAxis === axis) {
       setMatrixSecondaryAxis(null);
       persistViewState({ column_axis: axis, secondary_column_axis: null });
@@ -254,6 +266,16 @@ export default function BOMDetail() {
   const handleSecondaryAxisChange = (axis) => {
     setMatrixSecondaryAxis(axis);
     persistViewState({ secondary_column_axis: axis });
+  };
+
+  const handleShowSourcingChange = (val) => {
+    setShowSourcing(val);
+    if (viewStateId) {
+      base44.entities.BOMMatrixViewState.update(viewStateId, {
+        filter_config: { ui_options: { show_sourcing_chain: val } },
+        last_used_at: new Date().toISOString(),
+      });
+    }
   };
 
   const handleUpsertVariant = async (variantData) => {
@@ -287,17 +309,65 @@ export default function BOMDetail() {
       items: [
         ...(!isReadOnly ? [
           { label: "Add Component Line", icon: Plus, onClick: () => setShowAddLine(true), className: "text-primary hover:bg-primary/10" },
-          { divider: true },
         ] : []),
-        { label: "Axis Configuration", icon: Settings2, onClick: () => setShowMatrixConfig((v) => !v), custom: true },
-        { divider: true },
+        ...(!isReadOnly && transitions.length > 0 ? [{ divider: true }] : []),
         ...transitions.map((t) => ({
           label: t.label,
           onClick: () => handleStatusTransition(t.to),
         })),
       ],
+      customContent: (
+        <div className="space-y-4">
+          {/* View group */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">View</p>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Column axis</label>
+                <Select value={matrixColumnAxis} onValueChange={handleColumnAxisChange}>
+                  <SelectTrigger className="h-7 text-xs w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AXIS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Group by (secondary)</label>
+                <Select
+                  value={matrixSecondaryAxis || "__none__"}
+                  onValueChange={(v) => handleSecondaryAxisChange(v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger className="h-7 text-xs w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— none —</SelectItem>
+                    {AXIS_OPTIONS.filter((o) => o.value !== matrixColumnAxis).map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <label className="text-xs text-foreground cursor-pointer" htmlFor="sourcing-toggle">
+                  Show sourcing chain in cells
+                </label>
+                <Switch
+                  id="sourcing-toggle"
+                  checked={showSourcing}
+                  onCheckedChange={handleShowSourcingChange}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
     });
-  }, [bom, isReadOnly, setOptions]);
+  }, [bom, isReadOnly, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing]);
 
   const getUom = (line) => {
     if (line.uom) return line.uom;
@@ -391,7 +461,7 @@ export default function BOMDetail() {
           onColumnAxisChange={handleColumnAxisChange}
           secondaryAxis={matrixSecondaryAxis}
           onSecondaryAxisChange={handleSecondaryAxisChange}
-          showAxisConfig={showMatrixConfig}
+          showSourcing={showSourcing}
           onUpdateLine={handleUpdateLine}
           onDeleteLine={handleDeleteLine}
           onUpsertVariant={handleUpsertVariant}

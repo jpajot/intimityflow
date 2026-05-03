@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, GripVertical, Plus, AlertTriangle, Eye, EyeOff, Pencil } from "lucide-react";
+import { Trash2, GripVertical, Plus, AlertTriangle, Pencil, Search, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import BOMVariantCellEditor from "./BOMVariantCellEditor.jsx";
 import BOMSourcingBlock from "./BOMSourcingBlock.jsx";
@@ -26,8 +26,6 @@ const SIZE_VARIATION_MODE_OPTIONS = [
 ];
 
 const BASE_SIZE_REQUIRED_MODES = ["base_size_with_optional_grading", "component_size_mapping"];
-
-const SOURCING_SHOW_KEY = "bom_matrix_show_sourcing";
 
 function SizeVariationControls({ line, allSizes, isReadOnly, onUpdateLine }) {
   const mode = line.size_variation_mode;
@@ -181,23 +179,27 @@ export default function BOMMatrixEditor({
   allProducts, allProductColors, techColors, commColors,
   lovValues, isReadOnly, columnAxis, onColumnAxisChange,
   secondaryAxis, onSecondaryAxisChange,
-  showAxisConfig, onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
+  showSourcing,
+  onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
   onEditLineSaved, user,
   allSizes = [],
 }) {
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
   const [editingLine, setEditingLine] = useState(null);
   const [inlineConfirm, setInlineConfirm] = useState(null); // { lineId, field, newValue, cascadeIds, description }
-  const [showSourcing, setShowSourcing] = useState(() => {
-    const stored = localStorage.getItem(SOURCING_SHOW_KEY);
-    return stored === null ? true : stored === "true";
-  });
 
-  const toggleSourcing = () => {
-    setShowSourcing((v) => {
-      localStorage.setItem(SOURCING_SHOW_KEY, String(!v));
-      return !v;
-    });
+  // Auto-focus when search expands
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  const handleSearchBlur = () => {
+    if (!search) setSearchOpen(false);
+  };
+  const handleSearchKey = (e) => {
+    if (e.key === "Escape") { setSearch(""); setSearchOpen(false); }
   };
 
   // Inline flag toggle — checks for cascade before committing
@@ -291,17 +293,42 @@ export default function BOMMatrixEditor({
   };
 
   const toolbar = (
-    <div className="flex items-center gap-2 flex-wrap">
-      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search component lines…" className="h-8 text-xs w-56" />
-      {showAxisConfig && (
-        <AxisSelector
-          columnAxis={columnAxis}
-          onColumnAxisChange={onColumnAxisChange}
-          secondaryAxis={secondaryAxis}
-          onSecondaryAxisChange={onSecondaryAxisChange}
-        />
-      )}
-      <SourcingToggle showSourcing={showSourcing} onToggle={toggleSourcing} />
+    <div className="flex items-center gap-1.5">
+      {/* Collapsible search */}
+      <div className={`flex items-center transition-all duration-200 ${searchOpen ? "flex-1 min-w-0 max-w-xs" : "w-8 shrink-0"}`}>
+        {searchOpen ? (
+          <div className="relative w-full">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onBlur={handleSearchBlur}
+              onKeyDown={handleSearchKey}
+              placeholder="Search component lines…"
+              className="pl-8 pr-7 h-8 text-xs"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="Search component lines"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -570,60 +597,5 @@ export default function BOMMatrixEditor({
         />
       )}
     </div>
-  );
-}
-
-// ── Shared sub-components ──────────────────────────────────────────────────────
-
-function AxisSelector({ columnAxis, onColumnAxisChange, secondaryAxis, onSecondaryAxisChange }) {
-  return (
-    <div className="flex items-center gap-3 ml-auto bg-muted/60 border border-border rounded-lg px-3 py-1.5 flex-wrap">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Columns:</span>
-        <Select value={columnAxis} onValueChange={onColumnAxisChange}>
-          <SelectTrigger className="h-7 text-xs w-36 border-0 bg-transparent shadow-none p-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {AXIS_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="w-px h-4 bg-border" />
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Group by:</span>
-        <Select value={secondaryAxis || "__none__"} onValueChange={(v) => onSecondaryAxisChange(v === "__none__" ? null : v)}>
-          <SelectTrigger className="h-7 text-xs w-36 border-0 bg-transparent shadow-none p-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">— none —</SelectItem>
-            {AXIS_OPTIONS.filter((o) => o.value !== columnAxis).map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
-}
-
-function SourcingToggle({ showSourcing, onToggle }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors ${
-        showSourcing
-          ? "bg-primary/10 text-primary border-primary/30"
-          : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-      }`}
-      title="Show / hide sourcing chain in cells"
-    >
-      {showSourcing ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-      Sourcing
-    </button>
   );
 }
