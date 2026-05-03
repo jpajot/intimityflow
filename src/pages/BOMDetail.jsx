@@ -146,26 +146,34 @@ export default function BOMDetail() {
       // Batch 1: user + lightweight lookups
       const [u, lovs, sizes] = await Promise.all([
         base44.auth.me(),
-        base44.entities.ListOfValues.list("name", 5000),
+        base44.entities.ListOfValues.list("name", 2000),
         base44.entities.Size.list("size_code", 500),
       ]);
       setLovValues(lovs);
       setUser(u);
       setAllSizes(sizes);
 
-      // Batch 2: product catalogs (color libraries are large — separate batch)
-      const [prods, allPCs, tcs, ccs, projs] = await Promise.all([
+      // Batch 2a: products + projects (smaller batch)
+      const [prods, projs] = await Promise.all([
         base44.entities.Product.list("-created_date", 2000),
-        base44.entities.ProductColor.list("-created_date", 5000),
-        base44.entities.TechnicalColor.list("code", 2000),
-        base44.entities.CommercialColor.list("code", 2000),
         base44.entities.Project.list("name", 500),
       ]);
       setAllProducts(prods);
+      setProjects(projs);
+
+      // Batch 2b: colors (separate smaller batch)
+      const [allPCs, tcs] = await Promise.all([
+        base44.entities.ProductColor.list("-created_date", 3000),
+        base44.entities.TechnicalColor.list("code", 2000),
+      ]);
       setAllProductColors(allPCs);
       setTechColors(tcs);
+
+      // Batch 2c: commercial colors
+      const [ccs] = await Promise.all([
+        base44.entities.CommercialColor.list("code", 2000),
+      ]);
       setCommColors(ccs);
-      setProjects(projs);
 
       // Batch 3: BOM-specific data
       await reload();
