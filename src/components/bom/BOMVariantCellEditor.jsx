@@ -27,7 +27,7 @@ export default function BOMVariantCellEditor({
   onUpsertVariant,
 }) {
   const [editing, setEditing] = useState(false);
-  const [qty, setQty] = useState("");
+  const [qty, setQty] = useState(""); // used for size/cam axis quantity editing
   const [showPicker, setShowPicker] = useState(false);
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
   const triggerRef = useRef(null);
@@ -107,20 +107,129 @@ export default function BOMVariantCellEditor({
     );
   }
 
-  // ── Color axis: colorway chip + picker ─────────────────────────────────────
+  // ── Color axis: colorway resolution cell ──────────────────────────────────
   if (columnAxis === "color") {
     const compColorId = variant?.component_product_color_id;
     const compColor = compColorId ? allProductColors.find((pc) => pc.id === compColorId) : null;
-    const cellQty = variant?.quantity;
-    const baseQty = line.base_quantity;
-    const isGraded = cellQty != null && cellQty !== baseQty;
-
-    // Component product ID comes from the BOMLine
     const componentProductId = line.component_product_id;
 
+    // Resolve TCX codes as text
+    const resolveTcxCodes = () => {
+      if (!compColor) return null;
+      const codes = [];
+      if (compColor.linked_color_type === "commercial" && compColor.linked_color_id) {
+        const cc = commColors.find((c) => c.id === compColor.linked_color_id);
+        if (cc) {
+          if (cc.sub_type === "Combined" && Array.isArray(cc.linked_technical_color_ids)) {
+            cc.linked_technical_color_ids.forEach((tcId) => {
+              const tc = techColors.find((t) => t.id === tcId);
+              if (tc) codes.push(tc.code);
+            });
+          } else if (cc.main_technical_color_id) {
+            const tc = techColors.find((t) => t.id === cc.main_technical_color_id);
+            if (tc) codes.push(tc.code);
+          }
+        }
+      } else if (compColor.linked_tech_color_id) {
+        const tc = techColors.find((t) => t.id === compColor.linked_tech_color_id);
+        if (tc) codes.push(tc.code);
+      }
+      return codes.length > 0 ? codes.join(", ") : "—";
+    };
+
+    const tcxText = compColor ? resolveTcxCodes() : null;
+
+    // Colorway status badge config
+    const STATUS_BADGE = {
+      requested:               { dot: "bg-orange-400", text: "text-orange-700", label: "Requested" },
+      in_progress:             { dot: "bg-blue-400",   text: "text-blue-700",   label: "In progress" },
+      submitted_for_approval:  { dot: "bg-purple-400", text: "text-purple-700", label: "Submitted" },
+      approved:                { dot: "bg-green-400",  text: "text-green-700",  label: "Approved" },
+      rejected:                { dot: "bg-red-400",    text: "text-red-700",    label: "Rejected" },
+      obsolete:                { dot: "bg-gray-400",   text: "text-gray-500",   label: "Obsolete" },
+    };
+    const statusCfg = compColor?.colorway_status ? STATUS_BADGE[compColor.colorway_status] : null;
+
+    // Unresolved cell
+    if (!compColor && !isReadOnly) {
+      return (
+        <div className="relative flex flex-col items-center gap-1 py-1">
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={() => {
+              if (!showPicker && triggerRef.current) {
+                const rect = triggerRef.current.getBoundingClientRect();
+                setPickerPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX + rect.width / 2 });
+              }
+              setShowPicker((v) => !v);
+            }}
+            className="w-full min-h-[44px] rounded border-2 border-dashed border-amber-300 bg-amber-50/50 flex flex-col items-center justify-center gap-0.5 px-1 hover:border-primary/60 hover:bg-primary/5 transition-colors"
+            title="Pick component colorway"
+          >
+            <span className="text-[9px] text-amber-600 font-medium leading-tight">Pick colorway</span>
+          </button>
+          {showPicker && createPortal(
+            <div className="fixed z-[9999]" style={{ top: pickerPos.top, left: pickerPos.left, transform: "translateX(-50%)" }}>
+              <ComponentColorwayPicker
+                componentProductId={componentProductId}
+                bomType={bomType}
+                currentColorId={compColorId}
+                techColors={techColors}
+                commColors={commColors}
+                onSelect={(selectedColorId) => { safeUpsert({ component_product_color_id: selectedColorId, is_not_applicable: false }); setShowPicker(false); }}
+                onClear={() => { safeUpsert({ component_product_color_id: null }); setShowPicker(false); }}
+                onClose={() => setShowPicker(false)}
+              />
+            </div>,
+            document.body
+          )}
+        </div>
+      );
+    }
+
+    if (!compColor && isReadOnly) {
+      return (
+        <div className="w-full min-h-[44px] rounded border-2 border-dashed border-amber-300 bg-amber-50/50 flex items-center justify-center">
+          <span className="text-[9px] text-amber-600">—</span>
+        </div>
+      );
+    }
+
+    // Resolved cell
+    const cellContent = (
+      <div className="flex flex-col gap-0.5 py-1 px-1 w-full">
+        {/* Row 1: swatch + colorway code/name */}
+        <div className="flex items-center gap-1.5">
+          <div
+            className="w-4 h-4 rounded shrink-0 border border-border"
+            style={{ backgroundColor: compColor.color_hex || "#e5e7eb" }}
+            title={compColor.color_name}
+          />
+          <span className="text-[10px] font-medium text-foreground leading-tight truncate">
+            {[compColor.colorway_code, compColor.color_name].filter(Boolean).join(" ")}
+          </span>
+        </div>
+
+        {/* Row 2: TCX codes as plain text */}
+        {tcxText && (
+          <span className="text-[9px] text-muted-foreground leading-tight truncate" title={tcxText}>
+            {tcxText}
+          </span>
+        )}
+
+        {/* Row 3: status badge */}
+        {statusCfg && (
+          <div className="flex items-center gap-1">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusCfg.dot}`} />
+            <span className={`text-[9px] ${statusCfg.text} leading-tight`}>{statusCfg.label}</span>
+          </div>
+        )}
+      </div>
+    );
+
     return (
-      <div className="flex flex-col items-center gap-1 py-1 relative">
-        {/* Color chip — click opens picker */}
+      <div className="relative w-full">
         {!isReadOnly ? (
           <button
             ref={triggerRef}
@@ -128,51 +237,17 @@ export default function BOMVariantCellEditor({
             onClick={() => {
               if (!showPicker && triggerRef.current) {
                 const rect = triggerRef.current.getBoundingClientRect();
-                setPickerPos({
-                  top: rect.bottom + window.scrollY + 6,
-                  left: rect.left + window.scrollX + rect.width / 2,
-                });
+                setPickerPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX + rect.width / 2 });
               }
               setShowPicker((v) => !v);
             }}
-            className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-colors hover:border-primary ${
-              compColor ? "border-border" : "border-dashed border-muted-foreground/40 hover:border-primary/60"
-            }`}
-            style={{ backgroundColor: compColor?.color_hex || undefined }}
-            title={compColor ? `Component: ${compColor.color_name}` : "Click to assign component colorway"}
+            className="w-full rounded border border-border hover:border-primary/60 hover:bg-primary/5 transition-colors text-left"
+            title="Click to change component colorway"
           >
-            {!compColor && <span className="text-[9px] text-muted-foreground text-center leading-tight px-0.5">—</span>}
+            {cellContent}
           </button>
         ) : (
-          <div
-            className={`w-10 h-10 rounded-md border-2 flex items-center justify-center ${
-              compColor ? "border-border" : "border-dashed border-muted-foreground/40"
-            }`}
-            style={{ backgroundColor: compColor?.color_hex || undefined }}
-            title={compColor?.color_name || "No component colorway"}
-          >
-            {!compColor && <span className="text-[9px] text-muted-foreground text-center leading-tight px-0.5">—</span>}
-          </div>
-        )}
-
-        {/* Quantity override */}
-        {!isReadOnly ? (
-          <Input
-            type="number"
-            className={`h-5 w-14 text-[10px] text-center px-1 ${isGraded ? "border-amber-400 text-amber-700 font-semibold" : ""}`}
-            placeholder={baseQty != null ? String(baseQty) : "qty"}
-            defaultValue={cellQty ?? ""}
-            onBlur={(e) => {
-              const val = parseFloat(e.target.value);
-              safeUpsert({ quantity: isNaN(val) ? null : val });
-            }}
-          />
-        ) : (
-          cellQty != null && (
-            <span className={`text-[10px] ${isGraded ? "text-amber-600 font-semibold" : "text-muted-foreground"}`}>
-              {isGraded ? `Δ ${cellQty}` : cellQty} {uom}
-            </span>
-          )
+          <div className="w-full rounded border border-border">{cellContent}</div>
         )}
 
         {/* NA button */}
@@ -180,33 +255,24 @@ export default function BOMVariantCellEditor({
           <button
             type="button"
             onClick={handleMarkNA}
-            className="text-[9px] text-muted-foreground/50 hover:text-destructive transition-colors"
+            className="absolute top-0.5 right-0.5 opacity-0 hover:opacity-100 group-hover:opacity-100 text-muted-foreground/40 hover:text-destructive transition-all"
             title="Mark as N/A"
           >
             <Ban className="w-3 h-3" />
           </button>
         )}
 
-        {/* Component colorway picker — rendered in a portal to escape table overflow */}
+        {/* Picker portal */}
         {showPicker && createPortal(
-          <div
-            className="fixed z-[9999]"
-            style={{ top: pickerPos.top, left: pickerPos.left, transform: "translateX(-50%)" }}
-          >
+          <div className="fixed z-[9999]" style={{ top: pickerPos.top, left: pickerPos.left, transform: "translateX(-50%)" }}>
             <ComponentColorwayPicker
               componentProductId={componentProductId}
               bomType={bomType}
               currentColorId={compColorId}
               techColors={techColors}
               commColors={commColors}
-              onSelect={(selectedColorId) => {
-                safeUpsert({ component_product_color_id: selectedColorId, is_not_applicable: false });
-                setShowPicker(false);
-              }}
-              onClear={() => {
-                safeUpsert({ component_product_color_id: null });
-                setShowPicker(false);
-              }}
+              onSelect={(selectedColorId) => { safeUpsert({ component_product_color_id: selectedColorId, is_not_applicable: false }); setShowPicker(false); }}
+              onClear={() => { safeUpsert({ component_product_color_id: null }); setShowPicker(false); }}
               onClose={() => setShowPicker(false)}
             />
           </div>,
