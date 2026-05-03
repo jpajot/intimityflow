@@ -13,6 +13,7 @@ import BOLEditorTab from "../components/bom/BOLEditorTab";
 import BOMChangeLogTab from "../components/bom/BOMChangeLogTab";
 import BOMInfoPanel from "../components/bom/BOMInfoPanel";
 import BOMOptionsContent from "../components/bom/BOMOptionsContent";
+import { DEFAULT_QUICK_FILTERS, applyQuickFilters, isFilterActive } from "../components/bom/BOMQuickFilters.jsx";
 import BOMLinePickerDialog from "../components/bom/BOMLinePickerDialog";
 import BOMAutoResolveDialog from "../components/bom/BOMAutoResolveDialog";
 import BOMBulkLineActionDialog from "../components/bom/BOMBulkLineActionDialog";
@@ -65,7 +66,9 @@ export default function BOMDetail() {
   const [showSourcing, setShowSourcing] = useState(true);
   const [viewStateId, setViewStateId] = useState(null);
   const [user, setUser] = useState(null);
-  const [groupsExpanded, setGroupsExpanded] = useState({ view: false, lines: false, bom: false, export: false });
+  const [groupsExpanded, setGroupsExpanded] = useState({ view: false, quickfilter: false, lines: false, bom: false, export: false });
+  const [quickFilters, setQuickFilters] = useState(DEFAULT_QUICK_FILTERS);
+  const [projects, setProjects] = useState([]);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -141,11 +144,13 @@ export default function BOMDetail() {
       setLoading(true);
 
       // Batch 1: user + lightweight lookups
-      const [u, lovs, sizes] = await Promise.all([
+      const [u, lovs, sizes, projs] = await Promise.all([
         base44.auth.me(),
         base44.entities.ListOfValues.list("name", 5000),
         base44.entities.Size.list("size_code", 500),
+        base44.entities.Project.list("name", 200),
       ]);
+      setProjects(projs);
       setLovValues(lovs);
       setUser(u);
       setAllSizes(sizes);
@@ -177,7 +182,10 @@ export default function BOMDetail() {
             setShowSourcing(uiOpts.show_sourcing_chain);
           }
           if (existing[0].options_sidebar_groups_state) {
-            setGroupsExpanded({ view: false, lines: false, bom: false, export: false, ...existing[0].options_sidebar_groups_state });
+            setGroupsExpanded({ view: false, quickfilter: false, lines: false, bom: false, export: false, ...existing[0].options_sidebar_groups_state });
+          }
+          if (existing[0].filter_config?.quick_filters) {
+            setQuickFilters({ ...DEFAULT_QUICK_FILTERS, ...existing[0].filter_config.quick_filters });
           }
         } else {
           const created = await base44.entities.BOMMatrixViewState.create({
@@ -277,7 +285,17 @@ export default function BOMDetail() {
     setShowSourcing(val);
     if (viewStateId) {
       base44.entities.BOMMatrixViewState.update(viewStateId, {
-        filter_config: { ui_options: { show_sourcing_chain: val } },
+        filter_config: { ui_options: { show_sourcing_chain: val }, quick_filters: quickFilters },
+        last_used_at: new Date().toISOString(),
+      });
+    }
+  };
+
+  const handleQuickFiltersChange = (newFilters) => {
+    setQuickFilters(newFilters);
+    if (viewStateId) {
+      base44.entities.BOMMatrixViewState.update(viewStateId, {
+        filter_config: { ui_options: { show_sourcing_chain: showSourcing }, quick_filters: newFilters },
         last_used_at: new Date().toISOString(),
       });
     }
@@ -338,6 +356,19 @@ export default function BOMDetail() {
     });
   };
 
+  // Compute filtered axis members for the matrix
+  const { filteredColors, filteredSizes, filteredColorAndMores } = applyQuickFilters(quickFilters, {
+    colorVariants,
+    styleSizes,
+    colorAndMores,
+    allSizes,
+    techColors,
+    commColors,
+    allProducts,
+  });
+
+  const filtersActive = isFilterActive(quickFilters);
+
   useEffect(() => {
     if (!bom) return;
     const transitions = STATUS_TRANSITIONS[bom.status] || [];
@@ -346,6 +377,7 @@ export default function BOMDetail() {
         label: t.label,
         onClick: () => handleStatusTransition(t.to),
       })),
+      badge: filtersActive ? "●" : undefined,
       customContent: (
         <BOMOptionsContent
           matrixColumnAxis={matrixColumnAxis}
@@ -368,12 +400,21 @@ export default function BOMDetail() {
           onMarkAllNA={() => openLinePicker("markNA")}
           onCreateRevision={() => setShowCreateRevision(true)}
           onMarkObsolete={() => handleStatusTransition("obsolete")}
-          onRefreshSourcing={() => {/* deferred */}}
+          onRefreshSourcing={() => {}}
           onExportMatrix={() => setShowExport(true)}
+          quickFilters={quickFilters}
+          onQuickFiltersChange={handleQuickFiltersChange}
+          colorVariants={colorVariants}
+          styleSizes={styleSizes}
+          colorAndMores={colorAndMores}
+          allSizes={allSizes}
+          techColors={techColors}
+          commColors={commColors}
+          projects={projects}
         />
       ),
     });
-  }, [bom, isReadOnly, bomLines, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing, groupsExpanded]);
+  }, [bom, isReadOnly, bomLines, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing, groupsExpanded, quickFilters, filtersActive, projects]);
 
   const getUom = (line) => {
     if (line.uom) return line.uom;
@@ -402,7 +443,7 @@ export default function BOMDetail() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-32px)] overflow-hidden">
+    <div className="flex flex-col" style={{ height: "calc(100vh - 2rem)" }}>
 
       {/* FIXED HEADER ROW */}
       <div className="flex items-center gap-2 px-2 pt-2 pb-2 shrink-0 border-b border-border bg-background z-10">
@@ -483,16 +524,17 @@ export default function BOMDetail() {
         </div>
       )}
 
-      {/* SCROLLABLE CONTENT */}
-      <div className="flex-1 overflow-y-auto px-2 py-3">
+      {/* CONTENT — matrix fills remaining height, legend stays at bottom */}
+      <div className="flex-1 min-h-0 overflow-hidden px-2 py-3 flex flex-col">
         {activeTab === "matrix" && (
+          <div className="flex-1 min-h-0 flex flex-col">
           <BOMMatrixEditor
             bom={bom}
             bomLines={bomLines}
             bomLineVariants={bomLineVariants}
-            colorVariants={colorVariants}
-            styleSizes={styleSizes}
-            colorAndMores={colorAndMores}
+            colorVariants={filteredColors}
+            styleSizes={filteredSizes}
+            colorAndMores={filteredColorAndMores}
             allProducts={allProducts}
             allProductColors={allProductColors}
             techColors={techColors}
@@ -512,6 +554,9 @@ export default function BOMDetail() {
             onAddLine={() => setShowAddLine(true)}
             user={user}
             externalSearch={searchValue}
+            onReorderLines={(reorderedLines) => {
+              setBomLines(reorderedLines);
+            }}
             onEditLineSaved={(lineId, deletedIds) => {
               if (deletedIds?.length > 0) {
                 setBomLineVariants((prev) => prev.filter((v) => !deletedIds.includes(v.id)));
@@ -521,20 +566,25 @@ export default function BOMDetail() {
               });
             }}
           />
+          </div>
         )}
 
         {activeTab === "bol" && isProduction && (
-          <BOLEditorTab
-            bol={bol}
-            operations={bolOperations}
-            bom={bom}
-            isReadOnly={isReadOnly}
-            onReload={reload}
-          />
+          <div className="flex-1 overflow-y-auto">
+            <BOLEditorTab
+              bol={bol}
+              operations={bolOperations}
+              bom={bom}
+              isReadOnly={isReadOnly}
+              onReload={reload}
+            />
+          </div>
         )}
 
         {activeTab === "changelog" && (
-          <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
+          <div className="flex-1 overflow-y-auto">
+            <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
+          </div>
         )}
       </div>
 

@@ -220,8 +220,8 @@ export default function Layout() {
                 className="w-full flex items-center justify-center py-2.5 rounded-lg transition-all relative hover:bg-muted text-muted-foreground hover:text-foreground">
                 <SliderIcon className="w-5 h-5 shrink-0" />
                 <ChevronRight className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-40" />
-                {options.items?.some((item) => item.badge) && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                {(options.badge || options.items?.some((item) => item.badge)) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
                 )}
               </button>
             </>
@@ -301,8 +301,8 @@ export default function Layout() {
                  <div className="relative">
                    <SliderIcon className="w-5 h-5 shrink-0" />
                    <ChevronRight className="absolute -right-2 -top-1 w-2.5 h-2.5 opacity-40" />
-                   {options.items?.some((item) => item.badge) && (
-                     <span className="absolute -top-1 -right-2.5 w-2 h-2 rounded-full bg-red-500" />
+                   {(options.badge || options.items?.some((item) => item.badge)) && (
+                     <span className="absolute -top-1 -right-2.5 w-2 h-2 rounded-full bg-primary" />
                    )}
                  </div>
                  <span className="text-[10px] font-medium leading-none">Options</span>
