@@ -172,8 +172,8 @@ export default function BOMGroupedMatrix({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-auto border border-border rounded-xl mx-2 mt-2">
-        <table className="w-full text-xs min-w-[600px]">
+      <div className="flex-1 min-h-0 overflow-y-auto border border-border rounded-xl mx-2 mt-2">
+        <table className="w-full text-xs min-w-[600px] table-fixed">
           <thead className="sticky top-0 z-10 bg-muted/60">
             {/* Top row — primary axis spanning labels */}
             <tr className="border-b border-border/50">
