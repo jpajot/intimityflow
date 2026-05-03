@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // still used for base_quantity cell
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, GripVertical, Plus, AlertTriangle, Pencil, Search, X } from "lucide-react";
+import { Trash2, GripVertical, Plus, AlertTriangle, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import BOMVariantCellEditor from "./BOMVariantCellEditor.jsx";
 import BOMSourcingBlock from "./BOMSourcingBlock.jsx";
@@ -183,24 +183,10 @@ export default function BOMMatrixEditor({
   onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
   onEditLineSaved, user,
   allSizes = [],
+  externalSearch = "",
 }) {
-  const [search, setSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = useRef(null);
   const [editingLine, setEditingLine] = useState(null);
   const [inlineConfirm, setInlineConfirm] = useState(null); // { lineId, field, newValue, cascadeIds, description }
-
-  // Auto-focus when search expands
-  useEffect(() => {
-    if (searchOpen) searchRef.current?.focus();
-  }, [searchOpen]);
-
-  const handleSearchBlur = () => {
-    if (!search) setSearchOpen(false);
-  };
-  const handleSearchKey = (e) => {
-    if (e.key === "Escape") { setSearch(""); setSearchOpen(false); }
-  };
 
   // Inline flag toggle — checks for cascade before committing
   const handleFlagToggle = (line, flag, newValue) => {
@@ -263,13 +249,13 @@ export default function BOMMatrixEditor({
   };
 
   const filteredLines = useMemo(() => {
-    if (!search.trim()) return bomLines;
-    const q = search.toLowerCase();
+    if (!externalSearch.trim()) return bomLines;
+    const q = externalSearch.toLowerCase();
     return bomLines.filter((line) => {
       const comp = allProducts.find((p) => p.id === line.component_product_id);
       return comp?.name?.toLowerCase().includes(q) || comp?.code?.toLowerCase().includes(q) || line.component_role?.toLowerCase().includes(q);
     });
-  }, [bomLines, search, allProducts]);
+  }, [bomLines, externalSearch, allProducts]);
 
   const getVariantForCell = (lineId, col) => {
     return bomLineVariants.find((v) => {
@@ -292,51 +278,10 @@ export default function BOMMatrixEditor({
     );
   };
 
-  const toolbar = (
-    <div className="flex items-center gap-1.5">
-      {/* Collapsible search */}
-      <div className={`flex items-center transition-all duration-200 ${searchOpen ? "flex-1 min-w-0 max-w-xs" : "w-8 shrink-0"}`}>
-        {searchOpen ? (
-          <div className="relative w-full">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              ref={searchRef}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onBlur={handleSearchBlur}
-              onKeyDown={handleSearchKey}
-              placeholder="Search component lines…"
-              className="pl-8 pr-7 h-8 text-xs"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            title="Search component lines"
-          >
-            <Search className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-
   // Grouped matrix — secondary axis set and differs from primary
   if (secondaryAxis && secondaryAxis !== columnAxis) {
     return (
       <div className="space-y-3">
-        {toolbar}
         <BOMGroupedMatrix
           bom={bom}
           bomLines={bomLines}
@@ -368,7 +313,6 @@ export default function BOMMatrixEditor({
   if (columnAxis === "supplier") {
     return (
       <div className="space-y-3">
-        {toolbar}
         <BOMSupplierMatrix
           bom={bom}
           bomLines={bomLines}
@@ -387,9 +331,6 @@ export default function BOMMatrixEditor({
 
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
-      {toolbar}
-
       {/* Matrix table */}
       <div className="rounded-xl border border-border overflow-auto">
         <table className="w-full text-xs min-w-[600px]">

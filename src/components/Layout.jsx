@@ -427,8 +427,8 @@ export default function Layout() {
        )}
 
        {optionsDrawer.open && options && createPortal(
-         <div ref={optionsDrawer.popoverRef} style={{ ...optionsDrawer.style, zIndex: 10000 }}
-           className="bg-popover border border-border rounded-lg shadow-xl py-1.5 min-w-[240px] max-h-[80vh] overflow-visible">
+         <div ref={optionsDrawer.popoverRef} style={{ ...optionsDrawer.style, zIndex: 10000, width: 320 }}
+           className="bg-popover border border-border rounded-lg shadow-xl py-1.5 max-h-[80vh] overflow-y-auto overflow-x-hidden">
            <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-b border-border mb-1">Options</p>
            {options.items && options.items.map((item, idx) => (
              <div key={idx}>

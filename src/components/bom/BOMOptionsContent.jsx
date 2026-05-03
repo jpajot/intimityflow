@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, ChevronDown, Plus } from "lucide-react";
 
 const AXIS_OPTIONS = [
   { value: "color", label: "Colorway" },
@@ -10,7 +11,8 @@ const AXIS_OPTIONS = [
   { value: "supplier", label: "Supplier" },
 ];
 
-const DEFAULT_GROUPS = { view: true, lines: true, bom: true, export: true };
+// All groups collapsed by default
+const DEFAULT_GROUPS = { view: false, lines: false, bom: false, export: false };
 
 function CollapsibleGroup({ label, expanded, onToggle, children }) {
   return (
@@ -24,8 +26,8 @@ function CollapsibleGroup({ label, expanded, onToggle, children }) {
           {label}
         </span>
         {expanded
-          ? <ChevronDown className="w-3 h-3 text-muted-foreground" />
-          : <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          ? <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
+          : <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
         }
       </button>
       {expanded && <div className="mt-2 space-y-1">{children}</div>}
@@ -39,8 +41,8 @@ function ActionButton({ label, onClick, disabled, disabledReason, destructive })
       type="button"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      title={disabled ? disabledReason : undefined}
-      className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors
+      title={disabled ? disabledReason : label}
+      className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors overflow-hidden
         ${disabled
           ? "text-muted-foreground/50 cursor-not-allowed"
           : destructive
@@ -48,30 +50,23 @@ function ActionButton({ label, onClick, disabled, disabledReason, destructive })
             : "text-foreground hover:bg-muted"
         }`}
     >
-      {label}
-      {disabled && disabledReason && (
-        <span className="ml-1 text-[10px] text-muted-foreground/40">(coming soon)</span>
-      )}
+      <span className="block truncate">{label}</span>
     </button>
   );
 }
 
 export default function BOMOptionsContent({
-  // View props
   matrixColumnAxis,
   matrixSecondaryAxis,
   showSourcing,
   onColumnAxisChange,
   onSecondaryAxisChange,
   onShowSourcingChange,
-  // BOM state
   bom,
   bomLines,
   isReadOnly,
-  // Group state
   groupsExpanded,
   onGroupToggle,
-  // Action handlers (passed from parent)
   onAddLine,
   onAutoResolveTCX,
   onAutoResolveNameMatch,
@@ -84,10 +79,9 @@ export default function BOMOptionsContent({
   onMarkObsolete,
   onRefreshSourcing,
   onExportMatrix,
-  // Close sidebar
   onClose,
 }) {
-  const expanded = groupsExpanded || DEFAULT_GROUPS;
+  const expanded = { ...DEFAULT_GROUPS, ...groupsExpanded };
 
   const isProduction = bom?.bom_type === "production";
   const isDev = bom?.bom_type === "development";
@@ -97,9 +91,8 @@ export default function BOMOptionsContent({
 
   const wrap = (fn) => () => { fn?.(); onClose?.(); };
 
-  // Lines group actions
+  // Lines group: "Add line" is promoted — only 7 remaining actions
   const linesActions = !isReadOnly ? [
-    { label: "Add component line", onClick: wrap(onAddLine) },
     { label: "Auto-resolve colorways by linked TechnicalColor", onClick: wrap(onAutoResolveTCX) },
     { label: "Auto-resolve colorways by name match", onClick: wrap(onAutoResolveNameMatch) },
     { label: "Auto-resolve sizes by size code", onClick: wrap(onAutoResolveSizes) },
@@ -109,7 +102,6 @@ export default function BOMOptionsContent({
     { label: "Mark all cells in row Not Applicable", onClick: wrap(onMarkAllNA), destructive: true },
   ] : [];
 
-  // BOM group actions
   const bomActions = [
     ...(isNotTerminal ? [{ label: "Create new revision", onClick: wrap(onCreateRevision) }] : []),
     ...(canCreateProd ? [{ label: "Create production BOM from this dev BOM", onClick: wrap(onCreateProductionBOM) }] : []),
@@ -118,7 +110,24 @@ export default function BOMOptionsContent({
   ];
 
   return (
-    <div className="space-y-3">
+    // Fixed width — never grows with content
+    <div style={{ width: 288 }} className="space-y-3">
+
+      {/* PROMOTED: Add component line — always visible at top when editable */}
+      {!isReadOnly && (
+        <>
+          <Button
+            size="sm"
+            className="w-full gap-1.5 h-8 text-xs"
+            onClick={wrap(onAddLine)}
+          >
+            <Plus className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Add component line</span>
+          </Button>
+          <div className="border-t border-border" />
+        </>
+      )}
+
       {/* VIEW GROUP */}
       <CollapsibleGroup label="View" expanded={expanded.view} onToggle={() => onGroupToggle("view")}>
         <div className="space-y-2 px-1">
@@ -154,7 +163,7 @@ export default function BOMOptionsContent({
           </div>
           <div className="flex items-center justify-between pt-1">
             <label className="text-xs text-foreground cursor-pointer" htmlFor="sourcing-toggle-opts">
-              Show sourcing chain in cells
+              Show sourcing chain
             </label>
             <Switch
               id="sourcing-toggle-opts"
@@ -193,7 +202,7 @@ export default function BOMOptionsContent({
       <>
         <div className="border-t border-border" />
         <CollapsibleGroup label="Export" expanded={expanded.export} onToggle={() => onGroupToggle("export")}>
-          <ActionButton label="Export matrix" onClick={wrap(onExportMatrix)} />
+          <ActionButton label="Export matrix as CSV" onClick={wrap(onExportMatrix)} />
         </CollapsibleGroup>
       </>
     </div>

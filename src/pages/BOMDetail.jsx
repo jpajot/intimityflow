@@ -1,16 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, GitBranch, FileText, ClipboardList } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Loader2, GitBranch, FileText, ClipboardList, Info, Search, X } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
 import BOMLineAddDialog from "../components/bom/BOMLineAddDialog";
 import BOLEditorTab from "../components/bom/BOLEditorTab";
 import BOMChangeLogTab from "../components/bom/BOMChangeLogTab";
-import BOMHeaderCard from "../components/bom/BOMHeaderCard";
+import BOMInfoPanel from "../components/bom/BOMInfoPanel";
 import BOMOptionsContent from "../components/bom/BOMOptionsContent";
 import BOMLinePickerDialog from "../components/bom/BOMLinePickerDialog";
 import BOMAutoResolveDialog from "../components/bom/BOMAutoResolveDialog";
@@ -64,7 +65,11 @@ export default function BOMDetail() {
   const [showSourcing, setShowSourcing] = useState(true);
   const [viewStateId, setViewStateId] = useState(null);
   const [user, setUser] = useState(null);
-  const [groupsExpanded, setGroupsExpanded] = useState({ view: true, lines: true, bom: true, export: true });
+  const [groupsExpanded, setGroupsExpanded] = useState({ view: false, lines: false, bom: false, export: false });
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const searchRef = useRef(null);
 
   // Dialog state
   const [linePicker, setLinePicker] = useState(null); // { mode: "tcx"|"name"|"size"|"clear"|"markNA"|"copy" }
@@ -172,7 +177,7 @@ export default function BOMDetail() {
             setShowSourcing(uiOpts.show_sourcing_chain);
           }
           if (existing[0].options_sidebar_groups_state) {
-            setGroupsExpanded({ view: true, lines: true, bom: true, export: true, ...existing[0].options_sidebar_groups_state });
+            setGroupsExpanded({ view: false, lines: false, bom: false, export: false, ...existing[0].options_sidebar_groups_state });
           }
         } else {
           const created = await base44.entities.BOMMatrixViewState.create({
@@ -182,7 +187,7 @@ export default function BOMDetail() {
             column_axis: "color",
             secondary_column_axis: null,
             filter_config: { ui_options: { show_sourcing_chain: true } },
-            options_sidebar_groups_state: { view: true, lines: true, bom: true, export: true },
+            options_sidebar_groups_state: { view: false, lines: false, bom: false, export: false },
             last_used_at: new Date().toISOString(),
           });
           setViewStateId(created.id);
@@ -388,112 +393,160 @@ export default function BOMDetail() {
     return <div className="text-center py-20 text-muted-foreground">BOM not found</div>;
   }
 
-  // Diagnostic: parent product has no colorways at all
   const hasNoColorwaysAtAll = !loading && colorVariants.length === 0;
 
+  // pass search value down into BOMMatrixEditor via a prop-drilled approach
+  // (BOMMatrixEditor already has its own search state; we sync from header)
+  const handleSearchKey = (e) => {
+    if (e.key === "Escape") { setSearchValue(""); setSearchOpen(false); }
+  };
+
   return (
-    <div className="px-2 py-2 space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/boms")}>
+    <div className="flex flex-col h-[calc(100vh-32px)] overflow-hidden">
+
+      {/* FIXED HEADER ROW */}
+      <div className="flex items-center gap-2 px-2 pt-2 pb-2 shrink-0 border-b border-border bg-background z-10">
+        <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => navigate("/boms")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-display text-xl font-semibold truncate">
-              {product ? `${product.code || ""} ${product.name}`.trim() : "BOM"}
-            </h1>
-            <span className="text-muted-foreground text-sm">Rev {bom.revision_code} v{bom.version}</span>
-            <Badge variant="outline" className={`text-xs ${STATUS_COLORS[bom.status] || ""}`}>
-              {bom.status}
+
+        {/* Title + badges */}
+        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+          <h1 className="font-display text-base font-semibold truncate shrink-0 max-w-[180px] sm:max-w-xs">
+            {product ? `${product.code || ""} ${product.name}`.trim() : "BOM"}
+          </h1>
+          <span className="text-muted-foreground text-xs shrink-0">Rev {bom.revision_code} v{bom.version}</span>
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${STATUS_COLORS[bom.status] || ""}`}>
+            {bom.status}
+          </Badge>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize shrink-0">
+            {bom.bom_type}
+          </Badge>
+          {bom.source_change_pending && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-300 shrink-0">
+              ⚠ Source changed
             </Badge>
-            <Badge variant="outline" className="text-xs capitalize">
-              {bom.bom_type}
-            </Badge>
-            {bom.source_change_pending && (
-              <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-300">
-                ⚠ Source changed
-              </Badge>
-            )}
-          </div>
+          )}
+        </div>
+
+        {/* Info + Search icons */}
+        <div className="flex items-center gap-1 shrink-0 ml-auto">
+          {/* Inline search */}
+          {searchOpen ? (
+            <div className="flex items-center gap-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  ref={searchRef}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={handleSearchKey}
+                  onBlur={() => { if (!searchValue) setSearchOpen(false); }}
+                  placeholder="Search lines…"
+                  className="h-7 pl-7 pr-6 text-xs w-44"
+                  autoFocus
+                />
+                {searchValue && (
+                  <button type="button" onClick={() => { setSearchValue(""); searchRef.current?.focus(); }}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setSearchOpen(true)}
+              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
+          )}
+          <button type="button" onClick={() => setShowInfoPanel((v) => !v)}
+            className={`h-7 w-7 flex items-center justify-center rounded-md transition-colors ${
+              showInfoPanel ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+            title="BOM details & revision history">
+            <Info className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <BOMHeaderCard
-        bom={bom}
-        product={product}
-        isReadOnly={isReadOnly}
-        onBomUpdated={setBom}
-      />
-
       {/* Diagnostic banner */}
       {hasNoColorwaysAtAll && product && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs">
+        <div className="flex items-center gap-3 bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs shrink-0">
           <span className="text-amber-500">⚠</span>
           <span className="text-amber-800">
-            <strong>{product.code || product.name}</strong> has no colorways defined. The colorway matrix is empty.
+            <strong>{product.code || product.name}</strong> has no colorways. The matrix is empty.
           </span>
-          <button
-            type="button"
-            className="ml-auto text-primary hover:underline"
-            onClick={() => navigate(`/products/${product.id}`)}
-          >
+          <button type="button" className="ml-auto text-primary hover:underline" onClick={() => navigate(`/products/${product.id}`)}>
             Manage colorways →
           </button>
         </div>
       )}
 
-      {activeTab === "matrix" && (
-        <BOMMatrixEditor
-          bom={bom}
-          bomLines={bomLines}
-          bomLineVariants={bomLineVariants}
-          colorVariants={colorVariants}
-          styleSizes={styleSizes}
-          colorAndMores={colorAndMores}
-          allProducts={allProducts}
-          allProductColors={allProductColors}
-          techColors={techColors}
-          commColors={commColors}
-          lovValues={lovValues}
-          allSizes={allSizes}
-          isReadOnly={isReadOnly}
-          columnAxis={matrixColumnAxis}
-          onColumnAxisChange={handleColumnAxisChange}
-          secondaryAxis={matrixSecondaryAxis}
-          onSecondaryAxisChange={handleSecondaryAxisChange}
-          showSourcing={showSourcing}
-          onUpdateLine={handleUpdateLine}
-          onDeleteLine={handleDeleteLine}
-          onUpsertVariant={handleUpsertVariant}
-          getUom={getUom}
-          onAddLine={() => setShowAddLine(true)}
-          user={user}
-          onEditLineSaved={(lineId, deletedIds) => {
-            if (deletedIds?.length > 0) {
-              setBomLineVariants((prev) => prev.filter((v) => !deletedIds.includes(v.id)));
-            }
-            // Reload line data to reflect any component swap / field changes
-            base44.entities.BOMLine.filter({ bom_id: id }).then((lines) => {
-              setBomLines(lines.sort((a, z) => (a.position || 0) - (z.position || 0)));
-            });
-          }}
-        />
-      )}
+      {/* SCROLLABLE CONTENT */}
+      <div className="flex-1 overflow-y-auto px-2 py-3">
+        {activeTab === "matrix" && (
+          <BOMMatrixEditor
+            bom={bom}
+            bomLines={bomLines}
+            bomLineVariants={bomLineVariants}
+            colorVariants={colorVariants}
+            styleSizes={styleSizes}
+            colorAndMores={colorAndMores}
+            allProducts={allProducts}
+            allProductColors={allProductColors}
+            techColors={techColors}
+            commColors={commColors}
+            lovValues={lovValues}
+            allSizes={allSizes}
+            isReadOnly={isReadOnly}
+            columnAxis={matrixColumnAxis}
+            onColumnAxisChange={handleColumnAxisChange}
+            secondaryAxis={matrixSecondaryAxis}
+            onSecondaryAxisChange={handleSecondaryAxisChange}
+            showSourcing={showSourcing}
+            onUpdateLine={handleUpdateLine}
+            onDeleteLine={handleDeleteLine}
+            onUpsertVariant={handleUpsertVariant}
+            getUom={getUom}
+            onAddLine={() => setShowAddLine(true)}
+            user={user}
+            externalSearch={searchValue}
+            onEditLineSaved={(lineId, deletedIds) => {
+              if (deletedIds?.length > 0) {
+                setBomLineVariants((prev) => prev.filter((v) => !deletedIds.includes(v.id)));
+              }
+              base44.entities.BOMLine.filter({ bom_id: id }).then((lines) => {
+                setBomLines(lines.sort((a, z) => (a.position || 0) - (z.position || 0)));
+              });
+            }}
+          />
+        )}
 
-      {activeTab === "bol" && isProduction && (
-        <BOLEditorTab
-          bol={bol}
-          operations={bolOperations}
-          bom={bom}
-          isReadOnly={isReadOnly}
-          onReload={reload}
-        />
-      )}
+        {activeTab === "bol" && isProduction && (
+          <BOLEditorTab
+            bol={bol}
+            operations={bolOperations}
+            bom={bom}
+            isReadOnly={isReadOnly}
+            onReload={reload}
+          />
+        )}
 
-      {activeTab === "changelog" && (
-        <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
-      )}
+        {activeTab === "changelog" && (
+          <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
+        )}
+      </div>
+
+      {/* Right-side info panel */}
+      <BOMInfoPanel
+        open={showInfoPanel}
+        onClose={() => setShowInfoPanel(false)}
+        bom={bom}
+        product={product}
+        onBomUpdated={setBom}
+        onOpenChangelog={() => setActiveTab("changelog")}
+      />
 
       <BOMLineAddDialog
         open={showAddLine}
