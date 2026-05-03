@@ -48,6 +48,8 @@ export default function BOMGroupedMatrix({
   const [parentSupplierMap, setParentSupplierMap] = useState({});
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [openPicker, setOpenPicker] = useState(null);
+  // Cache for supplier lookups: key = "asId:productId", value = { as, supplier }
+  const [supplierCache, setSupplierCache] = useState({});
 
   const needsSupplierData = columnAxis === "supplier" || secondaryAxis === "supplier";
 
@@ -389,11 +391,13 @@ export default function BOMGroupedMatrix({
                               )}
 
                               {/* Supplier info */}
-                              <SupplierCellContent
-                                approvedSupplierId={compSupplierAsId}
-                                componentProductId={line.component_product_id}
-                                isDefault={!compSupplierAsId}
-                              />
+                                              <SupplierCellContent
+                                                approvedSupplierId={compSupplierAsId}
+                                                componentProductId={line.component_product_id}
+                                                isDefault={!compSupplierAsId}
+                                                supplierCache={supplierCache}
+                                                onCacheUpdate={setSupplierCache}
+                                              />
 
                               {/* Controls */}
                               {isEditable && (
@@ -530,15 +534,22 @@ export default function BOMGroupedMatrix({
 }
 
 /** Tiny inline component to show resolved component supplier info in a grouped cell */
-function SupplierCellContent({ approvedSupplierId, componentProductId, isDefault }) {
+function SupplierCellContent({ approvedSupplierId, componentProductId, isDefault, supplierCache, onCacheUpdate }) {
   const [info, setInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!componentProductId) return;
-    let cancelled = false;
-    setLoading(true);
 
+    // Build cache key
+    const cacheKey = approvedSupplierId ? `${approvedSupplierId}:${componentProductId}` : `primary:${componentProductId}`;
+    const cached = supplierCache[cacheKey];
+
+    if (cached) {
+      setInfo(cached);
+      return;
+    }
+
+    let cancelled = false;
     const load = async () => {
       try {
         let as = null;
@@ -555,25 +566,24 @@ function SupplierCellContent({ approvedSupplierId, componentProductId, isDefault
         }
 
         if (cancelled || !as) {
-          setInfo(null);
-          setLoading(false);
+          if (!cancelled) setInfo(null);
           return;
         }
 
         const sups = await base44.entities.Supplier.filter({ id: as.supplier_id });
         if (cancelled) return;
-        setInfo({ as, supplier: sups[0] || null });
-      } finally {
-        if (!cancelled) setLoading(false);
+
+        const result = { as, supplier: sups[0] || null };
+        setInfo(result);
+        onCacheUpdate((prev) => ({ ...prev, [cacheKey]: result }));
+      } catch {
+        if (!cancelled) setInfo(null);
       }
     };
+
     load();
     return () => { cancelled = true; };
-  }, [approvedSupplierId, componentProductId]);
-
-  if (loading) {
-    return <div className="text-[8px] text-muted-foreground">…</div>;
-  }
+  }, [approvedSupplierId, componentProductId, supplierCache, onCacheUpdate]);
 
   if (!info) {
     return (
