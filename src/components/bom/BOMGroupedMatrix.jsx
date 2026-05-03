@@ -171,9 +171,9 @@ export default function BOMGroupedMatrix({
   const totalCols = primaryMembers.length * secondaryMembers.length;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-3">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex-1 min-h-0 overflow-auto border border-border rounded-lg">
-        <table className="w-full text-xs min-w-[600px]">
+        <table className="w-full text-xs">
           <thead className="sticky top-0 z-10 bg-muted/60">
             {/* Top row — primary axis spanning labels */}
             <tr className="border-b border-border/50">
