@@ -493,8 +493,9 @@ export default function BOMDetail() {
       )}
 
       {/* SCROLLABLE CONTENT */}
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        {activeTab === "matrix" && (
+      {activeTab === "matrix" ? (
+        /* Matrix tab: flex column, min-height:0 so table wrapper can own the scroll */
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <BOMMatrixEditor
             bom={bom}
             bomLines={bomLines}
@@ -532,22 +533,23 @@ export default function BOMDetail() {
               });
             }}
           />
-        )}
-
-        {activeTab === "bol" && isProduction && (
-          <BOLEditorTab
-            bol={bol}
-            operations={bolOperations}
-            bom={bom}
-            isReadOnly={isReadOnly}
-            onReload={reload}
-          />
-        )}
-
-        {activeTab === "changelog" && (
-          <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-2 py-3">
+          {activeTab === "bol" && isProduction && (
+            <BOLEditorTab
+              bol={bol}
+              operations={bolOperations}
+              bom={bom}
+              isReadOnly={isReadOnly}
+              onReload={reload}
+            />
+          )}
+          {activeTab === "changelog" && (
+            <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
+          )}
+        </div>
+      )}
 
       {/* Right-side info panel */}
       <BOMInfoPanel

@@ -385,14 +385,14 @@ export default function BOMMatrixEditor({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Matrix table */}
-      <div className="rounded-xl border border-border overflow-auto">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* Matrix table — this div is the ONLY scroll container */}
+      <div className="flex-1 min-h-0 overflow-auto border border-border rounded-xl mx-2 mt-2">
         <table className="w-full text-xs min-w-[600px]">
-          <thead className="sticky top-0 z-10 bg-muted/60">
-            <tr className="border-b border-border">
-              <th className="px-3 py-2.5 w-8 sticky left-0 bg-muted/60 z-20"></th>
-              <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground sticky left-8 bg-muted/60 z-20 min-w-[220px]">Component</th>
+          <thead className="sticky top-0 z-[2] bg-card border-b border-border shadow-sm">
+            <tr>
+              <th className="px-3 py-2.5 w-8 sticky left-0 bg-card z-[3]"></th>
+              <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground sticky left-8 bg-card z-[3] min-w-[220px]">Component</th>
               <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground w-20">Base Qty</th>
               <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground w-16">UOM</th>
               {columnHeaders.map((col) => (
@@ -568,8 +568,8 @@ export default function BOMMatrixEditor({
         </table>
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center">
+      {/* Legend — sticky footer, never scrolls */}
+      <div className="shrink-0 flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center px-2 py-1.5 border-t border-border bg-background">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded border border-dashed border-amber-400 bg-amber-50/50 inline-block" />
           Missing resolution
