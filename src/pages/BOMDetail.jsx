@@ -90,21 +90,12 @@ export default function BOMDetail() {
     const sortedLines = lines.sort((a, z) => (a.position || 0) - (z.position || 0));
     setBom(b);
     setBomLines(sortedLines);
-    // Fetch variants filtered to this BOM's lines only
-    const lineIds = sortedLines.map((l) => l.id);
+    // Fetch all variants for this BOM in one large request, then filter client-side
     let variants = [];
-    if (lineIds.length > 0) {
-      // Filter server-side by bom_line_id for the first line as a proxy isn't possible,
-      // so fetch per-line in small batches to avoid a full table scan
-      const chunks = [];
-      for (let i = 0; i < lineIds.length; i += 10) chunks.push(lineIds.slice(i, i + 10));
-      const results = await Promise.all(
-        chunks.map((chunk) =>
-          Promise.all(chunk.map((lid) => base44.entities.BOMLineVariant.filter({ bom_line_id: lid })))
-            .then((arrays) => arrays.flat())
-        )
-      );
-      variants = results.flat();
+    if (sortedLines.length > 0) {
+      const lineIds = new Set(sortedLines.map((l) => l.id));
+      const allVariants = await base44.entities.BOMLineVariant.list("-created_date", 5000);
+      variants = allVariants.filter((v) => lineIds.has(v.bom_line_id));
     }
     setBomLineVariants(variants);
     setChangeLog(log.sort((a, z) => new Date(z.triggered_at) - new Date(a.triggered_at)));
