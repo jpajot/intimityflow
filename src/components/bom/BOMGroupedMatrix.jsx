@@ -532,39 +532,53 @@ export default function BOMGroupedMatrix({
 /** Tiny inline component to show resolved component supplier info in a grouped cell */
 function SupplierCellContent({ approvedSupplierId, componentProductId, isDefault }) {
   const [info, setInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!componentProductId) return;
     let cancelled = false;
+    setLoading(true);
+
     const load = async () => {
-      if (approvedSupplierId) {
-        // Load the specific approved supplier
-        const asList = await base44.entities.ApprovedSupplier.filter({ id: approvedSupplierId });
-        if (cancelled || !asList[0]) return;
-        const as = asList[0];
+      try {
+        let as = null;
+        if (approvedSupplierId) {
+          const asList = await base44.entities.ApprovedSupplier.filter({ id: approvedSupplierId });
+          as = asList[0];
+        } else {
+          const asList = await base44.entities.ApprovedSupplier.filter({
+            product_id: componentProductId,
+            is_primary: true,
+            status: "active",
+          });
+          as = asList[0];
+        }
+
+        if (cancelled || !as) {
+          setInfo(null);
+          setLoading(false);
+          return;
+        }
+
         const sups = await base44.entities.Supplier.filter({ id: as.supplier_id });
         if (cancelled) return;
         setInfo({ as, supplier: sups[0] || null });
-      } else {
-        // Row-level default: primary
-        const asList = await base44.entities.ApprovedSupplier.filter({
-          product_id: componentProductId, is_primary: true, status: "active",
-        });
-        if (cancelled || !asList[0]) { setInfo(null); return; }
-        const as = asList[0];
-        const sups = await base44.entities.Supplier.filter({ id: as.supplier_id });
-        if (cancelled) return;
-        setInfo({ as, supplier: sups[0] || null });
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     load();
     return () => { cancelled = true; };
   }, [approvedSupplierId, componentProductId]);
 
+  if (loading) {
+    return <div className="text-[8px] text-muted-foreground">…</div>;
+  }
+
   if (!info) {
     return (
       <div className="flex items-center justify-center gap-1 text-amber-600 text-[9px]">
-        <AlertTriangle className="w-2.5 h-2.5" /> No supplier
+        <AlertTriangle className="w-2.5 h-2.5" />
       </div>
     );
   }
