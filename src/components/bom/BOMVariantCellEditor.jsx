@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Ban } from "lucide-react";
 import ComponentColorwayPicker from "./ComponentColorwayPicker.jsx";
+import ComponentSizePicker from "./ComponentSizePicker.jsx";
 
 /**
  * BOMVariantCellEditor
@@ -24,6 +25,7 @@ export default function BOMVariantCellEditor({
   techColors,
   commColors,
   bomType,
+  allSizes,
   onUpsertVariant,
   onDeleteVariant,
 }) {
@@ -291,6 +293,99 @@ export default function BOMVariantCellEditor({
               commColors={commColors}
               onSelect={(selectedColorId) => { safeUpsert({ component_product_color_id: selectedColorId, is_not_applicable: false }); setShowPicker(false); }}
               onClear={() => { safeUpsert({ component_product_color_id: null }); setShowPicker(false); }}
+              onClose={() => setShowPicker(false)}
+            />
+          </div>,
+          document.body
+        )}
+      </div>
+    );
+  }
+
+  // ── Size axis: component_size_mapping mode ───────────────────────────────
+  if (columnAxis === "size" && line.size_variation_mode === "component_size_mapping") {
+    const baseSizeId = line.base_component_size_id;
+    const overrideSizeId = variant?.component_size_id;
+    // Resolved size: explicit override wins, then base
+    const resolvedSizeId = overrideSizeId || baseSizeId;
+    const isOverride = !!overrideSizeId && overrideSizeId !== baseSizeId;
+
+    const getSizeName = (sizeId) => {
+      if (!sizeId) return "—";
+      const s = (allSizes || []).find((sz) => sz.id === sizeId);
+      return s ? (s.name || s.size_code || sizeId) : sizeId;
+    };
+
+    const handleSizeSelect = (pickedSizeId) => {
+      setShowPicker(false);
+      if (pickedSizeId === baseSizeId && !variant?.quantity && !variant?.notes && !variant?.is_not_applicable) {
+        // Reset to base: delete variant if it exists
+        if (variant?.id && onDeleteVariant) { onDeleteVariant(variant.id); return; }
+      }
+      safeUpsert({ component_size_id: pickedSizeId, is_not_applicable: false });
+    };
+
+    const handleResetToBase = () => {
+      setShowPicker(false);
+      if (variant?.id) {
+        // If variant has only component_size_id set, delete it entirely
+        const hasOtherData = variant.quantity != null || variant.notes || variant.is_not_applicable;
+        if (!hasOtherData && onDeleteVariant) { onDeleteVariant(variant.id); return; }
+        safeUpsert({ component_size_id: null });
+      }
+    };
+
+    const cellContent = (
+      <div className={`flex items-center justify-center min-h-[36px] px-1 ${isOverride ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+        <span className="text-xs">
+          {isOverride && <span className="text-amber-500 mr-0.5">Δ</span>}
+          {getSizeName(resolvedSizeId)}
+        </span>
+      </div>
+    );
+
+    if (isReadOnly) {
+      return <div className="w-full rounded border border-border">{cellContent}</div>;
+    }
+
+    return (
+      <div className="relative w-full group">
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => {
+            if (!showPicker && triggerRef.current) {
+              const rect = triggerRef.current.getBoundingClientRect();
+              setPickerPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX + rect.width / 2 });
+            }
+            setShowPicker((v) => !v);
+          }}
+          className={`w-full rounded border transition-colors hover:border-primary/60 hover:bg-primary/5 ${
+            isOverride ? "border-amber-300 bg-amber-50/30" : "border-border"
+          }`}
+        >
+          {cellContent}
+        </button>
+
+        {/* NA button */}
+        <button
+          type="button"
+          onClick={handleMarkNA}
+          className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-muted-foreground/40 hover:text-destructive transition-all"
+          title="Mark as N/A"
+        >
+          <Ban className="w-3 h-3" />
+        </button>
+
+        {showPicker && createPortal(
+          <div className="fixed z-[9999]" style={{ top: pickerPos.top, left: pickerPos.left, transform: "translateX(-50%)" }}>
+            <ComponentSizePicker
+              componentProductId={line.component_product_id}
+              currentSizeId={resolvedSizeId}
+              baseSizeId={baseSizeId}
+              allSizes={allSizes || []}
+              onSelect={handleSizeSelect}
+              onClear={handleResetToBase}
               onClose={() => setShowPicker(false)}
             />
           </div>,

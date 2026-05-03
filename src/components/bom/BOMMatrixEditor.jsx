@@ -532,6 +532,7 @@ export default function BOMMatrixEditor({
                           bomType={bom?.bom_type}
                           onUpsertVariant={onUpsertVariant}
                           onDeleteVariant={onDeleteVariant}
+                          allSizes={allSizes}
                         />
                         {/* Supplier subscript — only in color axis when resolved */}
                         {showSourcing && columnAxis === "color" && compColorId && (
