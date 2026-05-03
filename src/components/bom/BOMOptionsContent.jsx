@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronDown, Plus } from "lucide-react";
+import { ChevronRight, ChevronDown, Plus, X } from "lucide-react";
+import { isFilterActive, DEFAULT_QUICK_FILTERS } from "./BOMQuickFilters.jsx";
 
 const AXIS_OPTIONS = [
   { value: "color", label: "Colorway" },
@@ -12,7 +12,7 @@ const AXIS_OPTIONS = [
 ];
 
 // All groups collapsed by default
-const DEFAULT_GROUPS = { view: false, lines: false, bom: false, export: false };
+const DEFAULT_GROUPS = { view: false, quickfilter: false, lines: false, bom: false, export: false };
 
 function CollapsibleGroup({ label, expanded, onToggle, children }) {
   return (
@@ -80,6 +80,13 @@ export default function BOMOptionsContent({
   onRefreshSourcing,
   onExportMatrix,
   onClose,
+  quickFilters,
+  onQuickFiltersChange,
+  colorVariants = [],
+  styleSizes = [],
+  colorAndMores = [],
+  techColors = [],
+  projects = [],
 }) {
   const expanded = { ...DEFAULT_GROUPS, ...groupsExpanded };
 
@@ -173,6 +180,61 @@ export default function BOMOptionsContent({
           </div>
         </div>
       </CollapsibleGroup>
+
+      {/* QUICK FILTER GROUP */}
+      <>
+        <div className="border-t border-border" />
+        <CollapsibleGroup label="Quick Filter" expanded={expanded.quickfilter} onToggle={() => onGroupToggle("quickfilter")}>
+          <div className="space-y-2 px-1">
+            {/* Project filter */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Project</label>
+              <Select
+                value={quickFilters?.project_id || "__none__"}
+                onValueChange={(v) => onQuickFiltersChange?.({ ...quickFilters, project_id: v === "__none__" ? null : v })}
+              >
+                <SelectTrigger className="h-7 text-xs w-full">
+                  <SelectValue placeholder="All projects" />
+                </SelectTrigger>
+                <SelectContent style={{ zIndex: 99999 }} position="popper">
+                  <SelectItem value="__none__">All projects</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Colorway status filter */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Colorway status</label>
+              <Select
+                value={quickFilters?.colorway_status || "__none__"}
+                onValueChange={(v) => onQuickFiltersChange?.({ ...quickFilters, colorway_status: v === "__none__" ? null : v })}
+              >
+                <SelectTrigger className="h-7 text-xs w-full">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent style={{ zIndex: 99999 }} position="popper">
+                  <SelectItem value="__none__">All statuses</SelectItem>
+                  {["approved", "in_progress", "submitted_for_approval", "requested", "rejected"].map((s) => (
+                    <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Clear button */}
+            {isFilterActive(quickFilters) && (
+              <button
+                type="button"
+                onClick={() => onQuickFiltersChange?.(DEFAULT_QUICK_FILTERS)}
+                className="w-full flex items-center justify-center gap-1 px-2 py-1 rounded text-xs text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <X className="w-3 h-3" /> Clear all filters
+              </button>
+            )}
+          </div>
+        </CollapsibleGroup>
+      </>
 
       {/* LINES GROUP */}
       {linesActions.length > 0 && (

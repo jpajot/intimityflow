@@ -330,9 +330,9 @@ export default function BOMMatrixEditor({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Matrix table */}
-      <div className="rounded-xl border border-border overflow-auto">
+    <div className="flex flex-col h-full min-h-0 gap-3">
+      {/* Matrix table — fills remaining height and scrolls */}
+      <div className="flex-1 min-h-0 rounded-xl border border-border overflow-auto">
         <table className="w-full text-xs min-w-[600px]">
           <thead className="sticky top-0 z-10 bg-muted/60">
             <tr className="border-b border-border">
@@ -489,8 +489,8 @@ export default function BOMMatrixEditor({
         </table>
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center">
+      {/* Legend — stays pinned at bottom */}
+      <div className="flex gap-4 text-[10px] text-muted-foreground flex-wrap items-center shrink-0">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded border border-dashed border-amber-400 bg-amber-50/50 inline-block" />
           Missing resolution
