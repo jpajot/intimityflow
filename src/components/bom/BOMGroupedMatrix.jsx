@@ -172,13 +172,7 @@ export default function BOMGroupedMatrix({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="shrink-0 px-2 py-1.5">
-        <span className="text-xs text-muted-foreground">
-          {primaryMembers.length} × {secondaryMembers.length} = {totalCols} columns
-        </span>
-      </div>
-
-      <div className="flex-1 min-h-0 overflow-auto border border-border rounded-xl mx-2 mb-2">
+      <div className="flex-1 min-h-0 overflow-auto border border-border rounded-xl mx-2 mt-2">
         <table className="w-full text-xs min-w-[600px]">
           <thead className="sticky top-0 z-10 bg-muted/60">
             {/* Top row — primary axis spanning labels */}
