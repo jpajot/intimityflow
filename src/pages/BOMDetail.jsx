@@ -133,9 +133,9 @@ export default function BOMDetail() {
       const ss = await base44.entities.StyleSize.filter({ product_id: b.product_id });
       setStyleSizes(ss.filter((s) => s.active !== false));
 
-      // Filter ColorAndMore by active colorways
-      const cams = await base44.entities.ProductColorAndMore.list("-created_date", 2000);
-      setColorAndMores(cams.filter((c) => activeCws.some((cw) => cw.id === c.product_color_id)));
+      // Filter ColorAndMore by active colorways (limit to 500 to reduce rate limit pressure)
+       const cams = await base44.entities.ProductColorAndMore.list("-created_date", 500);
+       setColorAndMores(cams.filter((c) => activeCws.some((cw) => cw.id === c.product_color_id)));
     }
 
     // Load BOL if production BOM
