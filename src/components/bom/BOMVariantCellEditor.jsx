@@ -25,6 +25,7 @@ export default function BOMVariantCellEditor({
   commColors,
   bomType,
   onUpsertVariant,
+  onDeleteVariant,
 }) {
   const [editing, setEditing] = useState(false);
   const [qty, setQty] = useState(""); // used for size/cam axis quantity editing
@@ -98,8 +99,13 @@ export default function BOMVariantCellEditor({
           <button
             type="button"
             onClick={() => {
-              const payload = buildPayload({ is_not_applicable: false, component_product_color_id: null });
-              if (payload) onUpsertVariant(payload);
+              if (variant?.id && onDeleteVariant) {
+                onDeleteVariant(variant.id);
+              } else {
+                // fallback: try to upsert with is_not_applicable: false
+                const payload = buildPayload({ is_not_applicable: false, component_product_color_id: null });
+                if (payload) onUpsertVariant(payload);
+              }
             }}
             className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-background/70 rounded text-[10px] text-foreground transition-opacity"
           >

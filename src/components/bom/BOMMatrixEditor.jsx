@@ -180,7 +180,7 @@ export default function BOMMatrixEditor({
   lovValues, isReadOnly, columnAxis, onColumnAxisChange,
   secondaryAxis, onSecondaryAxisChange,
   showSourcing,
-  onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
+  onUpdateLine, onDeleteLine, onUpsertVariant, onDeleteVariant, getUom, onAddLine,
   onReorderLines, onEditLineSaved, user,
   allSizes = [],
   externalSearch = "",
@@ -531,6 +531,7 @@ export default function BOMMatrixEditor({
                           commColors={commColors}
                           bomType={bom?.bom_type}
                           onUpsertVariant={onUpsertVariant}
+                          onDeleteVariant={onDeleteVariant}
                         />
                         {/* Supplier subscript — only in color axis when resolved */}
                         {showSourcing && columnAxis === "color" && compColorId && (

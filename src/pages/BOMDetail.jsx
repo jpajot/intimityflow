@@ -318,6 +318,11 @@ export default function BOMDetail() {
     }
   };
 
+  const handleDeleteVariant = async (variantId) => {
+    await base44.entities.BOMLineVariant.delete(variantId);
+    setBomLineVariants((prev) => prev.filter((v) => v.id !== variantId));
+  };
+
   const handleUpsertVariant = async (variantData) => {
     const existing = bomLineVariants.find(
       (v) => v.bom_line_id === variantData.bom_line_id &&
@@ -512,6 +517,7 @@ export default function BOMDetail() {
             onUpdateLine={handleUpdateLine}
             onDeleteLine={handleDeleteLine}
             onUpsertVariant={handleUpsertVariant}
+            onDeleteVariant={handleDeleteVariant}
             getUom={getUom}
             onAddLine={() => setShowAddLine(true)}
             onReorderLines={handleReorderLines}
