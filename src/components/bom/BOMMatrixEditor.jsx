@@ -193,33 +193,6 @@ export default function BOMMatrixEditor({
     });
   };
 
-  // Supplier axis → delegate entirely to BOMSupplierMatrix
-  if (columnAxis === "supplier") {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search component lines…" className="h-8 text-xs w-56" />
-          {showAxisConfig && (
-            <AxisSelector columnAxis={columnAxis} onColumnAxisChange={onColumnAxisChange} />
-          )}
-          <SourcingToggle showSourcing={showSourcing} onToggle={toggleSourcing} />
-        </div>
-        <BOMSupplierMatrix
-          bom={bom}
-          bomLines={bomLines}
-          bomLineVariants={bomLineVariants}
-          allProducts={allProducts}
-          lovValues={lovValues}
-          isReadOnly={isReadOnly}
-          onDeleteLine={onDeleteLine}
-          onUpdateLine={onUpdateLine}
-          onUpsertVariant={onUpsertVariant}
-          getUom={getUom}
-        />
-      </div>
-    );
-  }
-
   // Resolve size records for column headers
   const columnHeaders = useMemo(() => {
     if (columnAxis === "color") return colorVariants;
@@ -269,6 +242,31 @@ export default function BOMMatrixEditor({
       </span>
     );
   };
+
+  // Supplier axis — render after all hooks
+  if (columnAxis === "supplier") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search component lines…" className="h-8 text-xs w-56" />
+          {showAxisConfig && <AxisSelector columnAxis={columnAxis} onColumnAxisChange={onColumnAxisChange} />}
+          <SourcingToggle showSourcing={showSourcing} onToggle={toggleSourcing} />
+        </div>
+        <BOMSupplierMatrix
+          bom={bom}
+          bomLines={bomLines}
+          bomLineVariants={bomLineVariants}
+          allProducts={allProducts}
+          lovValues={lovValues}
+          isReadOnly={isReadOnly}
+          onDeleteLine={onDeleteLine}
+          onUpdateLine={onUpdateLine}
+          onUpsertVariant={onUpsertVariant}
+          getUom={getUom}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
