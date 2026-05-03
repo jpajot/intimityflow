@@ -30,9 +30,13 @@
       "type": "string",
       "description": "FK \u2192 ProductColorAndMore (component's ColorAndMore \u2014 nullable)"
     },
+    "parent_approved_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 ApprovedSupplier (the parent product's vendor scenario this variant applies to \u2014 the column dimension in the Supplier matrix. Null when the line does not vary by parent vendor.)"
+    },
     "approved_supplier_id": {
       "type": "string",
-      "description": "FK \u2192 ApprovedSupplier (production BOMs)"
+      "description": "FK \u2192 ApprovedSupplier \u2014 the component's supplier picked for this variant intersection"
     },
     "product_color_supplier_link_id": {
       "type": "string",
