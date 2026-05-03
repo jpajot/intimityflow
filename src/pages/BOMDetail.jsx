@@ -72,17 +72,32 @@ export default function BOMDetail() {
 
   const reload = useCallback(async () => {
     if (!id) return;
-    const [boms, lines, variants, log] = await Promise.all([
+    const [boms, lines, log] = await Promise.all([
       base44.entities.BOM.filter({ id }),
       base44.entities.BOMLine.filter({ bom_id: id }),
-      base44.entities.BOMLineVariant.list("-created_date", 5000),
       base44.entities.BOMChangeLog.filter({ bom_id: id }),
     ]);
     const b = boms[0];
+    const sortedLines = lines.sort((a, z) => (a.position || 0) - (z.position || 0));
     setBom(b);
-    setBomLines(lines.sort((a, z) => (a.position || 0) - (z.position || 0)));
-    const lineIds = new Set(lines.map((l) => l.id));
-    setBomLineVariants(variants.filter((v) => lineIds.has(v.bom_line_id)));
+    setBomLines(sortedLines);
+    // Fetch variants filtered to this BOM's lines only
+    const lineIds = sortedLines.map((l) => l.id);
+    let variants = [];
+    if (lineIds.length > 0) {
+      // Filter server-side by bom_line_id for the first line as a proxy isn't possible,
+      // so fetch per-line in small batches to avoid a full table scan
+      const chunks = [];
+      for (let i = 0; i < lineIds.length; i += 10) chunks.push(lineIds.slice(i, i + 10));
+      const results = await Promise.all(
+        chunks.map((chunk) =>
+          Promise.all(chunk.map((lid) => base44.entities.BOMLineVariant.filter({ bom_line_id: lid })))
+            .then((arrays) => arrays.flat())
+        )
+      );
+      variants = results.flat();
+    }
+    setBomLineVariants(variants);
     setChangeLog(log.sort((a, z) => new Date(z.triggered_at) - new Date(a.triggered_at)));
     if (b) {
       const [prod] = await Promise.all([
@@ -114,23 +129,32 @@ export default function BOMDetail() {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const [prods, lovs, u, allPCs, tcs, ccs, sizes] = await Promise.all([
-        base44.entities.Product.list("-created_date", 2000),
-        base44.entities.ListOfValues.list("name", 5000),
+
+      // Batch 1: user + lightweight lookups
+      const [u, lovs, sizes] = await Promise.all([
         base44.auth.me(),
+        base44.entities.ListOfValues.list("name", 5000),
+        base44.entities.Size.list("size_code", 500),
+      ]);
+      setLovValues(lovs);
+      setUser(u);
+      setAllSizes(sizes);
+
+      // Batch 2: product catalogs (color libraries are large — separate batch)
+      const [prods, allPCs, tcs, ccs] = await Promise.all([
+        base44.entities.Product.list("-created_date", 2000),
         base44.entities.ProductColor.list("-created_date", 5000),
         base44.entities.TechnicalColor.list("code", 2000),
         base44.entities.CommercialColor.list("code", 2000),
-        base44.entities.Size.list("size_code", 500),
       ]);
       setAllProducts(prods);
-      setLovValues(lovs);
-      setUser(u);
       setAllProductColors(allPCs);
       setTechColors(tcs);
       setCommColors(ccs);
-      setAllSizes(sizes);
+
+      // Batch 3: BOM-specific data
       await reload();
+
       // Load or create BOMMatrixViewState for this user+BOM
       if (u && id) {
         const existing = await base44.entities.BOMMatrixViewState.filter({ bom_id: id, user_id: u.id });
