@@ -181,7 +181,7 @@ export default function BOMMatrixEditor({
   secondaryAxis, onSecondaryAxisChange,
   showSourcing,
   onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
-  onEditLineSaved, user,
+  onReorderLines, onEditLineSaved, user,
   allSizes = [],
   externalSearch = "",
 }) {
@@ -221,7 +221,6 @@ export default function BOMMatrixEditor({
 
     if (!dragLineId || dragLineId === targetLineId) return;
 
-    // Reorder locally using the full bomLines array (not filtered)
     const currentOrder = [...bomLines];
     const fromIdx = currentOrder.findIndex((l) => l.id === dragLineId);
     const toIdx = currentOrder.findIndex((l) => l.id === targetLineId);
@@ -231,23 +230,17 @@ export default function BOMMatrixEditor({
     const [moved] = reordered.splice(fromIdx, 1);
     reordered.splice(toIdx, 0, moved);
 
-    // Assign sequential positions starting at 0
-    const updates = reordered.map((line, idx) => ({ ...line, position: idx }));
+    // Assign sequential positions
+    const withPositions = reordered.map((line, idx) => ({ ...line, position: idx }));
 
-    // Optimistic update via parent's onUpdateLine (which updates local state)
-    // We call it for each line that changed position
-    updates.forEach((line) => {
-      if (line.position !== bomLines.find((l) => l.id === line.id)?.position) {
-        onUpdateLine(line.id, { position: line.position });
-      }
-    });
+    // Instantly reorder in parent state
+    if (onReorderLines) onReorderLines(withPositions);
 
-    // Persist all affected rows in parallel
-    await Promise.all(
-      updates
-        .filter((line) => line.position !== bomLines.find((l) => l.id === line.id)?.position)
-        .map((line) => base44.entities.BOMLine.update(line.id, { position: line.position }))
+    // Persist only changed rows
+    const changed = withPositions.filter(
+      (line) => line.position !== currentOrder.find((l) => l.id === line.id)?.position
     );
+    await Promise.all(changed.map((line) => base44.entities.BOMLine.update(line.id, { position: line.position })));
   };
 
   // Inline flag toggle — checks for cascade before committing

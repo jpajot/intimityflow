@@ -250,6 +250,10 @@ export default function BOMDetail() {
     setBomLines((prev) => prev.map((l) => l.id === lineId ? { ...l, ...updates } : l));
   };
 
+  const handleReorderLines = (reorderedLines) => {
+    setBomLines(reorderedLines);
+  };
+
   const persistViewState = async (updates) => {
     if (!viewStateId) return;
     await base44.entities.BOMMatrixViewState.update(viewStateId, {
@@ -510,6 +514,7 @@ export default function BOMDetail() {
             onUpsertVariant={handleUpsertVariant}
             getUom={getUom}
             onAddLine={() => setShowAddLine(true)}
+            onReorderLines={handleReorderLines}
             user={user}
             externalSearch={searchValue}
             onEditLineSaved={(lineId, deletedIds) => {
