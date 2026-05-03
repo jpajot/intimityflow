@@ -28,6 +28,10 @@
       "type": "object",
       "description": "JSON filter state"
     },
+    "options_sidebar_groups_state": {
+      "type": "object",
+      "description": "Per-group expanded/collapsed state: { view, lines, bom, export } as booleans"
+    },
     "last_used_at": {
       "type": "string",
       "description": "ISO datetime"
