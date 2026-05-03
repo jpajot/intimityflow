@@ -55,6 +55,8 @@ export default function BOMDetail() {
   const [activeTab, setActiveTab] = useState("matrix");
   const [showMatrixConfig, setShowMatrixConfig] = useState(false);
   const [matrixColumnAxis, setMatrixColumnAxis] = useState("color");
+  const [matrixSecondaryAxis, setMatrixSecondaryAxis] = useState(null);
+  const [viewStateId, setViewStateId] = useState(null);
   const [user, setUser] = useState(null);
 
   const isReadOnly = bom && !["draft", "in_review"].includes(bom.status);
@@ -129,6 +131,26 @@ export default function BOMDetail() {
       setCommColors(ccs);
       setAllSizes(sizes);
       await reload();
+      // Load or create BOMMatrixViewState for this user+BOM
+      if (u && id) {
+        const existing = await base44.entities.BOMMatrixViewState.filter({ bom_id: id, user_id: u.id });
+        if (existing[0]) {
+          setViewStateId(existing[0].id);
+          setMatrixColumnAxis(existing[0].column_axis || "color");
+          setMatrixSecondaryAxis(existing[0].secondary_column_axis || null);
+        } else {
+          const created = await base44.entities.BOMMatrixViewState.create({
+            bom_id: id,
+            user_id: u.id,
+            row_axis: "bom_line",
+            column_axis: "color",
+            secondary_column_axis: null,
+            filter_config: {},
+            last_used_at: new Date().toISOString(),
+          });
+          setViewStateId(created.id);
+        }
+      }
       setLoading(false);
     };
     init();
@@ -186,12 +208,37 @@ export default function BOMDetail() {
     setBomLines((prev) => prev.map((l) => l.id === lineId ? { ...l, ...updates } : l));
   };
 
+  const persistViewState = async (updates) => {
+    if (!viewStateId) return;
+    await base44.entities.BOMMatrixViewState.update(viewStateId, {
+      ...updates,
+      last_used_at: new Date().toISOString(),
+    });
+  };
+
+  const handleColumnAxisChange = (axis) => {
+    setMatrixColumnAxis(axis);
+    // Clear secondary if it conflicts
+    if (matrixSecondaryAxis === axis) {
+      setMatrixSecondaryAxis(null);
+      persistViewState({ column_axis: axis, secondary_column_axis: null });
+    } else {
+      persistViewState({ column_axis: axis });
+    }
+  };
+
+  const handleSecondaryAxisChange = (axis) => {
+    setMatrixSecondaryAxis(axis);
+    persistViewState({ secondary_column_axis: axis });
+  };
+
   const handleUpsertVariant = async (variantData) => {
     const existing = bomLineVariants.find(
       (v) => v.bom_line_id === variantData.bom_line_id &&
         v.product_color_id === variantData.product_color_id &&
         v.size_id === variantData.size_id &&
-        v.product_color_and_more_id === variantData.product_color_and_more_id
+        v.product_color_and_more_id === variantData.product_color_and_more_id &&
+        v.parent_approved_supplier_id === variantData.parent_approved_supplier_id
     );
     if (existing) {
       await base44.entities.BOMLineVariant.update(existing.id, variantData);
@@ -317,7 +364,9 @@ export default function BOMDetail() {
           allSizes={allSizes}
           isReadOnly={isReadOnly}
           columnAxis={matrixColumnAxis}
-          onColumnAxisChange={setMatrixColumnAxis}
+          onColumnAxisChange={handleColumnAxisChange}
+          secondaryAxis={matrixSecondaryAxis}
+          onSecondaryAxisChange={handleSecondaryAxisChange}
           showAxisConfig={showMatrixConfig}
           onUpdateLine={handleUpdateLine}
           onDeleteLine={handleDeleteLine}

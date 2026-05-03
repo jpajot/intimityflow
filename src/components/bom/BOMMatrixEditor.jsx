@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import BOMVariantCellEditor from "./BOMVariantCellEditor.jsx";
 import BOMSourcingBlock from "./BOMSourcingBlock.jsx";
 import BOMSupplierMatrix from "./BOMSupplierMatrix.jsx";
+import BOMGroupedMatrix from "./BOMGroupedMatrix.jsx";
 
 const AXIS_OPTIONS = [
   { value: "color", label: "Colorway" },
@@ -177,6 +178,7 @@ export default function BOMMatrixEditor({
   bom, bomLines, bomLineVariants, colorVariants, styleSizes, colorAndMores,
   allProducts, allProductColors, techColors, commColors,
   lovValues, isReadOnly, columnAxis, onColumnAxisChange,
+  secondaryAxis, onSecondaryAxisChange,
   showAxisConfig, onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
   allSizes = [],
 }) {
@@ -243,15 +245,58 @@ export default function BOMMatrixEditor({
     );
   };
 
-  // Supplier axis — render after all hooks
+  const toolbar = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search component lines…" className="h-8 text-xs w-56" />
+      {showAxisConfig && (
+        <AxisSelector
+          columnAxis={columnAxis}
+          onColumnAxisChange={onColumnAxisChange}
+          secondaryAxis={secondaryAxis}
+          onSecondaryAxisChange={onSecondaryAxisChange}
+        />
+      )}
+      <SourcingToggle showSourcing={showSourcing} onToggle={toggleSourcing} />
+    </div>
+  );
+
+  // Grouped matrix — secondary axis set and differs from primary
+  if (secondaryAxis && secondaryAxis !== columnAxis) {
+    return (
+      <div className="space-y-3">
+        {toolbar}
+        <BOMGroupedMatrix
+          bom={bom}
+          bomLines={bomLines}
+          bomLineVariants={bomLineVariants}
+          colorVariants={colorVariants}
+          styleSizes={styleSizes}
+          colorAndMores={colorAndMores}
+          allProducts={allProducts}
+          allProductColors={allProductColors}
+          techColors={techColors}
+          commColors={commColors}
+          lovValues={lovValues}
+          allSizes={allSizes}
+          isReadOnly={isReadOnly}
+          columnAxis={columnAxis}
+          secondaryAxis={secondaryAxis}
+          onUpdateLine={onUpdateLine}
+          onDeleteLine={onDeleteLine}
+          onUpsertVariant={onUpsertVariant}
+          getUom={getUom}
+          onAddLine={onAddLine}
+          showSourcing={showSourcing}
+        />
+      </div>
+    );
+  }
+
+  // Flat supplier axis
   if (columnAxis === "supplier") {
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search component lines…" className="h-8 text-xs w-56" />
-          {showAxisConfig && <AxisSelector columnAxis={columnAxis} onColumnAxisChange={onColumnAxisChange} />}
-          <SourcingToggle showSourcing={showSourcing} onToggle={toggleSourcing} />
-        </div>
+        {toolbar}
         <BOMSupplierMatrix
           bom={bom}
           bomLines={bomLines}
@@ -271,11 +316,7 @@ export default function BOMMatrixEditor({
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search component lines…" className="h-8 text-xs w-56" />
-        {showAxisConfig && <AxisSelector columnAxis={columnAxis} onColumnAxisChange={onColumnAxisChange} />}
-        <SourcingToggle showSourcing={showSourcing} onToggle={toggleSourcing} />
-      </div>
+      {toolbar}
 
       {/* Matrix table */}
       <div className="rounded-xl border border-border overflow-auto">
@@ -446,20 +487,37 @@ export default function BOMMatrixEditor({
 
 // ── Shared sub-components ──────────────────────────────────────────────────────
 
-function AxisSelector({ columnAxis, onColumnAxisChange }) {
+function AxisSelector({ columnAxis, onColumnAxisChange, secondaryAxis, onSecondaryAxisChange }) {
   return (
-    <div className="flex items-center gap-2 ml-auto bg-muted/60 border border-border rounded-lg px-3 py-1.5">
-      <span className="text-xs font-medium text-muted-foreground">Columns:</span>
-      <Select value={columnAxis} onValueChange={onColumnAxisChange}>
-        <SelectTrigger className="h-7 text-xs w-36 border-0 bg-transparent shadow-none p-0">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {AXIS_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex items-center gap-3 ml-auto bg-muted/60 border border-border rounded-lg px-3 py-1.5 flex-wrap">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Columns:</span>
+        <Select value={columnAxis} onValueChange={onColumnAxisChange}>
+          <SelectTrigger className="h-7 text-xs w-36 border-0 bg-transparent shadow-none p-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AXIS_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="w-px h-4 bg-border" />
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Group by:</span>
+        <Select value={secondaryAxis || "__none__"} onValueChange={(v) => onSecondaryAxisChange(v === "__none__" ? null : v)}>
+          <SelectTrigger className="h-7 text-xs w-36 border-0 bg-transparent shadow-none p-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">— none —</SelectItem>
+            {AXIS_OPTIONS.filter((o) => o.value !== columnAxis).map((o) => (
+              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
