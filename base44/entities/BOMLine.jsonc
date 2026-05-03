@@ -64,6 +64,10 @@
       "type": "string",
       "description": "FK \u2192 Size (nullable; the component's default size used across all parent sizes when size_variation_mode = base_size_with_optional_grading)"
     },
+    "line_level_approved_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 ApprovedSupplier (nullable; overrides component primary supplier as the row-level default for this specific BOM line. Must reference an ApprovedSupplier whose product_id = BOMLine.component_product_id and status = 'active'.)"
+    },
     "notes": {
       "type": "string"
     },

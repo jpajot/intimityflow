@@ -2,12 +2,14 @@ import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, GripVertical, Plus, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Trash2, GripVertical, Plus, AlertTriangle, Eye, EyeOff, Pencil } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import BOMVariantCellEditor from "./BOMVariantCellEditor.jsx";
 import BOMSourcingBlock from "./BOMSourcingBlock.jsx";
 import BOMSupplierMatrix from "./BOMSupplierMatrix.jsx";
 import BOMGroupedMatrix from "./BOMGroupedMatrix.jsx";
+import BOMLineEditPanel from "./BOMLineEditPanel.jsx";
+import BOMLineDestructiveConfirmDialog from "./BOMLineDestructiveConfirmDialog.jsx";
 
 const AXIS_OPTIONS = [
   { value: "color", label: "Colorway" },
@@ -180,9 +182,12 @@ export default function BOMMatrixEditor({
   lovValues, isReadOnly, columnAxis, onColumnAxisChange,
   secondaryAxis, onSecondaryAxisChange,
   showAxisConfig, onUpdateLine, onDeleteLine, onUpsertVariant, getUom, onAddLine,
+  onEditLineSaved, user,
   allSizes = [],
 }) {
   const [search, setSearch] = useState("");
+  const [editingLine, setEditingLine] = useState(null);
+  const [inlineConfirm, setInlineConfirm] = useState(null); // { lineId, field, newValue, cascadeIds, description }
   const [showSourcing, setShowSourcing] = useState(() => {
     const stored = localStorage.getItem(SOURCING_SHOW_KEY);
     return stored === null ? true : stored === "true";
@@ -193,6 +198,46 @@ export default function BOMMatrixEditor({
       localStorage.setItem(SOURCING_SHOW_KEY, String(!v));
       return !v;
     });
+  };
+
+  // Inline flag toggle — checks for cascade before committing
+  const handleFlagToggle = (line, flag, newValue) => {
+    // Only turning OFF can be destructive
+    if (newValue === true) { onUpdateLine(line.id, { [flag]: true }); return; }
+
+    const lineVariants = bomLineVariants.filter((v) => v.bom_line_id === line.id);
+    const cascadeIds = lineVariants
+      .filter((v) => {
+        if (flag === "varies_by_color") return v.product_color_id;
+        if (flag === "varies_by_size") return v.size_id;
+        if (flag === "varies_by_color_and_more") return v.product_color_and_more_id;
+        if (flag === "varies_by_supplier") return v.parent_approved_supplier_id;
+        return false;
+      })
+      .map((v) => v.id);
+
+    if (cascadeIds.length === 0) { onUpdateLine(line.id, { [flag]: false }); return; }
+
+    const flagLabel = { varies_by_color: "Varies by color", varies_by_size: "Varies by size", varies_by_color_and_more: "Varies by Color & More", varies_by_supplier: "Varies by supplier" }[flag] || flag;
+    setInlineConfirm({
+      lineId: line.id,
+      field: flag,
+      newValue: false,
+      cascadeIds,
+      description: (
+        <p>Disabling <strong>"{flagLabel}"</strong> on this line will delete <strong>{cascadeIds.length} variant record{cascadeIds.length !== 1 ? "s" : ""}</strong>. This cannot be undone.</p>
+      ),
+    });
+  };
+
+  const executeInlineConfirm = async () => {
+    const { lineId, field, newValue, cascadeIds } = inlineConfirm;
+    setInlineConfirm(null);
+    if (cascadeIds.length > 0) {
+      await Promise.all(cascadeIds.map((vid) => base44.entities.BOMLineVariant.delete(vid)));
+      if (onEditLineSaved) onEditLineSaved(lineId, cascadeIds);
+    }
+    onUpdateLine(lineId, { [field]: newValue });
   };
 
   // Resolve size records for column headers
@@ -384,26 +429,30 @@ export default function BOMMatrixEditor({
                       </div>
                       {/* Variation flags + supplier toggle */}
                       <div className="flex gap-1 flex-wrap items-center">
-                        {line.varies_by_color && <span className="text-[10px] px-1 py-0.5 bg-blue-100 text-blue-700 rounded">×color</span>}
-                        {line.varies_by_size && <span className="text-[10px] px-1 py-0.5 bg-green-100 text-green-700 rounded">×size</span>}
-                        {line.varies_by_color_and_more && <span className="text-[10px] px-1 py-0.5 bg-orange-100 text-orange-700 rounded">×more</span>}
-                        {/* varies_by_supplier toggle */}
-                        {!isReadOnly ? (
-                          <button
-                            type="button"
-                            onClick={() => onUpdateLine(line.id, { varies_by_supplier: !line.varies_by_supplier })}
-                            className={`text-[10px] px-1 py-0.5 rounded border transition-colors ${
-                              line.varies_by_supplier
-                                ? "bg-pink-100 text-pink-700 border-pink-300"
-                                : "bg-muted text-muted-foreground border-border hover:bg-pink-50 hover:text-pink-600"
-                            }`}
-                            title="Toggle per-supplier variation"
-                          >
-                            ×supplier
-                          </button>
-                        ) : (
-                          line.varies_by_supplier && <span className="text-[10px] px-1 py-0.5 bg-pink-100 text-pink-700 rounded">×supplier</span>
-                        )}
+                        {[
+                          { flag: "varies_by_color", label: "×color", cls: "bg-blue-100 text-blue-700 border-blue-300" },
+                          { flag: "varies_by_size", label: "×size", cls: "bg-green-100 text-green-700 border-green-300" },
+                          { flag: "varies_by_color_and_more", label: "×more", cls: "bg-orange-100 text-orange-700 border-orange-300" },
+                          { flag: "varies_by_supplier", label: "×supplier", cls: "bg-pink-100 text-pink-700 border-pink-300" },
+                        ].map(({ flag, label, cls }) => (
+                          !isReadOnly ? (
+                            <button
+                              key={flag}
+                              type="button"
+                              onClick={() => handleFlagToggle(line, flag, !line[flag])}
+                              className={`text-[10px] px-1 py-0.5 rounded border transition-colors ${
+                                line[flag]
+                                  ? cls
+                                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                              }`}
+                              title={`Toggle ${label}`}
+                            >
+                              {label}
+                            </button>
+                          ) : (
+                            line[flag] && <span key={flag} className={`text-[10px] px-1 py-0.5 rounded ${cls}`}>{label}</span>
+                          )
+                        ))}
                       </div>
                       {/* Size variation controls */}
                       <SizeVariationControls line={line} allSizes={allSizes} isReadOnly={isReadOnly} onUpdateLine={onUpdateLine} />
@@ -449,12 +498,20 @@ export default function BOMMatrixEditor({
                       </td>
                     );
                   })}
-                  <td className="px-2 py-2 w-8">
+                  <td className="px-2 py-2 w-16">
                     {!isReadOnly && (
-                      <button type="button" onClick={() => onDeleteLine(line.id)}
-                        className="p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                        <button type="button" onClick={() => setEditingLine(line)}
+                          className="p-1 rounded text-muted-foreground hover:text-primary transition-colors"
+                          title="Edit line">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={() => onDeleteLine(line.id)}
+                          className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
+                          title="Delete line">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -481,6 +538,37 @@ export default function BOMMatrixEditor({
         </span>
         <span className="flex items-center gap-1 text-amber-600">Δ = quantity graded</span>
       </div>
+
+      {/* Edit panel */}
+      {editingLine && (
+        <BOMLineEditPanel
+          open={true}
+          line={editingLine}
+          lineVariants={bomLineVariants.filter((v) => v.bom_line_id === editingLine.id)}
+          allProducts={allProducts}
+          lovValues={lovValues}
+          allSizes={allSizes}
+          bomId={bom?.id}
+          user={user}
+          onClose={() => setEditingLine(null)}
+          onSaved={(updatedLine, deletedIds) => {
+            setEditingLine(null);
+            onUpdateLine(updatedLine.id, updatedLine);
+            if (onEditLineSaved) onEditLineSaved(updatedLine.id, deletedIds);
+          }}
+        />
+      )}
+
+      {/* Inline destructive confirm */}
+      {inlineConfirm && (
+        <BOMLineDestructiveConfirmDialog
+          open={true}
+          description={inlineConfirm.description}
+          deleteCount={inlineConfirm.cascadeIds.length}
+          onConfirm={executeInlineConfirm}
+          onCancel={() => setInlineConfirm(null)}
+        />
+      )}
     </div>
   );
 }

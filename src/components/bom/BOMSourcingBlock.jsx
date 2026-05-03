@@ -17,29 +17,37 @@ export default function BOMSourcingBlock({ line, comp, uom }) {
     if (!line.component_product_id) return;
     let cancelled = false;
     const load = async () => {
-      const approved = await base44.entities.ApprovedSupplier.filter({
-        product_id: line.component_product_id,
-        is_primary: true,
-        status: "active",
-      });
-      if (cancelled) return;
-      if (approved.length === 0) {
-        // Check if there are any at all
-        const all = await base44.entities.ApprovedSupplier.filter({ product_id: line.component_product_id });
-        if (cancelled) return;
-        setNoSuppliers(all.length === 0);
-        setLoaded(true);
-        return;
+      // If line has a line-level override, resolve that supplier; else resolve primary
+      let asRecord = null;
+      if (line.line_level_approved_supplier_id) {
+        const overrides = await base44.entities.ApprovedSupplier.filter({ id: line.line_level_approved_supplier_id });
+        if (!cancelled && overrides[0]) asRecord = overrides[0];
       }
-      const as = approved[0];
-      const suppliers = await base44.entities.Supplier.filter({ id: as.supplier_id });
+      if (!asRecord) {
+        const approved = await base44.entities.ApprovedSupplier.filter({
+          product_id: line.component_product_id,
+          is_primary: true,
+          status: "active",
+        });
+        if (cancelled) return;
+        if (approved.length === 0) {
+          const all = await base44.entities.ApprovedSupplier.filter({ product_id: line.component_product_id });
+          if (cancelled) return;
+          setNoSuppliers(all.length === 0);
+          setLoaded(true);
+          return;
+        }
+        asRecord = approved[0];
+      }
       if (cancelled) return;
-      setPrimarySupplier({ as, supplier: suppliers[0] || null });
+      const suppliers = await base44.entities.Supplier.filter({ id: asRecord.supplier_id });
+      if (cancelled) return;
+      setPrimarySupplier({ as: asRecord, supplier: suppliers[0] || null, isOverride: !!line.line_level_approved_supplier_id });
       setLoaded(true);
     };
     load();
     return () => { cancelled = true; };
-  }, [line.component_product_id]);
+  }, [line.component_product_id, line.line_level_approved_supplier_id]);
 
   if (!loaded) return null;
 
@@ -64,13 +72,13 @@ export default function BOMSourcingBlock({ line, comp, uom }) {
 
   if (!primarySupplier) return null;
 
-  const { as, supplier } = primarySupplier;
+  const { as, supplier, isOverride } = primarySupplier;
   const cost = as.unit_cost != null ? `${as.unit_cost} ${as.currency || ""}/${uom || ""}`.trim() : null;
   const lt = as.lead_time_days != null ? `${as.lead_time_days}d` : null;
 
   return (
     <div
-      className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1 cursor-pointer hover:text-foreground transition-colors"
+      className="flex items-center gap-1 flex-wrap text-[10px] text-muted-foreground mt-1 cursor-pointer hover:text-foreground transition-colors"
       onClick={openSourcing}
       title="Open component sourcing"
     >
@@ -81,6 +89,9 @@ export default function BOMSourcingBlock({ line, comp, uom }) {
       {supplier?.name && <span className="font-medium">{supplier.name}</span>}
       {cost && <span className="text-muted-foreground/70">· {cost}</span>}
       {lt && <span className="text-muted-foreground/70">· {lt}</span>}
+      {isOverride && (
+        <span className="px-1 py-0 rounded bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-medium">line override</span>
+      )}
       <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-40" />
     </div>
   );

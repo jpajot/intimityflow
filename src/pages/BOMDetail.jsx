@@ -397,6 +397,16 @@ export default function BOMDetail() {
           onUpsertVariant={handleUpsertVariant}
           getUom={getUom}
           onAddLine={() => setShowAddLine(true)}
+          user={user}
+          onEditLineSaved={(lineId, deletedIds) => {
+            if (deletedIds?.length > 0) {
+              setBomLineVariants((prev) => prev.filter((v) => !deletedIds.includes(v.id)));
+            }
+            // Reload line data to reflect any component swap / field changes
+            base44.entities.BOMLine.filter({ bom_id: id }).then((lines) => {
+              setBomLines(lines.sort((a, z) => (a.position || 0) - (z.position || 0)));
+            });
+          }}
         />
       )}
 
