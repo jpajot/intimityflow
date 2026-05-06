@@ -1,0 +1,136 @@
+{
+  "name": "ECO",
+  "type": "object",
+  "properties": {
+    "eco_number": {
+      "type": "string",
+      "description": "Auto-generated via SystemCodeGenerator (prefix ECO, padding 5). e.g. ECO00001. Unique. Set on insert; not user-editable."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short human-readable title for the change."
+    },
+    "description": {
+      "type": "string",
+      "description": "Rich description of the change \u2014 the why and the what."
+    },
+    "reason_category": {
+      "type": "string",
+      "enum": [
+        "quality",
+        "cost",
+        "supplier_change",
+        "design_change",
+        "regulatory",
+        "sourcing_update",
+        "routing_update",
+        "other"
+      ],
+      "description": "LOV: eco_reason_category"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "critical"
+      ],
+      "default": "normal",
+      "description": "LOV: eco_priority"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "under_review",
+        "approved",
+        "rejected",
+        "applied",
+        "cancelled",
+        "closed"
+      ],
+      "default": "proposed",
+      "description": "LOV: eco_status. State machine enforced by validateEcoStatusTransition."
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "dev_bom_release",
+        "routing_change",
+        "sourcing_change",
+        "component_revision",
+        "ecr_conversion"
+      ],
+      "description": "LOV: eco_origin. Identifies what triggered ECO creation."
+    },
+    "flow_type": {
+      "type": "string",
+      "enum": [
+        "A_dev_bom_release",
+        "B_routing_change",
+        "C_sourcing_change",
+        "D_component_revision",
+        "manual",
+        "mixed"
+      ],
+      "description": "LOV: eco_flow_type. Identifies which propagation pattern this ECO follows."
+    },
+    "source_ecr_id": {
+      "type": "string",
+      "description": "Will reference ECR entity once created in Prompt #5. Populated when ECO is created via ECR conversion."
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "User email of the person who created or triggered the ECO. For system-triggered ECOs, set to the user who performed the triggering action."
+    },
+    "requested_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp of ECO creation."
+    },
+    "approver_id": {
+      "type": "string",
+      "description": "User email of the approver. Set when status transitions to approved or rejected."
+    },
+    "approved_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp of approval or rejection. Set when status transitions to approved or rejected."
+    },
+    "target_effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional cut-in date for scheduled application. When null, application is immediate on approval."
+    },
+    "applied_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp when AffectedItem changes were committed and downstream propagation was opened. Set when status transitions to applied."
+    },
+    "closed_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp when ECO transitioned to closed. Set when status transitions to closed."
+    },
+    "rejection_reason": {
+      "type": "string",
+      "description": "Required (UI-enforced) when status = rejected."
+    },
+    "cancellation_reason": {
+      "type": "string",
+      "description": "Required (UI-enforced) when status = cancelled."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Running commentary throughout the ECO lifecycle."
+    }
+  },
+  "required": [
+    "eco_number",
+    "title",
+    "reason_category",
+    "status",
+    "origin",
+    "flow_type",
+    "requested_by",
+    "requested_at"
+  ]
+}
