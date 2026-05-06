@@ -44,7 +44,11 @@
     },
     "superseded_by_id": {
       "type": "string",
-      "description": "FK \u2192 BOM (self-ref)"
+      "description": "FK \u2192 BOM (self-ref) \u2014 revision-level supersession at release time"
+    },
+    "superseded_by_version_id": {
+      "type": "string",
+      "description": "FK \u2192 BOM (self-ref, nullable) \u2014 version-level supersession within the same revision. Set when a newer version of the same revision is created."
     },
     "derived_from_bom_id": {
       "type": "string",

@@ -22,7 +22,11 @@ export default function BOMCreateRevisionDialog({ open, onClose, bom, bomLines, 
 
   const nextRev = nextRevision(bom?.revision_code);
 
+  // Precondition: only allow creating a new revision from a released BOM
+  const isReleased = bom?.status === "released";
+
   const handleCreate = async () => {
+    if (!isReleased) return;
     setWorking(true);
     // Clone BOM
     const { id, created_date, updated_date, created_by, released_at, released_by, ...bomBase } = bom;
@@ -68,6 +72,29 @@ export default function BOMCreateRevisionDialog({ open, onClose, bom, bomLines, 
     onClose();
     navigate(`/boms/${newBom.id}`);
   };
+
+  if (!isReleased) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Cannot create new revision</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              Releases come before revisions. Use <strong>"Create new version"</strong> to iterate within the current draft, or release this BOM first to start a new revision.
+            </p>
+            <p className="text-xs">
+              Current status: <strong>{bom?.status}</strong>. Revision creation requires status <strong>released</strong>.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button size="sm" onClick={onClose}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>

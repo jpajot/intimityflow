@@ -75,6 +75,7 @@ export default function BOMOptionsContent({
   onClearResolutions,
   onCopyResolutions,
   onMarkAllNA,
+  onCreateVersion,
   onCreateRevision,
   onCreateProductionBOM,
   onMarkObsolete,
@@ -114,7 +115,10 @@ export default function BOMOptionsContent({
     { label: "Mark all cells in row Not Applicable", onClick: wrap(onMarkAllNA), destructive: true },
   ] : [];
 
+  const canCreateVersion = bom && ["draft", "in_review"].includes(bom.status);
+
   const bomActions = [
+    ...(canCreateVersion ? [{ label: "Create new version", onClick: wrap(onCreateVersion) }] : []),
     ...(isNotTerminal ? [{ label: "Create new revision", onClick: wrap(onCreateRevision) }] : []),
     ...(canCreateProd ? [{ label: "Create production BOM from this dev BOM", onClick: wrap(onCreateProductionBOM) }] : []),
     { label: "Refresh sourcing", onClick: wrap(onRefreshSourcing) },

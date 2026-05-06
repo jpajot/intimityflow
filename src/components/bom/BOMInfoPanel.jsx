@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Pencil, Check, ExternalLink } from "lucide-react";
+import { X, Pencil, Check, ExternalLink, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 
 const STATUS_COLORS = {
@@ -55,16 +55,46 @@ function InlineDateField({ label, value, onSave, canEdit }) {
 
 export default function BOMInfoPanel({ open, onClose, bom, product, onBomUpdated, onOpenChangelog }) {
   const navigate = useNavigate();
-  const [revisions, setRevisions] = useState([]);
+  const [allBoms, setAllBoms] = useState([]);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
+  const [expandedRevisions, setExpandedRevisions] = useState({});
 
   useEffect(() => {
     if (!open || !bom) return;
-    // Load all BOMs for same product + type
     base44.entities.BOM.filter({ product_id: bom.product_id, bom_type: bom.bom_type })
-      .then((all) => setRevisions(all.sort((a, b) => (b.revision_code || "").localeCompare(a.revision_code || ""))));
+      .then((all) => {
+        setAllBoms(all);
+        // Auto-expand the current revision
+        setExpandedRevisions({ [bom.revision_code]: true });
+      });
   }, [open, bom?.product_id, bom?.bom_type]);
+
+  // Group BOMs by revision_code, sorted descending; versions within each group sorted ascending
+  const groupedRevisions = useMemo(() => {
+    const groups = {};
+    for (const b of allBoms) {
+      const rev = b.revision_code || "?";
+      if (!groups[rev]) groups[rev] = [];
+      groups[rev].push(b);
+    }
+    // Sort versions ascending within each revision
+    for (const rev of Object.keys(groups)) {
+      groups[rev].sort((a, b) => (a.version || 1) - (b.version || 1));
+    }
+    // Return sorted revision codes descending
+    const sortedRevCodes = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+    return sortedRevCodes.map((rev) => ({ rev, versions: groups[rev] }));
+  }, [allBoms]);
+
+  // Detect non-released parent: this BOM's derived_from_bom_id points to a non-released BOM
+  const nonReleasedParentWarning = useMemo(() => {
+    if (!bom?.derived_from_bom_id) return null;
+    const parent = allBoms.find((b) => b.id === bom.derived_from_bom_id);
+    if (parent && parent.status !== "released") return parent;
+    // Also check cross-product parents from allBoms (won't be there) — skip, only warn if parent is in same product set
+    return null;
+  }, [bom, allBoms]);
 
   if (!open || !bom) return null;
 
@@ -170,46 +200,96 @@ export default function BOMInfoPanel({ open, onClose, bom, product, onBomUpdated
           </div>
         </div>
 
+        {/* Non-released parent warning */}
+        {nonReleasedParentWarning && (
+          <div className="flex gap-2 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-xs text-amber-800">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
+            <p>
+              This revision was created from <strong>Rev {nonReleasedParentWarning.revision_code}</strong> which was never released.
+              Consider deleting this revision and using "Create new version" on Rev {nonReleasedParentWarning.revision_code} instead, or releasing it first to legitimize this revision.
+            </p>
+          </div>
+        )}
+
         {/* SECTION: Revision history */}
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Revision History</p>
-          <div className="space-y-1.5">
-            {revisions.map((rev) => {
-              const isCurrent = rev.id === bom.id;
-              const validity = validityDisplay(rev);
+          <div className="space-y-1">
+            {groupedRevisions.length === 0 && <p className="text-xs text-muted-foreground italic">Loading…</p>}
+            {groupedRevisions.map(({ rev, versions }) => {
+              const isExpanded = !!expandedRevisions[rev];
+              const hasMultiple = versions.length > 1;
+              // Latest version in this revision group
+              const latestVersion = versions[versions.length - 1];
+              const revStatus = latestVersion?.status;
               return (
-                <div
-                  key={rev.id}
-                  className={`flex items-start justify-between gap-2 px-2.5 py-2 rounded-lg text-xs border transition-colors ${
-                    isCurrent ? "bg-primary/8 border-primary/20" : "bg-muted/30 border-transparent hover:bg-muted/60"
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-medium">Rev {rev.revision_code} · v{rev.version}</span>
-                      <Badge variant="outline" className={`text-[9px] px-1 py-0 ${STATUS_COLORS[rev.status] || ""}`}>
-                        {rev.status}
+                <div key={rev} className="border border-border rounded-lg overflow-hidden">
+                  {/* Revision header row */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedRevisions((prev) => ({ ...prev, [rev]: !prev[rev] }))}
+                    className="w-full flex items-center justify-between px-2.5 py-2 bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {isExpanded ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+                      <span className="text-xs font-semibold">Rev {rev}</span>
+                      <Badge variant="outline" className={`text-[9px] px-1 py-0 ${STATUS_COLORS[revStatus] || ""}`}>
+                        {revStatus}
                       </Badge>
                     </div>
-                    {validity && <p className="text-[10px] text-muted-foreground mt-0.5">{validity}</p>}
-                    {rev.released_at && (
-                      <p className="text-[10px] text-muted-foreground">Released {format(new Date(rev.released_at), "dd MMM yyyy")}</p>
-                    )}
-                  </div>
-                  {!isCurrent && (
-                    <button
-                      type="button"
-                      onClick={() => { onClose(); navigate(`/boms/${rev.id}`); }}
-                      className="text-primary text-[10px] font-medium hover:underline shrink-0 mt-0.5"
-                    >
-                      Open
-                    </button>
+                    <span className="text-[10px] text-muted-foreground">{versions.length} version{versions.length !== 1 ? "s" : ""}</span>
+                  </button>
+
+                  {/* Versions list */}
+                  {isExpanded && (
+                    <div className="divide-y divide-border/50">
+                      {versions.map((v) => {
+                        const isCurrent = v.id === bom.id;
+                        const isSuperseded = !!v.superseded_by_version_id;
+                        const validity = validityDisplay(v);
+                        const supersededByVersion = isSuperseded
+                          ? versions.find((vv) => vv.id === v.superseded_by_version_id)?.version
+                          : null;
+                        return (
+                          <div
+                            key={v.id}
+                            className={`flex items-start justify-between gap-2 px-3 py-2 text-xs transition-colors ${
+                              isCurrent ? "bg-primary/8" : isSuperseded ? "opacity-50" : "hover:bg-muted/30"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`font-medium ${isSuperseded ? "line-through" : ""}`}>v{v.version}</span>
+                                <Badge variant="outline" className={`text-[9px] px-1 py-0 ${STATUS_COLORS[v.status] || ""}`}>
+                                  {v.status}
+                                </Badge>
+                                {isCurrent && <span className="text-[9px] text-primary font-medium">current</span>}
+                              </div>
+                              {isSuperseded && supersededByVersion && (
+                                <p className="text-[10px] text-muted-foreground">superseded by v{supersededByVersion}</p>
+                              )}
+                              {validity && <p className="text-[10px] text-muted-foreground">{validity}</p>}
+                              {v.released_at && (
+                                <p className="text-[10px] text-muted-foreground">Released {format(new Date(v.released_at), "dd MMM yyyy")}</p>
+                              )}
+                            </div>
+                            {!isCurrent && (
+                              <button
+                                type="button"
+                                onClick={() => { onClose(); navigate(`/boms/${v.id}`); }}
+                                className="text-primary text-[10px] font-medium hover:underline shrink-0 mt-0.5"
+                              >
+                                Open
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                  {isCurrent && <span className="text-[10px] text-primary font-medium shrink-0 mt-0.5">Current</span>}
                 </div>
               );
             })}
-            {revisions.length === 0 && <p className="text-xs text-muted-foreground italic">Loading…</p>}
           </div>
         </div>
 

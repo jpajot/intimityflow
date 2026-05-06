@@ -17,6 +17,7 @@ import BOMLinePickerDialog from "../components/bom/BOMLinePickerDialog";
 import BOMAutoResolveDialog from "../components/bom/BOMAutoResolveDialog";
 import BOMBulkLineActionDialog from "../components/bom/BOMBulkLineActionDialog";
 import BOMCreateRevisionDialog from "../components/bom/BOMCreateRevisionDialog";
+import BOMCreateVersionDialog from "../components/bom/BOMCreateVersionDialog";
 import BOMExportDialog from "../components/bom/BOMExportDialog";
 import { DEFAULT_FILTER_CONFIG, isFilterActive, applyFilterConfig } from "../components/bom/BOMQuickFilterGroup";
 
@@ -79,9 +80,12 @@ export default function BOMDetail() {
   const [autoResolve, setAutoResolve] = useState(null); // { mode, line }
   const [bulkAction, setBulkAction] = useState(null);   // { action, targetLine }
   const [showCreateRevision, setShowCreateRevision] = useState(false);
+  const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
-  const isReadOnly = bom && !["draft", "in_review"].includes(bom.status);
+  // A BOM is read-only if: status is terminal, OR it has been superseded by a newer version
+  const isSupersededByVersion = bom && !!bom.superseded_by_version_id;
+  const isReadOnly = bom && (!["draft", "in_review"].includes(bom.status) || isSupersededByVersion);
   const isProduction = bom?.bom_type === "production";
 
   const subNavItems = bom ? [
@@ -418,6 +422,7 @@ export default function BOMDetail() {
           onClearResolutions={() => openLinePicker("clear")}
           onCopyResolutions={() => openLinePicker("copy")}
           onMarkAllNA={() => openLinePicker("markNA")}
+          onCreateVersion={() => setShowCreateVersion(true)}
           onCreateRevision={() => setShowCreateRevision(true)}
           onMarkObsolete={() => handleStatusTransition("obsolete")}
           onRefreshSourcing={() => {/* deferred */}}
@@ -542,6 +547,23 @@ export default function BOMDetail() {
           </button>
         </div>
       </div>
+
+      {/* Version-superseded banner */}
+      {isSupersededByVersion && bom && (
+        <div className="flex items-center gap-3 bg-slate-100 border-b border-slate-200 px-4 py-2 text-xs shrink-0">
+          <span className="text-slate-500">ℹ</span>
+          <span className="text-slate-700">
+            This is version {bom.version} of Rev {bom.revision_code}. A newer version exists.
+          </span>
+          <button
+            type="button"
+            className="ml-auto text-primary hover:underline shrink-0"
+            onClick={() => navigate(`/boms/${bom.superseded_by_version_id}`)}
+          >
+            Open latest version →
+          </button>
+        </div>
+      )}
 
       {/* Diagnostic banner */}
       {hasNoColorwaysAtAll && product && (
@@ -681,6 +703,21 @@ export default function BOMDetail() {
           onUpsertVariant={handleUpsertVariant}
           onVariantsDeleted={(ids) => setBomLineVariants((prev) => prev.filter((v) => !ids.includes(v.id)))}
           onDone={() => setBulkAction(null)}
+        />
+      )}
+
+      {/* Create version */}
+      {showCreateVersion && (
+        <BOMCreateVersionDialog
+          open={true}
+          onClose={() => setShowCreateVersion(false)}
+          bom={bom}
+          bomLines={bomLines}
+          bomLineVariants={bomLineVariants}
+          bol={bol}
+          bolOperations={bolOperations}
+          user={user}
+          viewStateId={viewStateId}
         />
       )}
 
