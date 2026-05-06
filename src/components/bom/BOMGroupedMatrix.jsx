@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { AlertTriangle, Ban, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -49,19 +49,6 @@ export default function BOMGroupedMatrix({
   const [openPicker, setOpenPicker] = useState(null);
   // Cache for supplier lookups: key = "asId:productId", value = { as, supplier }
   const [supplierCache, setSupplierCache] = useState({});
-  // Measure row-1 height so row-2 th's can use top: <row1Height>px
-  const row1Ref = useRef(null);
-  const [row1Height, setRow1Height] = useState(0);
-
-  useEffect(() => {
-    if (!row1Ref.current) return;
-    const ro = new ResizeObserver(() => {
-      setRow1Height(row1Ref.current?.getBoundingClientRect().height || 0);
-    });
-    ro.observe(row1Ref.current);
-    setRow1Height(row1Ref.current.getBoundingClientRect().height);
-    return () => ro.disconnect();
-  }, []);
 
   const needsSupplierData = columnAxis === "supplier" || secondaryAxis === "supplier";
 
@@ -187,19 +174,18 @@ export default function BOMGroupedMatrix({
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto border border-border rounded-lg">
         <table className="w-full text-xs border-collapse">
-          <thead>
+          <thead className="sticky top-0 z-10">
             {/* Top row — primary axis spanning labels */}
-            <tr ref={row1Ref} className="border-b border-border/50">
-              <th style={{ position: "sticky", top: 0, left: 0, zIndex: 30, background: "hsl(var(--muted))" }} className="px-2 py-2 w-8" rowSpan={2}></th>
-              <th style={{ position: "sticky", top: 0, left: 32, zIndex: 30, background: "hsl(var(--muted))" }} className="px-3 py-2 text-left font-semibold text-muted-foreground min-w-[220px]" rowSpan={2}>Component</th>
-              <th style={{ position: "sticky", top: 0, zIndex: 20, background: "hsl(var(--muted))" }} className="px-3 py-2 text-left font-semibold text-muted-foreground w-20" rowSpan={2}>Base Qty</th>
-              <th style={{ position: "sticky", top: 0, zIndex: 20, background: "hsl(var(--muted))" }} className="px-3 py-2 text-left font-semibold text-muted-foreground w-16" rowSpan={2}>UOM</th>
+            <tr className="border-b border-border/50">
+              <th className="px-2 py-2 w-8 bg-muted sticky left-0 z-20" rowSpan={2}></th>
+              <th className="px-3 py-2 text-left font-semibold text-muted-foreground bg-muted sticky left-8 z-20 min-w-[220px]" rowSpan={2}>Component</th>
+              <th className="px-3 py-2 text-left font-semibold text-muted-foreground bg-muted w-20" rowSpan={2}>Base Qty</th>
+              <th className="px-3 py-2 text-left font-semibold text-muted-foreground bg-muted w-16" rowSpan={2}>UOM</th>
               {primaryMembers.map((pm) => (
                 <th
                   key={pm.id}
                   colSpan={secondaryMembers.length}
-                  style={{ position: "sticky", top: 0, zIndex: 20, background: "hsl(var(--muted))" }}
-                  className="px-2 py-1.5 text-center font-semibold text-muted-foreground border-l border-border/50"
+                  className="px-2 py-1.5 text-center font-semibold text-muted-foreground bg-muted border-l border-border/50"
                 >
                   <div className="truncate max-w-[180px] mx-auto text-xs" title={getMemberLabel(pm, columnAxis)}>
                     {getMemberLabel(pm, columnAxis)}
@@ -218,7 +204,7 @@ export default function BOMGroupedMatrix({
                   )}
                 </th>
               ))}
-              <th style={{ position: "sticky", top: 0, zIndex: 20, background: "hsl(var(--muted))" }} className="w-8" rowSpan={2}></th>
+              <th className="w-8 bg-muted" rowSpan={2}></th>
             </tr>
             {/* Bottom row — secondary axis labels */}
             <tr className="border-b border-border">
@@ -226,8 +212,7 @@ export default function BOMGroupedMatrix({
                 secondaryMembers.map((sm) => (
                   <th
                     key={`${pm.id}__${sm.id}`}
-                    style={{ position: "sticky", top: row1Height, zIndex: 20, background: "hsl(var(--muted))" }}
-                    className="px-2 py-1.5 text-center font-medium text-muted-foreground/80 min-w-[100px] border-l border-border/30 text-[10px]"
+                    className="px-2 py-1.5 text-center font-medium text-muted-foreground/80 bg-muted min-w-[100px] border-l border-border/30 text-[10px]"
                   >
                     <div className="truncate max-w-[100px] mx-auto" title={getMemberLabel(sm, secondaryAxis)}>
                       {getMemberLabel(sm, secondaryAxis)}

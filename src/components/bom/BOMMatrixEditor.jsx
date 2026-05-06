@@ -336,7 +336,7 @@ export default function BOMMatrixEditor({
   // Grouped matrix — secondary axis set and differs from primary
   if (secondaryAxis && secondaryAxis !== columnAxis) {
     return (
-      <div className="space-y-3">
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <BOMGroupedMatrix
           bom={bom}
           bomLines={bomLines}
@@ -367,7 +367,7 @@ export default function BOMMatrixEditor({
   // Flat supplier axis
   if (columnAxis === "supplier") {
     return (
-      <div className="space-y-3">
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <BOMSupplierMatrix
           bom={bom}
           bomLines={bomLines}
