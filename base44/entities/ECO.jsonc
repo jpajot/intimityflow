@@ -79,7 +79,7 @@
     },
     "source_ecr_id": {
       "type": "string",
-      "description": "Will reference ECR entity once created in Prompt #5. Populated when ECO is created via ECR conversion."
+      "description": "FK \u2192 ECR. Nullable. Populated when ECO is created via ECR conversion (origin = ecr_conversion)."
     },
     "requested_by": {
       "type": "string",

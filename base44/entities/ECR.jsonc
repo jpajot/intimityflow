@@ -1,0 +1,99 @@
+{
+  "name": "ECR",
+  "type": "object",
+  "properties": {
+    "ecr_number": {
+      "type": "string",
+      "description": "Auto-generated via SystemCodeGenerator (prefix ECR, padding 5). e.g. ECR00001. Unique. Set on insert; not user-editable."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short human-readable title for the change request."
+    },
+    "description": {
+      "type": "string",
+      "description": "Free-text description of the suspected issue or change to investigate."
+    },
+    "reason_category": {
+      "type": "string",
+      "enum": [
+        "quality",
+        "cost",
+        "supplier_change",
+        "design_change",
+        "regulatory",
+        "sourcing_update",
+        "routing_update",
+        "other"
+      ],
+      "description": "LOV: eco_reason_category (shared with ECO)"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "critical"
+      ],
+      "default": "normal",
+      "description": "LOV: eco_priority (shared with ECO)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "under_investigation",
+        "converted",
+        "closed_no_action",
+        "rejected"
+      ],
+      "default": "open",
+      "description": "LOV: ecr_status. Terminal states: converted, closed_no_action, rejected."
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "User email of the person who filed the ECR."
+    },
+    "requested_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp of ECR creation."
+    },
+    "investigator_id": {
+      "type": "string",
+      "description": "User email of the person assigned to investigate. Nullable."
+    },
+    "investigation_notes": {
+      "type": "string",
+      "description": "Running notes from the investigation phase."
+    },
+    "converted_eco_id": {
+      "type": "string",
+      "description": "FK \u2192 ECO. Nullable. Populated when this ECR is converted into an ECO."
+    },
+    "converted_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp of conversion to ECO."
+    },
+    "closure_reason": {
+      "type": "string",
+      "description": "Required (UI-enforced) when status = closed_no_action or rejected. Captures why the ECR did not proceed."
+    },
+    "closed_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp when ECR reached a terminal status (converted, closed_no_action, or rejected)."
+    },
+    "notes": {
+      "type": "string",
+      "description": "General commentary."
+    }
+  },
+  "required": [
+    "ecr_number",
+    "title",
+    "reason_category",
+    "status",
+    "requested_by",
+    "requested_at"
+  ]
+}
