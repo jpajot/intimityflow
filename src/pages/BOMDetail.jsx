@@ -495,11 +495,7 @@ export default function BOMDetail() {
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize shrink-0">
             {bom.bom_type}
           </Badge>
-          {bom.source_change_pending && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-300 shrink-0">
-              ⚠ Source changed
-            </Badge>
-          )}
+
         </div>
 
         {/* Info + Search icons */}
