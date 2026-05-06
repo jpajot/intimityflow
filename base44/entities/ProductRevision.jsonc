@@ -1,0 +1,71 @@
+{
+  "name": "ProductRevision",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product. Always set regardless of which target is revised. Anchors history to the parent Product."
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "product",
+        "product_color",
+        "product_color_size",
+        "product_variant",
+        "product_attribute"
+      ],
+      "description": "Which level of the entity tree this revision applies to."
+    },
+    "target_id": {
+      "type": "string",
+      "description": "The id of the specific entity being revised. Equals product_id when target_type = product."
+    },
+    "revision_code": {
+      "type": "string",
+      "description": "Letter sequence: A, B, C, ..., Z, AA, AB, etc. Scoped per (product_id, target_type, target_id). Auto-generated on insert from existing rows for the same target."
+    },
+    "revision_context": {
+      "type": "string",
+      "description": "Free-text explanation of why this revision exists. Required on creation."
+    },
+    "before_snapshot": {
+      "type": "object",
+      "description": "Full snapshot of the target entity's tracked fields BEFORE this revision. Empty object {} for revision A."
+    },
+    "after_snapshot": {
+      "type": "object",
+      "description": "Full snapshot of the target entity's tracked fields AT the moment this revision was recorded."
+    },
+    "field_diffs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Stored list of field-level changes: [{field, before, after}, ...]. Empty array [] for revision A or when no tracked fields changed."
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User email who created this revision."
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp of revision creation."
+    },
+    "is_current": {
+      "type": "boolean",
+      "default": false,
+      "description": "True for the active/current revision per (product_id, target_type, target_id) tuple. Atomic flip logic to be implemented in a subsequent prompt."
+    },
+    "linked_eco_id": {
+      "type": "string",
+      "description": "Will reference ECO entity once created in Phase 2. Nullable. Populated when revision is created as a side effect of an applied ECO."
+    }
+  },
+  "required": [
+    "product_id",
+    "target_type",
+    "target_id",
+    "revision_context"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "RevisionTrackedField",
+  "type": "object",
+  "properties": {
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "product",
+        "product_color",
+        "product_color_size",
+        "product_variant",
+        "product_attribute"
+      ],
+      "description": "The entity type this tracked field belongs to."
+    },
+    "field_name": {
+      "type": "string",
+      "description": "Technical field name on the target entity (e.g. 'name', 'category'). Must match the actual field name in the entity schema."
+    },
+    "display_label": {
+      "type": "string",
+      "description": "Human-readable label for use in admin UI and field_diffs display (e.g. 'Product Name')."
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inactive fields do not trigger revision creation. Allows disabling without deleting."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Admin note explaining why this field is tracked."
+    }
+  },
+  "required": [
+    "target_type",
+    "field_name",
+    "display_label"
+  ]
+}
