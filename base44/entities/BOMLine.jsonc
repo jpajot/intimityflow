@@ -77,6 +77,10 @@
     },
     "reference_doc_url": {
       "type": "string"
+    },
+    "product_revision_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductRevision. Snapshots the current revision of the component_product_id (target_type = product) at the moment this BOMLine was authored or last refreshed against its component. Null until populated by Flow D infrastructure (later phase). Used to detect stale snapshots when the component Product is revised."
     }
   },
   "required": [

@@ -72,6 +72,10 @@
     },
     "notes": {
       "type": "string"
+    },
+    "component_revision_snapshots": {
+      "type": "object",
+      "description": "Snapshot of ProductRevision ids for each revisable component entity referenced by this variant at authoring time. Keys correspond to BOMLineVariant FK fields; values are ProductRevision ids. Used by Flow D ECO triggers to detect when a referenced entity has been revised since this variant was authored. Expected keys (all optional): component_product_color_id, component_color_and_more_id, component_size_id. Each key holds the ProductRevision.id where is_current=true for that referenced entity at authoring time. Null until populated by authoring-time logic in a later phase. Missing key = FK was null at authoring time OR no ProductRevision existed yet (legacy variant)."
     }
   },
   "required": [
