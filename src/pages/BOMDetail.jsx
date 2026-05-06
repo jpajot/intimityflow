@@ -116,12 +116,11 @@ export default function BOMDetail() {
     }
     setBomLineVariants(variants);
 
-    // Changelog + product in parallel (only 2 calls)
-    const [log, prods] = await Promise.all([
-      base44.entities.BOMChangeLog.filter({ bom_id: id }),
-      base44.entities.Product.filter({ id: b.product_id }),
-    ]);
+    // Load changelog and product sequentially
+    const log = await base44.entities.BOMChangeLog.filter({ bom_id: id });
     setChangeLog(log.sort((a, z) => new Date(z.triggered_at) - new Date(a.triggered_at)));
+
+    const prods = await base44.entities.Product.filter({ id: b.product_id });
     const prod = prods[0] || null;
     setProduct(prod);
 
@@ -158,30 +157,26 @@ export default function BOMDetail() {
       const u = await base44.auth.me();
       setUser(u);
 
-      // Load all reference data sequentially in small groups to avoid rate limits
-      const [lovs, sizes] = await Promise.all([
-        base44.entities.ListOfValues.list("name", 2000),
-        base44.entities.Size.list("size_code", 500),
-      ]);
+      // Load all reference data fully sequentially to avoid rate limits
+      const lovs = await base44.entities.ListOfValues.list("name", 2000);
       setLovValues(lovs);
+
+      const sizes = await base44.entities.Size.list("size_code", 500);
       setAllSizes(sizes);
 
-      const [prods, projs] = await Promise.all([
-        base44.entities.Product.list("-created_date", 2000),
-        base44.entities.Project.list("name", 500),
-      ]);
+      const prods = await base44.entities.Product.list("-created_date", 2000);
       setAllProducts(prods);
+
+      const projs = await base44.entities.Project.list("name", 500);
       setProjects(projs);
 
-      // Load color reference data sequentially to avoid hitting rate limits
       const allPCs = await base44.entities.ProductColor.list("-created_date", 3000);
       setAllProductColors(allPCs);
 
-      const [tcs, ccs] = await Promise.all([
-        base44.entities.TechnicalColor.list("code", 2000),
-        base44.entities.CommercialColor.list("code", 2000),
-      ]);
+      const tcs = await base44.entities.TechnicalColor.list("code", 2000);
       setTechColors(tcs);
+
+      const ccs = await base44.entities.CommercialColor.list("code", 2000);
       setCommColors(ccs);
 
       // Finally, load BOM-specific data
