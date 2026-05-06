@@ -19,6 +19,7 @@ import BOMBulkLineActionDialog from "../components/bom/BOMBulkLineActionDialog";
 import BOMCreateRevisionDialog from "../components/bom/BOMCreateRevisionDialog";
 import BOMCreateVersionDialog from "../components/bom/BOMCreateVersionDialog";
 import BOMExportDialog from "../components/bom/BOMExportDialog";
+import BOMCreateProdBOMDialog from "../components/bom/BOMCreateProdBOMDialog";
 import { DEFAULT_FILTER_CONFIG, isFilterActive, applyFilterConfig } from "../components/bom/BOMQuickFilterGroup";
 
 const STATUS_COLORS = {
@@ -82,6 +83,7 @@ export default function BOMDetail() {
   const [showCreateRevision, setShowCreateRevision] = useState(false);
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showCreateProdBOM, setShowCreateProdBOM] = useState(false);
 
   // A BOM is read-only if: status is terminal, OR it has been superseded by a newer version
   const isSupersededByVersion = bom && !!bom.superseded_by_version_id;
@@ -416,6 +418,7 @@ export default function BOMDetail() {
           onMarkAllNA={() => openLinePicker("markNA")}
           onCreateVersion={() => setShowCreateVersion(true)}
           onCreateRevision={() => setShowCreateRevision(true)}
+          onCreateProductionBOM={() => setShowCreateProdBOM(true)}
           onMarkObsolete={() => handleStatusTransition("obsolete")}
           onRefreshSourcing={() => {/* deferred */}}
           onExportMatrix={() => setShowExport(true)}
@@ -722,6 +725,19 @@ export default function BOMDetail() {
           bomLines={bomLines}
           bomLineVariants={bomLineVariants}
           user={user}
+        />
+      )}
+
+      {/* Create production BOM from dev BOM */}
+      {showCreateProdBOM && (
+        <BOMCreateProdBOMDialog
+          open={true}
+          onClose={() => setShowCreateProdBOM(false)}
+          bom={bom}
+          bomLines={bomLines}
+          bomLineVariants={bomLineVariants}
+          user={user}
+          lovValues={lovValues}
         />
       )}
 

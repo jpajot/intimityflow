@@ -56,19 +56,29 @@ function InlineDateField({ label, value, onSave, canEdit }) {
 export default function BOMInfoPanel({ open, onClose, bom, product, onBomUpdated, onOpenChangelog }) {
   const navigate = useNavigate();
   const [allBoms, setAllBoms] = useState([]);
+  const [allProdBomDerivations, setAllProdBomDerivations] = useState([]);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [expandedRevisions, setExpandedRevisions] = useState({});
 
   useEffect(() => {
     if (!open || !bom) return;
-    base44.entities.BOM.filter({ product_id: bom.product_id, bom_type: bom.bom_type })
-      .then((all) => {
-        setAllBoms(all);
-        // Auto-expand the current revision
-        setExpandedRevisions({ [bom.revision_code]: true });
-      });
-  }, [open, bom?.product_id, bom?.bom_type]);
+    let cancelled = false;
+    const load = async () => {
+      const all = await base44.entities.BOM.filter({ product_id: bom.product_id, bom_type: bom.bom_type });
+      if (cancelled) return;
+      setAllBoms(all);
+      setExpandedRevisions({ [bom.revision_code]: true });
+
+      // For dev BOMs: load all prod BOMs derived from this BOM
+      if (bom.bom_type === "development") {
+        const derived = await base44.entities.BOM.filter({ derived_from_bom_id: bom.id });
+        if (!cancelled) setAllProdBomDerivations(derived);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [open, bom?.product_id, bom?.bom_type, bom?.id]);
 
   // Group BOMs by revision_code, sorted descending; versions within each group sorted ascending
   const groupedRevisions = useMemo(() => {
@@ -292,6 +302,71 @@ export default function BOMInfoPanel({ open, onClose, bom, product, onBomUpdated
             })}
           </div>
         </div>
+
+        {/* SECTION: Derived from (production BOMs only) */}
+        {bom.bom_type === "production" && bom.derived_from_bom_id && (() => {
+          const sourceBom = allBoms.find((b) => b.id === bom.derived_from_bom_id);
+          return (
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Derived From</p>
+              <div className="border border-border rounded-lg px-3 py-2.5 space-y-1 text-xs">
+                <p className="font-medium">Dev BOM Rev {bom.derived_from_revision_code || "?"}{sourceBom ? ` · v${sourceBom.version}` : ""}</p>
+                {sourceBom?.released_at && (
+                  <p className="text-muted-foreground">Released {format(new Date(sourceBom.released_at), "dd MMM yyyy")}</p>
+                )}
+                {sourceBom && (
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); navigate(`/boms/${sourceBom.id}`); }}
+                    className="text-primary hover:underline text-[10px]"
+                  >
+                    Open source Dev BOM →
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* SECTION: Derivations (dev BOMs only) */}
+        {bom.bom_type === "development" && (() => {
+          const derivations = allBoms.filter ? [] : []; // will be loaded separately
+          return null; // placeholder — handled by derivationsFromAllBoms below
+        })()}
+        {bom.bom_type === "development" && allProdBomDerivations.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Derivations ({allProdBomDerivations.length})</p>
+            <div className="space-y-1">
+              {allProdBomDerivations.map((pb) => {
+                const ctx = pb.order_context || {};
+                const ctxParts = [ctx.region, ctx.customer_ref].filter(Boolean);
+                return (
+                  <div key={pb.id} className="border border-border rounded-lg px-3 py-2.5 space-y-0.5 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">Prod BOM Rev {pb.revision_code} · v{pb.version}</span>
+                        <Badge variant="outline" className={`text-[9px] px-1 py-0 ${STATUS_COLORS[pb.status] || ""}`}>{pb.status}</Badge>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { onClose(); navigate(`/boms/${pb.id}`); }}
+                        className="text-primary text-[10px] font-medium hover:underline shrink-0"
+                      >
+                        Open
+                      </button>
+                    </div>
+                    {ctxParts.length > 0 && (
+                      <p className="text-muted-foreground">{ctxParts.join(" · ")}</p>
+                    )}
+                    {pb.created_date && (
+                      <p className="text-muted-foreground">Created {format(new Date(pb.created_date), "dd MMM yyyy")}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* SECTION: Quick metadata */}
         <div className="space-y-2">

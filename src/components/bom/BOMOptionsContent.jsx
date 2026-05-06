@@ -98,7 +98,7 @@ export default function BOMOptionsContent({
   const isProduction = bom?.bom_type === "production";
   const isDev = bom?.bom_type === "development";
   const isReleased = bom?.status === "released";
-  const canCreateProd = isDev && isReleased;
+  const canCreateProd = isDev && isReleased; // only visible when dev BOM is released
   const isNotTerminal = bom && !["superseded", "obsolete"].includes(bom.status);
 
   // Option A: close sidebar first, then open the action pop-up
