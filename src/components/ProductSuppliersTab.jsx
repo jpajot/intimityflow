@@ -480,7 +480,11 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   };
 
   const handleEditApprovedSupplier = async (form) => {
-    await base44.entities.ApprovedSupplier.update(editingSupplier.id, {
+    // Capture before-state for Flow C trigger
+    const before = editingSupplier;
+    const AS_TRIGGER_FIELDS = ['unit_cost', 'currency', 'lead_time_days', 'moq', 'moq_uom', 'status', 'is_primary', 'rank', 'price_break_tiers', 'valid_from', 'valid_until', 'supplier_reference'];
+
+    const updates = {
       supplier_reference: form.supplier_reference,
       unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
       currency: form.currency,
@@ -491,9 +495,31 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
       valid_until: form.valid_until,
       status: form.status,
       notes: form.notes,
-    });
-    setApprovedSuppliers((prev) => prev.map((a) => a.id === editingSupplier.id ? { ...a, ...form } : a));
+    };
+
+    await base44.entities.ApprovedSupplier.update(editingSupplier.id, updates);
+    setApprovedSuppliers((prev) => prev.map((a) => a.id === editingSupplier.id ? { ...a, ...updates } : a));
     setEditingSupplier(null);
+
+    // Flow C trigger — post-commit, best-effort, non-blocking
+    try {
+      const fieldChanges = {};
+      for (const field of AS_TRIGGER_FIELDS) {
+        const beforeVal = before[field] ?? null;
+        const afterVal = updates[field] ?? null;
+        if (beforeVal !== afterVal) fieldChanges[field] = { before: beforeVal, after: afterVal };
+      }
+      if (Object.keys(fieldChanges).length > 0) {
+        const me = await base44.auth.me();
+        await base44.functions.invoke("createFlowCEcoOnSourcingChange", {
+          item_type: "ApprovedSupplier",
+          item_id: before.id,
+          change_kind: "modify",
+          field_changes: fieldChanges,
+          triggered_by: me?.email || "",
+        });
+      }
+    } catch (err) { console.error("[FlowC] ApprovedSupplier update trigger failed:", err); }
   };
 
   const handlePromoteToPrimary = async (as) => {
@@ -510,8 +536,29 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   };
 
   const handleRemoveApprovedSupplier = async (id) => {
+    // Capture before-state for Flow C trigger
+    const before = approvedSuppliers.find((a) => a.id === id);
     await base44.entities.ApprovedSupplier.delete(id);
     setApprovedSuppliers((prev) => prev.filter((a) => a.id !== id));
+
+    // Flow C trigger — post-commit, best-effort, non-blocking
+    if (before) {
+      try {
+        const AS_TRIGGER_FIELDS = ['unit_cost', 'currency', 'lead_time_days', 'moq', 'moq_uom', 'status', 'is_primary', 'rank', 'price_break_tiers', 'valid_from', 'valid_until', 'supplier_reference'];
+        const fieldChanges = {};
+        for (const field of AS_TRIGGER_FIELDS) {
+          fieldChanges[field] = { before: before[field] ?? null, after: null };
+        }
+        const me = await base44.auth.me();
+        await base44.functions.invoke("createFlowCEcoOnSourcingChange", {
+          item_type: "ApprovedSupplier",
+          item_id: id,
+          change_kind: "remove",
+          field_changes: fieldChanges,
+          triggered_by: me?.email || "",
+        });
+      } catch (err) { console.error("[FlowC] ApprovedSupplier delete trigger failed:", err); }
+    }
   };
 
   // ─── Routing CRUD ────────────────────────────────────────────────────────────

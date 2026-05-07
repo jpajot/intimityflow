@@ -91,6 +91,8 @@ export default function ProductColorSupplierLinkMatrix({ colorVariants, approved
   const getLink = (colorwayId, approvedSupplierId) =>
     links.find((l) => l.product_color_id === colorwayId && l.approved_supplier_id === approvedSupplierId);
 
+  const PCSL_TRIGGER_FIELDS = ['colorway_supplier_status', 'unit_cost_override', 'currency_override', 'lead_time_override_days', 'moq_override', 'colorway_supplier_reference'];
+
   const handleSave = async (form) => {
     const { colorway, approvedSupplier, existing } = editCell;
     const payload = {
@@ -102,14 +104,37 @@ export default function ProductColorSupplierLinkMatrix({ colorVariants, approved
       lead_time_override_days: form.lead_time_override_days ? Number(form.lead_time_override_days) : null,
       notes: form.notes,
     };
+
     if (existing) {
       await base44.entities.ProductColorSupplierLink.update(existing.id, payload);
       setLinks((prev) => prev.map((l) => l.id === existing.id ? { ...l, ...payload } : l));
+      setEditCell(null);
+
+      // Flow C trigger — post-commit, best-effort, non-blocking (update only; create is not a trigger)
+      try {
+        const fieldChanges = {};
+        for (const field of PCSL_TRIGGER_FIELDS) {
+          const beforeVal = existing[field] ?? null;
+          const afterVal = payload[field] ?? null;
+          if (beforeVal !== afterVal) fieldChanges[field] = { before: beforeVal, after: afterVal };
+        }
+        if (Object.keys(fieldChanges).length > 0) {
+          const me = await base44.auth.me();
+          await base44.functions.invoke("createFlowCEcoOnSourcingChange", {
+            item_type: "ProductColorSupplierLink",
+            item_id: existing.id,
+            change_kind: "modify",
+            field_changes: fieldChanges,
+            triggered_by: me?.email || "",
+          });
+        }
+      } catch (err) { console.error("[FlowC] ProductColorSupplierLink update trigger failed:", err); }
     } else {
       const created = await base44.entities.ProductColorSupplierLink.create(payload);
       setLinks((prev) => [...prev, created]);
+      setEditCell(null);
+      // CREATE does not trigger Flow C per spec
     }
-    setEditCell(null);
   };
 
   if (loading) return <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>;
