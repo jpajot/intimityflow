@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2, GitCommit } from "lucide-react";
 import ProductSuppliersTab from "../components/ProductSuppliersTab";
 import ImageLightbox from "../components/ImageLightbox";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
+import RevisionContextModal from "../components/RevisionContextModal";
 
 import MoreVariationsSection from "../components/MoreVariationsSection";
 import StyleSizesSection from "../components/StyleSizesSection";
@@ -63,6 +64,9 @@ export default function ProductDetail() {
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [lightboxImages, setLightboxImages] = useState(null); // { images: [], index: 0 }
+  const [revisionModal, setRevisionModal] = useState(null); // { type: "tracked"|"manual", pendingData?, beforeSnapshot?, afterSnapshot? }
+  const [revisionSaving, setRevisionSaving] = useState(false);
+  const productBeforeRef = useRef(null); // snapshot of product before an edit session begins
 
   const subNavItems = isNew ? [] : [
     { id: "details", label: "Details", icon: Info },
@@ -309,18 +313,101 @@ export default function ProductDetail() {
 
   const updateField = (field, value) => {
     setProduct((p) => {
+      // Capture a before-snapshot the first time an edit is made in this session
+      if (!productBeforeRef.current && !isNew) {
+        productBeforeRef.current = { ...p };
+      }
       const updated = { ...p, [field]: value };
       if (!isNew) {
         clearTimeout(autoSaveTimer.current);
-        autoSaveTimer.current = setTimeout(() => autoSave(updated), 800);
+        autoSaveTimer.current = setTimeout(() => autoSaveWithRevisionCheck(updated), 800);
       }
       return updated;
     });
   };
 
-  const autoSave = async (data) => {
+  const autoSaveWithRevisionCheck = async (data) => {
     const { id: _, created_date, updated_date, created_by, ...fields } = data;
-    await base44.entities.Product.update(data.id, fields);
+    const beforeRecord = productBeforeRef.current || data;
+
+    // Check for tracked-field changes
+    let tracked = null;
+    try {
+      const res = await base44.functions.invoke("detectTrackedFieldChanges", {
+        target_type: "product",
+        before_record: beforeRecord,
+        after_record: data,
+      });
+      tracked = res.data;
+    } catch (err) {
+      console.error("[Revision] detectTrackedFieldChanges failed:", err);
+    }
+
+    if (tracked?.has_tracked_changes) {
+      // Pause auto-save — prompt for revision context
+      setRevisionModal({
+        type: "tracked",
+        pendingData: fields,
+        beforeSnapshot: tracked.before_snapshot,
+        afterSnapshot: tracked.after_snapshot,
+      });
+    } else {
+      // No tracked changes — persist silently
+      await base44.entities.Product.update(data.id, fields);
+      productBeforeRef.current = null;
+    }
+  };
+
+  const handleRevisionConfirm = async (revisionContext) => {
+    if (!revisionModal) return;
+    setRevisionSaving(true);
+    try {
+      if (revisionModal.type === "tracked") {
+        // Persist the entity update
+        await base44.entities.Product.update(product.id, revisionModal.pendingData);
+        productBeforeRef.current = null;
+        // Create the revision (post-save, non-blocking)
+        try {
+          const me = await base44.auth.me();
+          await base44.functions.invoke("createProductRevision", {
+            product_id: product.id,
+            target_type: "product",
+            target_id: product.id,
+            revision_context: revisionContext,
+            before_snapshot: revisionModal.beforeSnapshot,
+            after_snapshot: revisionModal.afterSnapshot,
+            triggered_by: me?.email || "",
+          });
+        } catch (err) {
+          console.error("[Revision] createProductRevision failed after entity save:", err);
+        }
+      } else if (revisionModal.type === "manual") {
+        // Manual bump — persist is a no-op (entity unchanged), just create revision
+        const me = await base44.auth.me();
+        const snapshot = {};
+        // Build snapshot of current tracked fields
+        try {
+          const res = await base44.functions.invoke("detectTrackedFieldChanges", {
+            target_type: "product",
+            before_record: product,
+            after_record: product,
+          });
+          Object.assign(snapshot, res.data?.before_snapshot || {});
+        } catch (_) {}
+        await base44.functions.invoke("createProductRevision", {
+          product_id: product.id,
+          target_type: "product",
+          target_id: product.id,
+          revision_context: revisionContext,
+          before_snapshot: snapshot,
+          after_snapshot: snapshot,
+          triggered_by: me?.email || "",
+        });
+      }
+    } finally {
+      setRevisionSaving(false);
+      setRevisionModal(null);
+    }
   };
 
   if (loading) {
@@ -346,6 +433,17 @@ export default function ProductDetail() {
         </div>
         {!isNew && (
           <PresenceIndicator entityType="Product" entityId={product.id} />
+        )}
+        {!isNew && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs h-8"
+            onClick={() => setRevisionModal({ type: "manual" })}
+          >
+            <GitCommit className="w-3.5 h-3.5" />
+            New Revision
+          </Button>
         )}
         {!isNew && (
           <AlertDialog>
@@ -666,6 +764,22 @@ export default function ProductDetail() {
         open={showLibraryPicker}
         onClose={() => setShowLibraryPicker(false)}
         onAdd={handleAddFromLibrary}
+      />
+
+      <RevisionContextModal
+        open={!!revisionModal}
+        onClose={() => {
+          setRevisionModal(null);
+          productBeforeRef.current = null;
+        }}
+        onConfirm={handleRevisionConfirm}
+        saving={revisionSaving}
+        title={revisionModal?.type === "manual" ? "New Revision" : "Tracked Change Detected"}
+        subtitle={
+          revisionModal?.type === "tracked"
+            ? `This edit modifies tracked fields on "${product.name}". Add context before saving.`
+            : `Explicitly bumping the revision for "${product.name}".`
+        }
       />
 
       {lightboxImages && (

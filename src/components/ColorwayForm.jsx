@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, X, Loader2, ChevronDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { colorToHex } from "../lib/pantone-tcx";
+import RevisionContextModal from "./RevisionContextModal";
 
 function InlineColorPicker({ label, value, options, getHex, getLabel, onSelect, onClear, placeholder }) {
   const [search, setSearch] = useState("");
@@ -93,6 +94,8 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
   const [techColors, setTechColors] = useState([]);
   const [commColors, setCommColors] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [revisionPending, setRevisionPending] = useState(null); // { beforeSnapshot, afterSnapshot, formData }
+  const [revisionSaving, setRevisionSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -148,9 +151,62 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
         return;
       }
     }
+
+    // If editing an existing colorway, check for tracked-field changes
+    if (variant) {
+      let tracked = null;
+      try {
+        const res = await base44.functions.invoke("detectTrackedFieldChanges", {
+          target_type: "product_color",
+          before_record: variant,
+          after_record: { ...variant, ...form },
+        });
+        tracked = res.data;
+      } catch (err) {
+        console.error("[Revision] detectTrackedFieldChanges failed:", err);
+      }
+
+      if (tracked?.has_tracked_changes) {
+        // Pause and prompt for revision context
+        setRevisionPending({
+          beforeSnapshot: tracked.before_snapshot,
+          afterSnapshot: tracked.after_snapshot,
+          formData: form,
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     await onSave(form);
     setSaving(false);
+  };
+
+  const handleRevisionConfirm = async (revisionContext) => {
+    if (!revisionPending) return;
+    setRevisionSaving(true);
+    try {
+      // Persist the entity update
+      await onSave(revisionPending.formData);
+      // Create the revision (post-save, non-blocking)
+      try {
+        const me = await base44.auth.me();
+        await base44.functions.invoke("createProductRevision", {
+          product_id: variant.product_id,
+          target_type: "product_color",
+          target_id: variant.id,
+          revision_context: revisionContext,
+          before_snapshot: revisionPending.beforeSnapshot,
+          after_snapshot: revisionPending.afterSnapshot,
+          triggered_by: me?.email || "",
+        });
+      } catch (err) {
+        console.error("[Revision] createProductRevision failed after entity save:", err);
+      }
+    } finally {
+      setRevisionSaving(false);
+      setRevisionPending(null);
+    }
   };
 
   const getTechHex = (t) => colorToHex(t) || "#ccc";
@@ -165,6 +221,15 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
   };
 
   return (
+    <>
+    <RevisionContextModal
+      open={!!revisionPending}
+      onClose={() => setRevisionPending(null)}
+      onConfirm={handleRevisionConfirm}
+      saving={revisionSaving}
+      title="Tracked Change Detected"
+      subtitle={variant ? `This edit modifies tracked fields on "${variant.color_name}". Add context before saving.` : undefined}
+    />
     <form onSubmit={handleSubmit} className="space-y-5 bg-card rounded-xl border border-border p-5">
       <div className="flex items-start justify-between">
         <h4 className="font-semibold text-sm">{variant ? "Edit Colorway" : "New Colorway"}</h4>
@@ -273,7 +338,7 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
       </div>
 
       <div className="flex items-center gap-2 pt-2">
-        <Button type="submit" disabled={saving} className="gap-2">
+        <Button type="submit" disabled={saving || revisionSaving} className="gap-2">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           {variant ? "Update" : "Add"} Colorway
         </Button>
@@ -282,5 +347,6 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
         )}
       </div>
     </form>
+    </>
   );
 }
