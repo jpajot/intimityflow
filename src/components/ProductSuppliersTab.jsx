@@ -529,6 +529,15 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
     if (routing.is_default) return;
     await Promise.all(routings.map((r) => base44.entities.SupplierRouting.update(r.id, { is_default: r.id === routing.id })));
     setRoutings((prev) => prev.map((r) => ({ ...r, is_default: r.id === routing.id })));
+    // Flow B trigger — best-effort, non-blocking
+    try {
+      const me = await base44.auth.me();
+      await base44.functions.invoke("createFlowBEcoOnRoutingChange", {
+        supplier_routing_id: routing.id,
+        change_summary: "Default routing flag changed",
+        triggered_by: me?.email || "",
+      });
+    } catch (err) { console.error("[FlowB] Routing update trigger failed:", err); }
   };
 
   const handleDeleteRouting = async (id) => {
@@ -544,6 +553,9 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   const handleSaveStep = async (form) => {
     const routingId = targetRoutingId || selectedRoutingId;
     const stepsForRouting = routingSteps.filter((s) => s.supplier_routing_id === routingId);
+    let savedStepId = editingStep?.id || null;
+    let stepChangeKind = "modify";
+
     if (editingStep) {
       await base44.entities.SupplierRoutingStep.update(editingStep.id, {
         step_type: form.step_type,
@@ -559,6 +571,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
       });
       setRoutingSteps((prev) => prev.map((s) => s.id === editingStep.id ? { ...s, ...form } : s));
     } else {
+      stepChangeKind = "add";
       const seq = stepsForRouting.length + 1;
       const created = await base44.entities.SupplierRoutingStep.create({
         supplier_routing_id: routingId,
@@ -574,32 +587,62 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         output_description: form.output_description,
         notes: form.notes,
       });
+      savedStepId = created.id;
       setRoutingSteps((prev) => [...prev, created]);
       // Update total lead time on routing
       const newTotal = [...stepsForRouting, created].reduce((sum, s) => sum + (Number(s.lead_time_days) || 0), 0);
       await base44.entities.SupplierRouting.update(routingId, { total_lead_time_days: newTotal });
       setRoutings((prev) => prev.map((r) => r.id === routingId ? { ...r, total_lead_time_days: newTotal } : r));
     }
+
     setShowStepModal(false);
     setEditingStep(null);
+
+    // Flow B trigger — best-effort, non-blocking
+    try {
+      const me = await base44.auth.me();
+      const seq = editingStep?.sequence || (stepsForRouting.length + 1);
+      await base44.functions.invoke("createFlowBEcoOnRoutingChange", {
+        supplier_routing_id: routingId,
+        change_summary: stepChangeKind === "add" ? `Step ${seq} added` : `Step ${editingStep?.sequence} modified`,
+        triggered_by: me?.email || "",
+        routing_step_id: savedStepId,
+        step_change_kind: stepChangeKind,
+      });
+    } catch (err) { console.error("[FlowB] Step save trigger failed:", err); }
   };
 
   const handleDeleteStep = async () => {
-    await base44.entities.SupplierRoutingStep.delete(editingStep.id);
-    const remaining = routingSteps.filter((s) => s.id !== editingStep.id && s.supplier_routing_id === editingStep.supplier_routing_id);
+    const deletedStep = editingStep; // capture before clearing state
+    const routingId = deletedStep.supplier_routing_id;
+
+    await base44.entities.SupplierRoutingStep.delete(deletedStep.id);
+    const remaining = routingSteps.filter((s) => s.id !== deletedStep.id && s.supplier_routing_id === routingId);
     // Re-number
     await Promise.all(remaining.sort((a, b) => a.sequence - b.sequence).map((s, i) =>
       base44.entities.SupplierRoutingStep.update(s.id, { sequence: i + 1 })
     ));
-    const allRemaining = routingSteps.filter((s) => s.id !== editingStep.id);
+    const allRemaining = routingSteps.filter((s) => s.id !== deletedStep.id);
     const reNumbered = allRemaining.map((s) => {
-      if (s.supplier_routing_id !== editingStep.supplier_routing_id) return s;
+      if (s.supplier_routing_id !== routingId) return s;
       const idx = remaining.sort((a, b) => a.sequence - b.sequence).findIndex((r) => r.id === s.id);
       return { ...s, sequence: idx + 1 };
     });
     setRoutingSteps(reNumbered);
     setShowStepModal(false);
     setEditingStep(null);
+
+    // Flow B trigger — best-effort, non-blocking
+    try {
+      const me = await base44.auth.me();
+      await base44.functions.invoke("createFlowBEcoOnRoutingChange", {
+        supplier_routing_id: routingId,
+        change_summary: `Step ${deletedStep.sequence} removed`,
+        triggered_by: me?.email || "",
+        routing_step_id: deletedStep.id,
+        step_change_kind: "remove",
+      });
+    } catch (err) { console.error("[FlowB] Step delete trigger failed:", err); }
   };
 
   // ─── Color Override CRUD ─────────────────────────────────────────────────────
