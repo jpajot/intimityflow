@@ -161,6 +161,18 @@ Deno.serve(async (req) => {
 
     console.log(`[createProductRevision] Created ${target_type} revision ${revision_code} for product ${product_id} target ${target_id}. id=${newRevision.id}`);
 
+    // ── Flow D trigger (skip on first revision — no prior snapshots to compare) ──
+    if (!is_first_revision) {
+      try {
+        await base44.functions.invoke('createFlowDEcoOnRevision', {
+          product_revision_id: newRevision.id,
+          triggered_by,
+        });
+      } catch (err) {
+        console.error(`[createProductRevision] Flow D trigger failed (revision creation succeeded): ${err.message}`);
+      }
+    }
+
     return Response.json({
       success: true,
       revision_id: newRevision.id,

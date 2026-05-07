@@ -267,6 +267,12 @@ export default function BOMDetail() {
     });
     setBomLines((prev) => [...prev, created]);
     setShowAddLine(false);
+    // Populate revision snapshot (best-effort)
+    try {
+      await base44.functions.invoke("populateBomLineRevisionSnapshot", { bom_line_id: created.id });
+    } catch (err) {
+      console.error("[BOMDetail] populateBomLineRevisionSnapshot failed after line add:", err);
+    }
   };
 
   const handleDeleteLine = async (lineId) => {
@@ -285,6 +291,14 @@ export default function BOMDetail() {
   const handleUpdateLine = async (lineId, updates) => {
     await base44.entities.BOMLine.update(lineId, updates);
     setBomLines((prev) => prev.map((l) => l.id === lineId ? { ...l, ...updates } : l));
+    // If component_product_id changed, re-populate revision snapshot (best-effort)
+    if ("component_product_id" in updates) {
+      try {
+        await base44.functions.invoke("populateBomLineRevisionSnapshot", { bom_line_id: lineId });
+      } catch (err) {
+        console.error("[BOMDetail] populateBomLineRevisionSnapshot failed after line update:", err);
+      }
+    }
   };
 
   const handleReorderLines = (reorderedLines) => {
@@ -379,12 +393,15 @@ export default function BOMDetail() {
         v.product_color_and_more_id === variantData.product_color_and_more_id &&
         v.parent_approved_supplier_id === variantData.parent_approved_supplier_id
     );
+    let savedId;
     if (existing) {
       await base44.entities.BOMLineVariant.update(existing.id, variantData);
       setBomLineVariants((prev) => prev.map((v) => v.id === existing.id ? { ...v, ...variantData } : v));
+      savedId = existing.id;
     } else {
       const created = await base44.entities.BOMLineVariant.create(variantData);
       setBomLineVariants((prev) => [...prev, created]);
+      savedId = created.id;
     }
     await base44.entities.BOMChangeLog.create({
       bom_id: id,
@@ -393,6 +410,16 @@ export default function BOMDetail() {
       triggered_by: user?.email || "",
       triggered_at: new Date().toISOString(),
     });
+    // If a component FK changed, re-populate revision snapshot (best-effort)
+    const COMPONENT_FK_FIELDS = ["component_product_color_id", "component_color_and_more_id", "component_size_id"];
+    const hasComponentFkChange = COMPONENT_FK_FIELDS.some(f => f in variantData);
+    if (hasComponentFkChange) {
+      try {
+        await base44.functions.invoke("populateBomLineVariantRevisionSnapshots", { bom_line_variant_id: savedId });
+      } catch (err) {
+        console.error("[BOMDetail] populateBomLineVariantRevisionSnapshots failed after variant upsert:", err);
+      }
+    }
   };
 
   const filtersActive = isFilterActive(filterConfig);

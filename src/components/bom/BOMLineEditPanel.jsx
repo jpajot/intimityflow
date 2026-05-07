@@ -232,6 +232,15 @@ export default function BOMLineEditPanel({
 
     setSaving(false);
     onSaved(finalDraft, idsToDelete);
+
+    // Re-populate revision snapshot if component_product_id changed (best-effort)
+    if (swappingComponent) {
+      try {
+        await base44.functions.invoke("populateBomLineRevisionSnapshot", { bom_line_id: line.id });
+      } catch (err) {
+        console.error("[BOMLineEditPanel] populateBomLineRevisionSnapshot failed:", err);
+      }
+    }
   };
 
   if (!draft) return null;
