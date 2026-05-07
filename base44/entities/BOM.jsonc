@@ -68,6 +68,11 @@
     },
     "notes": {
       "type": "string"
+    },
+    "pending_eco_review_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Derived count of ECOAffectedDownstream rows targeting this BOM where propagation_status is in a non-terminal state (pending, notified, under_review). Maintained by the ECO propagation layer. Source of truth is ECOAffectedDownstream itself; this integer is a denormalized cache for fast badge rendering. Reconcileable via the recountBomPendingEcoReviews function."
     }
   },
   "required": [

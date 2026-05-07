@@ -3,7 +3,8 @@
  *
  * Canonical entry point for attaching a downstream artifact row to an ECO.
  * Validates inputs, enforces deduplication, inherits priority from parent ECO,
- * and inserts an ECOAffectedDownstream record.
+ * inserts an ECOAffectedDownstream record, and increments pending_eco_review_count
+ * on the targeted BOM or BOL (best-effort cache; failures are logged, not fatal).
  *
  * Payload:
  *   eco_id                       string   required
@@ -21,6 +22,35 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const ALLOWED_DOWNSTREAM_TYPES = ['BOM', 'BOL', 'BOMLineVariant', 'BOMLine'];
 const ALLOWED_FLOW_TYPES = ['A_dev_bom_release', 'B_routing_change', 'C_sourcing_change', 'D_component_revision', 'manual'];
 const ALLOWED_PRIORITIES = ['low', 'normal', 'high', 'critical'];
+
+// ── Inline count increment helper ─────────────────────────────────────────────
+// Cannot import from sibling functions in Deno; logic is inlined.
+// Only BOM and BOL carry pending_eco_review_count in v1.
+async function incrementPendingEcoReviewCount(base44ServiceRole, downstream_type, downstream_id) {
+  try {
+    if (downstream_type === 'BOM') {
+      const records = await base44ServiceRole.entities.BOM.filter({ id: downstream_id });
+      if (records.length === 0) {
+        console.warn(`[addEcoAffectedDownstream] BOM not found for count increment: ${downstream_id}`);
+        return;
+      }
+      const current = records[0].pending_eco_review_count || 0;
+      await base44ServiceRole.entities.BOM.update(downstream_id, { pending_eco_review_count: current + 1 });
+    } else if (downstream_type === 'BOL') {
+      const records = await base44ServiceRole.entities.BOL.filter({ id: downstream_id });
+      if (records.length === 0) {
+        console.warn(`[addEcoAffectedDownstream] BOL not found for count increment: ${downstream_id}`);
+        return;
+      }
+      const current = records[0].pending_eco_review_count || 0;
+      await base44ServiceRole.entities.BOL.update(downstream_id, { pending_eco_review_count: current + 1 });
+    }
+    // BOMLineVariant and BOMLine: no count field in v1 — do nothing.
+  } catch (err) {
+    console.error(`[addEcoAffectedDownstream] Failed to increment pending_eco_review_count for ${downstream_type}/${downstream_id}: ${err.message}`);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   try {
@@ -110,6 +140,9 @@ Deno.serve(async (req) => {
       notification_sent_at: null,
       priority,
     });
+
+    // 8. Increment pending_eco_review_count on the targeted artifact (best-effort)
+    await incrementPendingEcoReviewCount(base44.asServiceRole, downstream_type, downstream_id);
 
     return Response.json({ success: true, downstream_row_id: record.id });
 

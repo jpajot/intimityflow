@@ -2,12 +2,14 @@
  * transitionEcoDownstreamStatus
  *
  * Validates and applies a propagation_status transition on an ECOAffectedDownstream row.
- * Enforces the allowed transition state machine, flow-specific guards, and required side fields.
+ * Enforces the allowed transition state machine, flow-specific guards, required side fields,
+ * and decrements pending_eco_review_count on the targeted BOM or BOL when a row leaves a
+ * non-terminal state and enters a terminal state (best-effort cache; failures are logged, not fatal).
  *
  * Payload:
  *   downstream_row_id        string   required
  *   new_status               string   required
- *   reviewed_by              string   optional  — required for terminal user-action states
+ *   reviewed_by              string   optional  — required for user-driven terminal states (adopted, partially_adopted, rejected, pinned)
  *   resulting_artifact_type  string   optional  — required for adopted / partially_adopted
  *   resulting_artifact_id    string   optional  — required for adopted / partially_adopted
  *   decision_notes           string   optional  — required for rejected / partially_adopted
@@ -26,6 +28,38 @@ const TRANSITIONS = {
 
 const NON_TERMINAL_STATUSES = new Set(['pending', 'notified', 'under_review']);
 const TERMINAL_USER_ACTION_STATUSES = new Set(['adopted', 'partially_adopted', 'rejected', 'pinned']);
+const ALL_TERMINAL_STATUSES = new Set(['adopted', 'partially_adopted', 'rejected', 'pinned', 'superseded', 'not_applicable']);
+
+// ── Inline count decrement helper ─────────────────────────────────────────────
+// Cannot import from sibling functions in Deno; logic is inlined.
+// Decrements pending_eco_review_count with a floor of 0. Only BOM and BOL carry this field in v1.
+async function decrementPendingEcoReviewCount(base44ServiceRole, downstream_type, downstream_id) {
+  try {
+    if (downstream_type === 'BOM') {
+      const records = await base44ServiceRole.entities.BOM.filter({ id: downstream_id });
+      if (records.length === 0) {
+        console.warn(`[transitionEcoDownstreamStatus] BOM not found for count decrement: ${downstream_id}`);
+        return;
+      }
+      const current = records[0].pending_eco_review_count || 0;
+      const next = Math.max(0, current - 1);
+      await base44ServiceRole.entities.BOM.update(downstream_id, { pending_eco_review_count: next });
+    } else if (downstream_type === 'BOL') {
+      const records = await base44ServiceRole.entities.BOL.filter({ id: downstream_id });
+      if (records.length === 0) {
+        console.warn(`[transitionEcoDownstreamStatus] BOL not found for count decrement: ${downstream_id}`);
+        return;
+      }
+      const current = records[0].pending_eco_review_count || 0;
+      const next = Math.max(0, current - 1);
+      await base44ServiceRole.entities.BOL.update(downstream_id, { pending_eco_review_count: next });
+    }
+    // BOMLineVariant and BOMLine: no count field in v1 — do nothing.
+  } catch (err) {
+    console.error(`[transitionEcoDownstreamStatus] Failed to decrement pending_eco_review_count for ${downstream_type}/${downstream_id}: ${err.message}`);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   try {
@@ -101,8 +135,7 @@ Deno.serve(async (req) => {
     }
 
     // Guard: reviewed_by is required for user-driven terminal state transitions
-    const USER_TERMINAL_STATUSES = new Set(['adopted', 'partially_adopted', 'rejected', 'pinned']);
-    if (USER_TERMINAL_STATUSES.has(new_status) && !is_system_call) {
+    if (TERMINAL_USER_ACTION_STATUSES.has(new_status) && !is_system_call) {
       if (!reviewed_by || (typeof reviewed_by === 'string' && reviewed_by.trim() === '')) {
         return Response.json({ error: `reviewed_by is required for user-driven transitions to terminal states (${new_status}).` }, { status: 400 });
       }
@@ -129,6 +162,13 @@ Deno.serve(async (req) => {
 
     // 5. Apply the update
     await base44.asServiceRole.entities.ECOAffectedDownstream.update(downstream_row_id, updates);
+
+    // 6. Decrement pending_eco_review_count if transitioning from non-terminal → terminal (best-effort)
+    const was_non_terminal = NON_TERMINAL_STATUSES.has(current_status);
+    const is_now_terminal = ALL_TERMINAL_STATUSES.has(new_status);
+    if (was_non_terminal && is_now_terminal) {
+      await decrementPendingEcoReviewCount(base44.asServiceRole, row.downstream_type, row.downstream_id);
+    }
 
     return Response.json({ success: true, propagation_status: new_status });
 
