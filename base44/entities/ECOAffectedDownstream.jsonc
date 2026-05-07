@@ -1,0 +1,106 @@
+{
+  "name": "ECOAffectedDownstream",
+  "type": "object",
+  "properties": {
+    "eco_id": {
+      "type": "string",
+      "description": "FK \u2192 ECO. Each Downstream row belongs to exactly one ECO. Primary access pattern: list all downstreams on this ECO. Indexed: (eco_id)."
+    },
+    "downstream_type": {
+      "type": "string",
+      "enum": [
+        "BOM",
+        "BOL",
+        "BOMLineVariant",
+        "BOMLine"
+      ],
+      "description": "Polymorphic type discriminator. Together with downstream_id identifies the downstream artifact. LOV: eco_downstream_type."
+    },
+    "downstream_id": {
+      "type": "string",
+      "description": "The id of the downstream artifact. Forms the polymorphic reference together with downstream_type. Indexed: (downstream_type, downstream_id) \u2014 powers pending_eco_review_count derivation (Prompt #8)."
+    },
+    "downstream_label": {
+      "type": "string",
+      "description": "Human-readable label for inbox/list rendering (e.g. 'Prod BOM rev A \u2014 Bra Underwire Padded \u2014 EU'). Computed at row creation and stored to avoid repeated cross-entity lookups."
+    },
+    "flow_type": {
+      "type": "string",
+      "enum": [
+        "A_dev_bom_release",
+        "B_routing_change",
+        "C_sourcing_change",
+        "D_component_revision",
+        "manual"
+      ],
+      "description": "Identifies which propagation flow produced this row. Mirrors ECO.flow_type but stored per-row so inbox filters query this junction directly without an ECO join. For mixed ECOs, each row carries the specific flow_type it's reacting to. LOV: eco_flow_type (subset \u2014 excludes 'mixed')."
+    },
+    "triggering_affected_item_id": {
+      "type": "string",
+      "description": "FK \u2192 ECOAffectedItem. Nullable. Identifies the specific AffectedItem on the parent ECO that caused this Downstream row. Useful for multi-item ECOs where each downstream traces to a specific component change."
+    },
+    "propagation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "notified",
+        "under_review",
+        "adopted",
+        "partially_adopted",
+        "rejected",
+        "pinned",
+        "superseded",
+        "not_applicable"
+      ],
+      "default": "pending",
+      "description": "Current propagation lifecycle state. Terminal states (block ECO closure): adopted, partially_adopted, rejected, pinned, superseded, not_applicable. Non-terminal: pending, notified, under_review. Indexed: (propagation_status) \u2014 for inbox queries filtering non-terminal states. LOV: eco_downstream_propagation_status."
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "User email of whoever made the propagation decision. Set when status transitions to a terminal state via user action."
+    },
+    "reviewed_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp of the terminal-state transition."
+    },
+    "resulting_artifact_type": {
+      "type": "string",
+      "enum": [
+        "BOM",
+        "BOL",
+        "BOMLineVariant"
+      ],
+      "description": "Nullable. Identifies the type of artifact produced by the adoption (e.g. new Prod BOM revision for Flow A, updated BOL for Flow B, refreshed BOMLineVariant for Flow C). Null when no new artifact was produced (rejected, pinned in-place, superseded, not_applicable)."
+    },
+    "resulting_artifact_id": {
+      "type": "string",
+      "description": "Nullable. The id of the produced artifact. Null when resulting_artifact_type is null."
+    },
+    "decision_notes": {
+      "type": "string",
+      "description": "Free-text justification for the decision. Required (UI-enforced when UI exists) when propagation_status = 'rejected' or 'partially_adopted'."
+    },
+    "notification_sent_at": {
+      "type": "string",
+      "description": "ISO datetime. Nullable. When the user-facing notification was dispatched. Set during the pending \u2192 notified transition."
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "critical"
+      ],
+      "default": "normal",
+      "description": "Inherited from parent ECO.priority at creation time but stored locally so per-row priority adjustments are possible (e.g. escalate when downstream is part of an active production run). LOV: eco_priority."
+    }
+  },
+  "required": [
+    "eco_id",
+    "downstream_type",
+    "downstream_id",
+    "flow_type",
+    "propagation_status"
+  ]
+}
