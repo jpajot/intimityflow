@@ -242,6 +242,16 @@ export default function BOMDetail() {
       triggered_by: user?.email || "",
       triggered_at: now,
     });
+
+    // Flow A trigger: fire after release commits (best-effort, non-blocking)
+    if (toStatus === "released" && bom.bom_type === "development") {
+      try {
+        await base44.functions.invoke("createFlowAEcoOnDevRelease", { released_bom_id: id });
+      } catch (err) {
+        console.error("[FlowA] Propagation trigger failed (release succeeded):", err);
+      }
+    }
+
     await reload();
   };
 

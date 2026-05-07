@@ -8,7 +8,7 @@
     },
     "change_type": {
       "type": "string",
-      "description": "status_transition | line_added | line_removed | line_modified | variant_modified | derived | routing_synced | routing_overridden | matrix_axis_changed | uom_overridden"
+      "description": "status_transition | line_added | line_removed | line_modified | variant_modified | derived | derived_source_changed | routing_synced | routing_overridden | matrix_axis_changed | uom_overridden"
     },
     "payload": {
       "type": "object",
