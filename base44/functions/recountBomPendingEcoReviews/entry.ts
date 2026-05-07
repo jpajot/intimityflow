@@ -3,7 +3,9 @@
  *
  * Reconcile / repair function for pending_eco_review_count drift on BOM records.
  * Recomputes the correct count from ECOAffectedDownstream source of truth and
- * updates any BOM records where the cached value is wrong.
+ * UNCONDITIONALLY writes pending_eco_review_count to every BOM record, ensuring
+ * the field is physically present in the document (not just schema-defaulted).
+ * The mismatches list captures records where the before-value differed.
  *
  * Payload:
  *   bom_id  string  optional — if provided, process only that BOM; if omitted, process ALL BOMs.
@@ -51,12 +53,14 @@ Deno.serve(async (req) => {
         propagation_status: { $in: NON_TERMINAL_STATUSES },
       });
       const correctCount = rows.length;
-      const cachedCount = bom.pending_eco_review_count || 0;
+      const cachedCount = bom.pending_eco_review_count;
+      const hadMismatch = cachedCount !== correctCount;
 
-      if (correctCount !== cachedCount) {
-        await base44.asServiceRole.entities.BOM.update(bom.id, { pending_eco_review_count: correctCount });
+      // Always write — ensures field is physically stored, not just schema-defaulted
+      await base44.asServiceRole.entities.BOM.update(bom.id, { pending_eco_review_count: correctCount });
+      updated++;
+      if (hadMismatch) {
         mismatches.push({ bom_id: bom.id, before: cachedCount, after: correctCount });
-        updated++;
       }
     }
 
