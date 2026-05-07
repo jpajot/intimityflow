@@ -162,12 +162,27 @@ Deno.serve(async (req) => {
     console.log(`[createProductRevision] Created ${target_type} revision ${revision_code} for product ${product_id} target ${target_id}. id=${newRevision.id}`);
 
     // ── Flow D trigger (skip on first revision — no prior snapshots to compare) ──
+    // Pass the original Authorization header so the sibling function can authenticate.
     if (!is_first_revision) {
       try {
-        await base44.functions.invoke('createFlowDEcoOnRevision', {
-          product_revision_id: newRevision.id,
-          triggered_by,
+        const appId = Deno.env.get('BASE44_APP_ID');
+        const flowDUrl = `https://api.base44.com/api/apps/${appId}/functions/createFlowDEcoOnRevision`;
+        const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || '';
+        const flowDRes = await fetch(flowDUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { 'Authorization': authHeader } : {}),
+          },
+          body: JSON.stringify({ product_revision_id: newRevision.id, triggered_by }),
         });
+        if (!flowDRes.ok) {
+          const errText = await flowDRes.text().catch(() => '');
+          console.error(`[createProductRevision] Flow D trigger HTTP ${flowDRes.status}: ${errText}`);
+        } else {
+          const fd = await flowDRes.json().catch(() => null);
+          console.log(`[createProductRevision] Flow D ok: eco_created=${fd?.eco_created} eco_number=${fd?.eco_number} skipped=${fd?.skipped_reason || ''}`);
+        }
       } catch (err) {
         console.error(`[createProductRevision] Flow D trigger failed (revision creation succeeded): ${err.message}`);
       }
