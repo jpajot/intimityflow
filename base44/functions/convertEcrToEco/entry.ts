@@ -2,6 +2,7 @@
  * convertEcrToEco
  *
  * Converts an open ECR into a new ECO record, linking the two bidirectionally.
+ * eco_number is generated via the inlined SystemCodeGenerator helper.
  *
  * Payload: {
  *   ecr_id: string,
@@ -17,6 +18,23 @@
  * Returns: { success: true, eco_id, eco_number, ecr_id }
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+// ── Canonical inline code-generation helper ──────────────────────────────────
+// Cannot import from sibling functions in Deno; logic is inlined here.
+// Source of truth / canonical copy: functions/generateEntityCodeInline.js
+async function generateEntityCodeInline(base44ServiceRole, entity_name, entity_type) {
+  const generators = await base44ServiceRole.entities.SystemCodeGenerator.filter({ entity_name, entity_type });
+  if (generators.length === 0) throw new Error(`No SystemCodeGenerator found for entity_name=${entity_name}, entity_type=${entity_type}.`);
+  const gen = generators[0];
+  const padding = gen.padding || 5;
+  const excludedSet = new Set((gen.excluded_codes || '').split(',').map(c => c.trim().toUpperCase()).filter(Boolean));
+  let nextSeq = (gen.last_sequence || 0) + 1;
+  let code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
+  while (excludedSet.has(code.toUpperCase())) { nextSeq++; code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`; }
+  await base44ServiceRole.entities.SystemCodeGenerator.update(gen.id, { last_sequence: nextSeq });
+  return code;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   try {
@@ -55,27 +73,8 @@ Deno.serve(async (req) => {
       }, { status: 409 });
     }
 
-    // Step 4a: Generate eco_number — inline the SystemCodeGenerator logic
-    // (cannot call sibling functions via service role; inline is necessary)
-    const generators = await base44.asServiceRole.entities.SystemCodeGenerator.filter({
-      entity_name: 'ECO',
-      entity_type: 'ECO',
-    });
-    if (generators.length === 0) {
-      return Response.json({ error: 'No SystemCodeGenerator configured for ECO.' }, { status: 500 });
-    }
-    const gen = generators[0];
-    const padding = gen.padding || 5;
-    const excludedSet = new Set(
-      (gen.excluded_codes || '').split(',').map((c) => c.trim().toUpperCase()).filter(Boolean)
-    );
-    let nextSeq = (gen.last_sequence || 0) + 1;
-    let eco_number = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
-    while (excludedSet.has(eco_number.toUpperCase())) {
-      nextSeq += 1;
-      eco_number = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
-    }
-    await base44.asServiceRole.entities.SystemCodeGenerator.update(gen.id, { last_sequence: nextSeq });
+    // Step 4a: Generate eco_number via shared inline utility
+    const eco_number = await generateEntityCodeInline(base44.asServiceRole, 'ECO', 'ECO');
 
     const now = new Date().toISOString();
 
@@ -103,7 +102,7 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Step 5: Update ECR — if this fails, log inconsistency clearly
+    // Step 5: Update ECR
     try {
       await base44.asServiceRole.entities.ECR.update(ecr.id, {
         status: 'converted',
@@ -112,9 +111,8 @@ Deno.serve(async (req) => {
         closed_at: now,
       });
     } catch (updateErr) {
-      // ECO was created but ECR update failed — partial failure
       return Response.json({
-        error: `PARTIAL FAILURE: ECO ${newEco.id} (${eco_number}) was created successfully, but the ECR status update failed: ${updateErr.message}. Manual reconciliation required — set ECR ${ecr.id} status to "converted", converted_eco_id to "${newEco.id}", converted_at and closed_at to "${now}".`,
+        error: `PARTIAL FAILURE: ECO ${newEco.id} (${eco_number}) was created successfully, but the ECR status update failed: ${updateErr.message}. Manual reconciliation required.`,
         partial: true,
         eco_id: newEco.id,
         eco_number,
@@ -122,7 +120,6 @@ Deno.serve(async (req) => {
       }, { status: 207 });
     }
 
-    // Step 6: Return success
     return Response.json({
       success: true,
       eco_id: newEco.id,
