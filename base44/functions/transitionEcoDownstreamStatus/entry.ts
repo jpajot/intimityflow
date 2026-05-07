@@ -100,6 +100,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Guard: reviewed_by is required for user-driven terminal state transitions
+    const USER_TERMINAL_STATUSES = new Set(['adopted', 'partially_adopted', 'rejected', 'pinned']);
+    if (USER_TERMINAL_STATUSES.has(new_status) && !is_system_call) {
+      if (!reviewed_by || (typeof reviewed_by === 'string' && reviewed_by.trim() === '')) {
+        return Response.json({ error: `reviewed_by is required for user-driven transitions to terminal states (${new_status}).` }, { status: 400 });
+      }
+    }
+
     const now = new Date().toISOString();
     const updates = { propagation_status: new_status };
 
