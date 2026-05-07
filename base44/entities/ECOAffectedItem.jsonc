@@ -1,0 +1,91 @@
+{
+  "name": "ECOAffectedItem",
+  "type": "object",
+  "properties": {
+    "eco_id": {
+      "type": "string",
+      "description": "FK \u2192 ECO. Each AffectedItem belongs to exactly one ECO. Primary access pattern: list all items on an ECO."
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "BOM",
+        "BOMLine",
+        "BOMLineVariant",
+        "SupplierRouting",
+        "SupplierRoutingStep",
+        "ApprovedSupplier",
+        "ProductColorSupplierLink",
+        "ProductColor",
+        "Product",
+        "ProductRevision"
+      ],
+      "description": "Polymorphic type discriminator. Together with item_id identifies the affected entity."
+    },
+    "item_id": {
+      "type": "string",
+      "description": "The id of the affected entity instance. Together with item_type forms the polymorphic reference. Validation lives in addEcoAffectedItem."
+    },
+    "item_label": {
+      "type": "string",
+      "description": "Human-readable label for display in UIs (e.g. 'Fabric A \u2014 Red \u2014 rev B'). Computed at creation time and stored to avoid repeated cross-entity lookups."
+    },
+    "change_kind": {
+      "type": "string",
+      "enum": [
+        "add",
+        "modify",
+        "remove",
+        "reassign",
+        "release"
+      ],
+      "description": "Nature of the change: add (item created by ECO), modify (fields changed), remove (item removed/deactivated/superseded), reassign (parent or primary reference changes), release (transitions to released state)."
+    },
+    "before_snapshot": {
+      "type": "object",
+      "description": "Full snapshot of relevant fields BEFORE the ECO's change. Null or {} when change_kind = 'add'. Stored verbatim for audit."
+    },
+    "after_snapshot": {
+      "type": "object",
+      "description": "Full snapshot of relevant fields AFTER the ECO's change. Null or {} when change_kind = 'remove'. Represents proposed state until applied; achieved state once applied."
+    },
+    "field_diffs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Computed list of per-field changes: [{ field, before, after }, ...]. Stored for fast diff-view rendering. Empty [] when before_snapshot or after_snapshot is null."
+    },
+    "applied": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this specific AffectedItem's change has been committed to the target entity. Independent per-row within an ECO."
+    },
+    "applied_at": {
+      "type": "string",
+      "description": "ISO datetime. Timestamp when applied flipped to true."
+    },
+    "applied_by": {
+      "type": "string",
+      "description": "User email of whoever (or which system process) triggered the application."
+    },
+    "application_error": {
+      "type": "string",
+      "description": "If application failed for this specific item, the error message is stored here. applied stays false; a retry can clear this field on the next attempt."
+    },
+    "item_revision_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductRevision. Populated when ECO application creates a new ProductRevision for the affected item (Flow D). Null until Phase 4."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Per-item commentary independent of the parent ECO's notes."
+    }
+  },
+  "required": [
+    "eco_id",
+    "item_type",
+    "item_id",
+    "change_kind"
+  ]
+}
