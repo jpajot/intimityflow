@@ -10,6 +10,7 @@ import { Search, Package, Loader2, LayoutGrid, List, Plus, Pin, PinOff } from "l
 import DataTable from "@/components/DataTable";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
+import RevisionBadge from "../components/revisions/RevisionBadge";
 
 
 export default function Products() {
@@ -99,7 +100,19 @@ export default function Products() {
       label: "Name",
       width: 150,
       sortKey: (p) => p.name || "",
-      render: (p) => <Link to={`/products/${p.id}`} className="font-medium hover:text-primary transition-colors">{p.name}</Link>,
+      render: (p) => (
+        <div className="flex items-center gap-2">
+          <Link to={`/products/${p.id}`} className="font-medium hover:text-primary transition-colors">
+            {p.name}
+          </Link>
+          <RevisionBadge
+            target_type="product"
+            target_id={p.id}
+            size="xs"
+            onOpenPanel={(targetType, targetId) => navigate(`/products/${p.id}`)}
+          />
+        </div>
+      ),
     },
     {
       id: "category",
@@ -236,47 +249,59 @@ export default function Products() {
         </div>
       ) : view === "gallery" ? (
        <GalleryView
-         pageKey="styles"
-         allFields={[
-           { id: "colorways", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
-             const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 4);
-             return cvs.length > 0 ? (
-               <div className="flex flex-col gap-1.5">
-                 {cvs.map((cv) => (
-                   <div key={cv.id} className="flex items-center gap-2">
-                     {cv.image_url ? (
-                       <div className="w-6 h-6 rounded overflow-hidden border border-border shrink-0">
-                         <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
-                       </div>
-                     ) : (
-                       <div className="w-6 h-6 rounded border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
-                     )}
-                     <span className="text-xs font-medium truncate">{cv.color_name}</span>
-                   </div>
-                 ))}
-                 {colorVariants.filter((cv) => cv.product_id === product.id).length > 4 && (
-                   <span className="text-xs text-muted-foreground">+{colorVariants.filter((cv) => cv.product_id === product.id).length - 4} more</span>
-                 )}
-               </div>
-             ) : "—";
-           } },
-           { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name },
-           { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category },
-         ]}
-         filterableFields={filterableFields}
-         rows={filtered}
-         renderThumbnail={(product) => {
-           const mainImage = product.images?.[0];
-           return mainImage ? (
-             <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
-           ) : (
-             <div className="w-full h-full bg-muted flex items-center justify-center text-sm font-semibold">
-               {product.name?.charAt(0)?.toUpperCase()}
-             </div>
-           );
-         }}
-         onClickItem={(p) => navigate(`/products/${p.id}`)}
-         />
+          pageKey="styles"
+          allFields={[
+            { id: "colorways", label: "Colorways", getValue: (p) => colorVariants.filter((cv) => cv.product_id === p.id).length, render: (product) => {
+              const cvs = colorVariants.filter((cv) => cv.product_id === product.id).slice(0, 4);
+              return cvs.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {cvs.map((cv) => (
+                    <div key={cv.id} className="flex items-center gap-2">
+                      {cv.image_url ? (
+                        <div className="w-6 h-6 rounded overflow-hidden border border-border shrink-0">
+                          <img src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
+                      )}
+                      <span className="text-xs font-medium truncate">{cv.color_name}</span>
+                    </div>
+                  ))}
+                  {colorVariants.filter((cv) => cv.product_id === product.id).length > 4 && (
+                    <span className="text-xs text-muted-foreground">+{colorVariants.filter((cv) => cv.product_id === product.id).length - 4} more</span>
+                  )}
+                </div>
+              ) : "—";
+            } },
+            { id: "name", label: "Name", getValue: (p) => p.name || "—", render: (p) => p.name },
+            { id: "category", label: "Category", getValue: (p) => p.category || "—", render: (p) => p.category },
+          ]}
+          filterableFields={filterableFields}
+          rows={filtered}
+          renderThumbnail={(product) => {
+            const mainImage = product.images?.[0];
+            return (
+              <div className="relative w-full h-full">
+                {mainImage ? (
+                  <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center text-sm font-semibold">
+                    {product.name?.charAt(0)?.toUpperCase()}
+                  </div>
+                )}
+                <div className="absolute top-2 right-2">
+                  <RevisionBadge
+                    target_type="product"
+                    target_id={product.id}
+                    size="xs"
+                    onOpenPanel={(targetType, targetId) => navigate(`/products/${product.id}`)}
+                  />
+                </div>
+              </div>
+            );
+          }}
+          onClickItem={(p) => navigate(`/products/${p.id}`)}
+          />
       ) : (
         <DataTable
           columns={columns}

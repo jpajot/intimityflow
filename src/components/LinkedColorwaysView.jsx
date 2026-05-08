@@ -10,6 +10,7 @@ import LinkToProjectModal from "./LinkToProjectModal";
 import ViewSelector from "./ViewSelector";
 import DataTable from "./DataTable";
 import GalleryView from "./GalleryView";
+import RevisionBadge from "./revisions/RevisionBadge";
 
 function LinkedColorwayCard({ cw, product, techColor, commColor, allTechColors = [], navigate }) {
   const [lightbox, setLightbox] = useState(false);
@@ -38,10 +39,21 @@ function LinkedColorwayCard({ cw, product, techColor, commColor, allTechColors =
 
           <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
           }
-        {/* Hex swatch overlay only when using product fallback image */}
-        {useProductFallback && cw.color_hex &&
-          <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
-          }
+         {/* Hex swatch overlay only when using product fallback image */}
+         {useProductFallback && cw.color_hex &&
+           <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} />
+           }
+         {/* Revision badge in top-right */}
+         <div className="absolute top-2 right-2">
+           <RevisionBadge
+             target_type="product_color"
+             target_id={cw.id}
+             size="xs"
+             onOpenPanel={(targetType, targetId) => {
+               if (product) navigate(`/products/${product.id}`);
+             }}
+           />
+         </div>
       </div>
       <div className="p-3 space-y-1.5">
         {/* Style name */}
@@ -363,7 +375,21 @@ export default function LinkedColorwaysView({
     label: "Color Name",
     width: 150,
     sortKey: (cw) => cw.color_name || "",
-    render: (cw) => <span className="font-medium">{cw.color_name}</span>
+    render: (cw) => (
+      <div className="flex items-center gap-2">
+        <span className="font-medium">{cw.color_name}</span>
+        <RevisionBadge
+          target_type="product_color"
+          target_id={cw.id}
+          size="xs"
+          onOpenPanel={(targetType, targetId) => {
+            // Open the parent Product's revision panel
+            const prod = getProduct(cw);
+            if (prod) window.location.href = `/products/${prod.id}`;
+          }}
+        />
+      </div>
+    )
   },
   {
     id: "comm_code",
@@ -492,37 +518,47 @@ export default function LinkedColorwaysView({
         }
         rows={filtered}
         renderThumbnail={(cw) => {
-          const product = getProduct(cw);
-          const productImage = product?.images?.[0];
-          const useProductFallback = !cw.image_url && !!productImage;
-          const displayImage = cw.image_url || productImage;
-          const hexes = getLinkedHexes(cw);
-          return (
-            <div className="relative w-full h-full">
-                {displayImage ?
-              <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" /> :
-              hexes ?
-              <div className="w-full h-full flex">
-                    {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                  </div> :
+           const product = getProduct(cw);
+           const productImage = product?.images?.[0];
+           const useProductFallback = !cw.image_url && !!productImage;
+           const displayImage = cw.image_url || productImage;
+           const hexes = getLinkedHexes(cw);
+           return (
+             <div className="relative w-full h-full">
+                 {displayImage ?
+               <img src={displayImage} alt={cw.color_name} className="w-full h-full object-contain" /> :
+               hexes ?
+               <div className="w-full h-full flex">
+                     {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                   </div> :
 
-              <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
-              }
-                {useProductFallback && (
-              hexes ?
-              <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md overflow-hidden flex">
-                      {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                    </div> :
-              cw.color_hex ?
-              <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} /> :
-              null)
-              }
-                {!cw.linked_color_id &&
-              <div title="No commercial color linked" className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
-              }
-              </div>);
+               <div className="w-full h-full" style={{ backgroundColor: cw.color_hex || "#ccc" }} />
+               }
+                 {useProductFallback && (
+               hexes ?
+               <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md overflow-hidden flex">
+                       {hexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                     </div> :
+               cw.color_hex ?
+               <div className="absolute bottom-2 left-2 w-6 h-6 rounded-md border-2 border-white shadow-md" style={{ backgroundColor: cw.color_hex }} /> :
+               null)
+               }
+                 <div className="absolute top-2 right-2">
+               <RevisionBadge
+                 target_type="product_color"
+                 target_id={cw.id}
+                 size="xs"
+                 onOpenPanel={(targetType, targetId) => {
+                   if (product) navigate(`/products/${product.id}`);
+                 }}
+               />
+             </div>
+               {!cw.linked_color_id &&
+               <div title="No commercial color linked" className="absolute top-2 right-10 w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
+               }
+               </div>);
 
-        }}
+         }}
         onClickItem={(cw) => navigate(`/products/${getProduct(cw)?.id}`)} /> :
 
 
