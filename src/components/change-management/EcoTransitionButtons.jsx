@@ -12,6 +12,10 @@ import {
   ApproveModal, SendBackModal, CancelModal, RejectModal, ApplyNowModal,
 } from "@/components/change-management/EcoTransitionModals";
 
+// Badge counts ALL non-terminal ECOAffectedDownstream rows for this ECO,
+// regardless of downstream_type. BOM/BOL/BOMLineVariant/BOMLine all contribute.
+// (Note: BOM/BOL counts on the entity records are separate denormalized caches
+// for inbox badges; this badge counts the propagation rows directly.)
 const NON_TERMINAL_DOWNSTREAM = new Set(['pending', 'notified', 'under_review']);
 
 export default function EcoTransitionButtons({ eco, affectedItems, affectedDownstream, onTransitioned }) {

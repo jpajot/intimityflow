@@ -46,6 +46,11 @@ function computeFieldDiffs(before, after) {
   return diffs;
 }
 
+// NOTE: This function only creates the ECOAffectedItem record (the intent log).
+// It does NOT trigger downstream auto-population (ECOAffectedDownstream rows).
+// Downstream population is a separate concern handled by transitionEcoStatus
+// when the ECO transitions to "applied" — at that point, computeDownstream()
+// runs for each AffectedItem and creates the corresponding propagation rows.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

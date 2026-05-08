@@ -124,6 +124,31 @@ async function incrementPendingCount(serviceRole, downstream_type, downstream_id
 // ── Downstream auto-population: compute downstream artifacts for an AffectedItem ──
 // Supports all item_types that have meaningful downstream relationships.
 // Returns array of { downstream_type, downstream_id, downstream_label }
+//
+// DOWNSTREAM AUTO-POPULATION: SEMANTICS BY AFFECTED-ITEM TYPE
+//
+// The downstream rows created here mirror the where-used results for each AffectedItem.
+// Crucially, where-used resolution returns artifacts AT THE GRAIN of the AffectedItem's type:
+//
+//   - AffectedItem.item_type = BOM, BOMLine
+//     → downstream rows at BOM / BOL grain.
+//     → BOM and BOL pending_eco_review_count fields ARE incremented.
+//     → BOMChangeLog "manual_eco_applied" entries written per affected BOM.
+//
+//   - AffectedItem.item_type = ProductColor, Product, ProductRevision, ApprovedSupplier,
+//     ProductColorSupplierLink, SupplierRouting, SupplierRoutingStep, BOMLineVariant
+//     → downstream rows at BOMLineVariant grain (no parent BOM/BOL granularity).
+//     → NO BOM or BOL count increments (those entities don't carry a count field for
+//       variant-level changes — by design, mirroring Flow C/D semantics).
+//     → NO BOMChangeLog entries (per-variant changes don't warrant per-BOM audit noise).
+//
+// This matches the locked design from Phase 2 Prompt #8 / #8b: pending_eco_review_count
+// tracks BOM/BOL-level reviews only. Variant-level reviews surface via the dedicated
+// Sourcing Impact / Component Revision panels (Phase 5+) querying ECOAffectedDownstream
+// directly.
+//
+// If a future ECO needs BOM-level visibility for a variant-or-component-level change,
+// the user should attach a BOM-typed AffectedItem in addition to the lower-grain one.
 
 async function computeDownstream(serviceRole, item) {
   const results = [];
