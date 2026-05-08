@@ -11,9 +11,8 @@ export default function ColorRevisionBadge({ productColorId, productId, colorVar
   const [currentRevision, setCurrentRevision] = useState(null);
   const [checked, setChecked] = useState(false);
 
-  useEffect(() => {
+  const fetchRevision = () => {
     if (!productColorId) return;
-    setChecked(false);
     base44.entities.ProductRevision.filter(
       { target_id: productColorId, is_current: true },
       "-created_date",
@@ -22,6 +21,18 @@ export default function ColorRevisionBadge({ productColorId, productId, colorVar
       setCurrentRevision(rows[0] || null);
       setChecked(true);
     }).catch(() => setChecked(true));
+  };
+
+  useEffect(() => {
+    if (!productColorId) return;
+    setChecked(false);
+    fetchRevision();
+
+    // Re-fetch whenever a ProductRevision is created/updated for this color
+    const unsubscribe = base44.entities.ProductRevision.subscribe((event) => {
+      if (event.data?.target_id === productColorId) fetchRevision();
+    });
+    return unsubscribe;
   }, [productColorId]);
 
   if (!checked || !currentRevision) return null;
