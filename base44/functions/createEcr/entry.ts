@@ -13,9 +13,10 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// ── Canonical inline code-generation helper ──────────────────────────────────
+// ── Inline code-generation helper with uniqueness guard ──────────────────────
 // Cannot import from sibling functions in Deno; logic is inlined here.
 // Source of truth / canonical copy: functions/generateEntityCodeInline.js
+// Uniqueness guard added in Phase 5 #18-atomicity-fix
 async function generateEntityCodeInline(base44ServiceRole, entity_name, entity_type) {
   const generators = await base44ServiceRole.entities.SystemCodeGenerator.filter({ entity_name, entity_type });
   if (generators.length === 0) throw new Error(`No SystemCodeGenerator found for entity_name=${entity_name}, entity_type=${entity_type}.`);
@@ -25,6 +26,20 @@ async function generateEntityCodeInline(base44ServiceRole, entity_name, entity_t
   let nextSeq = (gen.last_sequence || 0) + 1;
   let code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
   while (excludedSet.has(code.toUpperCase())) { nextSeq++; code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`; }
+
+  // UNIQUENESS GUARD: Check if generated code already exists
+  let attempts = 0;
+  while (true) {
+    const existing = await base44ServiceRole.entities.ECR.filter({ ecr_number: code }, '-created_date', 1);
+    if (existing.length === 0) break;
+    nextSeq++;
+    code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
+    attempts++;
+    if (attempts > 100) {
+      throw new Error(`Code generation collision storm: 100+ attempts to find unique ecr_number starting from sequence ${gen.last_sequence}. Investigate SystemCodeGenerator drift.`);
+    }
+  }
+
   await base44ServiceRole.entities.SystemCodeGenerator.update(gen.id, { last_sequence: nextSeq });
   return code;
 }

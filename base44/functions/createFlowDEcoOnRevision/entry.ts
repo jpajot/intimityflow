@@ -26,7 +26,8 @@ const TERMINAL_BOM_STATUSES = ['superseded', 'obsolete'];
 const NON_TERMINAL_DOWNSTREAM = ['pending', 'notified', 'under_review'];
 const BATCH_CAP = 200;
 
-// ── Inline SystemCodeGenerator increment ──────────────────────────────────────
+// ── Inline code-generation helper with uniqueness guard ──────────────────────
+// Uniqueness guard added in Phase 5 #18-atomicity-fix
 async function generateEntityCodeInline(svc, entity_name, entity_type) {
   const generators = await svc.entities.SystemCodeGenerator.filter({ entity_name, entity_type });
   if (generators.length === 0) throw new Error(`No SystemCodeGenerator for ${entity_name}/${entity_type}`);
@@ -36,6 +37,20 @@ async function generateEntityCodeInline(svc, entity_name, entity_type) {
   let nextSeq = (gen.last_sequence || 0) + 1;
   let code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
   while (excludedSet.has(code.toUpperCase())) { nextSeq++; code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`; }
+
+  // UNIQUENESS GUARD: Check if generated code already exists
+  let attempts = 0;
+  while (true) {
+    const existing = await svc.entities.ECO.filter({ eco_number: code }, '-created_date', 1);
+    if (existing.length === 0) break;
+    nextSeq++;
+    code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
+    attempts++;
+    if (attempts > 100) {
+      throw new Error(`Code generation collision storm: 100+ attempts to find unique eco_number starting from sequence ${gen.last_sequence}. Investigate SystemCodeGenerator drift.`);
+    }
+  }
+
   await svc.entities.SystemCodeGenerator.update(gen.id, { last_sequence: nextSeq });
   return code;
 }
