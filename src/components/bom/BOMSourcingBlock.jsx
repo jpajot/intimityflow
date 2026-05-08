@@ -1,7 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// Request cache to deduplicate queries across multiple BOMSourcingBlock instances
+const requestCache = new Map();
+const requestPending = new Map();
+
+const cachedQuery = async (key, fn, ttl = 60000) => {
+  // Check cache first
+  if (requestCache.has(key)) {
+    const { data, expiry } = requestCache.get(key);
+    if (Date.now() < expiry) return data;
+    requestCache.delete(key);
+  }
+  
+  // Check if request is pending
+  if (requestPending.has(key)) return requestPending.get(key);
+  
+  // Fire new request
+  const promise = fn().then(data => {
+    requestCache.set(key, { data, expiry: Date.now() + ttl });
+    requestPending.delete(key);
+    return data;
+  }).catch(err => {
+    requestPending.delete(key);
+    throw err;
+  });
+  
+  requestPending.set(key, promise);
+  return promise;
+};
 
 /**
  * Row-level sourcing block for a BOMLine.
@@ -12,38 +41,62 @@ export default function BOMSourcingBlock({ line, comp, uom }) {
   const [primarySupplier, setPrimarySupplier] = useState(null); // { approvedSupplier, supplier }
   const [noSuppliers, setNoSuppliers] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const loadStartRef = useRef(Date.now());
 
   useEffect(() => {
     if (!line.component_product_id) return;
     let cancelled = false;
     const load = async () => {
-      // If line has a line-level override, resolve that supplier; else resolve primary
-      let asRecord = null;
-      if (line.line_level_approved_supplier_id) {
-        const overrides = await base44.entities.ApprovedSupplier.filter({ id: line.line_level_approved_supplier_id });
-        if (!cancelled && overrides[0]) asRecord = overrides[0];
-      }
-      if (!asRecord) {
-        const approved = await base44.entities.ApprovedSupplier.filter({
-          product_id: line.component_product_id,
-          is_primary: true,
-          status: "active",
-        });
+      try {
+        // Stagger requests by line index to avoid thundering herd
+        const delayMs = Math.random() * 200; // 0-200ms random jitter
+        await new Promise(r => setTimeout(r, delayMs));
         if (cancelled) return;
-        if (approved.length === 0) {
-          const all = await base44.entities.ApprovedSupplier.filter({ product_id: line.component_product_id });
-          if (cancelled) return;
-          setNoSuppliers(all.length === 0);
-          setLoaded(true);
-          return;
+
+        // If line has a line-level override, resolve that supplier; else resolve primary
+        let asRecord = null;
+        if (line.line_level_approved_supplier_id) {
+          const key = `as:${line.line_level_approved_supplier_id}`;
+          const overrides = await cachedQuery(key, () => 
+            base44.entities.ApprovedSupplier.filter({ id: line.line_level_approved_supplier_id })
+          );
+          if (!cancelled && overrides[0]) asRecord = overrides[0];
         }
-        asRecord = approved[0];
+        if (!asRecord) {
+          const key = `primary:${line.component_product_id}`;
+          const approved = await cachedQuery(key, () =>
+            base44.entities.ApprovedSupplier.filter({
+              product_id: line.component_product_id,
+              is_primary: true,
+              status: "active",
+            })
+          );
+          if (cancelled) return;
+          if (approved.length === 0) {
+            const allKey = `all:${line.component_product_id}`;
+            const all = await cachedQuery(allKey, () =>
+              base44.entities.ApprovedSupplier.filter({ product_id: line.component_product_id })
+            );
+            if (cancelled) return;
+            setNoSuppliers(all.length === 0);
+            setLoaded(true);
+            return;
+          }
+          asRecord = approved[0];
+        }
+        if (cancelled) return;
+        
+        const supplierKey = `supplier:${asRecord.supplier_id}`;
+        const suppliers = await cachedQuery(supplierKey, () =>
+          base44.entities.Supplier.filter({ id: asRecord.supplier_id })
+        );
+        if (cancelled) return;
+        setPrimarySupplier({ as: asRecord, supplier: suppliers[0] || null, isOverride: !!line.line_level_approved_supplier_id });
+        setLoaded(true);
+      } catch (err) {
+        console.error("[BOMSourcingBlock] Failed to load supplier data:", err);
+        setLoaded(true);
       }
-      if (cancelled) return;
-      const suppliers = await base44.entities.Supplier.filter({ id: asRecord.supplier_id });
-      if (cancelled) return;
-      setPrimarySupplier({ as: asRecord, supplier: suppliers[0] || null, isOverride: !!line.line_level_approved_supplier_id });
-      setLoaded(true);
     };
     load();
     return () => { cancelled = true; };
