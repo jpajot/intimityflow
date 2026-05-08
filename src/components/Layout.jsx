@@ -5,7 +5,7 @@ import FabricRollIcon from "./icons/FabricRollIcon";
 import ProjectsIcon from "./icons/ProjectsIcon";
 import StylesIcon from "./icons/StylesIcon";
 import SliderIcon from "./icons/SliderIcon";
-import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, ChevronDown, Building2, ClipboardList, GitPullRequestArrow, Inbox, FileStack, FilePlus } from "lucide-react";
+import { Shirt, SwatchBook, Ruler, Settings, Pin, PinOff, ChevronRight, ChevronDown, Building2, ClipboardList, GitPullRequestArrow } from "lucide-react";
 import { useSubNav } from "@/lib/SubNavContext";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
@@ -28,19 +28,11 @@ const DRAWER_ITEMS = [
   { path: "/size-grid-library",      label: "Size Studio",       icon: Ruler },
   { path: "/suppliers",              label: "Suppliers",         icon: Building2 },
   { path: "/boms",                   label: "BOMs",              icon: ClipboardList },
-  { path: "/change-management/ecos", label: "Change Management", icon: GitPullRequestArrow,
-    isModule: true, moduleLabel: "Change Management",
-    subItems: [
-      { path: "/change-management/ecos",    label: "All ECOs",        icon: FileStack },
-      { path: "/change-management/pending", label: "Pending Reviews", icon: Inbox },
-      { path: "/change-management/ecrs",    label: "All ECRs",        icon: ClipboardList },
-      { path: "/change-management/manual",  label: "Manual ECO",      icon: FilePlus },
-    ],
-  },
+  { path: "/change-management/ecos", label: "Change Management", icon: GitPullRequestArrow },
 ];
 
 function isDrawerItemActive(item, pathname) {
-  if (item.isModule) return pathname.startsWith("/change-management");
+  if (item.path === "/change-management/ecos") return pathname.startsWith("/change-management");
   if (item.path === "/color-palettes") return pathname.startsWith("/color-palettes");
   if (item.path === "/size-grid-library") return pathname.startsWith("/size-grid-library");
   // For product detail pages, check the stored nav context to distinguish materials vs products
@@ -102,22 +94,7 @@ export default function Layout() {
   const pinnedDrawer = usePopover();
   const subNavDrawer = usePopover();
   const optionsDrawer = usePopover();
-  const [cmCounts, setCmCounts] = useState({ ecos: null, pending: null, ecrs: null });
 
-  // Load Change Management badge counts when module is active or on mount
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [ecos, pending, ecrs] = await Promise.all([
-          import("@/api/base44Client").then(({ base44 }) => base44.entities.ECO.list("-created_date", 500)),
-          import("@/api/base44Client").then(({ base44 }) => base44.entities.ECOAffectedDownstream.filter({ propagation_status: { $in: ["pending", "notified", "under_review"] } }, "-created_date", 500)),
-          import("@/api/base44Client").then(({ base44 }) => base44.entities.ECR.list("-created_date", 500)),
-        ]);
-        setCmCounts({ ecos: ecos.length, pending: pending.length, ecrs: ecrs.length });
-      } catch (_) {}
-    };
-    load();
-  }, []);
 
 
 
@@ -355,38 +332,6 @@ export default function Layout() {
            {DRAWER_ITEMS.map((item) => {
              const Icon = item.icon;
              const isActive = isDrawerItemActive(item, location.pathname);
-             if (item.isModule) {
-               // Change Management — inline flyout section
-               return (
-                 <div key={item.path}>
-                   <div className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border-t border-border mt-1">
-                     {item.moduleLabel} › SECTIONS
-                   </div>
-                   {item.subItems.map((sub) => {
-                     const SubIcon = sub.icon;
-                     const subActive = location.pathname === sub.path || location.pathname.startsWith(sub.path + "/");
-                     const count = sub.path === "/change-management/ecos" ? cmCounts.ecos
-                       : sub.path === "/change-management/pending" ? cmCounts.pending
-                       : sub.path === "/change-management/ecrs" ? cmCounts.ecrs
-                       : null;
-                     return (
-                       <Link key={sub.path} to={sub.path} onClick={mainDrawer.close}
-                         className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${subActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"}`}>
-                         <SubIcon className="w-4 h-4 shrink-0" />
-                         <span className="flex-1">{sub.label}</span>
-                         {count !== null && count !== undefined && (
-                           <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                             sub.path === "/change-management/pending" && count > 0
-                               ? "bg-red-100 text-red-700"
-                               : subActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                           }`}>{count}</span>
-                         )}
-                       </Link>
-                     );
-                   })}
-                 </div>
-               );
-             }
              return (
                <Link key={item.path} to={item.path} onClick={mainDrawer.close}
                  className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${isActive ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"}`}>
@@ -469,7 +414,11 @@ export default function Layout() {
                    {Icon && <Icon className="w-4 h-4 shrink-0" />}
                    <span className="flex-1">{item.label}</span>
                    {item.count !== undefined && (
-                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{item.count}</span>
+                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                       item.countVariant === "red" && item.count > 0
+                         ? "bg-red-100 text-red-700"
+                         : isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                     }`}>{item.count}</span>
                    )}
                  </button>
                  <button type="button" onClick={() => pinSubNavItem(item)}

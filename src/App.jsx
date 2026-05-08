@@ -37,6 +37,7 @@ import AllEcosPage from './pages/change-management/AllEcosPage';
 import AllEcrsPage from './pages/change-management/AllEcrsPage';
 import ManualEcoPage from './pages/change-management/ManualEcoPage';
 import PendingReviewsPage from './pages/change-management/PendingReviewsPage';
+import ChangeManagementLayout from './pages/change-management/ChangeManagementLayout';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -105,11 +106,13 @@ const AuthenticatedApp = () => {
         <Route path="/suppliers/:id" element={<SupplierDetail />} />
         <Route path="/boms" element={<BOMs />} />
         <Route path="/boms/:id" element={<BOMDetail />} />
-        <Route path="/change-management/ecos" element={<AllEcosPage />} />
-        <Route path="/change-management/ecos/:id" element={<AllEcosPage />} />
-        <Route path="/change-management/pending" element={<PendingReviewsPage />} />
-        <Route path="/change-management/ecrs" element={<AllEcrsPage />} />
-        <Route path="/change-management/manual" element={<ManualEcoPage />} />
+        <Route element={<ChangeManagementLayout />}>
+          <Route path="/change-management/ecos" element={<AllEcosPage />} />
+          <Route path="/change-management/ecos/:id" element={<AllEcosPage />} />
+          <Route path="/change-management/pending" element={<PendingReviewsPage />} />
+          <Route path="/change-management/ecrs" element={<AllEcrsPage />} />
+          <Route path="/change-management/manual" element={<ManualEcoPage />} />
+        </Route>
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
