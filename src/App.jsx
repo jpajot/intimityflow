@@ -38,7 +38,7 @@ import AllEcrsPage from './pages/change-management/AllEcrsPage';
 import ManualEcoPage from './pages/change-management/ManualEcoPage';
 import PendingReviewsPage from './pages/change-management/PendingReviewsPage';
 import ChangeManagementLayout from './pages/change-management/ChangeManagementLayout';
-import EcoDetailStub from './pages/change-management/EcoDetailStub';
+import EcoDetailPage from './pages/change-management/EcoDetailPage';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -113,7 +113,7 @@ const AuthenticatedApp = () => {
           <Route path="/change-management/ecrs" element={<AllEcrsPage />} />
           <Route path="/change-management/manual" element={<ManualEcoPage />} />
         </Route>
-        <Route path="/change-management/ecos/:id" element={<EcoDetailStub />} />
+        <Route path="/change-management/ecos/:id" element={<EcoDetailPage />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
