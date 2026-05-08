@@ -12,7 +12,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 
 const STORAGE_KEY = "colorway_section_view";
 
-export default function ColorwaySection({ colorVariants, productImage = "", onEdit, onAddNew, onAddFromLibrary, onColorVariantsUpdated }) {
+export default function ColorwaySection({ colorVariants, productImage = "", onEdit, onAddNew, onAddFromLibrary, onColorVariantsUpdated, onOpenRevisionPanel }) {
   const { setOptions } = usePageOptions();
   const [view, setView] = useState(() => localStorage.getItem(STORAGE_KEY) || "grid");
   const [showBulkStatus, setShowBulkStatus] = useState(false);
@@ -213,7 +213,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filteredVariants.map((cv) => (
-            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} productImage={productImage} onEdit={() => onEdit(cv)} commColor={commColors.find((c) => c.id === cv.linked_color_id)} allTechColors={techColors} />
+            <ColorwayCard key={cv.id} variant={cv} techColor={getTechColor(cv.linked_tech_color_id)} productImage={productImage} onEdit={() => onEdit(cv)} commColor={commColors.find((c) => c.id === cv.linked_color_id)} allTechColors={techColors} onOpenRevisionPanel={onOpenRevisionPanel} />
           ))}
         </div>
       ) : (

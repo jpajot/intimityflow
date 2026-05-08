@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 import ImageLightbox from "./ImageLightbox";
+import ColorRevisionBadge from "./revisions/ColorRevisionBadge";
 
-export default function ColorwayCard({ variant, techColor, productImage = "", onEdit, commColor, allTechColors = [] }) {
+export default function ColorwayCard({ variant, techColor, productImage = "", onEdit, commColor, allTechColors = [], onOpenRevisionPanel }) {
   const [lightbox, setLightbox] = useState(false);
   // Rule: show colorway image if available, else fall back to product main image
   const useProductImage = !variant.image_url && !!productImage;
@@ -67,6 +68,10 @@ export default function ColorwayCard({ variant, techColor, productImage = "", on
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
             <span className="font-medium text-sm truncate">{variant.color_name}</span>
+            <ColorRevisionBadge
+              productColorId={variant.id}
+              onOpenPanel={onOpenRevisionPanel}
+            />
           </div>
           {variant.colorway_code && (
             <p className="text-xs text-muted-foreground font-mono mt-0.5">{variant.colorway_code}</p>

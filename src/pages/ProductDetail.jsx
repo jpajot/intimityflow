@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import PresenceIndicator from "../components/PresenceIndicator";
 import ProductUOMSection from "../components/ProductUOMSection";
+import RevisionHistoryPanel from "../components/revisions/RevisionHistoryPanel";
 
 // Categories, sub-categories, and customer needs are now fetched from database
 
@@ -66,6 +67,8 @@ export default function ProductDetail() {
   const [lightboxImages, setLightboxImages] = useState(null); // { images: [], index: 0 }
   const [revisionModal, setRevisionModal] = useState(null); // { type: "tracked"|"manual", pendingData?, beforeSnapshot?, afterSnapshot? }
   const [revisionSaving, setRevisionSaving] = useState(false);
+  const [showRevisionPanel, setShowRevisionPanel] = useState(false);
+  const [revisionPanelTargetType, setRevisionPanelTargetType] = useState("all");
   const productBeforeRef = useRef(null); // snapshot of product before an edit session begins
 
   const subNavItems = isNew ? [] : [
@@ -436,6 +439,17 @@ export default function ProductDetail() {
         )}
         {!isNew && (
           <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Revision History"
+            onClick={() => { setRevisionPanelTargetType("all"); setShowRevisionPanel(true); }}
+          >
+            <Info className="w-4 h-4" />
+          </Button>
+        )}
+        {!isNew && (
+          <Button
             variant="outline"
             size="sm"
             className="gap-1.5 text-xs h-8"
@@ -726,6 +740,10 @@ export default function ProductDetail() {
           onEdit={(cv) => setEditingColor(cv)}
           onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
           onAddFromLibrary={() => setShowLibraryPicker(true)}
+          onOpenRevisionPanel={(targetType = "product_color") => {
+            setRevisionPanelTargetType(targetType || "product_color");
+            setShowRevisionPanel(true);
+          }}
           onColorVariantsUpdated={(updates) => {
             setColorVariants((prev) => prev.map((cv) => {
               const u = updates.find((x) => x.id === cv.id);
@@ -780,6 +798,14 @@ export default function ProductDetail() {
             ? `This edit modifies tracked fields on "${product.name}". Add context before saving.`
             : `Explicitly bumping the revision for "${product.name}".`
         }
+      />
+
+      <RevisionHistoryPanel
+        open={showRevisionPanel}
+        onClose={() => setShowRevisionPanel(false)}
+        product={product}
+        colorVariants={colorVariants}
+        initialTargetType={revisionPanelTargetType}
       />
 
       {lightboxImages && (
