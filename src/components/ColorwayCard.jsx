@@ -70,7 +70,7 @@ export default function ColorwayCard({ variant, techColor, productImage = "", on
             <span className="font-medium text-sm truncate">{variant.color_name}</span>
             <ColorRevisionBadge
               productColorId={variant.id}
-              onOpenPanel={onOpenRevisionPanel}
+              onOpenPanel={(targetType) => onOpenRevisionPanel && onOpenRevisionPanel(targetType, variant.id)}
             />
           </div>
           {variant.colorway_code && (

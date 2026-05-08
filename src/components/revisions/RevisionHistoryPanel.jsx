@@ -3,7 +3,7 @@
  * Right slide-in drawer surfacing ProductRevision history for a Product and its children.
  * Opens via (i) icon on Product detail page header.
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, GitCommit } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import NewRevisionModal from "./NewRevisionModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ export default function RevisionHistoryPanel({
   product,               // full product record
   colorVariants = [],    // ProductColor[] already loaded on the page
   initialTargetType = "all", // pre-filter (e.g. "product_color" from child page badge)
+  initialTargetId = null,    // specific entity id when opened from a child badge
 }) {
   const { toast } = useToast();
 
@@ -158,6 +160,10 @@ export default function RevisionHistoryPanel({
   const [colorMap, setColorMap] = useState({}); // { colorId: ProductColor }
   const [ecoMap, setEcoMap] = useState({});     // { revisionId: [ecoId, ...] }
   const [ecoRecords, setEcoRecords] = useState({}); // { ecoId: ECO }
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Modal state
+  const [newRevisionOpen, setNewRevisionOpen] = useState(false);
 
   // Filters
   const [typeFilter, setTypeFilter] = useState(initialTargetType);
@@ -241,7 +247,7 @@ export default function RevisionHistoryPanel({
     };
 
     load().catch(() => setLoading(false));
-  }, [open, product?.id]);
+  }, [open, product?.id, refreshKey]);
 
   // ── Filtered revisions ────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -261,6 +267,28 @@ export default function RevisionHistoryPanel({
   const newest = revisions[0];
   const lastUpdated = newest ? relTime(newest.created_at || newest.created_date) : null;
 
+  // ── Derive target context for the "New Revision" modal ────────────────────────
+  // When opened from a child badge: targetType=product_color, targetId=<colorId>
+  // When opened from the (i) icon: targetType=product, targetId=product.id
+  const newRevTargetType = (initialTargetType && initialTargetType !== "all")
+    ? initialTargetType
+    : "product";
+  const newRevTargetId = initialTargetId || product?.id;
+  const newRevTargetName = (() => {
+    if (newRevTargetType === "product") return product?.name || "";
+    if (newRevTargetType === "product_color") {
+      const c = colorVariants.find(cv => cv.id === newRevTargetId);
+      return c?.color_name || "";
+    }
+    return "";
+  })();
+
+  // Find current revision code for the specific target
+  const currentRevForTarget = revisions.find(
+    r => r.target_type === newRevTargetType && r.target_id === newRevTargetId && r.is_current
+  );
+  const currentRevisionCode = currentRevForTarget?.revision_code || null;
+
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <SheetContent side="right" className="w-full sm:w-[440px] p-0 flex flex-col">
@@ -276,10 +304,10 @@ export default function RevisionHistoryPanel({
             </p>
           </SheetHeader>
 
-          {/* New Revision button — placeholder */}
+          {/* New Revision button */}
           <Button
             className="w-full h-8 text-sm gap-1.5"
-            onClick={() => toast({ title: "Coming in Prompt #18." })}
+            onClick={() => setNewRevisionOpen(true)}
           >
             <GitCommit className="w-3.5 h-3.5" />
             New Revision
@@ -342,6 +370,20 @@ export default function RevisionHistoryPanel({
             ))
           )}
         </div>
+        {/* ── New Revision Modal ──────────────────────────────────────────── */}
+        <NewRevisionModal
+          open={newRevisionOpen}
+          onClose={() => setNewRevisionOpen(false)}
+          onCreated={(revisionCode, isFirstRevision) => {
+            setNewRevisionOpen(false);
+            setRefreshKey(k => k + 1);
+          }}
+          product={product}
+          targetType={newRevTargetType}
+          targetId={newRevTargetId}
+          targetName={newRevTargetName}
+          currentRevisionCode={currentRevisionCode}
+        />
       </SheetContent>
     </Sheet>
   );

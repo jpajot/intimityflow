@@ -69,6 +69,7 @@ export default function ProductDetail() {
   const [revisionSaving, setRevisionSaving] = useState(false);
   const [showRevisionPanel, setShowRevisionPanel] = useState(false);
   const [revisionPanelTargetType, setRevisionPanelTargetType] = useState("all");
+  const [revisionPanelTargetId, setRevisionPanelTargetId] = useState(null);
   const productBeforeRef = useRef(null); // snapshot of product before an edit session begins
 
   const subNavItems = isNew ? [] : [
@@ -443,7 +444,7 @@ export default function ProductDetail() {
             size="icon"
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
             title="Revision History"
-            onClick={() => { setRevisionPanelTargetType("all"); setShowRevisionPanel(true); }}
+            onClick={() => { setRevisionPanelTargetType("all"); setRevisionPanelTargetId(null); setShowRevisionPanel(true); }}
           >
             <Info className="w-4 h-4" />
           </Button>
@@ -740,8 +741,9 @@ export default function ProductDetail() {
           onEdit={(cv) => setEditingColor(cv)}
           onAddNew={() => { setEditingColor(null); setShowNewColorModal(true); }}
           onAddFromLibrary={() => setShowLibraryPicker(true)}
-          onOpenRevisionPanel={(targetType = "product_color") => {
+          onOpenRevisionPanel={(targetType, targetId) => {
             setRevisionPanelTargetType(targetType || "product_color");
+            setRevisionPanelTargetId(targetId || null);
             setShowRevisionPanel(true);
           }}
           onColorVariantsUpdated={(updates) => {
@@ -806,6 +808,7 @@ export default function ProductDetail() {
         product={product}
         colorVariants={colorVariants}
         initialTargetType={revisionPanelTargetType}
+        initialTargetId={revisionPanelTargetId}
       />
 
       {lightboxImages && (
