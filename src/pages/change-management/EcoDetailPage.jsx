@@ -414,20 +414,16 @@ export default function EcoDetailPage() {
   }, [eco, sourceEcr, affectedDownstream]);
 
   // ── Render states ─────────────────────────────────────────────────────────────
-  const backLink = (
-    <Link
-      to="/change-management/ecos"
-      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <ArrowLeft className="w-4 h-4" /> Back to All ECOs
-    </Link>
-  );
-
   if (loading) return <PageSkeleton />;
 
   if (notFound) return (
     <div className="px-4 py-6 space-y-4 max-w-4xl">
-      {backLink}
+      <Link
+        to="/change-management/ecos"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to All ECOs
+      </Link>
       <p className="text-muted-foreground">ECO not found.</p>
     </div>
   );
@@ -438,27 +434,38 @@ export default function EcoDetailPage() {
     : null;
 
   return (
-    <div className="px-4 py-6 space-y-6 max-w-4xl">
-      {/* Breadcrumb / back */}
-      <div className="space-y-1">
-        {backLink}
-        <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-          Change Management › All ECOs › {eco.eco_number}
-        </p>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-32px)] overflow-hidden">
+      {/* ── STICKY HEADER ─────────────────────────────────────────────────────── */}
+      <div className="shrink-0 flex items-center gap-2 px-3 pt-2 pb-2 border-b border-border bg-background z-10">
+        <Link
+          to="/change-management/ecos"
+          className="shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          title="Back to All ECOs"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
 
-      {/* Title row */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-display font-semibold font-mono">{eco.eco_number}</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{eco.title}</p>
+        {/* ECO number + title */}
+        <div className="flex-1 min-w-0 flex items-baseline gap-2 overflow-hidden">
+          <h1 className="font-display font-semibold font-mono text-base shrink-0">{eco.eco_number}</h1>
+          <span className="text-muted-foreground text-xs truncate hidden sm:block">{eco.title}</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+
+        {/* Badges */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <StatusBadge value={eco.status} />
           <PriorityBadge value={eco.priority} />
           <FlowBadge value={eco.flow_type} />
         </div>
       </div>
+
+      {/* ── SCROLLABLE BODY ────────────────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="px-4 py-6 space-y-6 max-w-4xl">
+      {/* Breadcrumb */}
+      <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
+        Change Management › All ECOs › {eco.eco_number}
+      </p>
 
       {/* ── TASK 2: Metadata card ─────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-6">
@@ -752,6 +759,8 @@ export default function EcoDetailPage() {
           ))}
         </div>
       </div>
+      </div>{/* end max-w-4xl */}
+      </div>{/* end overflow-y-auto */}
     </div>
   );
 }
