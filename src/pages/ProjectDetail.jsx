@@ -336,7 +336,7 @@ export default function ProjectDetail() {
     setPalettes(pals);
     setDocuments(docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date)));
 
-    await delay(100);
+    await delay(300);
 
     // Batch 2: reference data + doc types
     const [projs, sgs, docValues] = await Promise.all([
@@ -350,7 +350,7 @@ export default function ProjectDetail() {
     setSizeGrids(sgs);
     setDocTypes(docValues.map((v) => v.name));
 
-    await delay(100);
+    await delay(300);
 
     // Batch 3: color library data
     const [tc, cc, palCols] = await Promise.all([
@@ -362,13 +362,13 @@ export default function ProjectDetail() {
     setCommColors(cc);
     setPaletteColors(palCols);
 
-    await delay(100);
+    await delay(300);
 
-    // Batch 4: product/colorway data
+    // Batch 4: product/colorway data (reduced limits to avoid rate limit)
     const [allCws, allProducts, allVars] = await Promise.all([
-    base44.entities.ProductColor.list("-created_date", 5000),
+    base44.entities.ProductColor.list("-created_date", 2000),
     base44.entities.Product.list("-created_date", 2000),
-    base44.entities.ProductColorAndMore.list("-created_date", 5000)]
+    base44.entities.ProductColorAndMore.list("-created_date", 2000)]
     );
     const linked = allCws.filter((c) => (c.project_ids || []).includes(id));
     setLinkedColorways(linked);
