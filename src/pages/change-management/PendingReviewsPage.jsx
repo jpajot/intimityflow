@@ -1,34 +1,23 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Pencil, Search, FileStack, ClipboardList, SplitSquareVertical, List, ExternalLink } from "lucide-react";
+import { Loader2, Pencil, Search, X, FileStack, ClipboardList, SplitSquareVertical, List, ExternalLink, Filter } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import ChangeManagementViewDrawer from "@/components/change-management/ChangeManagementViewDrawer";
+import QuickFiltersPanel from "@/components/QuickFiltersPanel";
+import { applyQuickFilters } from "@/components/QuickFiltersPanel";
+import DataTable from "@/components/DataTable";
+import { FlowBadge, PriorityBadge } from "@/components/change-management/EcoBadges";
 
 const PAGE_KEY = "change_management_pending";
+const PAGE_SIZE = 50;
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const NON_TERMINAL_STATUSES = ["pending", "notified", "under_review"];
-
-const FLOW_CONFIG = {
-  A_dev_bom_release:  { letter: "A", color: "bg-blue-100 text-blue-700 border-blue-300",   label: "Flow A — Dev BOM Release" },
-  B_routing_change:   { letter: "B", color: "bg-purple-100 text-purple-700 border-purple-300", label: "Flow B — Routing Change" },
-  C_sourcing_change:  { letter: "C", color: "bg-amber-100 text-amber-700 border-amber-300",  label: "Flow C — Sourcing Change" },
-  D_component_revision: { letter: "D", color: "bg-green-100 text-green-700 border-green-300", label: "Flow D — Component Revision" },
-  manual:             { letter: "M", color: "bg-slate-100 text-slate-600 border-slate-300",  label: "Manual" },
-};
-
-const PRIORITY_CONFIG = {
-  low:      "bg-slate-100 text-slate-600 border-slate-300",
-  normal:   "bg-blue-100 text-blue-700 border-blue-300",
-  high:     "bg-orange-100 text-orange-700 border-orange-300",
-  critical: "bg-red-100 text-red-700 border-red-300",
-};
 
 const STATUS_CONFIG = {
   pending:           "bg-slate-100 text-slate-600",
@@ -49,58 +38,128 @@ const DOWNSTREAM_ICONS = {
   BOMLine:        <List className="w-3.5 h-3.5 shrink-0" />,
 };
 
-const PAGE_SIZE = 50;
+// ── Quick Filter fields ────────────────────────────────────────────────────────
+const QF_FIELDS = [
+  { id: "flow_type",         label: "Flow Type",         getValue: (r) => r.flow_type || "" },
+  { id: "priority",          label: "Priority",          getValue: (r) => r.priority || "" },
+  { id: "propagation_status", label: "Status",           getValue: (r) => r.propagation_status || "" },
+  { id: "downstream_type",   label: "Downstream Type",   getValue: (r) => r.downstream_type || "" },
+  { id: "downstream_label",  label: "Downstream Label",  getValue: (r) => r.downstream_label || "" },
+  { id: "created_date",      label: "Created Date",      getValue: (r) => r.created_date || "" },
+];
 
-// ── Column definitions ─────────────────────────────────────────────────────────
-function renderCell(colId, row, ecoMap, navigate) {
-  const eco = ecoMap[row.eco_id];
-  switch (colId) {
-    case "eco_number":
-      return (
-        <button type="button" onClick={() => navigate(`/change-management/ecos/${row.eco_id}`)}
-          className="font-mono text-xs font-semibold text-primary hover:underline"
-          title={eco?.title || ""}>
-          {eco?.eco_number || row.eco_id?.slice(-6) || "—"}
-        </button>
-      );
-    case "flow_type": {
-      const cfg = FLOW_CONFIG[row.flow_type] || { letter: "?", color: "bg-slate-100 text-slate-600", label: row.flow_type };
-      return (
-        <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-bold border ${cfg.color}`} title={cfg.label}>
-          {cfg.letter}
-        </span>
-      );
-    }
-    case "downstream_label":
-      return (
-        <span className="flex items-center gap-1.5 text-xs text-foreground max-w-[280px]">
-          <span className="text-muted-foreground shrink-0">{DOWNSTREAM_ICONS[row.downstream_type]}</span>
-          <span className="truncate" title={row.downstream_label}>{row.downstream_label || "—"}</span>
-        </span>
-      );
-    case "priority":
-      return <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium capitalize ${PRIORITY_CONFIG[row.priority] || "bg-muted text-muted-foreground"}`}>{row.priority || "—"}</span>;
-    case "propagation_status":
-      return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_CONFIG[row.propagation_status] || "bg-muted text-muted-foreground"}`}>{(row.propagation_status || "—").replace(/_/g, " ")}</span>;
-    case "created_date":
-      return row.created_date ? (
-        <span className="text-xs text-muted-foreground" title={new Date(row.created_date).toLocaleString()}>
-          {formatDistanceToNow(new Date(row.created_date), { addSuffix: true })}
-        </span>
-      ) : "—";
-    default:
-      return <span className="text-xs text-muted-foreground">{String(row[colId] ?? "—")}</span>;
+const COLUMN_DEFS_BASE = {
+  eco_number:          { label: "ECO",        width: 110 },
+  flow_type:           { label: "Flow",       width: 70 },
+  downstream_label:    { label: "Downstream", width: 300 },
+  priority:            { label: "Priority",   width: 100 },
+  propagation_status:  { label: "Status",     width: 130 },
+  created_date:        { label: "Created",    width: 140 },
+};
+
+// ── InlineSearch ───────────────────────────────────────────────────────────────
+function InlineSearch({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef(null);
+
+  const handleOpen = () => {
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const handleBlur = () => { if (!value) setOpen(false); };
+
+  const handleClear = () => { onChange(""); setOpen(false); };
+
+  if (!open) {
+    return (
+      <button type="button" onClick={handleOpen}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Search">
+        <Search className="w-4 h-4" />
+      </button>
+    );
   }
+  return (
+    <div className="relative flex items-center">
+      <Search className="absolute left-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+      <Input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)}
+        onBlur={handleBlur} placeholder="Search downstream label, ECO…"
+        className="pl-8 pr-7 h-8 text-xs w-64" />
+      {value && (
+        <button type="button" onClick={handleClear} className="absolute right-2 text-muted-foreground hover:text-foreground">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
 }
 
-const COLUMN_LABELS = {
-  eco_number: "ECO",
-  flow_type: "Flow",
-  downstream_label: "Downstream",
-  priority: "Priority",
-  propagation_status: "Status",
-  created_date: "Created",
-};
+// ── Column builder ─────────────────────────────────────────────────────────────
+function buildColumns(ecoMap, navigate) {
+  return [
+    {
+      id: "eco_number", label: "ECO", width: 110,
+      sortKey: (r) => ecoMap[r.eco_id]?.eco_number || "",
+      render: (r) => {
+        const eco = ecoMap[r.eco_id];
+        return (
+          <button type="button" onClick={() => navigate(`/change-management/ecos/${r.eco_id}`)}
+            className="font-mono text-xs font-semibold text-primary hover:underline"
+            title={eco?.title || ""}>
+            {eco?.eco_number || r.eco_id?.slice(-6) || "—"}
+          </button>
+        );
+      },
+    },
+    {
+      id: "flow_type", label: "Flow", width: 70,
+      sortKey: (r) => r.flow_type || "",
+      render: (r) => <FlowBadge value={r.flow_type} />,
+    },
+    {
+      id: "downstream_label", label: "Downstream", width: 300,
+      sortKey: (r) => r.downstream_label || "",
+      render: (r) => (
+        <span className="flex items-center gap-1.5 text-xs text-foreground max-w-[280px]">
+          <span className="text-muted-foreground shrink-0">{DOWNSTREAM_ICONS[r.downstream_type]}</span>
+          <span className="truncate" title={r.downstream_label}>{r.downstream_label || "—"}</span>
+        </span>
+      ),
+    },
+    {
+      id: "priority", label: "Priority", width: 100,
+      sortKey: (r) => r.priority || "",
+      render: (r) => <PriorityBadge value={r.priority} />,
+    },
+    {
+      id: "propagation_status", label: "Status", width: 130,
+      sortKey: (r) => r.propagation_status || "",
+      render: (r) => (
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_CONFIG[r.propagation_status] || "bg-muted text-muted-foreground"}`}>
+          {(r.propagation_status || "—").replace(/_/g, " ")}
+        </span>
+      ),
+    },
+    {
+      id: "created_date", label: "Created", width: 140,
+      sortKey: (r) => r.created_date || "",
+      render: (r) => r.created_date ? (
+        <span className="text-xs text-muted-foreground" title={new Date(r.created_date).toLocaleString()}>
+          {formatDistanceToNow(new Date(r.created_date), { addSuffix: true })}
+        </span>
+      ) : "—",
+    },
+    {
+      id: "_actions", label: "", width: 110,
+      render: (r) => (
+        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-primary"
+          onClick={() => navigate(`/change-management/ecos/${r.eco_id}`)}>
+          View ECO <ExternalLink className="w-3 h-3" />
+        </Button>
+      ),
+    },
+  ];
+}
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function PendingReviewsPage() {
@@ -118,71 +177,78 @@ export default function PendingReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  // Inline controls (ephemeral — don't modify saved view)
+  // Search (inline magnifier)
   const [search, setSearch] = useState("");
-  const [sortOrder, setSortOrder] = useState("newest");
+
+  // Quick Filters (ephemeral)
+  const [quickFilters, setQuickFilters] = useState([]);
+  const [showQF, setShowQF] = useState(false);
+
+  // Pagination
   const [page, setPage] = useState(0);
 
   // Load user
   useEffect(() => {
-    base44.auth.me().then(u => setUser(u)).catch(() => {});
+    base44.auth.me().then((u) => setUser(u)).catch(() => {});
   }, []);
 
   // Load active view config
   useEffect(() => {
-    if (activeViewId === "default") {
-      setActiveView(null);
-      return;
-    }
-    base44.entities.ListViewConfig.filter({ id: activeViewId }).then(res => {
+    if (activeViewId === "default") { setActiveView(null); return; }
+    base44.entities.ListViewConfig.filter({ id: activeViewId }).then((res) => {
       setActiveView(res[0] || null);
     });
   }, [activeViewId]);
+
+  // Clear QF on view switch
+  const handleSelectView = (id) => {
+    setActiveViewId(id);
+    setQuickFilters([]);
+    setShowQF(false);
+    setPage(0);
+  };
 
   // Fetch rows based on active view filters
   useEffect(() => {
     setLoading(true);
     setPage(0);
     const fetchData = async () => {
-      // Always filter to non-terminal statuses
       const allRows = await base44.entities.ECOAffectedDownstream.filter(
         { propagation_status: { $in: NON_TERMINAL_STATUSES } },
         "-created_date",
         500
       );
 
-      // Apply view-level filters (client-side for pseudo-fields)
+      // Apply view-level filters (client-side)
       const viewFilters = activeView?.filters_config?.filters || [];
       let filtered = allRows;
-
       for (const f of viewFilters) {
         if (f.field === "propagation_status") {
-          filtered = filtered.filter(r => f.values.includes(r.propagation_status));
+          filtered = filtered.filter((r) => f.values.includes(r.propagation_status));
         } else if (f.field === "flow_type") {
-          filtered = filtered.filter(r => f.values.includes(r.flow_type));
+          filtered = filtered.filter((r) => f.values.includes(r.flow_type));
         } else if (f.field === "priority") {
-          filtered = filtered.filter(r => f.values.includes(r.priority));
+          filtered = filtered.filter((r) => f.values.includes(r.priority));
         } else if (f.field === "_mine_only" && user) {
-          // Resolve ECOs for mine-only — batch
-          const ecoIds = [...new Set(filtered.map(r => r.eco_id).filter(Boolean))];
+          const ecoIds = [...new Set(filtered.map((r) => r.eco_id).filter(Boolean))];
           const ecos = ecoIds.length > 0
             ? await base44.entities.ECO.filter({ id: { $in: ecoIds } }, "-created_date", 500)
             : [];
           const myEcoIds = new Set(
-            ecos.filter(e => e.requested_by === user.email || e.approver_id === user.email).map(e => e.id)
+            ecos.filter((e) => e.requested_by === user.email || e.approver_id === user.email).map((e) => e.id)
           );
-          filtered = filtered.filter(r => myEcoIds.has(r.eco_id) || r.created_by === user.email);
+          filtered = filtered.filter((r) => myEcoIds.has(r.eco_id) || r.created_by === user.email);
         }
       }
 
       setRows(filtered);
 
       // Batch-fetch ECOs
-      const ecoIds = [...new Set(filtered.map(r => r.eco_id).filter(Boolean))];
+      const ecoIds = [...new Set(filtered.map((r) => r.eco_id).filter(Boolean))];
       if (ecoIds.length > 0) {
         const ecos = await base44.entities.ECO.filter({ id: { $in: ecoIds } }, "-created_date", 500);
         const map = {};
-        ecos.forEach(e => { map[e.id] = e; });
+        ecos.forEach((e) => { map[e.id] = e; });
         setEcoMap(map);
       } else {
         setEcoMap({});
@@ -192,93 +258,101 @@ export default function PendingReviewsPage() {
     fetchData();
   }, [activeView, user]);
 
+  // Columns (memoised per ecoMap)
+  const allColumns = useMemo(() => buildColumns(ecoMap, navigate), [ecoMap, navigate]);
+
+  // Active column ids from view or default
+  const columnIds = activeView?.column_ids?.length > 0
+    ? activeView.column_ids
+    : ["eco_number", "flow_type", "downstream_label", "priority", "propagation_status", "created_date"];
+
+  const displayColumns = [
+    ...columnIds.map((id) => allColumns.find((c) => c.id === id)).filter(Boolean),
+    allColumns.find((c) => c.id === "_actions"),
+  ].filter(Boolean);
+
   // Register options menu
   useEffect(() => {
     setOptions({
+      filterBadge: quickFilters.length > 0 ? quickFilters.length : null,
       items: [
-        { label: "Manage Views", icon: Pencil, onClick: () => setShowViewMenu(v => !v), custom: true },
+        {
+          label: "Manage Views", icon: Pencil,
+          onClick: () => { setShowViewMenu((v) => !v); setShowQF(false); },
+          custom: true,
+        },
+        {
+          label: "Quick Filters", icon: Filter,
+          onClick: () => { setShowQF((v) => !v); setShowViewMenu(false); },
+          custom: true,
+          badge: quickFilters.length > 0 ? quickFilters.length : null,
+        },
       ],
       customContent: showViewMenu ? (
         <ChangeManagementViewDrawer
           pageKey={PAGE_KEY}
           activeViewId={activeViewId}
-          onSelectView={(id) => { setActiveViewId(id); setShowViewMenu(false); }}
-          allFields={Object.entries(COLUMN_LABELS).map(([id, label]) => ({ id, label }))}
+          onSelectView={handleSelectView}
+          allFields={Object.entries(COLUMN_DEFS_BASE).map(([id, { label }]) => ({ id, label }))}
           displayMode="list"
+        />
+      ) : showQF ? (
+        <QuickFiltersPanel
+          fields={QF_FIELDS}
+          activeFilters={quickFilters}
+          onApply={(f) => { setQuickFilters(f); setPage(0); }}
         />
       ) : null,
     });
-  }, [setOptions, showViewMenu, activeViewId]);
+  }, [setOptions, showViewMenu, showQF, activeViewId, quickFilters]);
 
-  // Inline search + sort (ephemeral)
+  // Apply quick filters
+  const qfRows = useMemo(() => applyQuickFilters(rows, quickFilters), [rows, quickFilters]);
+
+  // Apply search
   const processed = useMemo(() => {
-    let result = [...rows];
-
+    let result = qfRows;
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.filter(r =>
+      result = result.filter((r) =>
         r.downstream_label?.toLowerCase().includes(q) ||
         ecoMap[r.eco_id]?.eco_number?.toLowerCase().includes(q) ||
         ecoMap[r.eco_id]?.title?.toLowerCase().includes(q)
       );
     }
-
-    if (sortOrder === "newest") result.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    else if (sortOrder === "oldest") result.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
-    else if (sortOrder === "priority") {
-      const order = { critical: 0, high: 1, normal: 2, low: 3 };
-      result.sort((a, b) => (order[a.priority] ?? 4) - (order[b.priority] ?? 4));
-    }
-
     return result;
-  }, [rows, search, sortOrder, ecoMap]);
+  }, [qfRows, search, ecoMap]);
 
   const totalPages = Math.ceil(processed.length / PAGE_SIZE);
   const visible = processed.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-
-  // Active column ids (from view or default)
-  const columnIds = activeView?.column_ids?.length > 0
-    ? activeView.column_ids
-    : ["eco_number", "flow_type", "downstream_label", "priority", "propagation_status", "created_date"];
 
   return (
     <div className="flex flex-col h-[calc(100vh-32px)] overflow-hidden">
       {/* Header */}
       <div className="shrink-0 px-4 pt-4 pb-2 border-b border-border bg-background">
         <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Change Management</p>
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-xl font-display font-semibold">Pending Reviews</h1>
-          <span className="text-sm text-muted-foreground">
-            {loading ? "…" : `${processed.length} change${processed.length !== 1 ? "s" : ""} awaiting attention`}
-          </span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-xl font-display font-semibold">Pending Reviews</h1>
+            <span className="text-sm text-muted-foreground">
+              {loading ? "…" : `${processed.length} change${processed.length !== 1 ? "s" : ""} awaiting attention`}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <InlineSearch value={search} onChange={(v) => { setSearch(v); setPage(0); }} />
+          </div>
         </div>
-      </div>
-
-      {/* Inline controls bar */}
-      <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border bg-background">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search rows…" className="h-8 pl-8 text-xs" />
-        </div>
-        <Select value={sortOrder} onValueChange={setSortOrder}>
-          <SelectTrigger className="h-8 text-xs w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest first</SelectItem>
-            <SelectItem value="oldest">Oldest first</SelectItem>
-            <SelectItem value="priority">Highest priority first</SelectItem>
-          </SelectContent>
-        </Select>
         {activeView && (
-          <span className="text-xs text-muted-foreground px-2 py-1 bg-primary/10 text-primary rounded-md font-medium">
-            {activeView.name}
-          </span>
+          <div className="mt-1">
+            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium">
+              {activeView.name}
+            </span>
+          </div>
         )}
       </div>
 
       {/* Table */}
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto px-4 py-2">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -289,35 +363,13 @@ export default function PendingReviewsPage() {
             <p className="text-xs">Try switching views or adjusting filters.</p>
           </div>
         ) : (
-          <table className="w-full text-xs min-w-[700px]">
-            <thead className="sticky top-0 z-[2] bg-card border-b border-border shadow-sm">
-              <tr>
-                {columnIds.map(colId => (
-                  <th key={colId} className="px-3 py-2.5 text-left font-semibold text-muted-foreground whitespace-nowrap">
-                    {COLUMN_LABELS[colId] || colId}
-                  </th>
-                ))}
-                <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground w-28">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map(row => (
-                <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors group">
-                  {columnIds.map(colId => (
-                    <td key={colId} className="px-3 py-2.5 align-middle">
-                      {renderCell(colId, row, ecoMap, navigate)}
-                    </td>
-                  ))}
-                  <td className="px-3 py-2.5 text-right">
-                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-primary"
-                      onClick={() => navigate(`/change-management/ecos/${row.eco_id}`)}>
-                      View ECO <ExternalLink className="w-3 h-3" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={displayColumns}
+            rows={visible}
+            fixedColumns={activeView?.fixed_column_ids || []}
+            hideColumnToggle
+            onPinColumn={() => {}}
+          />
         )}
       </div>
 
@@ -326,9 +378,9 @@ export default function PendingReviewsPage() {
         <div className="shrink-0 flex items-center justify-between px-4 py-2 border-t border-border bg-background text-xs text-muted-foreground">
           <span>Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, processed.length)} of {processed.length}</span>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Prev</Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
             <span>{page + 1} / {totalPages}</span>
-            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>Next</Button>
           </div>
         </div>
       )}
