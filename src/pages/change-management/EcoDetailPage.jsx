@@ -338,11 +338,11 @@ export default function EcoDetailPage() {
       });
     }
 
-    // Auto-applied: requested_at ≈ applied_at within 1 second
+    // Auto-applied: origin != "manual" means system-triggered, auto-approved-and-applied in one action
     const isAutoApplied =
       eco.applied_at &&
-      eco.requested_at &&
-      Math.abs(new Date(eco.applied_at) - new Date(eco.requested_at)) < 2000;
+      eco.origin !== "manual" &&
+      (eco.status === "applied" || eco.status === "closed");
 
     if (isAutoApplied) {
       events.push({
