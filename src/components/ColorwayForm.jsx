@@ -96,6 +96,7 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
   const [projects, setProjects] = useState([]);
   const [revisionPending, setRevisionPending] = useState(null); // { beforeSnapshot, afterSnapshot, formData }
   const [revisionSaving, setRevisionSaving] = useState(false);
+  const [currentRevision, setCurrentRevision] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -104,6 +105,15 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
       base44.entities.Project.list("name", 500),
     ]).then(([tc, cc, projs]) => { setTechColors(tc); setCommColors(cc); setProjects(projs); });
   }, []);
+
+  useEffect(() => {
+    if (!variant?.id) return;
+    base44.entities.ProductRevision.filter(
+      { target_id: variant.id, is_current: true },
+      "-created_date",
+      1
+    ).then((rows) => setCurrentRevision(rows[0] || null)).catch(() => {});
+  }, [variant?.id]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -232,7 +242,17 @@ export default function ColorwayForm({ variant, onSave, onCancel, onDelete, exis
     />
     <form onSubmit={handleSubmit} className="space-y-5 bg-card rounded-xl border border-border p-5">
       <div className="flex items-start justify-between">
-        <h4 className="font-semibold text-sm">{variant ? "Edit Colorway" : "New Colorway"}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold text-sm">{variant ? "Edit Colorway" : "New Colorway"}</h4>
+          {variant && currentRevision && (
+            <span
+              title={`Current revision: ${currentRevision.revision_code} — ${currentRevision.revision_context || ""}`}
+              className="inline-flex items-center justify-center w-6 h-6 rounded border border-green-400 bg-green-50 text-green-700 text-[11px] font-mono font-bold shrink-0"
+            >
+              {currentRevision.revision_code}
+            </span>
+          )}
+        </div>
         {onCancel && (
           <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="h-7 w-7">
             <X className="w-4 h-4" />

@@ -9,6 +9,7 @@ import DataTable from "./DataTable";
 import ColorwayCard from "./ColorwayCard";
 import ImageLightbox from "./ImageLightbox";
 import { usePageOptions } from "@/lib/PageOptionsContext";
+import ColorRevisionBadge from "./revisions/ColorRevisionBadge";
 
 const STORAGE_KEY = "colorway_section_view";
 
@@ -25,6 +26,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState("");
   const [activeColumns, setActiveColumns] = useState(null);
+  const [revisionMap, setRevisionMap] = useState({}); // { productColorId: revision }
 
   const [commColors, setCommColors] = useState([]);
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -35,6 +37,21 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
     base44.entities.Project.list("name", 500).then(setProjects);
     base44.entities.CommercialColor.list("code", 2000).then(setCommColors);
   }, []);
+
+  // Fetch current revisions for all color variants
+  useEffect(() => {
+    if (!colorVariants.length) return;
+    const colorIds = colorVariants.map((cv) => cv.id);
+    base44.entities.ProductRevision.filter(
+      { target_id: { $in: colorIds }, is_current: true },
+      "-created_date",
+      colorIds.length
+    ).then((rows) => {
+      const map = {};
+      rows.forEach((r) => { map[r.target_id] = r; });
+      setRevisionMap(map);
+    }).catch(() => {});
+  }, [colorVariants]);
 
   useEffect(() => {
     setOptions({
@@ -171,6 +188,22 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       },
     },
     {
+      id: "revision",
+      label: "Revision",
+      width: 90,
+      sortKey: (cv) => revisionMap[cv.id]?.revision_code || "",
+      render: (cv) => {
+        const rev = revisionMap[cv.id];
+        if (!rev) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <ColorRevisionBadge
+            productColorId={cv.id}
+            onOpenPanel={(targetType) => onOpenRevisionPanel && onOpenRevisionPanel(targetType, cv.id)}
+          />
+        );
+      },
+    },
+    {
       id: "actions",
       label: "",
       width: 50,
@@ -186,7 +219,7 @@ export default function ColorwaySection({ colorVariants, productImage = "", onEd
       ),
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [techColors, commColors, projects, onEdit]);
+  ], [techColors, commColors, projects, onEdit, revisionMap]);
 
   // Reset activeColumns whenever columns rebuild (data loaded) so renders always use fresh closures
   useEffect(() => { setActiveColumns(null); }, [columns]);
