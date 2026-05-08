@@ -462,10 +462,7 @@ export default function EcoDetailPage() {
       {/* ── SCROLLABLE BODY ────────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="px-4 py-6 space-y-6 max-w-4xl">
-      {/* Breadcrumb */}
-      <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-        Change Management › All ECOs › {eco.eco_number}
-      </p>
+
 
       {/* ── TASK 2: Metadata card ─────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-6">
