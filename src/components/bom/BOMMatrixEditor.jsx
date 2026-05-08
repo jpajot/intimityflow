@@ -180,6 +180,7 @@ export default function BOMMatrixEditor({
   lovValues, isReadOnly, columnAxis, onColumnAxisChange,
   secondaryAxis, onSecondaryAxisChange,
   showSourcing,
+  showRevisionSnapshots = false,
   onUpdateLine, onDeleteLine, onUpsertVariant, onDeleteVariant, getUom, onAddLine,
   onReorderLines, onEditLineSaved, user,
   allSizes = [],
@@ -192,6 +193,97 @@ export default function BOMMatrixEditor({
   const [dragLineId, setDragLineId] = useState(null);   // id of row being dragged
   const [dragOverLineId, setDragOverLineId] = useState(null); // id of row being hovered over
   const dragSourceIndex = useRef(null);
+
+  // Revision snapshot resolution state
+  const [snapshotData, setSnapshotData] = useState({
+    // Maps: snapshotRevisionId → revision_code
+    snapshotted: {},
+    // Maps: `${target_type}:${target_id}` → current_revision_code
+    current: {},
+  });
+
+  // Batch-resolve revision snapshots when toggle is ON
+  useEffect(() => {
+    if (!showRevisionSnapshots) {
+      setSnapshotData({ snapshotted: {}, current: {} });
+      return;
+    }
+
+    const loadRevisionData = async () => {
+      // Step 1: Collect all snapshotted revision ids from visible variants
+      const snapshotRevisionIds = new Set();
+      const targetReferences = new Set(); // "${target_type}:${target_id}"
+
+      for (const variant of bomLineVariants) {
+        if (!variant.component_revision_snapshots) continue;
+        const snapshots = variant.component_revision_snapshots;
+
+        // Collect snapshotted revision ids
+        for (const [fkField, revisionId] of Object.entries(snapshots)) {
+          if (revisionId) snapshotRevisionIds.add(revisionId);
+          // Infer target from FK field
+          let targetType = null;
+          let targetId = null;
+          if (fkField === "component_product_color_id" && variant.component_product_color_id) {
+            targetType = "product_color";
+            targetId = variant.component_product_color_id;
+          } else if (fkField === "component_color_and_more_id" && variant.component_color_and_more_id) {
+            targetType = "product_attribute";
+            targetId = variant.component_color_and_more_id;
+          } else if (fkField === "component_size_id" && variant.component_size_id) {
+            targetType = "product_color_size";
+            targetId = variant.component_size_id;
+          }
+          if (targetType && targetId) {
+            targetReferences.add(`${targetType}:${targetId}`);
+          }
+        }
+      }
+
+      if (snapshotRevisionIds.size === 0 && targetReferences.size === 0) {
+        setSnapshotData({ snapshotted: {}, current: {} });
+        return;
+      }
+
+      try {
+        // Fetch snapshotted revisions
+        const snapshotMap = {};
+        if (snapshotRevisionIds.size > 0) {
+          const snapshotRevisions = await base44.entities.ProductRevision.filter({
+            id: { $in: Array.from(snapshotRevisionIds) }
+          }, "-created_date", 1000);
+          for (const rev of snapshotRevisions) {
+            snapshotMap[rev.id] = rev.revision_code;
+          }
+        }
+
+        // Fetch current revisions for each target
+        const currentMap = {};
+        const targetArray = Array.from(targetReferences);
+        for (const ref of targetArray) {
+          const [targetType, targetId] = ref.split(":");
+          try {
+            const currentRevs = await base44.entities.ProductRevision.filter(
+              { target_id: targetId, target_type: targetType, is_current: true },
+              "-created_date",
+              1
+            );
+            if (currentRevs[0]) {
+              currentMap[ref] = currentRevs[0].revision_code;
+            }
+          } catch (err) {
+            console.warn(`[BOMMatrixEditor] Failed to fetch current revision for ${ref}:`, err);
+          }
+        }
+
+        setSnapshotData({ snapshotted: snapshotMap, current: currentMap });
+      } catch (err) {
+        console.error("[BOMMatrixEditor] Failed to load revision data:", err);
+      }
+    };
+
+    loadRevisionData();
+  }, [showRevisionSnapshots, bomLineVariants]);
 
   const handleDragStart = (e, lineId, index) => {
     if (isReadOnly) { e.preventDefault(); return; }
@@ -520,20 +612,22 @@ export default function BOMMatrixEditor({
                     return (
                       <td key={col.id} className="px-1.5 py-2 text-center min-w-[96px] align-top">
                         <BOMVariantCellEditor
-                          variant={variant}
-                          line={line}
-                          col={col}
-                          columnAxis={columnAxis}
-                          uom={uom}
-                          isReadOnly={isReadOnly}
-                          allProductColors={allProductColors}
-                          techColors={techColors}
-                          commColors={commColors}
-                          bomType={bom?.bom_type}
-                          onUpsertVariant={onUpsertVariant}
-                          onDeleteVariant={onDeleteVariant}
-                          allSizes={allSizes}
-                        />
+                            variant={variant}
+                            line={line}
+                            col={col}
+                            columnAxis={columnAxis}
+                            uom={uom}
+                            isReadOnly={isReadOnly}
+                            allProductColors={allProductColors}
+                            techColors={techColors}
+                            commColors={commColors}
+                            bomType={bom?.bom_type}
+                            onUpsertVariant={onUpsertVariant}
+                            onDeleteVariant={onDeleteVariant}
+                            allSizes={allSizes}
+                            showRevisionSnapshots={showRevisionSnapshots}
+                            snapshotData={snapshotData}
+                          />
                         {/* Supplier subscript — only in color axis when resolved */}
                         {showSourcing && columnAxis === "color" && compColorId && (
                           <SupplierSubscript

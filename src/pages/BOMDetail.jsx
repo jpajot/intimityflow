@@ -66,6 +66,7 @@ export default function BOMDetail() {
   const [matrixColumnAxis, setMatrixColumnAxis] = useState("color");
   const [matrixSecondaryAxis, setMatrixSecondaryAxis] = useState(null);
   const [showSourcing, setShowSourcing] = useState(true);
+  const [showRevisionSnapshots, setShowRevisionSnapshots] = useState(false);
   const [viewStateId, setViewStateId] = useState(null);
   const [user, setUser] = useState(null);
   const [groupsExpanded, setGroupsExpanded] = useState({ view: false, quick_filter: false, lines: false, bom: false, export: false });
@@ -338,6 +339,10 @@ export default function BOMDetail() {
     }
   };
 
+  const handleShowRevisionSnapshotsChange = (val) => {
+    setShowRevisionSnapshots(val);
+  };
+
   const handleFilterChange = (newFilter) => {
     setFilterConfig(newFilter);
     if (viewStateId) {
@@ -441,6 +446,8 @@ export default function BOMDetail() {
           onColumnAxisChange={handleColumnAxisChange}
           onSecondaryAxisChange={handleSecondaryAxisChange}
           onShowSourcingChange={handleShowSourcingChange}
+          showRevisionSnapshots={showRevisionSnapshots}
+          onShowRevisionSnapshotsChange={handleShowRevisionSnapshotsChange}
           bom={bom}
           bomLines={bomLines}
           isReadOnly={isReadOnly}
@@ -472,7 +479,7 @@ export default function BOMDetail() {
         />
       ),
     });
-  }, [bom, isReadOnly, bomLines, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing, groupsExpanded, filterConfig, colorVariants, styleSizes, colorAndMores, techColors, commColors, projects, allSizes, filtersActive]);
+  }, [bom, isReadOnly, bomLines, setOptions, matrixColumnAxis, matrixSecondaryAxis, showSourcing, showRevisionSnapshots, groupsExpanded, filterConfig, colorVariants, styleSizes, colorAndMores, techColors, commColors, projects, allSizes, filtersActive]);
 
   const getUom = (line) => {
     if (line.uom) return line.uom;
@@ -629,6 +636,7 @@ export default function BOMDetail() {
             secondaryAxis={matrixSecondaryAxis}
             onSecondaryAxisChange={handleSecondaryAxisChange}
             showSourcing={showSourcing}
+            showRevisionSnapshots={showRevisionSnapshots}
             onUpdateLine={handleUpdateLine}
             onDeleteLine={handleDeleteLine}
             onUpsertVariant={handleUpsertVariant}

@@ -63,6 +63,8 @@ export default function BOMOptionsContent({
   onColumnAxisChange,
   onSecondaryAxisChange,
   onShowSourcingChange,
+  showRevisionSnapshots,
+  onShowRevisionSnapshotsChange,
   bom,
   bomLines,
   isReadOnly,
@@ -185,6 +187,16 @@ export default function BOMOptionsContent({
               id="sourcing-toggle-opts"
               checked={showSourcing}
               onCheckedChange={onShowSourcingChange}
+            />
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <label className="text-xs text-foreground cursor-pointer" htmlFor="revision-snapshots-toggle-opts">
+              Show revision snapshots
+            </label>
+            <Switch
+              id="revision-snapshots-toggle-opts"
+              checked={showRevisionSnapshots}
+              onCheckedChange={onShowRevisionSnapshotsChange}
             />
           </div>
         </div>

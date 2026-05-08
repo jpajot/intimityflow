@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Ban } from "lucide-react";
 import ComponentColorwayPicker from "./ComponentColorwayPicker.jsx";
 import ComponentSizePicker from "./ComponentSizePicker.jsx";
+import VariantRevisionIndicator from "../revisions/VariantRevisionIndicator.jsx";
 
 /**
  * BOMVariantCellEditor
@@ -28,6 +29,8 @@ export default function BOMVariantCellEditor({
   allSizes,
   onUpsertVariant,
   onDeleteVariant,
+  showRevisionSnapshots = false,
+  snapshotData = { snapshotted: {}, current: {} },
 }) {
   const [editing, setEditing] = useState(false);
   const [qty, setQty] = useState(""); // used for size/cam axis quantity editing
@@ -217,8 +220,37 @@ export default function BOMVariantCellEditor({
     }
 
     // Resolved cell
+    // Resolve revision snapshot indicator (if enabled)
+    let revisionIndicator = null;
+    if (showRevisionSnapshots && variant?.component_revision_snapshots) {
+      const snapshots = variant.component_revision_snapshots;
+      const snapshotRevisionId = snapshots.component_product_color_id;
+      if (snapshotRevisionId) {
+        const snapshotCode = snapshotData.snapshotted[snapshotRevisionId];
+        const currentCode = snapshotData.current[`product_color:${compColorId}`];
+        if (snapshotCode) {
+          revisionIndicator = (
+            <VariantRevisionIndicator
+              variant={variant}
+              targetType="product_color"
+              targetId={compColorId}
+              snapshotRevisionCode={snapshotCode}
+              currentRevisionCode={currentCode || null}
+              parentProductId={line.component_product_id}
+            />
+          );
+        }
+      }
+    }
+
     const cellContent = (
       <div className="flex flex-col gap-0.5 py-1 px-1 w-full">
+        {/* Row 0.5: revision indicator (if enabled) */}
+        {revisionIndicator && (
+          <div className="flex items-center justify-end">
+            {revisionIndicator}
+          </div>
+        )}
         {/* Row 1: swatch + colorway code/name */}
         <div className="flex items-center gap-1.5">
           <div

@@ -26,6 +26,9 @@ export default function RevisionBadge({
   onOpenPanel,
   parentProductId,
   size = "sm",
+  is_stale = false,
+  current_revision_code = null,
+  snapshotted_revision_code = null,
 }) {
   const [currentRevision, setCurrentRevision] = useState(null);
   const [checked, setChecked] = useState(false);
@@ -55,6 +58,11 @@ export default function RevisionBadge({
       setChecked(true);
       return;
     }
+    // If external revision codes are provided (staleness indicator mode), skip fetch
+    if (snapshotted_revision_code !== null) {
+      setChecked(true);
+      return;
+    }
     setChecked(false);
     fetchRevision();
 
@@ -65,9 +73,34 @@ export default function RevisionBadge({
       }
     });
     return unsubscribe;
-  }, [target_id]);
+  }, [target_id, snapshotted_revision_code]);
 
-  if (!checked || !currentRevision) return null;
+  if (!checked) return null;
+
+  // Staleness indicator mode: use provided revision codes
+  if (snapshotted_revision_code !== null) {
+    const letterToDisplay = snapshotted_revision_code;
+    const isFresh = letterToDisplay === current_revision_code;
+    
+    return (
+      <button
+        type="button"
+        onClick={() => onOpenPanel && onOpenPanel(target_type, target_id)}
+        title={isFresh ? `Revision ${letterToDisplay}` : `Snapshotted at ${letterToDisplay}; current is ${current_revision_code || "—"}`}
+        className={`inline-flex items-center justify-center rounded border-2 font-mono font-bold hover:opacity-80 transition-opacity shrink-0 gap-0.5 ${sizeClasses[size]} ${
+          isFresh
+            ? "border-green-400 bg-green-50 text-green-700"
+            : "border-orange-400 bg-orange-50 text-orange-700"
+        }`}
+      >
+        {letterToDisplay}
+        {!isFresh && <span className="text-orange-500 text-lg leading-none">●</span>}
+      </button>
+    );
+  }
+
+  // Normal mode: display current revision
+  if (!currentRevision) return null;
 
   return (
     <button
