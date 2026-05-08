@@ -187,6 +187,12 @@ export default function PendingReviewsPage() {
   // Pagination
   const [page, setPage] = useState(0);
 
+  // Pinned columns
+  const [pinnedCols, setPinnedCols] = useState([]);
+  const handlePinColumn = (colId) => {
+    setPinnedCols((prev) => prev.includes(colId) ? prev.filter((c) => c !== colId) : [...prev, colId]);
+  };
+
   // Load user
   useEffect(() => {
     base44.auth.me().then((u) => setUser(u)).catch(() => {});
@@ -366,9 +372,9 @@ export default function PendingReviewsPage() {
           <DataTable
             columns={displayColumns}
             rows={visible}
-            fixedColumns={activeView?.fixed_column_ids || []}
+            fixedColumns={[...(activeView?.fixed_column_ids || []), ...pinnedCols]}
             hideColumnToggle
-            onPinColumn={() => {}}
+            onPinColumn={handlePinColumn}
           />
         )}
       </div>

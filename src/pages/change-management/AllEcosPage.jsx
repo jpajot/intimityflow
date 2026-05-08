@@ -245,6 +245,12 @@ export default function AllEcosPage() {
   // Pagination
   const [page, setPage] = useState(0);
 
+  // Pinned columns
+  const [pinnedCols, setPinnedCols] = useState([]);
+  const handlePinColumn = (colId) => {
+    setPinnedCols((prev) => prev.includes(colId) ? prev.filter((c) => c !== colId) : [...prev, colId]);
+  };
+
   // Columns
   const allColumns = useMemo(() => buildColumns(navigate), [navigate]);
 
@@ -413,9 +419,9 @@ export default function AllEcosPage() {
           <DataTable
             columns={displayColumns}
             rows={visibleRows}
-            fixedColumns={fixedCols}
+            fixedColumns={[...fixedCols, ...pinnedCols]}
             hideColumnToggle
-            onPinColumn={() => {}}
+            onPinColumn={handlePinColumn}
           />
         )}
       </div>
