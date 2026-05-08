@@ -9,9 +9,15 @@ import {
 import {
   ArrowLeft, Loader2, CheckCircle2, Clock, X, RefreshCw,
   Archive, FileStack, ClipboardList, SplitSquareVertical, List,
-  Plus, CheckCheck, GitMerge, ChevronDown, ChevronUp,
+  Plus, CheckCheck, GitMerge, ChevronDown, ChevronUp, Pencil, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import AffectedItemEditor from "@/components/change-management/AffectedItemEditor";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -226,6 +232,7 @@ function PageSkeleton() {
 export default function EcoDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [eco, setEco] = useState(null);
@@ -240,6 +247,11 @@ export default function EcoDetailPage() {
 
   const [itemsError, setItemsError] = useState(false);
   const [downstreamError, setDownstreamError] = useState(false);
+
+  // ── AffectedItem editor state ─────────────────────────────────────────────
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null); // null = create, record = edit
+  const [removeTarget, setRemoveTarget] = useState(null); // item to confirm-delete
 
   // ── Fetch ECO ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -428,6 +440,31 @@ export default function EcoDetailPage() {
     </div>
   );
 
+  // ── Editability gate ─────────────────────────────────────────────────────────
+  const canEditItems =
+    eco.origin === "manual" &&
+    ["proposed", "under_review"].includes(eco.status);
+
+  // ── Refresh affected items list ───────────────────────────────────────────────
+  const refreshAffectedItems = () => {
+    base44.entities.ECOAffectedItem.filter({ eco_id: id }, "created_date", 200)
+      .then(setAffectedItems)
+      .catch(() => {});
+  };
+
+  // ── Remove handler ────────────────────────────────────────────────────────────
+  const handleRemoveItem = async () => {
+    if (!removeTarget) return;
+    try {
+      await base44.entities.ECOAffectedItem.delete(removeTarget.id);
+      setAffectedItems((prev) => prev.filter((i) => i.id !== removeTarget.id));
+      toast({ title: "Affected item removed." });
+    } catch (err) {
+      toast({ title: "Could not remove item", description: err?.message, variant: "destructive" });
+    }
+    setRemoveTarget(null);
+  };
+
   const showDisposition = eco.status === "rejected" || eco.status === "cancelled" || eco.notes;
   const downstreamSubtitle = affectedDownstream.length > 0
     ? `${nPending} pending, ${nReview} under review, ${nResolved} resolved`
@@ -553,7 +590,25 @@ export default function EcoDetailPage() {
       </div>
 
       {/* ── TASK 3: Affected Items ────────────────────────────────────────────── */}
-      <Section title="Affected Items" count={affectedItems.length}>
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-foreground">
+              Affected Items ({affectedItems.length})
+            </h2>
+          </div>
+          {canEditItems && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => { setEditingItem(null); setEditorOpen(true); }}
+            >
+              <Plus className="w-3 h-3" /> Add affected item
+            </Button>
+          )}
+        </div>
+        <div className="overflow-x-auto">
         {itemsError ? (
           <div className="px-5 py-8 text-center">
             <p className="text-sm text-muted-foreground">Could not load affected items.</p>
@@ -583,6 +638,7 @@ export default function EcoDetailPage() {
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground w-32">Applied At</th>
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground w-40">Applied By</th>
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground w-28">Field Changes</th>
+                {canEditItems && <th className="px-4 py-2.5 w-20" />}
               </tr>
             </thead>
             <tbody>
@@ -632,13 +688,30 @@ export default function EcoDetailPage() {
                     <td className="px-4 py-3">
                       <FieldDiffsPopover diffs={item.field_diffs} />
                     </td>
+                    {canEditItems && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <button type="button" title="Edit"
+                            onClick={() => { setEditingItem(item); setEditorOpen(true); }}
+                            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" title="Remove"
+                            onClick={() => setRemoveTarget(item)}
+                            className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
             </tbody>
           </table>
         )}
-      </Section>
+        </div>
+      </div>
 
       {/* ── TASK 4: Affected Downstream ───────────────────────────────────────── */}
       <Section
@@ -758,6 +831,36 @@ export default function EcoDetailPage() {
       </div>
       </div>{/* end max-w-4xl */}
       </div>{/* end overflow-y-auto */}
+
+      {/* ── AffectedItem editor modal ──────────────────────────────────────── */}
+      {canEditItems && (
+        <AffectedItemEditor
+          open={editorOpen}
+          onClose={() => { setEditorOpen(false); setEditingItem(null); }}
+          onSaved={refreshAffectedItems}
+          ecoId={id}
+          existingItem={editingItem}
+        />
+      )}
+
+      {/* ── Remove confirmation dialog ────────────────────────────────────── */}
+      <AlertDialog open={!!removeTarget} onOpenChange={(v) => { if (!v) setRemoveTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this affected item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The downstream impact won't be tracked when the ECO is approved.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemoveItem} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
