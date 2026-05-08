@@ -4,25 +4,29 @@
   "properties": {
     "page_key": {
       "type": "string",
-      "description": "Identifier for the page + type, e.g. 'styles' or 'materials'"
+      "description": "Identifies which page/view this config belongs to (e.g. styles_list, gallery_styles_list)"
     },
     "name": {
       "type": "string",
-      "description": "View name, e.g. 'Sales View'"
+      "description": "User-visible name for this view"
     },
     "column_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Ordered list of visible column IDs"
+      "description": "Ordered list of column IDs to show"
     },
     "fixed_column_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "List of column IDs that are pinned/fixed to the left"
+      "description": "Column IDs that are pinned/fixed to the left"
+    },
+    "filters_config": {
+      "type": "object",
+      "description": "Filter configuration: { operator: 'and'|'or', filters: [{field, values, operator}] }"
     },
     "thumb_size": {
       "type": "string",
@@ -33,23 +37,31 @@
         "lg",
         "xl"
       ],
-      "description": "Gallery view thumbnail size (xs, sm, md, lg, xl)"
-    },
-    "filters_config": {
-      "type": "object",
-      "description": "Filter configuration: { operator: 'and'|'or'|'nor', filters: [{field, values}] }"
+      "description": "Thumbnail size for gallery views"
     },
     "allowed_roles": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "List of user roles that can see this view. Empty = visible to all."
+      "description": "Restrict to these roles. Empty = all roles."
+    },
+    "is_system": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, this view is a system-provided default that cannot be edited or deleted by users. Edit and trash buttons are hidden in the Manage Views dropdown for system views. New system views can only be added via seed scripts or admin tooling."
+    },
+    "display_mode": {
+      "type": "string",
+      "enum": [
+        "list",
+        "gallery"
+      ],
+      "description": "Explicit display mode this view applies to. Determines which mode toggle the view appears under in the Manage Views dropdown. Required on insert going forward; existing records will be backfilled from thumb_size presence."
     }
   },
   "required": [
     "page_key",
-    "name",
-    "column_ids"
+    "name"
   ]
 }
