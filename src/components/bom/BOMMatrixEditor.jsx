@@ -246,21 +246,37 @@ export default function BOMMatrixEditor({
       }
 
       try {
-        // Fetch snapshotted revisions
+        // Fetch snapshotted revisions with retry
         const snapshotMap = {};
         if (snapshotRevisionIds.size > 0) {
-          const snapshotRevisions = await base44.entities.ProductRevision.filter({
-            id: { $in: Array.from(snapshotRevisionIds) }
-          }, "-created_date", 1000);
-          for (const rev of snapshotRevisions) {
-            snapshotMap[rev.id] = rev.revision_code;
+          let retries = 0;
+          const maxRetries = 3;
+          while (retries < maxRetries) {
+            try {
+              const snapshotRevisions = await base44.entities.ProductRevision.filter({
+                id: { $in: Array.from(snapshotRevisionIds) }
+              }, "-created_date", 1000);
+              for (const rev of snapshotRevisions) {
+                snapshotMap[rev.id] = rev.revision_code;
+              }
+              break; // Success, exit retry loop
+            } catch (err) {
+              retries++;
+              if (retries < maxRetries) {
+                await new Promise(r => setTimeout(r, Math.pow(2, retries) * 500)); // Exponential backoff
+              } else {
+                throw err;
+              }
+            }
           }
         }
 
-        // Fetch current revisions for each target
+        // Fetch current revisions for each target with throttling
         const currentMap = {};
         const targetArray = Array.from(targetReferences);
-        for (const ref of targetArray) {
+        const THROTTLE_MS = 100; // Delay between requests
+        for (let i = 0; i < targetArray.length; i++) {
+          const ref = targetArray[i];
           const [targetType, targetId] = ref.split(":");
           try {
             const currentRevs = await base44.entities.ProductRevision.filter(
@@ -273,6 +289,10 @@ export default function BOMMatrixEditor({
             }
           } catch (err) {
             console.warn(`[BOMMatrixEditor] Failed to fetch current revision for ${ref}:`, err);
+          }
+          // Add small delay between requests (except after last one)
+          if (i < targetArray.length - 1) {
+            await new Promise(r => setTimeout(r, THROTTLE_MS));
           }
         }
 
