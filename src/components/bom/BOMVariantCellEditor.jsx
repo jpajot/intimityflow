@@ -244,14 +244,8 @@ export default function BOMVariantCellEditor({
     }
 
     const cellContent = (
-      <div className="flex flex-col gap-0.5 py-1 px-1 w-full">
-        {/* Row 0.5: revision indicator (if enabled) */}
-        {revisionIndicator && (
-          <div className="flex items-center justify-end">
-            {revisionIndicator}
-          </div>
-        )}
-        {/* Row 1: swatch + colorway code/name */}
+      <div className="flex flex-col gap-0.5 py-1 px-1 w-full relative">
+        {/* Row 1: swatch + colorway code/name + revision indicator (bottom-right) */}
         <div className="flex items-center gap-1.5">
           <div
             className="w-4 h-4 rounded shrink-0 border border-border"
@@ -275,6 +269,13 @@ export default function BOMVariantCellEditor({
           <div className="flex items-center gap-1">
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusCfg.dot}`} />
             <span className={`text-[9px] ${statusCfg.text} leading-tight`}>{statusCfg.label}</span>
+          </div>
+        )}
+        
+        {/* Revision indicator badge (bottom-right corner, inline) */}
+        {revisionIndicator && (
+          <div className="absolute bottom-0.5 right-0.5 scale-75 origin-bottom-right">
+            {revisionIndicator}
           </div>
         )}
       </div>
