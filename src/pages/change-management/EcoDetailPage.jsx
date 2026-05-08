@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import AffectedItemEditor from "@/components/change-management/AffectedItemEditor";
+import EcoTransitionButtons from "@/components/change-management/EcoTransitionButtons";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -252,6 +253,28 @@ export default function EcoDetailPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // null = create, record = edit
   const [removeTarget, setRemoveTarget] = useState(null); // item to confirm-delete
+
+  // ── Full refresh (called after transitions) ───────────────────────────────────
+  const refreshAll = () => {
+    setLoading(true);
+    setEco(null);
+    setAffectedItems([]);
+    setAffectedDownstream([]);
+    base44.entities.ECO.filter({ id })
+      .then(async (rows) => {
+        if (rows.length === 0) { setNotFound(true); setLoading(false); return; }
+        const ecoRow = rows[0];
+        setEco(ecoRow);
+        const [itemsRes, downstreamRes] = await Promise.allSettled([
+          base44.entities.ECOAffectedItem.filter({ eco_id: id }, "created_date", 200),
+          base44.entities.ECOAffectedDownstream.filter({ eco_id: id }, "created_date", 200),
+        ]);
+        if (itemsRes.status === "fulfilled") setAffectedItems(itemsRes.value);
+        if (downstreamRes.status === "fulfilled") setAffectedDownstream(downstreamRes.value);
+        setLoading(false);
+      })
+      .catch(() => { setNotFound(true); setLoading(false); });
+  };
 
   // ── Fetch ECO ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -493,6 +516,16 @@ export default function EcoDetailPage() {
           <StatusBadge value={eco.status} />
           <PriorityBadge value={eco.priority} />
           <FlowBadge value={eco.flow_type} />
+        </div>
+
+        {/* Transition buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <EcoTransitionButtons
+            eco={eco}
+            affectedItems={affectedItems}
+            affectedDownstream={affectedDownstream}
+            onTransitioned={refreshAll}
+          />
         </div>
       </div>
 
