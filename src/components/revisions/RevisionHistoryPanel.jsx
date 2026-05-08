@@ -267,23 +267,41 @@ export default function RevisionHistoryPanel({
   const newest = revisions[0];
   const lastUpdated = newest ? relTime(newest.created_at || newest.created_date) : null;
 
-  // ── Derive target context for the "New Revision" modal ────────────────────────
-  // When opened from a child badge: targetType=product_color, targetId=<colorId>
-  // When opened from the (i) icon: targetType=product, targetId=product.id
-  const newRevTargetType = (initialTargetType && initialTargetType !== "all")
-    ? initialTargetType
-    : "product";
-  const newRevTargetId = initialTargetId || product?.id;
-  const newRevTargetName = (() => {
-    if (newRevTargetType === "product") return product?.name || "";
-    if (newRevTargetType === "product_color") {
-      const c = colorVariants.find(cv => cv.id === newRevTargetId);
-      return c?.color_name || "";
+  // ── Target selector for "New Revision" modal ─────────────────────────────────
+  // Build list of selectable targets: the product itself + each color variant
+  const targetOptions = useMemo(() => {
+    const opts = [{ type: "product", id: product?.id, label: `Product: ${product?.name || "—"}` }];
+    colorVariants.forEach(cv => {
+      opts.push({ type: "product_color", id: cv.id, label: `Color: ${cv.color_name}` });
+    });
+    return opts;
+  }, [product, colorVariants]);
+
+  // Determine initial selected target key based on how the panel was opened
+  const initialTargetKey = (() => {
+    if (initialTargetId && initialTargetType && initialTargetType !== "all") {
+      return `${initialTargetType}::${initialTargetId}`;
     }
-    return "";
+    return `product::${product?.id}`;
   })();
 
-  // Find current revision code for the specific target
+  const [selectedTargetKey, setSelectedTargetKey] = useState(initialTargetKey);
+
+  // Reset selected target whenever the panel opens or initialTarget changes
+  useEffect(() => {
+    setSelectedTargetKey(initialTargetKey);
+  }, [initialTargetKey, open]);
+
+  const selectedTarget = targetOptions.find(o => `${o.type}::${o.id}` === selectedTargetKey) || targetOptions[0];
+  const newRevTargetType = selectedTarget?.type || "product";
+  const newRevTargetId = selectedTarget?.id || product?.id;
+  const newRevTargetName = (() => {
+    if (newRevTargetType === "product") return product?.name || "";
+    const c = colorVariants.find(cv => cv.id === newRevTargetId);
+    return c?.color_name || "";
+  })();
+
+  // Find current revision code for the selected target
   const currentRevForTarget = revisions.find(
     r => r.target_type === newRevTargetType && r.target_id === newRevTargetId && r.is_current
   );
@@ -304,14 +322,28 @@ export default function RevisionHistoryPanel({
             </p>
           </SheetHeader>
 
-          {/* New Revision button */}
-          <Button
-            className="w-full h-8 text-sm gap-1.5"
-            onClick={() => setNewRevisionOpen(true)}
-          >
-            <GitCommit className="w-3.5 h-3.5" />
-            New Revision
-          </Button>
+          {/* Target selector + New Revision button */}
+          <div className="flex gap-2">
+            <Select value={selectedTargetKey} onValueChange={setSelectedTargetKey}>
+              <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {targetOptions.map(o => (
+                  <SelectItem key={`${o.type}::${o.id}`} value={`${o.type}::${o.id}`}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              className="h-8 text-sm gap-1.5 shrink-0"
+              onClick={() => setNewRevisionOpen(true)}
+            >
+              <GitCommit className="w-3.5 h-3.5" />
+              New Revision
+            </Button>
+          </div>
         </div>
 
         {/* ── Sticky filter row ──────────────────────────────────────────────── */}
