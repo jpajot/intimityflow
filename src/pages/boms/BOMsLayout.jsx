@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { ClipboardList, GitCompare } from "lucide-react";
 import { useRegisterSubNav } from "@/hooks/useRegisterSubNav";
 
@@ -19,19 +17,10 @@ export default function BOMsLayout() {
   const navigate = useNavigate();
   const activeId = pathToId(location.pathname);
 
-  const [bomCount, setBomCount] = useState(null);
-
-  useEffect(() => {
-    base44.entities.BOM.list("-created_date", 500)
-      .then((boms) => setBomCount(boms.length))
-      .catch(() => {});
-  }, []);
-
   const subNavItems = SECTIONS.map((s) => ({
     id: s.id,
     label: s.label,
     icon: s.icon,
-    count: s.id === "list" ? bomCount : undefined,
   }));
 
   useRegisterSubNav(
