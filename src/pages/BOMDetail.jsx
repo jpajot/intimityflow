@@ -207,6 +207,9 @@ export default function BOMDetail() {
           if (existing[0].options_sidebar_groups_state) {
             setGroupsExpanded({ view: false, quick_filter: false, lines: false, bom: false, export: false, ...existing[0].options_sidebar_groups_state });
           }
+          if (typeof storedFilter?.ui_options?.show_revision_snapshots === "boolean") {
+            setShowRevisionSnapshots(storedFilter.ui_options.show_revision_snapshots);
+          }
         } else {
           const created = await base44.entities.BOMMatrixViewState.create({
             bom_id: id,
@@ -333,7 +336,7 @@ export default function BOMDetail() {
     setShowSourcing(val);
     if (viewStateId) {
       base44.entities.BOMMatrixViewState.update(viewStateId, {
-        filter_config: { ui_options: { show_sourcing_chain: val } },
+        filter_config: { ui_options: { show_sourcing_chain: val, show_revision_snapshots: showRevisionSnapshots } },
         last_used_at: new Date().toISOString(),
       });
     }
@@ -341,6 +344,12 @@ export default function BOMDetail() {
 
   const handleShowRevisionSnapshotsChange = (val) => {
     setShowRevisionSnapshots(val);
+    if (viewStateId) {
+      base44.entities.BOMMatrixViewState.update(viewStateId, {
+        filter_config: { ui_options: { show_sourcing_chain: showSourcing, show_revision_snapshots: val } },
+        last_used_at: new Date().toISOString(),
+      });
+    }
   };
 
   const handleFilterChange = (newFilter) => {
@@ -348,7 +357,7 @@ export default function BOMDetail() {
     if (viewStateId) {
       // Persist: merge with existing ui_options
       base44.entities.BOMMatrixViewState.update(viewStateId, {
-        filter_config: { ui_options: { show_sourcing_chain: showSourcing }, ...newFilter },
+        filter_config: { ui_options: { show_sourcing_chain: showSourcing, show_revision_snapshots: showRevisionSnapshots }, ...newFilter },
         last_used_at: new Date().toISOString(),
       });
     }
