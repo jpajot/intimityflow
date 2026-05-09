@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, ClipboardList, ExternalLink, Layers } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Loader2, ClipboardList, ExternalLink, Search, X } from "lucide-react";
 import NewBOMDialog from "./NewBOMDialog";
 import DataTable from "@/components/DataTable";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
@@ -136,6 +137,13 @@ export default function ProductBomsTab({ product }) {
   const [activeViewId, setActiveViewId] = useState("default");
   const [columnIds, setColumnIds] = useState(DEFAULT_COLUMN_IDS);
   const [fixedIds, setFixedIds] = useState(DEFAULT_FIXED_IDS);
+  const [filterText, setFilterText] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => searchRef.current?.focus(), 50);
+  }, [searchOpen]);
 
   const loadBoms = async () => {
     setLoading(true);
@@ -193,12 +201,15 @@ export default function ProductBomsTab({ product }) {
     .filter(Boolean);
   const fixedColumns = fixedIds.filter((id) => columnIds.includes(id));
 
-  const filterFields = [
-    { getValue: (r) => r.revision_code },
-    { getValue: (r) => r.status },
-    { getValue: (r) => r.bom_type },
-    { getValue: (r) => r.notes },
-  ];
+  const filteredBoms = filterText
+    ? boms.filter((r) => {
+        const q = filterText.toLowerCase();
+        return (r.revision_code || "").toLowerCase().includes(q)
+          || (r.status || "").toLowerCase().includes(q)
+          || (r.bom_type || "").toLowerCase().includes(q)
+          || (r.notes || "").toLowerCase().includes(q);
+      })
+    : boms;
 
   if (loading) {
     return (
@@ -211,17 +222,43 @@ export default function ProductBomsTab({ product }) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h2 className="font-semibold text-base">BOMs</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Bills of Materials for {product.code ? `${product.code} ` : ""}{product.name}
           </p>
         </div>
-        <Button size="sm" className="gap-1.5" onClick={() => setShowNewBom(true)}>
-          <Plus className="w-3.5 h-3.5" />
-          New BOM
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Collapsible search */}
+          {searchOpen ? (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                ref={searchRef}
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") { setFilterText(""); setSearchOpen(false); } }}
+                onBlur={() => { if (!filterText) setSearchOpen(false); }}
+                placeholder="Filter…"
+                className="pl-8 pr-7 h-8 text-xs w-44"
+              />
+              {filterText && (
+                <button type="button" onClick={() => { setFilterText(""); searchRef.current?.focus(); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button type="button" onClick={() => setSearchOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Search">
+              <Search className="w-4 h-4" />
+            </button>
+          )}
+          <Button size="sm" className="gap-1.5" onClick={() => setShowNewBom(true)}>
+            <Plus className="w-3.5 h-3.5" />
+            New BOM
+          </Button>
+        </div>
       </div>
 
       {boms.length === 0 ? (
@@ -236,9 +273,10 @@ export default function ProductBomsTab({ product }) {
       ) : (
         <DataTable
           columns={columns}
-          rows={boms}
+          rows={filteredBoms}
           fixedColumns={fixedColumns}
-          filterFields={filterFields}
+          filterFields={[]}
+          hideColumnToggle
           onPinColumn={(colId) => {
             setFixedIds((prev) =>
               prev.includes(colId) ? prev.filter((x) => x !== colId) : [...prev, colId]
