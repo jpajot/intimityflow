@@ -33,6 +33,7 @@ const DRAWER_ITEMS = [
 
 function isDrawerItemActive(item, pathname) {
   if (item.path === "/change-management/ecos") return pathname.startsWith("/change-management");
+  if (item.path === "/boms") return pathname === "/boms" || pathname === "/boms/compare";
   if (item.path === "/color-palettes") return pathname.startsWith("/color-palettes");
   if (item.path === "/size-grid-library") return pathname.startsWith("/size-grid-library");
   // For product detail pages, check the stored nav context to distinguish materials vs products

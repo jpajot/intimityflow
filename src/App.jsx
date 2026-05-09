@@ -39,6 +39,8 @@ import ManualEcoPage from './pages/change-management/ManualEcoPage';
 import PendingReviewsPage from './pages/change-management/PendingReviewsPage';
 import ChangeManagementLayout from './pages/change-management/ChangeManagementLayout';
 import EcoDetailPage from './pages/change-management/EcoDetailPage';
+import BOMsLayout from './pages/boms/BOMsLayout';
+import BomComparePage from './pages/boms/BomComparePage';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -105,7 +107,10 @@ const AuthenticatedApp = () => {
         <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/suppliers/:id" element={<SupplierDetail />} />
-        <Route path="/boms" element={<BOMs />} />
+        <Route element={<BOMsLayout />}>
+          <Route path="/boms" element={<BOMs />} />
+          <Route path="/boms/compare" element={<BomComparePage />} />
+        </Route>
         <Route path="/boms/:id" element={<BOMDetail />} />
         <Route element={<ChangeManagementLayout />}>
           <Route path="/change-management/ecos" element={<AllEcosPage />} />
