@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2, GitCommit } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2, GitCommit, ClipboardList } from "lucide-react";
 import ProductSuppliersTab from "../components/ProductSuppliersTab";
+import ProductBomsTab from "../components/bom/ProductBomsTab";
 import ImageLightbox from "../components/ImageLightbox";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import RevisionContextModal from "../components/RevisionContextModal";
@@ -56,6 +57,7 @@ export default function ProductDetail() {
   const [productTypeOptions, setProductTypeOptions] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [colorVariants, setColorVariants] = useState([]);
+  const [bomCount, setBomCount] = useState(0);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [originalSizeGridId, setOriginalSizeGridId] = useState("");
@@ -78,6 +80,7 @@ export default function ProductDetail() {
     { id: "sizes", label: "Sizes", icon: Ruler },
     { id: "more", label: "More Variations", icon: Layers },
     { id: "suppliers", label: "Suppliers", icon: Building2 },
+    { id: "boms", label: "BOMs", count: bomCount || undefined, icon: ClipboardList },
   ];
   const productTitle = isNew ? `New ${product.type}` : [product.code, product.name].filter(Boolean).join(" ");
   useRegisterSubNav(subNavItems, activeTab, setActiveTab, productTitle);
@@ -172,9 +175,10 @@ export default function ProductDetail() {
 
   const loadProduct = async () => {
     setLoading(true);
-    const [prod, colors] = await Promise.all([
+    const [prod, colors, boms] = await Promise.all([
       base44.entities.Product.filter({ id }),
       base44.entities.ProductColor.filter({ product_id: id }),
+      base44.entities.BOM.filter({ product_id: id }),
     ]);
     if (prod.length > 0) {
       setProduct(prod[0]);
@@ -183,6 +187,7 @@ export default function ProductDetail() {
       sessionStorage.setItem("productNavContext", prod[0].type === "Material" ? "materials" : "products");
     }
     setColorVariants(colors);
+    setBomCount(boms.length);
     setLoading(false);
   };
 
@@ -762,6 +767,9 @@ export default function ProductDetail() {
       )}
       {!isNew && activeTab === "suppliers" && (
         <ProductSuppliersTab product={product} colorVariants={colorVariants} />
+      )}
+      {!isNew && activeTab === "boms" && (
+        <ProductBomsTab product={product} />
       )}
 
       <ColorwayEditModal

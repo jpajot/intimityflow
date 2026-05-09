@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function NewBOMDialog({ open, onClose, products, onCreated }) {
+export default function NewBOMDialog({ open, onClose, products, preselectedProduct, onCreated }) {
   const [bomType, setBomType] = useState("development");
   const [productSearch, setProductSearch] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(preselectedProduct || null);
   const [saving, setSaving] = useState(false);
 
   const filteredProducts = useMemo(() => {
@@ -41,7 +41,7 @@ export default function NewBOMDialog({ open, onClose, products, onCreated }) {
   };
 
   const reset = () => {
-    setBomType("development"); setProductSearch(""); setSelectedProduct(null);
+    setBomType("development"); setProductSearch(""); setSelectedProduct(preselectedProduct || null);
   };
 
   return (
@@ -62,6 +62,14 @@ export default function NewBOMDialog({ open, onClose, products, onCreated }) {
             </Select>
           </div>
 
+          {preselectedProduct ? (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Product</Label>
+              <p className="text-sm font-medium text-foreground px-1">
+                {preselectedProduct.code ? `${preselectedProduct.code} ` : ""}{preselectedProduct.name}
+              </p>
+            </div>
+          ) : (
           <div className="space-y-1.5">
             <Label className="text-xs">Product</Label>
             <div className="relative">
@@ -97,6 +105,7 @@ export default function NewBOMDialog({ open, onClose, products, onCreated }) {
               </p>
             )}
           </div>
+          )}
         </div>
 
         <DialogFooter>
