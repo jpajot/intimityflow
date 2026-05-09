@@ -13,7 +13,7 @@ const AXIS_OPTIONS = [
 ];
 
 // All groups collapsed by default
-const DEFAULT_GROUPS = { view: false, quick_filter: false, lines: false, bom: false, export: false };
+const DEFAULT_GROUPS = { view: false, quick_filter: false, lines: false, bom: false, compare: false, export: false };
 
 function CollapsibleGroup({ label, expanded, onToggle, children }) {
   return (
@@ -126,6 +126,8 @@ export default function BOMOptionsContent({
     { label: "Refresh sourcing", onClick: wrap(onRefreshSourcing) },
     ...(isReleased ? [{ label: "Mark obsolete", onClick: wrap(onMarkObsolete), destructive: true }] : []),
   ];
+
+  const compareUrl = bom?.id ? `/boms/compare?left=${bom.id}` : null;
 
   return (
     // Fixed width — never grows with content
@@ -243,6 +245,21 @@ export default function BOMOptionsContent({
           </CollapsibleGroup>
         </>
       )}
+
+      {/* COMPARE GROUP */}
+      <>
+        <div className="border-t border-border" />
+        <CollapsibleGroup label="Compare" expanded={expanded.compare} onToggle={() => onGroupToggle("compare")}>
+          <ActionButton
+            label="Compare BOM"
+            onClick={() => {
+              onClose?.();
+              if (compareUrl) window.location.href = compareUrl;
+            }}
+            disabled={!compareUrl}
+          />
+        </CollapsibleGroup>
+      </>
 
       {/* EXPORT GROUP */}
       <>
