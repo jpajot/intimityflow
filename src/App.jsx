@@ -95,6 +95,8 @@ const AuthenticatedApp = () => {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/rfqs" element={<ProjectRFQs />} />
+        <Route path="/projects/:id/rfqs/new" element={<div className="p-8 text-muted-foreground text-sm">New RFQ — coming soon.</div>} />
+        <Route path="/projects/:id/rfqs/:rfqId" element={<div className="p-8 text-muted-foreground text-sm">RFQ detail — coming soon.</div>} />
         <Route path="/projects/:id/documents-to-parse" element={<ProjectDocuments />} />
         <Route path="/projects/:id/documents" element={<ProjectDocumentsRedirect />} />
         <Route path="/projects/:id/documents-to-parse/:docId" element={<DocumentStaging />} />
