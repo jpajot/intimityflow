@@ -94,12 +94,13 @@ export default function RFQTrackingBoard() {
 
       if (rfqList.length > 0) {
         const rfqIds = rfqList.map((r) => r.id);
-        const [linesList, responsesList] = await Promise.all([
-          base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }, "-created_date", 5000),
-          base44.entities.RFQResponse.filter({ rfq_line_id: { $in: linesList?.map((l) => l.id) || [] } }, "-created_date", 5000),
-        ]);
+        const linesList = await base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }, "-created_date", 5000);
         setLines(linesList || []);
-        setAllResponses(responsesList || []);
+        
+        if (linesList?.length > 0) {
+          const responsesList = await base44.entities.RFQResponse.filter({ rfq_line_id: { $in: linesList.map((l) => l.id) } }, "-created_date", 5000);
+          setAllResponses(responsesList || []);
+        }
       }
 
       setLoading(false);
