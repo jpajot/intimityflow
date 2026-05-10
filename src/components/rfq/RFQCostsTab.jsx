@@ -9,12 +9,12 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, X, MoreVertical, Trash2 } from "lucide-react";
+import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersPanel";
+import ViewDrawerContent from "@/components/ViewDrawerContent";
 import RFQLineBuilderDialog from "./RFQLineBuilderDialog";
 import { usePageOptions } from "@/lib/PageOptionsContext";
-import { Filter } from "lucide-react";
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const LINE_STATUS_COLORS = {
@@ -72,6 +72,9 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
   const [searchText, setSearchText] = useState("");
   const [quickFilters, setQuickFilters] = useState([]);
   const [showQF, setShowQF] = useState(false);
+  const [showManageViews, setShowManageViews] = useState(false);
+  const [activeViewId, setActiveViewId] = useState("default");
+  const [columnIds, setColumnIds] = useState(null); // null = use all columns
   const [pinnedCols, setPinnedCols] = useState(["product"]);
 
   // ── Lookup maps ───────────────────────────────────────────────────────────────
@@ -261,8 +264,29 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
     return list;
   }, [lines, searchText, quickFilters, productMap, supplierMap, stepMap]);
 
+  // ── View field definitions for Manage Views ───────────────────────────────────
+  const ALL_FIELDS = [
+    { id: "product",    label: "Product" },
+    { id: "granularity",label: "Granularity" },
+    { id: "step",       label: "Routing Step" },
+    { id: "supplier",   label: "Recipient Supplier" },
+    { id: "qty",        label: "Fcst. Qty" },
+    { id: "status",     label: "Status" },
+    { id: "actions",    label: "Actions" },
+  ];
+
+  // Load saved view column config when activeViewId changes
+  useEffect(() => {
+    if (activeViewId === "default") { setColumnIds(null); return; }
+    base44.entities.ListViewConfig.filter({ id: activeViewId }).then((results) => {
+      const v = results[0];
+      setColumnIds(v?.column_ids?.length ? v.column_ids : null);
+    });
+  }, [activeViewId]);
+
   // ── Page Options — register on mount ─────────────────────────────────────────
-  const toggleQF = useCallback(() => setShowQF((v) => !v), []);
+  const toggleQF = useCallback(() => { setShowQF((v) => !v); setShowManageViews(false); }, []);
+  const toggleMV = useCallback(() => { setShowManageViews((v) => !v); setShowQF(false); }, []);
 
   useEffect(() => {
     setOptions({
@@ -274,18 +298,35 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
           custom: true,
           badge: quickFilters.length > 0 ? quickFilters.length : null,
         },
+        { divider: true },
+        {
+          label: "Manage Views",
+          icon: Pencil,
+          onClick: toggleMV,
+          custom: true,
+        },
       ],
       customContent: showQF
-        ? ({ close }) => (
+        ? () => (
             <QuickFiltersPanel
               fields={qfFields}
               activeFilters={quickFilters}
               onApply={(f) => { setQuickFilters(f); }}
             />
           )
+        : showManageViews
+        ? () => (
+            <ViewDrawerContent
+              pageKey="rfq_costs_tab"
+              activeViewId={activeViewId}
+              onSelectView={(id) => { setActiveViewId(id); setShowManageViews(false); }}
+              allFields={ALL_FIELDS}
+              currentViewType="list"
+            />
+          )
         : null,
     });
-  }, [showQF, quickFilters, qfFields, toggleQF, setOptions]);
+  }, [showQF, showManageViews, quickFilters, qfFields, activeViewId, toggleQF, toggleMV, setOptions]);
 
   // Clear options on unmount
   useEffect(() => () => setOptions(null), [setOptions]);
@@ -377,11 +418,10 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
       {/* ── DataTable ── */}
       {lines.length > 0 && (
         <DataTable
-          columns={columns}
+          columns={columnIds ? columns.filter((c) => columnIds.includes(c.id)) : columns}
           rows={filteredLines}
           fixedColumns={pinnedCols}
           onPinColumn={handlePinColumn}
-          hideColumnToggle={false}
         />
       )}
 

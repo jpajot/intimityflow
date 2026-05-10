@@ -177,22 +177,7 @@ export default function DataTable({ columns, rows, fixedColumns = [], groupOptio
             </div>
           )}
         </div>
-        {!hideColumnToggle && (
-          <div className="flex items-center justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs"><Settings2 className="w-3.5 h-3.5" /> Columns</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="text-xs">Show/Hide</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {columns.map((col) => (
-                  <DropdownMenuCheckboxItem key={col.id} checked={visibleCols.has(col.id)} onCheckedChange={() => toggleCol(col.id)} className="text-xs">{col.label}</DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
+        
       </div>
 
       {/* Active grouping pills */}
