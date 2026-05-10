@@ -115,7 +115,7 @@ export default function RFQTrackingTable({
               const hasResponses = lineResponses.length > 0;
 
               return (
-                <tbody key={line.id}>
+                <>
                   {/* Parent Row */}
                   <tr className="border-b border-border hover:bg-muted/20 transition-colors">
                     {/* Expand/Collapse */}
@@ -356,11 +356,11 @@ export default function RFQTrackingTable({
                           );
                         })}
                       </tr>
-                    ))}
-                </tbody>
-              );
-            })}
-          </tbody>
+                      ))}
+                      </>
+                      );
+                      })}
+                      </tbody>
         </table>
       </div>
     </div>
