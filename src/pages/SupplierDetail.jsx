@@ -15,7 +15,7 @@ const EMPTY_SUPPLIER = {
   name: "", legal_name: "", country: "", region: "", city: "",
   primary_contact_name: "", primary_contact_email: "", primary_contact_phone: "",
   capabilities: [], certifications: [], lead_time_default_days: "",
-  moq_policy: "", payment_terms_default: "", currency_default: "",
+  moq_policy: "", payment_terms_default: "", currency_default_id: "",
   status: "active", status_reason: "", notes: "",
 };
 
@@ -27,6 +27,7 @@ export default function SupplierDetail() {
 
   const [supplier, setSupplier] = useState(EMPTY_SUPPLIER);
   const [lovValues, setLovValues] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
   const [approvedLinks, setApprovedLinks] = useState([]);
   const [routingSteps, setRoutingSteps] = useState([]);
   const [products, setProducts] = useState([]);
@@ -48,7 +49,10 @@ export default function SupplierDetail() {
   }, [setOptions]);
 
   useEffect(() => {
-    base44.entities.ListOfValues.list("name", 5000).then(setLovValues);
+    Promise.all([
+      base44.entities.ListOfValues.list("name", 5000),
+      base44.entities.Currency.filter({ is_active: true }),
+    ]).then(([lovs, currs]) => { setLovValues(lovs); setCurrencies(currs.sort((a, b) => a.code.localeCompare(b.code))); });
     if (!isNew) {
       loadData();
     }
@@ -261,11 +265,11 @@ export default function SupplierDetail() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Default Currency</Label>
-                <Select value={supplier.currency_default || "none"} onValueChange={(v) => updateField("currency_default", v === "none" ? "" : v)}>
+                <Select value={supplier.currency_default_id || "none"} onValueChange={(v) => updateField("currency_default_id", v === "none" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {getLov("currency").map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {currencies.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -355,7 +359,7 @@ export default function SupplierDetail() {
                 {step.description && <p className="text-xs text-muted-foreground mt-1 ml-8">{step.description}</p>}
                 {(step.unit_cost || step.lead_time_days) && (
                   <div className="flex gap-3 mt-1 ml-8">
-                    {step.unit_cost && <span className="text-xs text-muted-foreground">{step.unit_cost} {step.currency}</span>}
+                    {step.unit_cost && <span className="text-xs text-muted-foreground">{step.unit_cost} {currencies.find((c) => c.id === step.currency_id)?.code || "—"}</span>}
                     {step.lead_time_days && <span className="text-xs text-muted-foreground">{step.lead_time_days}d lead time</span>}
                   </div>
                 )}

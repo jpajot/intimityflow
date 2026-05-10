@@ -15,14 +15,14 @@ const STATUS_COLORS = {
   discontinued: "bg-red-100 text-red-700 border-red-200",
 };
 
-function LinkEditModal({ open, onClose, onSave, colorway, approvedSupplier, supplierName, existing }) {
-  const [form, setForm] = useState({ colorway_supplier_reference: "", colorway_supplier_status: "available", unit_cost_override: "", currency_override: "", lead_time_override_days: "", notes: "" });
+function LinkEditModal({ open, onClose, onSave, colorway, approvedSupplier, supplierName, existing, currencies }) {
+  const [form, setForm] = useState({ colorway_supplier_reference: "", colorway_supplier_status: "available", unit_cost_override: "", currency_override_id: "", lead_time_override_days: "", notes: "" });
 
   useEffect(() => {
     if (open) {
       setForm(existing
         ? { ...existing, unit_cost_override: existing.unit_cost_override ?? "", lead_time_override_days: existing.lead_time_override_days ?? "" }
-        : { colorway_supplier_reference: "", colorway_supplier_status: "available", unit_cost_override: "", currency_override: "", lead_time_override_days: "", notes: "" }
+        : { colorway_supplier_reference: "", colorway_supplier_status: "available", unit_cost_override: "", currency_override_id: "", lead_time_override_days: "", notes: "" }
       );
     }
   }, [open, existing]);
@@ -61,6 +61,25 @@ function LinkEditModal({ open, onClose, onSave, colorway, approvedSupplier, supp
             </div>
           </div>
           <div className="space-y-1.5">
+            <Label className="text-xs">Currency Override</Label>
+            <Select value={form.currency_override_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, currency_override_id: v === "none" ? "" : v }))}>
+              <SelectTrigger><SelectValue placeholder="Inherit from parent supplier" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Inherit from parent supplier</SelectItem>
+                {currencies.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(() => {
+              const parentCurrId = approvedSupplier?.currency_id;
+              const parentCurr = parentCurrId ? currencies.find((c) => c.id === parentCurrId) : null;
+              return (
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Inheriting: {parentCurr ? parentCurr.code : "—"}
+                </p>
+              );
+            })()}
+          </div>
+          <div className="space-y-1.5">
             <Label className="text-xs">Notes</Label>
             <Input value={form.notes || ""} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
           </div>
@@ -76,8 +95,15 @@ function LinkEditModal({ open, onClose, onSave, colorway, approvedSupplier, supp
 
 export default function ProductColorSupplierLinkMatrix({ colorVariants, approvedSuppliers, allSuppliers, lovValues }) {
   const [links, setLinks] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editCell, setEditCell] = useState(null); // { colorway, approvedSupplier, existing }
+
+  useEffect(() => {
+    base44.entities.Currency.filter({ is_active: true }).then((currs) =>
+      setCurrencies(currs.sort((a, b) => a.code.localeCompare(b.code)))
+    );
+  }, []);
 
   useEffect(() => {
     if (!colorVariants.length || !approvedSuppliers.length) { setLoading(false); return; }
@@ -91,7 +117,7 @@ export default function ProductColorSupplierLinkMatrix({ colorVariants, approved
   const getLink = (colorwayId, approvedSupplierId) =>
     links.find((l) => l.product_color_id === colorwayId && l.approved_supplier_id === approvedSupplierId);
 
-  const PCSL_TRIGGER_FIELDS = ['colorway_supplier_status', 'unit_cost_override', 'currency_override', 'lead_time_override_days', 'moq_override', 'colorway_supplier_reference'];
+  const PCSL_TRIGGER_FIELDS = ['colorway_supplier_status', 'unit_cost_override', 'currency_override_id', 'lead_time_override_days', 'moq_override', 'colorway_supplier_reference'];
 
   const handleSave = async (form) => {
     const { colorway, approvedSupplier, existing } = editCell;
@@ -101,6 +127,7 @@ export default function ProductColorSupplierLinkMatrix({ colorVariants, approved
       colorway_supplier_reference: form.colorway_supplier_reference,
       colorway_supplier_status: form.colorway_supplier_status,
       unit_cost_override: form.unit_cost_override ? Number(form.unit_cost_override) : null,
+      currency_override_id: form.currency_override_id || null,
       lead_time_override_days: form.lead_time_override_days ? Number(form.lead_time_override_days) : null,
       notes: form.notes,
     };
@@ -200,6 +227,7 @@ export default function ProductColorSupplierLinkMatrix({ colorVariants, approved
           approvedSupplier={editCell.approvedSupplier}
           supplierName={editCell.supplierName}
           existing={editCell.existing}
+          currencies={currencies}
         />
       )}
     </div>

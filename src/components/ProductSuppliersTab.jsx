@@ -50,8 +50,8 @@ function SourcingSummary({ approvedSuppliers, routings, colorOverrides, colorVar
 }
 
 // ─── Add/Edit Approved Supplier Modal ────────────────────────────────────────
-function ApprovedSupplierModal({ open, onClose, onSave, suppliers, lovValues, existing }) {
-  const [form, setForm] = useState({ supplier_id: "", supplier_reference: "", unit_cost: "", currency: "", moq: "", moq_uom: "", lead_time_days: "", valid_from: "", valid_until: "", status: "active", notes: "" });
+function ApprovedSupplierModal({ open, onClose, onSave, suppliers, lovValues, currencies, existing }) {
+  const [form, setForm] = useState({ supplier_id: "", supplier_reference: "", unit_cost: "", currency_id: "", moq: "", moq_uom: "", lead_time_days: "", valid_from: "", valid_until: "", status: "active", notes: "" });
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -59,7 +59,7 @@ function ApprovedSupplierModal({ open, onClose, onSave, suppliers, lovValues, ex
       if (existing) {
         setForm({ ...existing, unit_cost: existing.unit_cost || "", moq: existing.moq || "", lead_time_days: existing.lead_time_days || "" });
       } else {
-        setForm({ supplier_id: "", supplier_reference: "", unit_cost: "", currency: "", moq: "", moq_uom: "", lead_time_days: "", valid_from: "", valid_until: "", status: "active", notes: "" });
+        setForm({ supplier_id: "", supplier_reference: "", unit_cost: "", currency_id: "", moq: "", moq_uom: "", lead_time_days: "", valid_from: "", valid_until: "", status: "active", notes: "" });
       }
       setSearch("");
     }
@@ -104,11 +104,11 @@ function ApprovedSupplierModal({ open, onClose, onSave, suppliers, lovValues, ex
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Currency</Label>
-              <Select value={form.currency || "none"} onValueChange={(v) => setForm((f) => ({ ...f, currency: v === "none" ? "" : v }))}>
+              <Select value={form.currency_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, currency_id: v === "none" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {getLov("currency").map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {currencies.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -193,13 +193,13 @@ function AddRoutingModal({ open, onClose, onSave }) {
 }
 
 // ─── Add/Edit Routing Step Modal ──────────────────────────────────────────────
-function RoutingStepModal({ open, onClose, onSave, onDelete, suppliers, lovValues, existing }) {
-  const [form, setForm] = useState({ step_type: "", supplier_id: "", description: "", unit_cost: "", currency: "", lead_time_days: "", ships_to_next: true, input_description: "", output_description: "", notes: "" });
+function RoutingStepModal({ open, onClose, onSave, onDelete, suppliers, lovValues, currencies, existing }) {
+  const [form, setForm] = useState({ step_type: "", supplier_id: "", description: "", unit_cost: "", currency_id: "", lead_time_days: "", ships_to_next: true, input_description: "", output_description: "", notes: "" });
   const [search, setSearch] = useState("");
   useEffect(() => {
     if (open) {
       if (existing) setForm({ ...existing, unit_cost: existing.unit_cost || "", lead_time_days: existing.lead_time_days || "" });
-      else setForm({ step_type: "", supplier_id: "", description: "", unit_cost: "", currency: "", lead_time_days: "", ships_to_next: true, input_description: "", output_description: "", notes: "" });
+      else setForm({ step_type: "", supplier_id: "", description: "", unit_cost: "", currency_id: "", lead_time_days: "", ships_to_next: true, input_description: "", output_description: "", notes: "" });
       setSearch("");
     }
   }, [open, existing]);
@@ -252,11 +252,11 @@ function RoutingStepModal({ open, onClose, onSave, onDelete, suppliers, lovValue
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Currency</Label>
-              <Select value={form.currency || "none"} onValueChange={(v) => setForm((f) => ({ ...f, currency: v === "none" ? "" : v }))}>
+              <Select value={form.currency_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, currency_id: v === "none" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {getLov("currency").map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {currencies.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -405,6 +405,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   const [routings, setRoutings] = useState([]);
   const [routingSteps, setRoutingSteps] = useState([]);
   const [lovValues, setLovValues] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
@@ -435,13 +436,14 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
 
   const loadData = async () => {
     setLoading(true);
-    const [sups, apps, overrides, rts, steps, lovs] = await Promise.all([
+    const [sups, apps, overrides, rts, steps, lovs, currs] = await Promise.all([
       base44.entities.Supplier.list("name", 500),
       base44.entities.ApprovedSupplier.filter({ product_id: product.id }),
       base44.entities.ApprovedSupplierColorOverride.list("-created_date", 500),
       base44.entities.SupplierRouting.filter({ product_id: product.id }),
       base44.entities.SupplierRoutingStep.list("sequence", 2000),
       base44.entities.ListOfValues.list("name", 5000),
+      base44.entities.Currency.filter({ is_active: true }),
     ]);
     setAllSuppliers(sups);
     setApprovedSuppliers(apps.sort((a, b) => (a.rank || 99) - (b.rank || 99)));
@@ -451,6 +453,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
     setRoutings(rts);
     setRoutingSteps(steps);
     setLovValues(lovs);
+    setCurrencies(currs.sort((a, b) => a.code.localeCompare(b.code)));
     if (rts.length > 0) setSelectedRoutingId(rts.find((r) => r.is_default)?.id || rts[0].id);
     setLoading(false);
   };
@@ -464,7 +467,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
       supplier_id: form.supplier_id,
       supplier_reference: form.supplier_reference,
       unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
-      currency: form.currency,
+      currency_id: form.currency_id || null,
       moq: form.moq ? Number(form.moq) : null,
       moq_uom: form.moq_uom,
       lead_time_days: form.lead_time_days ? Number(form.lead_time_days) : null,
@@ -482,12 +485,12 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   const handleEditApprovedSupplier = async (form) => {
     // Capture before-state for Flow C trigger
     const before = editingSupplier;
-    const AS_TRIGGER_FIELDS = ['unit_cost', 'currency', 'lead_time_days', 'moq', 'moq_uom', 'status', 'is_primary', 'rank', 'price_break_tiers', 'valid_from', 'valid_until', 'supplier_reference'];
+    const AS_TRIGGER_FIELDS = ['unit_cost', 'currency_id', 'lead_time_days', 'moq', 'moq_uom', 'status', 'is_primary', 'rank', 'price_break_tiers', 'valid_from', 'valid_until', 'supplier_reference'];
 
     const updates = {
       supplier_reference: form.supplier_reference,
       unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
-      currency: form.currency,
+      currency_id: form.currency_id || null,
       moq: form.moq ? Number(form.moq) : null,
       moq_uom: form.moq_uom,
       lead_time_days: form.lead_time_days ? Number(form.lead_time_days) : null,
@@ -544,7 +547,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
     // Flow C trigger — post-commit, best-effort, non-blocking
     if (before) {
       try {
-        const AS_TRIGGER_FIELDS = ['unit_cost', 'currency', 'lead_time_days', 'moq', 'moq_uom', 'status', 'is_primary', 'rank', 'price_break_tiers', 'valid_from', 'valid_until', 'supplier_reference'];
+        const AS_TRIGGER_FIELDS = ['unit_cost', 'currency_id', 'lead_time_days', 'moq', 'moq_uom', 'status', 'is_primary', 'rank', 'price_break_tiers', 'valid_from', 'valid_until', 'supplier_reference'];
         const fieldChanges = {};
         for (const field of AS_TRIGGER_FIELDS) {
           fieldChanges[field] = { before: before[field] ?? null, after: null };
@@ -609,7 +612,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         supplier_id: form.supplier_id,
         description: form.description,
         unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
-        currency: form.currency,
+        currency_id: form.currency_id || null,
         lead_time_days: form.lead_time_days ? Number(form.lead_time_days) : null,
         ships_to_next: form.ships_to_next,
         input_description: form.input_description,
@@ -627,7 +630,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         supplier_id: form.supplier_id,
         description: form.description,
         unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
-        currency: form.currency,
+        currency_id: form.currency_id || null,
         lead_time_days: form.lead_time_days ? Number(form.lead_time_days) : null,
         ships_to_next: form.ships_to_next,
         input_description: form.input_description,
@@ -789,7 +792,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 mt-3 text-xs text-muted-foreground">
-                  {primary.unit_cost && <span>{primary.unit_cost} {primary.currency}</span>}
+                  {primary.unit_cost && <span>{primary.unit_cost} {currencies.find((c) => c.id === primary.currency_id)?.code || "—"}</span>}
                   {primary.moq && <span>MOQ: {primary.moq} {primary.moq_uom}</span>}
                   {primary.lead_time_days && <span>{primary.lead_time_days}d lead time</span>}
                   {primary.valid_until && <span>Until: {primary.valid_until}</span>}
@@ -814,7 +817,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
                         <p className="text-sm font-medium">{sup?.name || "—"}</p>
                         <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
                           {as.supplier_reference && <span className="font-mono">{as.supplier_reference}</span>}
-                          {as.unit_cost && <span>{as.unit_cost} {as.currency}</span>}
+                          {as.unit_cost && <span>{as.unit_cost} {currencies.find((c) => c.id === as.currency_id)?.code || "—"}</span>}
                           {as.lead_time_days && <span>{as.lead_time_days}d</span>}
                         </div>
                       </div>
@@ -934,7 +937,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
                                 <div className="flex gap-2 mt-1.5 text-[10px] text-muted-foreground">
                                   {step.lead_time_days && <span>{step.lead_time_days}d</span>}
                                   {step.unit_cost && <span>·</span>}
-                                  {step.unit_cost && <span>{step.unit_cost} {step.currency}</span>}
+                                  {step.unit_cost && <span>{step.unit_cost} {currencies.find((c) => c.id === step.currency_id)?.code || "—"}</span>}
                                 </div>
                                 {step.ships_to_next && idx < selectedSteps.length - 1 && (
                                   <p className="text-[9px] text-primary mt-1">ships to next ↘</p>
@@ -978,6 +981,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         onSave={handleAddApprovedSupplier}
         suppliers={allSuppliers}
         lovValues={lovValues}
+        currencies={currencies}
       />
       <ApprovedSupplierModal
         open={!!editingSupplier}
@@ -985,6 +989,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         onSave={handleEditApprovedSupplier}
         suppliers={allSuppliers}
         lovValues={lovValues}
+        currencies={currencies}
         existing={editingSupplier}
       />
       <AddRoutingModal
@@ -999,6 +1004,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         onDelete={editingStep ? handleDeleteStep : null}
         suppliers={allSuppliers}
         lovValues={lovValues}
+        currencies={currencies}
         existing={editingStep}
       />
     </div>
