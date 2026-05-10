@@ -57,7 +57,7 @@ export default function RFQDetail() {
 
   // Costs tab data
   const [rfqLines, setRfqLines] = useState([]);
-  const [costsRefData, setCostsRefData] = useState({ products: [], colors: [], pcams: [], steps: [], suppliers: [] });
+  const [costsRefData, setCostsRefData] = useState({ products: [], colors: [], pcams: [], steps: [], suppliers: [], currencies: [] });
 
   const load = async () => {
     setLoading(true);
@@ -85,16 +85,17 @@ export default function RFQDetail() {
     setCurrency(currList[0] || null);
 
     // Load costs tab data in parallel
-    const [linesData, products, colors, pcams, steps, suppliers] = await Promise.all([
+    const [linesData, products, colors, pcams, steps, suppliers, currencies] = await Promise.all([
       base44.entities.RFQLine.filter({ rfq_id: rfqId }, "created_date", 1000),
       base44.entities.Product.list("code", 2000),
       base44.entities.ProductColor.list("-created_date", 2000),
       base44.entities.ProductColorAndMore.list("-created_date", 2000),
       base44.entities.SupplierRoutingStep.list("sequence", 2000),
       base44.entities.Supplier.list("name", 500),
+      base44.entities.Currency.filter({ is_active: true }),
     ]);
     setRfqLines(linesData);
-    setCostsRefData({ products, colors, pcams, steps, suppliers });
+    setCostsRefData({ products, colors, pcams, steps, suppliers, currencies });
 
     setLoading(false);
   };

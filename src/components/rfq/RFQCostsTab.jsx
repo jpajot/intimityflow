@@ -9,13 +9,15 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil, MessageSquarePlus } from "lucide-react";
+import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil, MessageSquarePlus, Download, Upload } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersPanel";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
 import RFQLineBuilderDialog from "./RFQLineBuilderDialog";
 import AddResponseDialog from "./AddResponseDialog";
 import ResponsesPanel from "./ResponsesPanel";
+import ExportTodoDialog from "./ExportTodoDialog";
+import ImportResponsesDialog from "./ImportResponsesDialog";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
 // ── constants ──────────────────────────────────────────────────────────────────
@@ -72,6 +74,8 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   const [panelLine, setPanelLine] = useState(null);           // line whose responses panel is open
   const [responseCounts, setResponseCounts] = useState({});   // { [lineId]: count }
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -351,6 +355,16 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
             icon: Plus,
             onClick: () => setShowBuilder(true),
           },
+          {
+            label: "Export ToDo",
+            icon: Download,
+            onClick: () => setShowExportDialog(true),
+          },
+          {
+            label: "Import Responses",
+            icon: Upload,
+            onClick: () => setShowImportDialog(true),
+          },
           { divider: true },
         ] : []),
         {
@@ -516,6 +530,31 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
           supplierMap={supplierMap}
           onSaved={() => { setResponseTarget(null); onLinesChange(); }}
           onClose={() => setResponseTarget(null)}
+        />
+      )}
+
+      {/* ── Export Todo Dialog ── */}
+      {showExportDialog && (
+        <ExportTodoDialog
+          rfq={rfq}
+          lines={lines}
+          productMap={productMap}
+          colorMap={colorMap}
+          pcamMap={pcamMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          onClose={() => setShowExportDialog(false)}
+        />
+      )}
+
+      {/* ── Import Responses Dialog ── */}
+      {showImportDialog && (
+        <ImportResponsesDialog
+          rfq={rfq}
+          rfqLines={lines}
+          currencies={refData.currencies || []}
+          onClose={() => setShowImportDialog(false)}
+          onImportSuccess={() => onLinesChange()}
         />
       )}
 
