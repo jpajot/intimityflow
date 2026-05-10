@@ -24,16 +24,17 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    // STEP 1 — Update awarded response
-    await base44.entities.RFQResponse.update(response_id, {
-      is_awarded: true,
-      status: 'awarded',
-    });
+    // STEP 0 — Capture target response id (type-safe validation)
+    const awardedResponseId = response.id;
+    if (!awardedResponseId || typeof awardedResponseId !== 'string') {
+      return Response.json({ error: 'Invalid response id' }, { status: 400 });
+    }
 
-    // STEP 2 — Reject sibling responses
+    // STEP 1 — Demote ALL siblings FIRST (before promoting the target)
+    // Use filtered update to ensure target is never touched
     const siblings = await base44.entities.RFQResponse.filter({
       rfq_line_id,
-      id: { $ne: response_id },
+      id: { $ne: awardedResponseId },
     });
     const toReject = siblings.filter((s) => ['submitted', 'under_review', 'draft', 'awarded'].includes(s.status));
     await Promise.all(
@@ -41,6 +42,12 @@ Deno.serve(async (req) => {
         base44.entities.RFQResponse.update(s.id, { status: 'rejected', is_awarded: false })
       )
     );
+
+    // STEP 2 — Promote the target response (AFTER sibling demotion)
+    await base44.entities.RFQResponse.update(awardedResponseId, {
+      is_awarded: true,
+      status: 'awarded',
+    });
 
     // STEP 3 — Update RFQLine
     await base44.entities.RFQLine.update(rfq_line_id, {
