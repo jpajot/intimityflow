@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import RFQEditHeaderDialog from "@/components/rfq/RFQEditHeaderDialog";
 import RFQCostsTab from "@/components/rfq/RFQCostsTab";
+import { usePageOptions } from "@/lib/PageOptionsContext";
 
 // ── Feature flags ──────────────────────────────────────────────────────────────
 const FEATURE_RFQ_SAMPLE_REQUESTS = false;
@@ -42,6 +43,8 @@ export default function RFQDetail() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  const { setOptions } = usePageOptions();
 
   const [activeTab, setActiveTab] = useState("costs");
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -93,6 +96,11 @@ export default function RFQDetail() {
   };
 
   useEffect(() => { load(); }, [rfqId, projectId]);
+
+  // Clear options when leaving the costs tab (costs tab registers its own)
+  useEffect(() => {
+    if (activeTab !== "costs") setOptions(null);
+  }, [activeTab]);
 
   const handleEditSaved = (updated) => {
     setRfq(updated);
