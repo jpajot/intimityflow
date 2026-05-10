@@ -135,6 +135,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
   // View
   const [activeViewId, setActiveViewId] = useState("default");
   const [columnIds, setColumnIds] = useState(DEFAULT_COLUMN_IDS);
+  const [fixedColumnIds, setFixedColumnIds] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -336,6 +337,14 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
             columns={columns}
             rows={filteredRfqs}
             onRowClick={handleRowClick}
+            fixedColumns={fixedColumnIds}
+            onPinColumn={(colId) => {
+              setFixedColumnIds((prev) =>
+                prev.includes(colId)
+                  ? prev.filter((c) => c !== colId)
+                  : [...prev, colId]
+              );
+            }}
           />
         </div>
       )}
@@ -351,7 +360,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
 }
 
 // Thin wrapper around DataTable to make rows clickable without modifying DataTable
-function ClickableDataTable({ columns, rows, onRowClick }) {
+function ClickableDataTable({ columns, rows, onRowClick, fixedColumns, onPinColumn }) {
   const clickableColumns = useMemo(() =>
     columns.map((col) => ({
       ...col,
@@ -372,6 +381,8 @@ function ClickableDataTable({ columns, rows, onRowClick }) {
       columns={clickableColumns}
       rows={rows}
       hideColumnToggle
+      fixedColumns={fixedColumns}
+      onPinColumn={onPinColumn}
     />
   );
 }
