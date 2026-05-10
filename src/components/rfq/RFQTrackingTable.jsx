@@ -164,47 +164,6 @@ export default function RFQTrackingTable({
 
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex items-center gap-1.5">
-        {showSearch && (
-          <div className="relative flex-1">
-            <Input
-              autoFocus
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search…"
-              className="h-7 text-xs"
-            />
-            {searchText && (
-              <button
-                type="button"
-                onClick={() => setSearchText("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
-          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-          title="Search"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 text-xs gap-1"
-          onClick={toggleAllExpand}
-        >
-          {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          {allExpanded ? "Collapse" : "Expand"}
-        </Button>
-      </div>
-
       {/* Context Menu */}
       {contextMenu && (
         <div
