@@ -566,38 +566,6 @@ export default function RFQTrackingBoard() {
         )}
       </div>
 
-      {/* Toolbar - Collapsible Search */}
-      <div className="flex items-center gap-2">
-        {showSearch && (
-          <div className="relative flex-1">
-            <Input
-              autoFocus
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search product, supplier, RFQ…"
-              className="h-8 text-xs pr-7"
-            />
-            {searchText && (
-              <button
-                type="button"
-                onClick={() => setSearchText("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
-          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-          title="Search"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-      </div>
-
       {/* Empty state */}
       {filteredLines.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 border border-dashed border-border rounded-xl text-muted-foreground">
