@@ -166,6 +166,23 @@ export default function RFQTrackingTable({
     <div className="space-y-3">
       {/* Toolbar - consolidated search + expand */}
       <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs gap-1"
+          onClick={toggleAllExpand}
+        >
+          {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {allExpanded ? "Collapse" : "Expand"}
+        </Button>
+        <button
+          type="button"
+          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
+          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Search"
+        >
+          <Search className="w-4 h-4" />
+        </button>
         {showSearch && (
           <div className="relative flex-1">
             <Input
@@ -186,23 +203,6 @@ export default function RFQTrackingTable({
             )}
           </div>
         )}
-        <button
-          type="button"
-          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
-          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-          title="Search"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 text-xs gap-1"
-          onClick={toggleAllExpand}
-        >
-          {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          {allExpanded ? "Collapse" : "Expand"}
-        </Button>
       </div>
 
       {/* Context Menu */}
