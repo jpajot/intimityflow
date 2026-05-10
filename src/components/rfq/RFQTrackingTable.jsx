@@ -400,7 +400,13 @@ export default function RFQTrackingTable({
 
                           if (col.id === "qty") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
+                              <td key={col.id} className={`px-4 py-3 text-xs font-mono ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
+                                <div className="space-y-0.5">
+                                  {response.min_qty != null && <div>Min: {response.min_qty}</div>}
+                                  {response.max_qty != null && <div>Max: {response.max_qty}</div>}
+                                  {response.leadtime_days && <div>{response.leadtime_days}d lead</div>}
+                                </div>
+                              </td>
                             );
                           }
 
@@ -508,23 +514,9 @@ export default function RFQTrackingTable({
                             );
                           }
 
-                          // Show response details for specific columns
-                          if (col.id === "qty") {
-                            return (
-                              <td key={col.id} className={`px-4 py-3 text-xs font-mono ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
-                                <div className="space-y-0.5">
-                                  {response.min_qty != null && <div>Min: {response.min_qty}</div>}
-                                  {response.max_qty != null && <div>Max: {response.max_qty}</div>}
-                                </div>
-                              </td>
-                            );
-                          }
-
                           if (col.id === "responses") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 text-xs font-mono ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
-                                {response.leadtime_days ? `${response.leadtime_days}d` : "—"}
-                              </td>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
