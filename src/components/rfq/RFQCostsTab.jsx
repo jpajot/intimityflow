@@ -351,44 +351,46 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
     <div className="space-y-3">
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-2">
-        <Button size="sm" className="gap-1.5" onClick={() => setShowBuilder(true)}>
-          <Plus className="w-3.5 h-3.5" />
-          Add Lines
-        </Button>
-
-        {/* Search toggle */}
-        <button
-          type="button"
-          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
-          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-          title="Search lines"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-
-        {/* Inline search when open */}
-        {showSearch && (
-          <div className="relative flex-1 max-w-xs">
-            <Input
-              autoFocus
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search product, supplier, step…"
-              className="h-8 text-xs pr-7"
-            />
-            {searchText && (
-              <button type="button" onClick={() => setSearchText("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
-
-        <span className="ml-auto text-xs text-muted-foreground shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0">
           {filteredLines.length !== lines.length
             ? `${filteredLines.length} / ${lines.length} line${lines.length !== 1 ? "s" : ""}`
             : `${lines.length} line${lines.length !== 1 ? "s" : ""}`}
         </span>
+
+        <div className="ml-auto flex items-center gap-2">
+          {/* Inline search when open */}
+          {showSearch && (
+            <div className="relative">
+              <Input
+                autoFocus
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Search product, supplier, step…"
+                className="h-8 text-xs pr-7 w-56"
+              />
+              {searchText && (
+                <button type="button" onClick={() => setSearchText("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Search toggle */}
+          <button
+            type="button"
+            onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
+            className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+            title="Search lines"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
+          <Button size="sm" className="gap-1.5" onClick={() => setShowBuilder(true)}>
+            <Plus className="w-3.5 h-3.5" />
+            Add Lines
+          </Button>
+        </div>
       </div>
 
       {/* Active quick filter badge */}
