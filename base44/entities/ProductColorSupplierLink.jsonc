@@ -23,9 +23,9 @@
       "type": "number",
       "description": "null = inherit from ApprovedSupplier.unit_cost"
     },
-    "currency_override": {
+    "currency_override_id": {
       "type": "string",
-      "description": "LOV: currency"
+      "description": "FK \u2192 Currency. Optional override of the parent ApprovedSupplier.currency_id for this colorway-specific link. Null = inherit from parent."
     },
     "lead_time_override_days": {
       "type": "number",
