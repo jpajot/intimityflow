@@ -292,6 +292,12 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
     setOptions({
       items: [
         {
+          label: "Add Lines",
+          icon: Plus,
+          onClick: () => setShowBuilder(true),
+        },
+        { divider: true },
+        {
           label: "Quick Filters",
           icon: Filter,
           onClick: toggleQF,
@@ -326,7 +332,7 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
           )
         : null,
     });
-  }, [showQF, showManageViews, quickFilters, qfFields, activeViewId, toggleQF, toggleMV, setOptions]);
+  }, [showQF, showManageViews, quickFilters, qfFields, activeViewId, toggleQF, toggleMV, setOptions, setShowBuilder]);
 
   // Clear options on unmount
   useEffect(() => () => setOptions(null), [setOptions]);
@@ -385,11 +391,6 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
           >
             <Search className="w-4 h-4" />
           </button>
-
-          <Button size="sm" className="gap-1.5" onClick={() => setShowBuilder(true)}>
-            <Plus className="w-3.5 h-3.5" />
-            Add Lines
-          </Button>
         </div>
       </div>
 
