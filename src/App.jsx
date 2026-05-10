@@ -47,6 +47,7 @@ import RFQRounds from './pages/RFQRounds';
 import BomComparePage from './pages/boms/BomComparePage';
 import ProjectRFQs from './pages/ProjectRFQs';
 import NewRFQ from './pages/NewRFQ';
+import RFQDetail from './pages/RFQDetail';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -97,7 +98,7 @@ const AuthenticatedApp = () => {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/rfqs" element={<ProjectRFQs />} />
         <Route path="/projects/:id/rfqs/new" element={<NewRFQ />} />
-        <Route path="/projects/:id/rfqs/:rfqId" element={<div className="p-8 text-muted-foreground text-sm">RFQ detail — coming soon.</div>} />
+        <Route path="/projects/:id/rfqs/:rfqId" element={<RFQDetail />} />
         <Route path="/projects/:id/documents-to-parse" element={<ProjectDocuments />} />
         <Route path="/projects/:id/documents" element={<ProjectDocumentsRedirect />} />
         <Route path="/projects/:id/documents-to-parse/:docId" element={<DocumentStaging />} />
