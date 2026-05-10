@@ -426,14 +426,34 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   return (
     <div className="space-y-3">
       {/* ── Toolbar ── */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
         <span className="text-xs text-muted-foreground shrink-0">
           {filteredLines.length !== lines.length
             ? `${filteredLines.length} / ${lines.length} line${lines.length !== 1 ? "s" : ""}`
             : `${lines.length} line${lines.length !== 1 ? "s" : ""}`}
         </span>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+          {!locked && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs h-8"
+                onClick={() => setShowExportDialog(true)}
+              >
+                <Download className="w-3.5 h-3.5" /> Export ToDo
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs h-8"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Upload className="w-3.5 h-3.5" /> Import Responses
+              </Button>
+            </>
+          )}
           {/* Inline search when open */}
           {showSearch && (
             <div className="relative">
