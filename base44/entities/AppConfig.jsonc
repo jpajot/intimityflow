@@ -1,0 +1,42 @@
+{
+  "name": "AppConfig",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Configuration key name. Unique."
+    },
+    "value": {
+      "type": "string",
+      "description": "Configuration value, stored as string, parsed by consumers based on value_type"
+    },
+    "value_type": {
+      "type": "string",
+      "enum": [
+        "string",
+        "number",
+        "boolean",
+        "currency_id"
+      ],
+      "default": "string",
+      "description": "Informs how the value is interpreted"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this config controls"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "User email of last modifier"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "ISO datetime of last modification"
+    }
+  },
+  "required": [
+    "key",
+    "value",
+    "value_type"
+  ]
+}

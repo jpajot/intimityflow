@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3, Coins, ArrowLeftRight } from "lucide-react";
+import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3, Coins, ArrowLeftRight, Settings2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const CONFIG_ITEMS = [
@@ -45,6 +45,12 @@ const CONFIG_ITEMS = [
     label: "Currency Conversion Rates",
     description: "Manage exchange rates between currencies by effective date",
     icon: ArrowLeftRight,
+  },
+  {
+    path: "/app-config",
+    label: "App Configuration",
+    description: "System-level key-value configuration for app-wide defaults",
+    icon: Settings2,
   },
 ];
 
