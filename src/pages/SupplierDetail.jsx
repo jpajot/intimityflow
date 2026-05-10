@@ -328,7 +328,7 @@ export default function SupplierDetail() {
                 </div>
                 {link?.is_primary && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">Primary</span>}
                 {link?.rank && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Rank {link.rank}</span>}
-                {link?.unit_cost && <span className="text-xs text-muted-foreground">{link.unit_cost} {link.currency}</span>}
+                {link?.unit_cost && <span className="text-xs text-muted-foreground">{link.unit_cost} {currencies.find((c) => c.id === link.currency_id)?.code || "—"}</span>}
               </div>
             );
           })}
