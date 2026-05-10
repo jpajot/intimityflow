@@ -473,11 +473,6 @@ export default function RFQTrackingBoard() {
           onClick: () => { setShowViewMenu((v) => !v); setShowQF(false); },
           custom: true,
         },
-        {
-          label: "Export to Excel",
-          icon: Download,
-          onClick: () => { /* TODO: implement export */ },
-        },
       ],
       customContent: showQF
         ? () => (
@@ -647,7 +642,6 @@ export default function RFQTrackingBoard() {
               }
             });
           }}
-          onNavigate={navigate}
           projectId={projectId}
         />
       )}
