@@ -131,9 +131,9 @@ export default function RFQTrackingTable({
     return `${amount.toFixed(curr?.decimal_places ?? 2)} ${curr?.code || "?"}`;
   };
 
-  const handleHeaderContextMenu = (e, colId) => {
+  const handleHeaderContextMenu = (e, col) => {
     e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, colId });
+    setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id });
   };
 
   const togglePinColumn = (colId) => {
@@ -248,7 +248,7 @@ export default function RFQTrackingTable({
                       key={col.id}
                       className={`px-4 py-2.5 text-xs font-semibold text-muted-foreground text-left cursor-context-menu select-none relative ${isPinned ? "sticky z-30 bg-muted/40" : ""}`}
                       style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}
-                      onContextMenu={(e) => handleHeaderContextMenu(e, col.id)}
+                      onContextMenu={(e) => handleHeaderContextMenu(e, col)}
                     >
                       {col.label}
                       <ResizeHandle colId={col.id} onResize={(delta) => {
