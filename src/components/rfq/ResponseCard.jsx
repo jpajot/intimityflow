@@ -61,9 +61,7 @@ export default function ResponseCard({ response, currencyMap, line, onEdit, onDe
   };
 
   const handleAward = () => {
-    console.log("awardResponse", response.id);
-    toast({ title: "Award flow coming next prompt", description: `Response ${response.id}` });
-    onAward?.(response.id);
+    onAward?.(response);
   };
 
   return (

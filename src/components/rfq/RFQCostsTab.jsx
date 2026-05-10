@@ -9,7 +9,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil, MessageSquarePlus, Download, Upload } from "lucide-react";
+import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil, MessageSquarePlus, Download, Upload, Trophy } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersPanel";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
@@ -18,7 +18,10 @@ import AddResponseDialog from "./AddResponseDialog";
 import ResponsesPanel from "./ResponsesPanel";
 import ExportTodoDialog from "./ExportTodoDialog";
 import ImportResponsesDialog from "./ImportResponsesDialog";
+import AwardConfirmDialog from "./AwardConfirmDialog";
+import BulkAwardDialog from "./BulkAwardDialog";
 import { usePageOptions } from "@/lib/PageOptionsContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const LINE_STATUS_COLORS = {
@@ -85,6 +88,10 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   const [activeViewId, setActiveViewId] = useState("default");
   const [columnIds, setColumnIds] = useState(null); // null = use all columns
   const [pinnedCols, setPinnedCols] = useState(["product"]);
+  const [selectedLineIds, setSelectedLineIds] = useState(new Set());
+  const [awardingResponse, setAwardingResponse] = useState(null);
+  const [priorCost, setPriorCost] = useState(null);
+  const [showBulkAwardDialog, setShowBulkAwardDialog] = useState(false);
 
   // ── Lookup maps ───────────────────────────────────────────────────────────────
   const productMap  = useMemo(() => Object.fromEntries(products.map((p) => [p.id, p])), [products]);
@@ -93,9 +100,10 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   const stepMap     = useMemo(() => Object.fromEntries(steps.map((s) => [s.id, s])), [steps]);
   const supplierMap = useMemo(() => Object.fromEntries(suppliers.map((s) => [s.id, s])), [suppliers]);
 
-  // ── Load response counts for all lines ───────────────────────────────────
+  // ── Load response counts and all responses for all lines ───────────────────────────────────
+  const [allResponses, setAllResponses] = useState([]);
   useEffect(() => {
-    if (lines.length === 0) { setResponseCounts({}); return; }
+    if (lines.length === 0) { setResponseCounts({}); setAllResponses([]); return; }
     base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }, "-created_date", 5000)
       .then((responses) => {
         const counts = {};
@@ -103,6 +111,7 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
           counts[r.rfq_line_id] = (counts[r.rfq_line_id] || 0) + 1;
         }
         setResponseCounts(counts);
+        setAllResponses(responses);
       });
   }, [lines]);
 
@@ -134,6 +143,22 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   }, [onLinesChange]);
 
   const columns = useMemo(() => [
+    {
+      id: "select",
+      label: "",
+      width: 40,
+      render: (r) => (
+        <Checkbox
+          checked={selectedLineIds.has(r.id)}
+          onCheckedChange={(checked) => {
+            const next = new Set(selectedLineIds);
+            checked ? next.add(r.id) : next.delete(r.id);
+            setSelectedLineIds(next);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
     {
       id: "product",
       label: "Product",
@@ -265,26 +290,46 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
       width: 44,
       render: (r) => {
         const canDelete = !locked && r.status === "pending";
+        // Count submitted responses for quick award
+        const submittedResponses = allResponses.filter((resp) => resp.rfq_line_id === r.id && resp.status === 'submitted');
+        const canQuickAward = submittedResponses.length === 1 && !r.awarded_response_id;
+        
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
-                <MoreVertical className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1">
+            {canQuickAward && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                title="Award single response"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAwardClick(submittedResponses[0], r);
+                }}
+              >
+                <Trophy className="w-3.5 h-3.5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setResponseTarget(r)}>
-                <MessageSquarePlus className="w-3.5 h-3.5 mr-2" />
-                Add Response
-              </DropdownMenuItem>
-              {canDelete && (
-                <DropdownMenuItem onClick={() => setDeleteTarget(r)} className="text-destructive focus:text-destructive">
-                  <Trash2 className="w-3.5 h-3.5 mr-2" />
-                  Remove line
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setResponseTarget(r)}>
+                  <MessageSquarePlus className="w-3.5 h-3.5 mr-2" />
+                  Add Response
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {canDelete && (
+                  <DropdownMenuItem onClick={() => setDeleteTarget(r)} className="text-destructive focus:text-destructive">
+                    <Trash2 className="w-3.5 h-3.5 mr-2" />
+                    Remove line
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },
@@ -323,6 +368,7 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
 
   // ── View field definitions for Manage Views ───────────────────────────────────
   const ALL_FIELDS = [
+    { id: "select",     label: "Select" },
     { id: "product",    label: "Product" },
     { id: "granularity",label: "Granularity" },
     { id: "step",       label: "Routing Step" },
@@ -423,17 +469,64 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
     );
   }, []);
 
+  // Award handlers
+  const handleAwardClick = async (response, line) => {
+    const priors = await base44.entities.ProductCost.filter({
+      status: 'active',
+      project_id: rfq.project_id,
+      product_id: line.product_id,
+      product_color_id: line.product_color_id || null,
+      product_color_and_more_id: line.product_color_and_more_id || null,
+      routing_step_id: line.routing_step_id,
+      supplier_id: line.recipient_supplier_id,
+    });
+    setAwardingResponse(response);
+    if (priors.length > 0) {
+      const rfqList = await base44.entities.RFQ.filter({ id: priors[0].source_rfq_id });
+      setPriorCost({ ...priors[0], source_rfq: rfqList[0] });
+    } else {
+      setPriorCost(null);
+    }
+  };
+
+  const handleAwardConfirmed = () => {
+    onLinesChange();
+  };
+
+  // Bulk award handlers
+  const handleBulkAwardClick = () => {
+    setShowBulkAwardDialog(true);
+  };
+
+  const handleBulkAwardConfirmed = (count) => {
+    setSelectedLineIds(new Set());
+    onLinesChange();
+  };
+
   return (
     <div className="space-y-3">
       {/* ── Toolbar ── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
         <span className="text-xs text-muted-foreground shrink-0">
+          {selectedLineIds.size > 0 && (
+            <span className="font-medium text-primary">{selectedLineIds.size} selected · </span>
+          )}
           {filteredLines.length !== lines.length
             ? `${filteredLines.length} / ${lines.length} line${lines.length !== 1 ? "s" : ""}`
             : `${lines.length} line${lines.length !== 1 ? "s" : ""}`}
         </span>
 
         <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+          {selectedLineIds.size > 0 && (
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1.5 text-xs h-8 bg-amber-600 hover:bg-amber-700"
+              onClick={handleBulkAwardClick}
+            >
+              <Trophy className="w-3.5 h-3.5" /> Bulk Award {selectedLineIds.size}
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
@@ -601,6 +694,40 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Award Confirm Dialog ── */}
+      {awardingResponse && (
+        <AwardConfirmDialog
+          open={!!awardingResponse}
+          onOpenChange={(open) => { if (!open) setAwardingResponse(null); }}
+          response={awardingResponse}
+          line={lines.find((l) => l.id === awardingResponse.rfq_line_id)}
+          rfq={rfq}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          currencyMap={Object.fromEntries((refData.currencies || []).map((c) => [c.id, c]))}
+          priorCost={priorCost}
+          onConfirmed={handleAwardConfirmed}
+        />
+      )}
+
+      {/* ── Bulk Award Dialog ── */}
+      {showBulkAwardDialog && (
+        <BulkAwardDialog
+          open={showBulkAwardDialog}
+          onOpenChange={setShowBulkAwardDialog}
+          selectedLineIds={Array.from(selectedLineIds)}
+          lines={lines}
+          responses={allResponses}
+          rfq={rfq}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          currencyMap={Object.fromEntries((refData.currencies || []).map((c) => [c.id, c]))}
+          onConfirmed={handleBulkAwardConfirmed}
+        />
+      )}
     </div>
   );
 }

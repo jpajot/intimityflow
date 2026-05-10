@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { X, Loader2, MessageSquarePlus } from "lucide-react";
 import ResponseCard from "./ResponseCard";
 import AddResponseDialog from "./AddResponseDialog";
+import AwardConfirmDialog from "./AwardConfirmDialog";
 
 export default function ResponsesPanel({ line, rfq, productMap, stepMap, supplierMap, onClose, onLineChanged }) {
   const product  = productMap[line.product_id];
@@ -15,6 +16,8 @@ export default function ResponsesPanel({ line, rfq, productMap, stepMap, supplie
   const [loading, setLoading] = useState(true);
   const [editingResponse, setEditingResponse] = useState(null); // RFQResponse to edit
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [awardingResponse, setAwardingResponse] = useState(null); // RFQResponse to award
+  const [priorCost, setPriorCost] = useState(null);
 
   const loadResponses = useCallback(async () => {
     setLoading(true);
@@ -41,6 +44,33 @@ export default function ResponsesPanel({ line, rfq, productMap, stepMap, supplie
   const handleSaved = () => {
     setShowAddDialog(false);
     setEditingResponse(null);
+    loadResponses();
+    onLineChanged?.();
+  };
+
+  const handleAwardClick = async (response) => {
+    // Check for prior ProductCost to warn about supersession
+    const priorCosts = await base44.entities.ProductCost.filter({
+      status: 'active',
+      project_id: rfq.project_id,
+      product_id: line.product_id,
+      product_color_id: line.product_color_id || null,
+      product_color_and_more_id: line.product_color_and_more_id || null,
+      routing_step_id: line.routing_step_id,
+      supplier_id: line.recipient_supplier_id,
+    });
+
+    setAwardingResponse(response);
+    if (priorCosts.length > 0) {
+      // Fetch the RFQ for the prior cost
+      const rfqList = await base44.entities.RFQ.filter({ id: priorCosts[0].source_rfq_id });
+      setPriorCost({ ...priorCosts[0], source_rfq: rfqList[0] });
+    } else {
+      setPriorCost(null);
+    }
+  };
+
+  const handleAwardConfirmed = () => {
     loadResponses();
     onLineChanged?.();
   };
@@ -102,14 +132,14 @@ export default function ResponsesPanel({ line, rfq, productMap, stepMap, supplie
             <div className="space-y-3">
               {responses.map((resp) => (
                 <ResponseCard
-                  key={resp.id}
-                  response={resp}
-                  currencyMap={currencyMap}
-                  line={lineWithTarget}
-                  onEdit={(r) => setEditingResponse(r)}
-                  onDeleted={handleDeleted}
-                  onAward={null}
-                />
+                   key={resp.id}
+                   response={resp}
+                   currencyMap={currencyMap}
+                   line={lineWithTarget}
+                   onEdit={(r) => setEditingResponse(r)}
+                   onDeleted={handleDeleted}
+                   onAward={handleAwardClick}
+                 />
               ))}
             </div>
           )}
@@ -140,6 +170,23 @@ export default function ResponsesPanel({ line, rfq, productMap, stepMap, supplie
           existingResponse={editingResponse}
           onSaved={handleSaved}
           onClose={() => setEditingResponse(null)}
+        />
+      )}
+
+      {/* Award Confirm Dialog */}
+      {awardingResponse && (
+        <AwardConfirmDialog
+          open={!!awardingResponse}
+          onOpenChange={(open) => { if (!open) setAwardingResponse(null); }}
+          response={awardingResponse}
+          line={line}
+          rfq={rfq}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          currencyMap={currencyMap}
+          priorCost={priorCost}
+          onConfirmed={handleAwardConfirmed}
         />
       )}
     </>
