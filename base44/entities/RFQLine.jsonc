@@ -1,0 +1,77 @@
+{
+  "name": "RFQLine",
+  "type": "object",
+  "properties": {
+    "rfq_id": {
+      "type": "string",
+      "description": "FK \u2192 RFQ."
+    },
+    "routing_step_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRoutingStep. The manufacturing/sourcing step being quoted."
+    },
+    "product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product. Denormalized for fast querying and grid display."
+    },
+    "product_color_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColor. If set, the line is at colorway granularity. If null AND product_color_and_more_id is null, the line is at Product level."
+    },
+    "product_color_and_more_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColorAndMore. If set, the line is at PCAM granularity."
+    },
+    "recipient_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier. The supplier this line is sent to. Usually equals SupplierRoutingStep.supplier_id but may differ when soliciting an alternate supplier for benchmark."
+    },
+    "forecasted_qty": {
+      "type": "number",
+      "description": "Forecasted quantity at the line's granularity. Editable by the requester."
+    },
+    "forecasted_qty_uom": {
+      "type": "string",
+      "description": "UOM the forecasted quantity is expressed in. LOV: uom."
+    },
+    "target_lead_time_days": {
+      "type": "number",
+      "description": "Optional target lead time the buyer wants the supplier to meet."
+    },
+    "buyer_notes": {
+      "type": "string",
+      "description": "Free text shown to the supplier."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "answered",
+        "awarded",
+        "declined",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Line-level status."
+    },
+    "awarded_response_id": {
+      "type": "string",
+      "description": "FK \u2192 RFQResponse. Set when an RFQResponse on this line has been awarded. Null otherwise."
+    },
+    "awarded_at": {
+      "type": "string",
+      "description": "ISO datetime when awarded."
+    },
+    "awarded_by": {
+      "type": "string",
+      "description": "Email of user who awarded."
+    }
+  },
+  "required": [
+    "rfq_id",
+    "routing_step_id",
+    "product_id",
+    "recipient_supplier_id",
+    "status"
+  ]
+}
