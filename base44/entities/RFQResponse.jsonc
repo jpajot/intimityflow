@@ -1,0 +1,97 @@
+{
+  "name": "RFQResponse",
+  "type": "object",
+  "properties": {
+    "rfq_line_id": {
+      "type": "string",
+      "description": "FK \u2192 RFQLine. Multiple responses per line are allowed (price tiers, alternate validity windows, revisions)."
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Start of price validity."
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "End of price validity."
+    },
+    "min_qty": {
+      "type": "number",
+      "description": "Minimum quantity at which this price applies."
+    },
+    "max_qty": {
+      "type": "number",
+      "description": "Maximum quantity at which this price applies."
+    },
+    "leadtime_days": {
+      "type": "number",
+      "description": "Quoted lead time in days from order to delivery."
+    },
+    "supplier_currency_id": {
+      "type": "string",
+      "description": "FK \u2192 Currency. Currency the supplier is quoting in."
+    },
+    "total_cost_supplier_ccy": {
+      "type": "number",
+      "description": "Total cost per unit in supplier currency."
+    },
+    "total_cost_target_ccy": {
+      "type": "number",
+      "description": "Total cost converted to RFQ.target_currency_id. Computed and stored at the moment the response is submitted, not recomputed live."
+    },
+    "conversion_rate_used": {
+      "type": "number",
+      "description": "The CurrencyConversionRate.rate value used for the conversion. Stored for audit."
+    },
+    "conversion_rate_id": {
+      "type": "string",
+      "description": "FK \u2192 CurrencyConversionRate. The specific rate record applied. Stored for full audit traceability."
+    },
+    "conversion_rate_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Effective date of the rate that was applied (snapshot of CurrencyConversionRate.effective_date at submission)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "under_review",
+        "awarded",
+        "rejected",
+        "superseded"
+      ],
+      "default": "draft",
+      "description": "Response-level status."
+    },
+    "submitted_at": {
+      "type": "string",
+      "description": "ISO datetime when supplier submitted."
+    },
+    "submitted_by": {
+      "type": "string",
+      "description": "Email of supplier user (or internal user keying it in on supplier's behalf)."
+    },
+    "is_awarded": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this response is the awarded one for its parent line. Mirrored on RFQLine.awarded_response_id for fast querying."
+    },
+    "supplier_notes": {
+      "type": "string",
+      "description": "Comments from the supplier (e.g. capacity caveats)."
+    },
+    "reviewer_notes": {
+      "type": "string",
+      "description": "Buyer's internal annotation on this response."
+    }
+  },
+  "required": [
+    "rfq_line_id",
+    "supplier_currency_id",
+    "total_cost_supplier_ccy",
+    "status"
+  ]
+}
