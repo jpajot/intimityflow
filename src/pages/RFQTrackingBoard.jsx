@@ -16,7 +16,10 @@ import {
 import DataTable from "@/components/DataTable";
 import ResponsesPanel from "@/components/rfq/ResponsesPanel";
 import BulkAwardDialog from "@/components/rfq/BulkAwardDialog";
+import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersPanel";
+import ViewDrawerContent from "@/components/ViewDrawerContent";
 import { usePageOptions } from "@/lib/PageOptionsContext";
+import { Filter, Pencil, Search, X } from "lucide-react";
 
 const STATUS_COLORS = {
   pending:   "bg-gray-100 text-gray-600 border-gray-200",
@@ -33,14 +36,6 @@ const RFQ_STATUS_COLORS = {
   closed:        "bg-green-100 text-green-700 border-green-200",
   archived:      "bg-gray-100 text-gray-400 border-gray-200",
 };
-
-const GROUPING_OPTIONS = [
-  { value: "supplier", label: "By Recipient Supplier" },
-  { value: "rfq", label: "By RFQ" },
-  { value: "product", label: "By Product" },
-  { value: "step_type", label: "By Routing Step Type" },
-  { value: "none", label: "None (Flat List)" },
-];
 
 export default function RFQTrackingBoard() {
   const { id: projectId } = useParams();
@@ -59,10 +54,12 @@ export default function RFQTrackingBoard() {
   const [selectedLineIds, setSelectedLineIds] = useState(new Set());
   const [showBulkAwardDialog, setShowBulkAwardDialog] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [grouping, setGrouping] = useState(() => {
-    const saved = localStorage.getItem(`rfq-tracking-grouping-${projectId}`);
-    return saved || "supplier";
-  });
+  const [showSearch, setShowSearch] = useState(false);
+  const [showKpis, setShowKpis] = useState(true);
+  const [showViewMenu, setShowViewMenu] = useState(false);
+  const [showQF, setShowQF] = useState(false);
+  const [quickFilters, setQuickFilters] = useState([]);
+  const [activeViewId, setActiveViewId] = useState("default");
 
   const [filters, setFilters] = useState({
     rfqs: [],
@@ -109,10 +106,7 @@ export default function RFQTrackingBoard() {
     load();
   }, [projectId]);
 
-  // Save grouping preference
-  useEffect(() => {
-    localStorage.setItem(`rfq-tracking-grouping-${projectId}`, grouping);
-  }, [grouping, projectId]);
+
 
   const { products: productMap, colors: colorMap, pcams: pcamMap, steps: stepMap, suppliers: supplierMap, currencies: currencyMap, rounds: roundMap } = useMemo(() => {
     return {
@@ -185,8 +179,11 @@ export default function RFQTrackingBoard() {
       list = list.filter((l) => (l.status === "awarded") === isAwarded);
     }
 
+    // Apply quick filters
+    list = applyQuickFilters(list, quickFilters);
+
     return list;
-  }, [lines, searchText, filters, rfqs, productMap, supplierMap, stepMap, allResponses]);
+  }, [lines, searchText, filters, rfqs, productMap, supplierMap, stepMap, allResponses, quickFilters]);
 
   const getGranularity = (line) => {
     if (line.product_color_and_more_id) return "PCAM";
@@ -441,6 +438,14 @@ export default function RFQTrackingBoard() {
 
   // Register options
   useEffect(() => {
+    const qfFields = [
+      { id: "rfq_code", label: "RFQ Code", getValue: (l) => rfqs.find((r) => r.id === l.rfq_id)?.code || "" },
+      { id: "status", label: "Line Status", getValue: (l) => l.status || "" },
+      { id: "rfq_status", label: "RFQ Status", getValue: (l) => rfqs.find((r) => r.id === l.rfq_id)?.status || "" },
+      { id: "supplier", label: "Recipient Supplier", getValue: (l) => supplierMap[l.recipient_supplier_id]?.name || "" },
+      { id: "product", label: "Product", getValue: (l) => productMap[l.product_id]?.name || "" },
+    ];
+
     setOptions({
       items: [
         {
@@ -451,13 +456,59 @@ export default function RFQTrackingBoard() {
           disabled: selectedLineIds.size === 0,
         },
         {
+          label: "Quick Filters",
+          icon: Filter,
+          onClick: () => { setShowQF((v) => !v); setShowViewMenu(false); },
+          custom: true,
+          badge: quickFilters.length > 0 ? quickFilters.length : null,
+        },
+        { divider: true },
+        {
+          label: "Manage Views",
+          icon: Pencil,
+          onClick: () => { setShowViewMenu((v) => !v); setShowQF(false); },
+          custom: true,
+        },
+        {
           label: "Export to Excel",
           icon: Download,
           onClick: () => { /* TODO: implement export */ },
         },
       ],
+      customContent: showQF
+        ? () => (
+            <QuickFiltersPanel
+              fields={qfFields}
+              activeFilters={quickFilters}
+              onApply={(f) => { setQuickFilters(f); }}
+            />
+          )
+        : showViewMenu
+        ? () => (
+            <ViewDrawerContent
+              pageKey="rfq_tracking_board"
+              activeViewId={activeViewId}
+              onSelectView={setActiveViewId}
+              allFields={[
+                { id: "rfq", label: "RFQ" },
+                { id: "round", label: "Round" },
+                { id: "product", label: "Product" },
+                { id: "granularity", label: "Granularity" },
+                { id: "step", label: "Routing Step" },
+                { id: "supplier", label: "Recipient Supplier" },
+                { id: "qty", label: "Fcst. Qty" },
+                { id: "responses", label: "Responses" },
+                { id: "best_quote", label: "Best Quote" },
+                { id: "awarded_cost", label: "Awarded Cost" },
+                { id: "status", label: "Status" },
+                { id: "rfq_status", label: "RFQ Status" },
+                { id: "actions", label: "Actions" },
+              ]}
+            />
+          )
+        : null,
     });
-  }, [setOptions, selectedLineIds]);
+  }, [setOptions, selectedLineIds, showQF, showViewMenu, quickFilters, activeViewId, rfqs, productMap, supplierMap]);
 
   if (loading) {
     return (
@@ -488,52 +539,80 @@ export default function RFQTrackingBoard() {
         </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-lg px-4 py-3">
-          <p className="text-xs text-muted-foreground mb-1">Open Lines</p>
-          <p className="text-2xl font-bold">{kpis.open}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-4 py-3">
-          <p className="text-xs text-muted-foreground mb-1">Awarded</p>
-          <p className="text-2xl font-bold text-green-600">{kpis.awarded}</p>
-        </div>
-        <div className={`border rounded-lg px-4 py-3 ${kpis.noResponses > 0 ? "bg-amber-50 border-amber-200" : "bg-card border-border"}`}>
-          <p className={`text-xs mb-1 ${kpis.noResponses > 0 ? "text-amber-700" : "text-muted-foreground"}`}>No Responses</p>
-          <p className={`text-2xl font-bold ${kpis.noResponses > 0 ? "text-amber-700" : ""}`}>{kpis.noResponses}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-4 py-3">
-          <p className="text-xs text-muted-foreground mb-1">Avg Responses/Line</p>
-          <p className="text-2xl font-bold">{kpis.avgResponses}</p>
-        </div>
+      {/* KPI Cards - Collapsible */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowKpis((v) => !v)}
+          className="w-full flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/40 transition-colors"
+        >
+          <span className="text-sm font-semibold">Stats</span>
+          <span className="text-sm font-semibold text-muted-foreground">{showKpis ? "−" : "+"}</span>
+        </button>
+        {showKpis && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-5 py-4 border-t border-border">
+            <button
+              type="button"
+              onClick={() => setFilters((f) => ({ ...f, statuses: ["pending", "answered"] }))}
+              className="text-left bg-muted/40 border border-border rounded-lg px-4 py-3 hover:bg-muted transition-colors"
+            >
+              <p className="text-xs text-muted-foreground mb-1">Open Lines</p>
+              <p className="text-2xl font-bold">{kpis.open}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilters((f) => ({ ...f, statuses: ["awarded"] }))}
+              className="text-left bg-green-50 border border-green-200 rounded-lg px-4 py-3 hover:bg-green-100 transition-colors"
+            >
+              <p className="text-xs text-green-700 mb-1">Awarded</p>
+              <p className="text-2xl font-bold text-green-700">{kpis.awarded}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilters((f) => ({ ...f, statuses: ["pending"], hasResponses: false }))}
+              className={`text-left border rounded-lg px-4 py-3 hover:opacity-90 transition-colors ${kpis.noResponses > 0 ? "bg-amber-50 border-amber-200" : "bg-muted/40 border-border"}`}
+            >
+              <p className={`text-xs mb-1 ${kpis.noResponses > 0 ? "text-amber-700" : "text-muted-foreground"}`}>No Responses</p>
+              <p className={`text-2xl font-bold ${kpis.noResponses > 0 ? "text-amber-700" : ""}`}>{kpis.noResponses}</p>
+            </button>
+            <div className="bg-muted/40 border border-border rounded-lg px-4 py-3">
+              <p className="text-xs text-muted-foreground mb-1">Avg Responses/Line</p>
+              <p className="text-2xl font-bold">{kpis.avgResponses}</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Toolbar */}
+      {/* Toolbar - Collapsible Search */}
       <div className="flex items-center gap-2">
-        <Input
-          placeholder="Search product, supplier, RFQ…"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="h-8 text-xs flex-1"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <LayoutGrid className="w-3.5 h-3.5" /> Grouping: {GROUPING_OPTIONS.find((o) => o.value === grouping)?.label}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {GROUPING_OPTIONS.map((opt) => (
-              <DropdownMenuCheckboxItem
-                key={opt.value}
-                checked={grouping === opt.value}
-                onCheckedChange={() => setGrouping(opt.value)}
+        {showSearch && (
+          <div className="relative flex-1">
+            <Input
+              autoFocus
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search product, supplier, RFQ…"
+              className="h-8 text-xs pr-7"
+            />
+            {searchText && (
+              <button
+                type="button"
+                onClick={() => setSearchText("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                {opt.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
+          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Search"
+        >
+          <Search className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Empty state */}
