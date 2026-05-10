@@ -1,0 +1,136 @@
+{
+  "name": "ProductCost",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "FK \u2192 Product. Always set."
+    },
+    "product_color_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColor. Set when cost is at colorway granularity."
+    },
+    "product_color_and_more_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductColorAndMore. Set when cost is at PCAM granularity."
+    },
+    "routing_step_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRoutingStep. The manufacturing/sourcing step this cost covers."
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier. The awarded supplier for this cost."
+    },
+    "project_id": {
+      "type": "string",
+      "description": "FK \u2192 Project. The project context in which this cost was awarded. Costs are project-scoped \u2014 same product/step/supplier in different projects are separate ProductCost records."
+    },
+    "supplier_currency_id": {
+      "type": "string",
+      "description": "FK \u2192 Currency. Currency the supplier quoted in."
+    },
+    "total_cost_supplier_ccy": {
+      "type": "number",
+      "description": "Per-unit cost in supplier currency."
+    },
+    "target_currency_id": {
+      "type": "string",
+      "description": "FK \u2192 Currency. The RFQ.target_currency_id at award time."
+    },
+    "total_cost_target_ccy": {
+      "type": "number",
+      "description": "Per-unit cost converted to target currency. Stored, not recomputed."
+    },
+    "conversion_rate_used": {
+      "type": "number",
+      "description": "Numerical rate applied at the conversion."
+    },
+    "conversion_rate_id": {
+      "type": "string",
+      "description": "FK \u2192 CurrencyConversionRate. The specific rate record applied (audit trail)."
+    },
+    "conversion_rate_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Effective date of the rate that was applied."
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Start of price validity (from the awarded RFQResponse)."
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "End of price validity."
+    },
+    "min_qty": {
+      "type": "number",
+      "description": "Minimum quantity at which this price applies."
+    },
+    "max_qty": {
+      "type": "number",
+      "description": "Maximum quantity at which this price applies."
+    },
+    "leadtime_days": {
+      "type": "number",
+      "description": "Lead time in days from the awarded response."
+    },
+    "source_rfq_response_id": {
+      "type": "string",
+      "description": "FK \u2192 RFQResponse. The response that was awarded to produce this cost record."
+    },
+    "source_rfq_id": {
+      "type": "string",
+      "description": "FK \u2192 RFQ. Denormalized for fast querying."
+    },
+    "awarded_at": {
+      "type": "string",
+      "description": "ISO datetime of the award action."
+    },
+    "awarded_by": {
+      "type": "string",
+      "description": "Email of the user who awarded."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "superseded",
+        "expired",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Lifecycle status. At most one active record per (project_id, product_id, product_color_id, product_color_and_more_id, routing_step_id, supplier_id) tuple. Enforced in award logic, not at schema level."
+    },
+    "superseded_by_id": {
+      "type": "string",
+      "description": "FK \u2192 ProductCost (self-ref). Points to the newer ProductCost that replaced this one. Set when status = superseded."
+    },
+    "superseded_at": {
+      "type": "string",
+      "description": "ISO datetime when this record was superseded."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal annotation."
+    }
+  },
+  "required": [
+    "product_id",
+    "routing_step_id",
+    "supplier_id",
+    "project_id",
+    "supplier_currency_id",
+    "total_cost_supplier_ccy",
+    "target_currency_id",
+    "total_cost_target_ccy",
+    "conversion_rate_used",
+    "source_rfq_response_id",
+    "source_rfq_id",
+    "awarded_at",
+    "awarded_by",
+    "status"
+  ]
+}
