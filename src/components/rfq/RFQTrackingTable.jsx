@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, ChevronUp, MoreVertical, ExternalLink, Trophy, ArrowRight, Loader2, Edit3, Trash2, Search, Pin, PinOff } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, MoreVertical, ExternalLink, Trophy, ArrowRight, Loader2, Edit3, Trash2, Search, Pin, PinOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -84,7 +84,6 @@ export default function RFQTrackingTable({
   const [colWidths, setColWidths] = useState({});
   const [pinnedCols, setPinnedCols] = useState([]);
   const [contextMenu, setContextMenu] = useState(null);
-  const resizeRef = useRef(null);
 
   // Load persistent column widths and pinned columns
   useEffect(() => {
@@ -166,17 +165,45 @@ export default function RFQTrackingTable({
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-       <div className="flex items-center justify-end gap-1.5">
-         <Button
-           size="sm"
-           variant="outline"
-           className="h-7 text-xs gap-1"
-           onClick={toggleAllExpand}
-         >
-           {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-           {allExpanded ? "Collapse" : "Expand"}
-         </Button>
-       </div>
+      <div className="flex items-center gap-1.5">
+        {showSearch && (
+          <div className="relative flex-1">
+            <Input
+              autoFocus
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search…"
+              className="h-7 text-xs"
+            />
+            {searchText && (
+              <button
+                type="button"
+                onClick={() => setSearchText("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
+          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Search"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs gap-1"
+          onClick={toggleAllExpand}
+        >
+          {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {allExpanded ? "Collapse" : "Expand"}
+        </Button>
+      </div>
 
       {/* Context Menu */}
       {contextMenu && (
@@ -202,14 +229,20 @@ export default function RFQTrackingTable({
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-20">
               <tr className="border-b border-border bg-muted/40">
-                <th className="w-8 px-3 py-2 text-left sticky left-0 z-30 bg-muted/40" />
-                {columns.map((col) => {
+                <th className="w-6 px-1 py-2 text-left sticky left-0 z-30 bg-muted/40" />
+                {columns.map((col, idx) => {
                   const isPinned = pinnedCols.includes(col.id);
+                  let left = 24;
+                  for (let i = 0; i < idx; i++) {
+                    if (pinnedCols.includes(columns[i].id)) {
+                      left += getWidth(columns[i]);
+                    }
+                  }
                   return (
                     <th
                       key={col.id}
-                      className={`px-4 py-2.5 text-xs font-semibold text-muted-foreground text-left cursor-context-menu select-none relative ${isPinned ? "sticky left-8 z-30 bg-muted/40" : ""}`}
-                      style={{ width: getWidth(col), minWidth: getWidth(col) }}
+                      className={`px-4 py-2.5 text-xs font-semibold text-muted-foreground text-left cursor-context-menu select-none relative ${isPinned ? "sticky z-30 bg-muted/40" : ""}`}
+                      style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}
                       onContextMenu={(e) => handleHeaderContextMenu(e, col.id)}
                     >
                       {col.label}
@@ -398,14 +431,9 @@ export default function RFQTrackingTable({
                             return (
                               <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 {response.is_awarded ? (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-mono">
-                                      {formatCurrency(response.total_cost_target_ccy, (rfqs.find((r) => r.id === line.rfq_id)?.target_currency_id))}
-                                    </span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-200 font-semibold">
-                                      Awarded ✓
-                                    </span>
-                                  </div>
+                                  <span className="text-xs font-mono">
+                                    {formatCurrency(response.total_cost_target_ccy, (rfqs.find((r) => r.id === line.rfq_id)?.target_currency_id))}
+                                  </span>
                                 ) : null}
                               </td>
                             );
