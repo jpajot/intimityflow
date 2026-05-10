@@ -45,6 +45,7 @@ import CurrencyConversionRates from './pages/CurrencyConversionRates';
 import AppConfiguration from './pages/AppConfiguration';
 import RFQRounds from './pages/RFQRounds';
 import BomComparePage from './pages/boms/BomComparePage';
+import ProjectRFQs from './pages/ProjectRFQs';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
 
@@ -93,6 +94,7 @@ const AuthenticatedApp = () => {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/projects/:id/rfqs" element={<ProjectRFQs />} />
         <Route path="/projects/:id/documents-to-parse" element={<ProjectDocuments />} />
         <Route path="/projects/:id/documents" element={<ProjectDocumentsRedirect />} />
         <Route path="/projects/:id/documents-to-parse/:docId" element={<DocumentStaging />} />
