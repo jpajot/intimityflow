@@ -1,0 +1,37 @@
+{
+  "name": "CurrencyConversionRate",
+  "type": "object",
+  "properties": {
+    "from_currency_id": {
+      "type": "string",
+      "description": "FK \u2192 Currency"
+    },
+    "to_currency_id": {
+      "type": "string",
+      "description": "FK \u2192 Currency"
+    },
+    "rate": {
+      "type": "number",
+      "description": "Multiplicative rate. amount_in_to_currency = amount * rate"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date from which this rate applies"
+    },
+    "source": {
+      "type": "string",
+      "description": "Origin of the rate, e.g. ECB, Manual, OpenExchangeRates"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "from_currency_id",
+    "to_currency_id",
+    "rate",
+    "effective_date"
+  ]
+}
