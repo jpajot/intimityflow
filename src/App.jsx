@@ -43,6 +43,7 @@ import BOMsLayout from './pages/boms/BOMsLayout';
 import Currencies from './pages/Currencies';
 import CurrencyConversionRates from './pages/CurrencyConversionRates';
 import AppConfiguration from './pages/AppConfiguration';
+import RFQRounds from './pages/RFQRounds';
 import BomComparePage from './pages/boms/BomComparePage';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
@@ -108,6 +109,7 @@ const AuthenticatedApp = () => {
         <Route path="/currencies" element={<Currencies />} />
         <Route path="/currency-rates" element={<CurrencyConversionRates />} />
         <Route path="/app-config" element={<AppConfiguration />} />
+        <Route path="/rfq-rounds" element={<RFQRounds />} />
         <Route path="/document-parsing-schemes" element={<DocumentParsingSchemes />} />
         <Route path="/entity-field-config" element={<EntityFieldConfigPage />} />
         <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />

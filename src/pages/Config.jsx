@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3, Coins, ArrowLeftRight, Settings2 } from "lucide-react";
+import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3, Coins, ArrowLeftRight, Settings2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const CONFIG_ITEMS = [
@@ -51,6 +51,12 @@ const CONFIG_ITEMS = [
     label: "App Configuration",
     description: "System-level key-value configuration for app-wide defaults",
     icon: Settings2,
+  },
+  {
+    path: "/rfq-rounds",
+    label: "RFQ Rounds",
+    description: "Define quotation round types used in RFQ workflows",
+    icon: RefreshCw,
   },
 ];
 
