@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, FileSearch, Loader2, Search, X } from "lucide-react";
+import { Plus, FileSearch, Loader2, Search, X, Filter } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
+import QuickFiltersPanel from "@/components/QuickFiltersPanel";
 import RFQCreateDialog from "@/components/rfq/RFQCreateDialog";
 
 const STATUS_COLORS = {
@@ -127,8 +128,9 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
 
   // Filters
   const [search, setSearch] = useState("");
-  const [filterStatuses, setFilterStatuses] = useState([]);
-  const [filterRounds, setFilterRounds] = useState([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const [quickFilters, setQuickFilters] = useState([]);
+  const [showQF, setShowQF] = useState(false);
 
   // View
   const [activeViewId, setActiveViewId] = useState("default");
@@ -162,22 +164,54 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
     return m;
   }, [currencies]);
 
-  // Register page options — Manage Views
+  // Register page options — Manage Views + Quick Filters
   const handleSelectView = useCallback((id) => setActiveViewId(id), []);
+  const qfFields = useMemo(() => [
+    { id: "round", label: "Round", getValue: (r) => roundMap[r.round_id]?.label || "" },
+    { id: "status", label: "Status", getValue: (r) => r.status || "" },
+    { id: "due_date_from", label: "Due Date From", getValue: (r) => r.due_date || "" },
+    { id: "due_date_to", label: "Due Date To", getValue: (r) => r.due_date || "" },
+    { id: "created_by", label: "Created By", getValue: (r) => r.created_by || "" },
+  ], [roundMap]);
+
   useEffect(() => {
     setOptions({
-      customContent: ({ close }) => (
-        <ViewDrawerContent
-          pageKey={PAGE_KEY}
-          activeViewId={activeViewId}
-          onSelectView={(id) => { handleSelectView(id); close(); }}
-          allFields={ALL_FIELDS}
-          currentViewType="list"
-        />
-      ),
+      items: [
+        {
+          label: "Quick Filters",
+          icon: Filter,
+          onClick: () => { setShowQF((v) => !v); },
+          custom: true,
+          badge: quickFilters.length > 0 ? quickFilters.length : null,
+        },
+        { divider: true },
+        {
+          label: "Manage Views",
+          icon: Search,
+          onClick: () => { /* view management */ },
+          custom: true,
+        },
+      ],
+      customContent: showQF
+        ? () => (
+            <QuickFiltersPanel
+              fields={qfFields}
+              activeFilters={quickFilters}
+              onApply={(f) => setQuickFilters(f)}
+            />
+          )
+        : () => (
+            <ViewDrawerContent
+              pageKey={PAGE_KEY}
+              activeViewId={activeViewId}
+              onSelectView={(id) => { handleSelectView(id); }}
+              allFields={ALL_FIELDS}
+              currentViewType="list"
+            />
+          ),
     });
     return () => setOptions(null);
-  }, [activeViewId, handleSelectView, setOptions]);
+  }, [activeViewId, handleSelectView, setOptions, showQF, quickFilters, qfFields]);
 
   // Apply view config
   useEffect(() => {
@@ -201,17 +235,21 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
         (r.name || "").toLowerCase().includes(q)
       );
     }
-    if (filterStatuses.length > 0) {
-      list = list.filter((r) => filterStatuses.includes(r.status));
-    }
-    if (filterRounds.length > 0) {
-      list = list.filter((r) => filterRounds.includes(r.round_id));
+    // Apply quick filters
+    if (quickFilters.length > 0) {
+      list = list.filter((r) =>
+        quickFilters.every((f) => {
+          if (f.field === "round") return r.round_id === f.value;
+          if (f.field === "status") return r.status === f.value;
+          if (f.field === "due_date_from") return r.due_date >= f.value;
+          if (f.field === "due_date_to") return r.due_date <= f.value;
+          if (f.field === "created_by") return r.created_by === f.value;
+          return true;
+        })
+      );
     }
     return list;
-  }, [rfqs, search, filterStatuses, filterRounds]);
-
-  const toggleStatus = (s) => setFilterStatuses((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
-  const toggleRound = (id) => setFilterRounds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  }, [rfqs, search, quickFilters]);
 
   const handleRowClick = (row) => {
     navigate(`/projects/${projectId}/rfqs/${row.id}`);
@@ -241,72 +279,36 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
         </Button>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search code or name…"
-            className="pl-8 h-8 text-xs w-52"
-          />
-          {search && (
-            <button type="button" onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Status filter */}
-        <div className="flex flex-wrap gap-1">
-          {STATUS_OPTIONS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => toggleStatus(s)}
-              className={`text-[10px] px-2 py-1 rounded border font-medium capitalize transition-colors ${
-                filterStatuses.includes(s)
-                  ? STATUS_COLORS[s] + " ring-1 ring-inset ring-current"
-                  : "bg-background border-border text-muted-foreground hover:border-primary/50"
-              }`}
-            >
-              {s.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-
-        {/* Round filter */}
-        {rounds.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {rounds.filter((r) => r.is_active).map((r) => (
+      {/* Collapsible Search Bar */}
+      <div className="flex items-center gap-1.5">
+        {showSearch && (
+          <div className="relative flex-1">
+            <Input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search code or name…"
+              className="h-7 text-xs pr-7"
+            />
+            {search && (
               <button
-                key={r.id}
                 type="button"
-                onClick={() => toggleRound(r.id)}
-                className={`text-[10px] px-2 py-1 rounded border font-medium transition-colors ${
-                  filterRounds.includes(r.id)
-                    ? "bg-primary/10 text-primary border-primary/30 ring-1 ring-inset ring-primary/30"
-                    : "bg-background border-border text-muted-foreground hover:border-primary/50"
-                }`}
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                {r.label}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
+            )}
           </div>
         )}
-
-        {/* Clear filters */}
-        {(filterStatuses.length > 0 || filterRounds.length > 0) && (
-          <button
-            type="button"
-            onClick={() => { setFilterStatuses([]); setFilterRounds([]); }}
-            className="text-xs text-muted-foreground hover:text-destructive underline-offset-2 hover:underline"
-          >
-            Clear filters
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearch(""); }}
+          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+          title="Search"
+        >
+          <Search className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Empty state */}
