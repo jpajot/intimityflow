@@ -26,9 +26,9 @@
       "type": "number",
       "description": "Cost for this operation only"
     },
-    "currency": {
+    "currency_id": {
       "type": "string",
-      "description": "LOV: currency"
+      "description": "FK \u2192 Currency. Currency in which unit_cost is denominated for this routing step."
     },
     "lead_time_days": {
       "type": "number"
