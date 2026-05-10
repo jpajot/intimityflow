@@ -57,9 +57,9 @@
       "type": "string",
       "description": "LOV: payment_terms"
     },
-    "currency_default": {
+    "currency_default_id": {
       "type": "string",
-      "description": "LOV: currency"
+      "description": "FK \u2192 Currency. Default invoicing/quoting currency for this supplier."
     },
     "status": {
       "type": "string",
