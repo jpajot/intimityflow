@@ -7,6 +7,7 @@ import { Plus, FileSearch, Loader2, Search, X } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
+import RFQCreateDialog from "@/components/rfq/RFQCreateDialog";
 
 const STATUS_COLORS = {
   draft:         "bg-gray-100 text-gray-600 border-gray-200",
@@ -122,6 +123,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
   const [rounds, setRounds] = useState([]);
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -215,6 +217,11 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
     navigate(`/projects/${projectId}/rfqs/${row.id}`);
   };
 
+  const handleCreated = (created) => {
+    setShowCreateDialog(false);
+    navigate(`/projects/${projectId}/rfqs/${created.id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -228,7 +235,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-base">RFQs</h2>
-        <Button size="sm" className="gap-1.5" onClick={() => navigate(`/projects/${projectId}/rfqs/new`)}>
+        <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
           <Plus className="w-3.5 h-3.5" />
           New RFQ
         </Button>
@@ -307,7 +314,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
         <div className="flex flex-col items-center justify-center py-20 gap-3 border border-dashed border-border rounded-xl text-muted-foreground">
           <FileSearch className="w-10 h-10 opacity-25" />
           <p className="text-sm font-medium">No RFQs yet for this project.</p>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/projects/${projectId}/rfqs/new`)}>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
             <Plus className="w-3.5 h-3.5" />
             New RFQ
           </Button>
@@ -331,6 +338,13 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
             onRowClick={handleRowClick}
           />
         </div>
+      )}
+      {showCreateDialog && (
+        <RFQCreateDialog
+          projectId={projectId}
+          onCreated={handleCreated}
+          onClose={() => setShowCreateDialog(false)}
+        />
       )}
     </div>
   );
