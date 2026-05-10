@@ -217,7 +217,11 @@ export default function RFQTrackingTable({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              togglePinColumn(contextMenu.colId);
+              const newPinned = pinnedCols.includes(contextMenu.colId)
+                ? pinnedCols.filter((c) => c !== contextMenu.colId)
+                : [...pinnedCols, contextMenu.colId];
+              setPinnedCols(newPinned);
+              saveColumnState(colWidths, newPinned);
               setContextMenu(null);
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
