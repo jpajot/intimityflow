@@ -15,6 +15,7 @@ import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersP
 import ViewDrawerContent from "@/components/ViewDrawerContent";
 import RFQLineBuilderDialog from "./RFQLineBuilderDialog";
 import AddResponseDialog from "./AddResponseDialog";
+import ResponsesPanel from "./ResponsesPanel";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
 // ── constants ──────────────────────────────────────────────────────────────────
@@ -67,7 +68,9 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   const { setOptions } = usePageOptions();
 
   const [showBuilder, setShowBuilder] = useState(false);
-  const [responseTarget, setResponseTarget] = useState(null); // line to add response to
+  const [responseTarget, setResponseTarget] = useState(null); // line to add response to (quick add from kebab)
+  const [panelLine, setPanelLine] = useState(null);           // line whose responses panel is open
+  const [responseCounts, setResponseCounts] = useState({});   // { [lineId]: count }
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -85,6 +88,19 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
   const pcamMap     = useMemo(() => Object.fromEntries(pcams.map((p) => [p.id, p])), [pcams]);
   const stepMap     = useMemo(() => Object.fromEntries(steps.map((s) => [s.id, s])), [steps]);
   const supplierMap = useMemo(() => Object.fromEntries(suppliers.map((s) => [s.id, s])), [suppliers]);
+
+  // ── Load response counts for all lines ───────────────────────────────────
+  useEffect(() => {
+    if (lines.length === 0) { setResponseCounts({}); return; }
+    base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }, "-created_date", 5000)
+      .then((responses) => {
+        const counts = {};
+        for (const r of responses) {
+          counts[r.rfq_line_id] = (counts[r.rfq_line_id] || 0) + 1;
+        }
+        setResponseCounts(counts);
+      });
+  }, [lines]);
 
   const getGranularity = (line) => {
     if (line.product_color_and_more_id) return "PCAM";
@@ -218,6 +234,28 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
       ),
     },
     {
+      id: "responses",
+      label: "Responses",
+      width: 110,
+      sortKey: (r) => responseCounts[r.id] || 0,
+      render: (r) => {
+        const count = responseCounts[r.id] || 0;
+        const isOpen = panelLine?.id === r.id;
+        return (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setPanelLine(isOpen ? null : r); }}
+            className={`flex items-center gap-1.5 transition-colors ${isOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-semibold border ${count > 0 ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-muted text-muted-foreground border-border"}`}>
+              {count}
+            </span>
+            <span className="text-[10px] underline underline-offset-2">View</span>
+          </button>
+        );
+      },
+    },
+    {
       id: "actions",
       label: "",
       width: 44,
@@ -247,7 +285,7 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
       },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [productMap, colorMap, pcamMap, stepMap, supplierMap, handleQtyBlur]);
+  ], [productMap, colorMap, pcamMap, stepMap, supplierMap, handleQtyBlur, responseCounts, panelLine]);
 
   // ── filter fields for QuickFiltersPanel ──────────────────────────────────────
   const qfFields = useMemo(() => makeQfFields(productMap, supplierMap, stepMap), [productMap, supplierMap, stepMap]);
@@ -287,6 +325,7 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
     { id: "supplier",   label: "Recipient Supplier" },
     { id: "qty",        label: "Fcst. Qty" },
     { id: "status",     label: "Status" },
+    { id: "responses",  label: "Responses" },
     { id: "actions",    label: "Actions" },
   ];
 
@@ -445,7 +484,29 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
         />
       )}
 
-      {/* ── Add Response Dialog ── */}
+      {/* ── Responses Side Panel ── */}
+      {panelLine && rfq && (
+        <ResponsesPanel
+          line={panelLine}
+          rfq={rfq}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          onClose={() => setPanelLine(null)}
+          onLineChanged={() => {
+            onLinesChange();
+            // Refresh counts after any change in the panel
+            base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }, "-created_date", 5000)
+              .then((responses) => {
+                const counts = {};
+                for (const r of responses) counts[r.rfq_line_id] = (counts[r.rfq_line_id] || 0) + 1;
+                setResponseCounts(counts);
+              });
+          }}
+        />
+      )}
+
+      {/* ── Add Response Dialog (from kebab menu) ── */}
       {responseTarget && rfq && (
         <AddResponseDialog
           line={responseTarget}

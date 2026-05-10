@@ -9,14 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, AlertTriangle } from "lucide-react";
 
-export default function AddResponseDialog({ line, rfq, productMap, stepMap, supplierMap, onSaved, onClose }) {
+export default function AddResponseDialog({ line, rfq, productMap, stepMap, supplierMap, existingResponse, onSaved, onClose }) {
   const { user } = useAuth();
+  const isEdit = !!existingResponse;
 
   const product  = productMap[line.product_id];
   const step     = stepMap[line.routing_step_id];
   const supplier = supplierMap[line.recipient_supplier_id];
 
-  const dialogTitle = `Add Response — ${product?.code || "?"} / Step ${step?.sequence}: ${(step?.step_type || "").replace(/_/g, " ")} / ${supplier?.name || "?"}`;
+  const dialogTitle = `${isEdit ? "Edit" : "Add"} Response — ${product?.code || "?"} / Step ${step?.sequence}: ${(step?.step_type || "").replace(/_/g, " ")} / ${supplier?.name || "?"}`;
 
   // ── Reference data ─────────────────────────────────────────────────────────
   const [currencies, setCurrencies] = useState([]);
@@ -55,10 +56,25 @@ export default function AddResponseDialog({ line, rfq, productMap, stepMap, supp
       setCurrencies(sorted);
       setTargetCurrency(tcList[0] || null);
 
-      // Default currency: supplier's default or rfq target
-      const sup = supplierMap[line.recipient_supplier_id];
-      const defaultCurrId = sup?.currency_default_id || rfq.target_currency_id || "";
-      set("supplier_currency_id", defaultCurrId);
+      if (isEdit && existingResponse) {
+        // Pre-fill form from existing response
+        setForm({
+          valid_from:               existingResponse.valid_from     || "",
+          valid_until:              existingResponse.valid_until    || "",
+          min_qty:                  existingResponse.min_qty        != null ? String(existingResponse.min_qty)     : "",
+          max_qty:                  existingResponse.max_qty        != null ? String(existingResponse.max_qty)     : "",
+          leadtime_days:            existingResponse.leadtime_days  != null ? String(existingResponse.leadtime_days) : "",
+          supplier_currency_id:     existingResponse.supplier_currency_id || "",
+          total_cost_supplier_ccy:  existingResponse.total_cost_supplier_ccy != null ? String(existingResponse.total_cost_supplier_ccy) : "",
+          supplier_notes:           existingResponse.supplier_notes  || "",
+          reviewer_notes:           existingResponse.reviewer_notes  || "",
+        });
+      } else {
+        // Default currency: supplier's default or rfq target
+        const sup = supplierMap[line.recipient_supplier_id];
+        const defaultCurrId = sup?.currency_default_id || rfq.target_currency_id || "";
+        set("supplier_currency_id", defaultCurrId);
+      }
       setLoadingInit(false);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,8 +128,7 @@ export default function AddResponseDialog({ line, rfq, productMap, stepMap, supp
     const totalSupplier = parseFloat(form.total_cost_supplier_ccy);
     const totalTarget = isSameCurrency ? totalSupplier : parseFloat((totalSupplier * rate).toFixed(targetDecimalPlaces));
 
-    await base44.entities.RFQResponse.create({
-      rfq_line_id:              line.id,
+    const payload = {
       valid_from:               form.valid_from  || null,
       valid_until:              form.valid_until || null,
       min_qty:                  form.min_qty     ? parseFloat(form.min_qty)     : null,
@@ -125,17 +140,25 @@ export default function AddResponseDialog({ line, rfq, productMap, stepMap, supp
       conversion_rate_used:     isSameCurrency ? 1 : rate,
       conversion_rate_id:       isSameCurrency ? null : (conversionRate?.id || null),
       conversion_rate_date:     isSameCurrency ? today : (conversionRate?.effective_date || null),
-      status:                   "submitted",
-      submitted_at:             now,
-      submitted_by:             user?.email || "",
-      is_awarded:               false,
       supplier_notes:           form.supplier_notes.trim() || null,
       reviewer_notes:           form.reviewer_notes.trim() || null,
-    });
+    };
 
-    // Update line status if still pending
-    if (line.status === "pending") {
-      await base44.entities.RFQLine.update(line.id, { status: "answered" });
+    if (isEdit) {
+      await base44.entities.RFQResponse.update(existingResponse.id, payload);
+    } else {
+      await base44.entities.RFQResponse.create({
+        ...payload,
+        rfq_line_id:  line.id,
+        status:       "submitted",
+        submitted_at: now,
+        submitted_by: user?.email || "",
+        is_awarded:   false,
+      });
+      // Update line status if still pending
+      if (line.status === "pending") {
+        await base44.entities.RFQLine.update(line.id, { status: "answered" });
+      }
     }
 
     setSubmitting(false);
@@ -305,7 +328,7 @@ export default function AddResponseDialog({ line, rfq, productMap, stepMap, supp
           <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={submitting || loadingInit} className="gap-2">
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Submit Response
+            {isEdit ? "Save Changes" : "Submit Response"}
           </Button>
         </DialogFooter>
       </DialogContent>
