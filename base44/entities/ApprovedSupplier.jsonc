@@ -26,9 +26,9 @@
     "unit_cost": {
       "type": "number"
     },
-    "currency": {
+    "currency_id": {
       "type": "string",
-      "description": "LOV: currency"
+      "description": "FK \u2192 Currency. Currency in which the unit_cost and price_break_tiers are denominated."
     },
     "moq": {
       "type": "number"
