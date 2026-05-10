@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Loader2, ChevronRight, MoreVertical, ExternalLink, Trophy, LayoutGrid, Download } from "lucide-react";
+import { Loader2, MoreVertical, ExternalLink, Trophy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -520,24 +520,8 @@ export default function RFQTrackingBoard() {
 
   return (
     <div className="space-y-4 pb-20">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1 text-xs text-muted-foreground flex-wrap px-1 pt-1 pb-3">
-        <Link to="/projects" className="hover:text-foreground transition-colors">Projects</Link>
-        <ChevronRight className="w-3 h-3 shrink-0" />
-        <span className="text-foreground font-medium">{rfqs[0]?.project_id?.slice?.(-8) || "Project"}</span>
-        <ChevronRight className="w-3 h-3 shrink-0" />
-        <span className="text-foreground font-medium flex items-center gap-1"><LayoutGrid className="w-3.5 h-3.5" /> RFQ Tracking</span>
-      </nav>
-
       {/* Header */}
-      <div className="bg-card border border-border rounded-xl px-5 py-4 space-y-1.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h1 className="text-2xl font-bold">RFQ Tracking</h1>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {filteredLines.length} lines across {new Set(filteredLines.map((l) => l.rfq_id)).size} RFQs · {kpis.awarded} awarded · {kpis.open} open · {lines.filter((l) => l.status === "pending").length} pending
-        </p>
-      </div>
+      <h2 className="font-semibold text-base">RFQ Tracking</h2>
 
       {/* KPI Cards - Collapsible */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
