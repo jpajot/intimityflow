@@ -166,39 +166,17 @@ export default function RFQTrackingTable({
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2">
-        {showSearch && (
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              autoFocus
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search supplier, product, RFQ…"
-              className="h-7 text-xs pl-8"
-            />
-          </div>
-        )}
-        <div className="ml-auto flex items-center gap-1.5">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs gap-1"
-            onClick={toggleAllExpand}
-          >
-            {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            {allExpanded ? "Collapse" : "Expand"}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
-          >
-            <Search className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+       <div className="flex items-center justify-end gap-1.5">
+         <Button
+           size="sm"
+           variant="outline"
+           className="h-7 text-xs gap-1"
+           onClick={toggleAllExpand}
+         >
+           {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+           {allExpanded ? "Collapse" : "Expand"}
+         </Button>
+       </div>
 
       {/* Context Menu */}
       {contextMenu && (
@@ -256,44 +234,50 @@ export default function RFQTrackingTable({
                   {/* Parent Row */}
                   <tr className="border-b border-border hover:bg-muted/20 transition-colors">
                     {/* Expand/Collapse */}
-                    <td className="px-3 py-3 text-left">
-                      {hasResponses ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleExpand(line.id)}
-                          className="p-0.5 rounded hover:bg-muted text-muted-foreground"
-                        >
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </button>
-                      ) : (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                disabled
-                                className="p-0.5 text-muted-foreground/40 cursor-not-allowed"
-                              >
-                                <ChevronRight className="w-4 h-4" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <p className="text-xs">No responses yet</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </td>
+                     <td className="w-6 px-1 py-3 text-left">
+                       {hasResponses ? (
+                         <button
+                           type="button"
+                           onClick={() => toggleExpand(line.id)}
+                           className="p-0 rounded hover:bg-muted text-muted-foreground"
+                         >
+                           {isExpanded ? (
+                             <ChevronDown className="w-4 h-4" />
+                           ) : (
+                             <ChevronRight className="w-4 h-4" />
+                           )}
+                         </button>
+                       ) : (
+                         <TooltipProvider>
+                           <Tooltip>
+                             <TooltipTrigger asChild>
+                               <button
+                                 type="button"
+                                 disabled
+                                 className="p-0 text-muted-foreground/40 cursor-not-allowed"
+                               >
+                                 <ChevronRight className="w-4 h-4" />
+                               </button>
+                             </TooltipTrigger>
+                             <TooltipContent side="right">
+                               <p className="text-xs">No responses yet</p>
+                             </TooltipContent>
+                           </Tooltip>
+                         </TooltipProvider>
+                       )}
+                     </td>
 
                     {/* Parent Row Cells */}
-                    {columns.map((col) => {
+                    {columns.map((col, idx) => {
                       const isPinned = pinnedCols.includes(col.id);
+                      let left = 24; // Start after expand column (w-6 = 24px)
+                      for (let i = 0; i < idx; i++) {
+                        if (pinnedCols.includes(columns[i].id)) {
+                          left += getWidth(columns[i]);
+                        }
+                      }
                       return (
-                        <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-card" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                        <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-card" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                           {col.renderParent ? col.renderParent(line) : col.render ? col.render(line) : "—"}
                         </td>
                       );
@@ -308,14 +292,20 @@ export default function RFQTrackingTable({
                         className="border-b border-border/50 bg-muted/5 hover:bg-muted/20 transition-colors border-l-2 border-l-slate-300"
                       >
                         {/* Expand chevron (empty for children) */}
-                        <td className="px-3 py-3" />
+                         <td className="w-6 px-1 py-3" />
 
                         {/* Response Cells */}
-                        {columns.map((col) => {
-                           const isPinned = pinnedCols.includes(col.id);
-                           if (col.id === "select") {
-                             return (
-                               <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                        {columns.map((col, idx) => {
+                          const isPinned = pinnedCols.includes(col.id);
+                          let left = 24;
+                          for (let i = 0; i < idx; i++) {
+                            if (pinnedCols.includes(columns[i].id)) {
+                              left += getWidth(columns[i]);
+                            }
+                          }
+                          if (col.id === "select") {
+                            return (
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 {isResponseAwardable(response) ? (
                                   <Checkbox
                                     checked={selectedResponseIds.has(response.id)}
@@ -333,19 +323,19 @@ export default function RFQTrackingTable({
 
                           if (col.id === "rfq") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "round") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "product") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 <div className="flex items-center gap-1.5 text-muted-foreground pl-4">
                                   <ArrowRight className="w-3.5 h-3.5" />
                                   <span className="text-xs">Response</span>
@@ -356,20 +346,20 @@ export default function RFQTrackingTable({
 
                           if (col.id === "granularity") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "step") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "supplier") {
                             const sup = supplierMap[line.recipient_supplier_id];
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 <span className="text-xs">{sup?.name || "—"}</span>
                               </td>
                             );
@@ -377,19 +367,19 @@ export default function RFQTrackingTable({
 
                           if (col.id === "qty") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "responses") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "best_quote") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 <span className="text-xs font-mono">
                                   {response.total_cost_supplier_ccy && response.supplier_currency_id ? (
                                     <>
@@ -406,7 +396,7 @@ export default function RFQTrackingTable({
 
                           if (col.id === "awarded_cost") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 {response.is_awarded ? (
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-mono">
@@ -423,7 +413,7 @@ export default function RFQTrackingTable({
 
                           if (col.id === "status") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium capitalize ${RESPONSE_STATUS_COLORS[response.status] || "bg-muted text-muted-foreground border-border"}`}>
                                   {(response.status || "").replace(/_/g, " ")}
                                 </span>
@@ -433,13 +423,13 @@ export default function RFQTrackingTable({
 
                           if (col.id === "rfq_status") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }} />
                             );
                           }
 
                           if (col.id === "actions") {
                             return (
-                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                                 <div className="flex items-center gap-1">
                                   {isResponseAwardable(response) && (
                                     <Button
@@ -490,12 +480,32 @@ export default function RFQTrackingTable({
                             );
                           }
 
+                          // Show response details for specific columns
+                          if (col.id === "qty") {
+                            return (
+                              <td key={col.id} className={`px-4 py-3 text-xs font-mono ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
+                                <div className="space-y-0.5">
+                                  {response.min_qty != null && <div>Min: {response.min_qty}</div>}
+                                  {response.max_qty != null && <div>Max: {response.max_qty}</div>}
+                                </div>
+                              </td>
+                            );
+                          }
+
+                          if (col.id === "responses") {
+                            return (
+                              <td key={col.id} className={`px-4 py-3 text-xs font-mono ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
+                                {response.leadtime_days ? `${response.leadtime_days}d` : "—"}
+                              </td>
+                            );
+                          }
+
                           return (
-                            <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                            <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col), left: isPinned ? `${left}px` : undefined }}>
                               —
                             </td>
                           );
-                        })}
+                          })}
                       </tr>
                       ))}
                       </>
