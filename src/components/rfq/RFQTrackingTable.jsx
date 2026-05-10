@@ -211,10 +211,15 @@ export default function RFQTrackingTable({
           style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999 }}
           className="bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px]"
           onMouseLeave={() => setContextMenu(null)}
+          onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
-            onClick={() => togglePinColumn(contextMenu.colId)}
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePinColumn(contextMenu.colId);
+              setContextMenu(null);
+            }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
           >
             {pinnedCols.includes(contextMenu.colId) ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
