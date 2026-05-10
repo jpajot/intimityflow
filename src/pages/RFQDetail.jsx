@@ -11,6 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import RFQEditHeaderDialog from "@/components/rfq/RFQEditHeaderDialog";
+import RFQCostsTab from "@/components/rfq/RFQCostsTab";
 
 // ── Feature flags ──────────────────────────────────────────────────────────────
 const FEATURE_RFQ_SAMPLE_REQUESTS = false;
@@ -47,6 +48,10 @@ export default function RFQDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Costs tab data
+  const [rfqLines, setRfqLines] = useState([]);
+  const [costsRefData, setCostsRefData] = useState({ products: [], colors: [], pcams: [], steps: [], suppliers: [] });
+
   const load = async () => {
     setLoading(true);
     const [rfqList, projList] = await Promise.all([
@@ -71,6 +76,19 @@ export default function RFQDetail() {
     ]);
     setRound(roundList[0] || null);
     setCurrency(currList[0] || null);
+
+    // Load costs tab data in parallel
+    const [linesData, products, colors, pcams, steps, suppliers] = await Promise.all([
+      base44.entities.RFQLine.filter({ rfq_id: rfqId }, "created_date", 1000),
+      base44.entities.Product.list("code", 2000),
+      base44.entities.ProductColor.list("-created_date", 2000),
+      base44.entities.ProductColorAndMore.list("-created_date", 2000),
+      base44.entities.SupplierRoutingStep.list("sequence", 2000),
+      base44.entities.Supplier.list("name", 500),
+    ]);
+    setRfqLines(linesData);
+    setCostsRefData({ products, colors, pcams, steps, suppliers });
+
     setLoading(false);
   };
 
@@ -211,9 +229,16 @@ export default function RFQDetail() {
       {/* Tab content */}
       <div>
         {activeTab === "costs" && (
-          <div className="flex items-center justify-center py-20 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
-            Costs builder — coming soon.
-          </div>
+          <RFQCostsTab
+            rfqId={rfqId}
+            projectId={projectId}
+            lines={rfqLines}
+            refData={costsRefData}
+            onLinesChange={() => {
+              base44.entities.RFQLine.filter({ rfq_id: rfqId }, "created_date", 1000)
+                .then(setRfqLines);
+            }}
+          />
         )}
       </div>
 
