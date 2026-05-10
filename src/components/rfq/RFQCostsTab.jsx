@@ -9,11 +9,12 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil } from "lucide-react";
+import { Plus, Search, X, MoreVertical, Trash2, Filter, Pencil, MessageSquarePlus } from "lucide-react";
 import DataTable from "@/components/DataTable";
 import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersPanel";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
 import RFQLineBuilderDialog from "./RFQLineBuilderDialog";
+import AddResponseDialog from "./AddResponseDialog";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
 // ── constants ──────────────────────────────────────────────────────────────────
@@ -61,11 +62,12 @@ function makeQfFields(productMap, supplierMap, stepMap) {
 }
 
 // ── main ───────────────────────────────────────────────────────────────────────
-export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesChange, locked = false }) {
+export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onLinesChange, locked = false }) {
   const { products, colors, pcams, steps, suppliers } = refData;
   const { setOptions } = usePageOptions();
 
   const [showBuilder, setShowBuilder] = useState(false);
+  const [responseTarget, setResponseTarget] = useState(null); // line to add response to
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -219,21 +221,30 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
       id: "actions",
       label: "",
       width: 44,
-      render: (r) => (!locked && r.status === "pending") ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
-              <MoreVertical className="w-3.5 h-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setDeleteTarget(r)} className="text-destructive focus:text-destructive">
-              <Trash2 className="w-3.5 h-3.5 mr-2" />
-              Remove line
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null,
+      render: (r) => {
+        const canDelete = !locked && r.status === "pending";
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                <MoreVertical className="w-3.5 h-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setResponseTarget(r)}>
+                <MessageSquarePlus className="w-3.5 h-3.5 mr-2" />
+                Add Response
+              </DropdownMenuItem>
+              {canDelete && (
+                <DropdownMenuItem onClick={() => setDeleteTarget(r)} className="text-destructive focus:text-destructive">
+                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                  Remove line
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [productMap, colorMap, pcamMap, stepMap, supplierMap, handleQtyBlur]);
@@ -431,6 +442,19 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
           rows={filteredLines}
           fixedColumns={pinnedCols}
           onPinColumn={handlePinColumn}
+        />
+      )}
+
+      {/* ── Add Response Dialog ── */}
+      {responseTarget && rfq && (
+        <AddResponseDialog
+          line={responseTarget}
+          rfq={rfq}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          onSaved={() => { setResponseTarget(null); onLinesChange(); }}
+          onClose={() => setResponseTarget(null)}
         />
       )}
 

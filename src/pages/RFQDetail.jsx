@@ -267,6 +267,7 @@ export default function RFQDetail() {
           <RFQCostsTab
             rfqId={rfqId}
             projectId={projectId}
+            rfq={rfq}
             lines={rfqLines}
             refData={costsRefData}
             locked={rfq.status !== "draft"}
