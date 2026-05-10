@@ -61,7 +61,7 @@ function makeQfFields(productMap, supplierMap, stepMap) {
 }
 
 // ── main ───────────────────────────────────────────────────────────────────────
-export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesChange }) {
+export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesChange, locked = false }) {
   const { products, colors, pcams, steps, suppliers } = refData;
   const { setOptions } = usePageOptions();
 
@@ -188,14 +188,18 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
       sortKey: (r) => r.forecasted_qty ?? 0,
       render: (r) => (
         <div className="flex items-center gap-1.5">
-          <Input
-            type="number"
-            min={0}
-            defaultValue={r.forecasted_qty ?? 0}
-            onBlur={(e) => handleQtyBlur(r, e.target.value)}
-            className="h-7 w-20 text-xs"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {locked ? (
+            <span className="text-xs font-mono">{r.forecasted_qty ?? 0}</span>
+          ) : (
+            <Input
+              type="number"
+              min={0}
+              defaultValue={r.forecasted_qty ?? 0}
+              onBlur={(e) => handleQtyBlur(r, e.target.value)}
+              className="h-7 w-20 text-xs"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
           <span className="text-[10px] text-muted-foreground shrink-0">{r.forecasted_qty_uom || ""}</span>
         </div>
       ),
@@ -215,7 +219,7 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
       id: "actions",
       label: "",
       width: 44,
-      render: (r) => r.status === "pending" ? (
+      render: (r) => (!locked && r.status === "pending") ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
@@ -291,12 +295,14 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
   useEffect(() => {
     setOptions({
       items: [
-        {
-          label: "Add Lines",
-          icon: Plus,
-          onClick: () => setShowBuilder(true),
-        },
-        { divider: true },
+        ...(!locked ? [
+          {
+            label: "Add Lines",
+            icon: Plus,
+            onClick: () => setShowBuilder(true),
+          },
+          { divider: true },
+        ] : []),
         {
           label: "Quick Filters",
           icon: Filter,
@@ -332,7 +338,7 @@ export default function RFQCostsTab({ rfqId, projectId, lines, refData, onLinesC
           )
         : null,
     });
-  }, [showQF, showManageViews, quickFilters, qfFields, activeViewId, toggleQF, toggleMV, setOptions, setShowBuilder]);
+  }, [showQF, showManageViews, quickFilters, qfFields, activeViewId, toggleQF, toggleMV, setOptions, setShowBuilder, locked]);
 
   // Clear options on unmount
   useEffect(() => () => setOptions(null), [setOptions]);

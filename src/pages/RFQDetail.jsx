@@ -13,6 +13,7 @@ import {
 import RFQEditHeaderDialog from "@/components/rfq/RFQEditHeaderDialog";
 import RFQCostsTab from "@/components/rfq/RFQCostsTab";
 import { usePageOptions } from "@/lib/PageOptionsContext";
+import { useAuth } from "@/lib/AuthContext";
 
 // ── Feature flags ──────────────────────────────────────────────────────────────
 const FEATURE_RFQ_SAMPLE_REQUESTS = false;
@@ -45,11 +46,14 @@ export default function RFQDetail() {
   const [notFound, setNotFound] = useState(false);
 
   const { setOptions } = usePageOptions();
+  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState("costs");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Costs tab data
   const [rfqLines, setRfqLines] = useState([]);
@@ -119,6 +123,18 @@ export default function RFQDetail() {
     }
   };
 
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    const updated = await base44.entities.RFQ.update(rfqId, {
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+      submitted_by: user?.email || "",
+    });
+    setRfq((prev) => ({ ...prev, ...updated }));
+    setShowSubmitConfirm(false);
+    setSubmitting(false);
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     // Cascade: get lines → get responses → delete responses → delete lines → delete RFQ
@@ -183,6 +199,17 @@ export default function RFQDetail() {
             <span className={`text-[10px] px-2 py-0.5 rounded border font-medium capitalize ${STATUS_COLORS[rfq.status] || "bg-muted text-muted-foreground border-border"}`}>
               {(rfq.status || "").replace(/_/g, " ")}
             </span>
+            {rfq.status === "draft" && (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                disabled={rfqLines.length === 0}
+                title={rfqLines.length === 0 ? "Add at least one line first" : undefined}
+                onClick={() => setShowSubmitConfirm(true)}
+              >
+                Submit RFQ
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -242,6 +269,7 @@ export default function RFQDetail() {
             projectId={projectId}
             lines={rfqLines}
             refData={costsRefData}
+            locked={rfq.status !== "draft"}
             onLinesChange={() => {
               base44.entities.RFQLine.filter({ rfq_id: rfqId }, "created_date", 1000)
                 .then(setRfqLines);
@@ -258,6 +286,38 @@ export default function RFQDetail() {
           onClose={() => setShowEditDialog(false)}
         />
       )}
+
+      {/* Submit Confirm */}
+      <AlertDialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit RFQ {rfq?.code}?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>
+                  This RFQ will be sent to{" "}
+                  <strong className="text-foreground">
+                    {new Set(rfqLines.map((l) => l.recipient_supplier_id)).size} supplier(s)
+                  </strong>{" "}
+                  across{" "}
+                  <strong className="text-foreground">{rfqLines.length} line(s)</strong>.
+                </p>
+                <p>Once submitted, you can no longer add or remove lines.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirm */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

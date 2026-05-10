@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 
 export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
+  const isDraft = rfq.status === "draft";
   const [rounds, setRounds] = useState([]);
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +43,9 @@ export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim())          errs.name               = "Name is required.";
-    if (!form.round_id)             errs.round_id           = "Round is required.";
-    if (!form.target_currency_id)   errs.target_currency_id = "Target currency is required.";
+    if (!form.name.trim())                        errs.name               = "Name is required.";
+    if (isDraft && !form.round_id)                errs.round_id           = "Round is required.";
+    if (isDraft && !form.target_currency_id)      errs.target_currency_id = "Target currency is required.";
     return errs;
   };
 
@@ -54,9 +55,8 @@ export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
     setSaving(true);
     const updated = await base44.entities.RFQ.update(rfq.id, {
       name:               form.name.trim(),
-      round_id:           form.round_id,
+      ...(isDraft && { round_id: form.round_id, target_currency_id: form.target_currency_id }),
       due_date:           form.due_date || null,
-      target_currency_id: form.target_currency_id,
       description:        form.description.trim() || null,
       notes:              form.notes.trim()        || null,
     });
@@ -90,18 +90,22 @@ export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
 
             {/* Round */}
             <div className="space-y-1.5">
-              <Label className="text-xs">Round <span className="text-destructive">*</span></Label>
-              <Select value={form.round_id || "none"} onValueChange={(v) => set("round_id", v === "none" ? "" : v)}>
-                <SelectTrigger className={errors.round_id ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select round…" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" disabled>Select round…</SelectItem>
-                  {rounds.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Round {isDraft && <span className="text-destructive">*</span>}</Label>
+              {isDraft ? (
+                <Select value={form.round_id || "none"} onValueChange={(v) => set("round_id", v === "none" ? "" : v)}>
+                  <SelectTrigger className={errors.round_id ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select round…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" disabled>Select round…</SelectItem>
+                    {rounds.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground px-1">{rounds.find((r) => r.id === form.round_id)?.label || "—"} <span className="text-xs text-muted-foreground/60">(locked after submission)</span></p>
+              )}
               {errors.round_id && <p className="text-xs text-destructive">{errors.round_id}</p>}
             </div>
 
@@ -117,18 +121,22 @@ export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
 
             {/* Target Currency */}
             <div className="space-y-1.5">
-              <Label className="text-xs">Target Currency <span className="text-destructive">*</span></Label>
-              <Select value={form.target_currency_id || "none"} onValueChange={(v) => set("target_currency_id", v === "none" ? "" : v)}>
-                <SelectTrigger className={errors.target_currency_id ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select currency…" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" disabled>Select currency…</SelectItem>
-                  {currencies.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Target Currency {isDraft && <span className="text-destructive">*</span>}</Label>
+              {isDraft ? (
+                <Select value={form.target_currency_id || "none"} onValueChange={(v) => set("target_currency_id", v === "none" ? "" : v)}>
+                  <SelectTrigger className={errors.target_currency_id ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select currency…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" disabled>Select currency…</SelectItem>
+                    {currencies.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground px-1">{currencies.find((c) => c.id === form.target_currency_id)?.code || "—"} <span className="text-xs text-muted-foreground/60">(locked after submission)</span></p>
+              )}
               {errors.target_currency_id && <p className="text-xs text-destructive">{errors.target_currency_id}</p>}
             </div>
 
