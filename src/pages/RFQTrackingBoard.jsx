@@ -4,18 +4,17 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, MoreVertical, ExternalLink, Trophy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-  DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import DataTable from "@/components/DataTable";
-import ResponsesPanel from "@/components/rfq/ResponsesPanel";
-import BulkAwardDialog from "@/components/rfq/BulkAwardDialog";
+import RFQTrackingTable from "@/components/rfq/RFQTrackingTable";
+import BulkAwardDialogResponses from "@/components/rfq/BulkAwardDialogResponses";
+import AddResponseDialog from "@/components/rfq/AddResponseDialog";
+import AwardConfirmDialog from "@/components/rfq/AwardConfirmDialog";
 import QuickFiltersPanel, { applyQuickFilters } from "@/components/QuickFiltersPanel";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
 import { usePageOptions } from "@/lib/PageOptionsContext";
@@ -50,9 +49,13 @@ export default function RFQTrackingBoard() {
     products: [], colors: [], pcams: [], steps: [], suppliers: [], currencies: [], rounds: [],
   });
 
-  const [panelLine, setPanelLine] = useState(null);
-  const [selectedLineIds, setSelectedLineIds] = useState(new Set());
+  const [selectedResponseIds, setSelectedResponseIds] = useState(new Set());
   const [showBulkAwardDialog, setShowBulkAwardDialog] = useState(false);
+  const [editingResponse, setEditingResponse] = useState(null);
+  const [deletingResponse, setDeletingResponse] = useState(null);
+  const [awardingResponse, setAwardingResponse] = useState(null);
+  const [awardingLine, setAwardingLine] = useState(null);
+  const [priorCost, setPriorCost] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showKpis, setShowKpis] = useState(true);
@@ -227,17 +230,7 @@ export default function RFQTrackingBoard() {
       id: "select",
       label: "",
       width: 40,
-      render: (r) => (
-        <Checkbox
-          checked={selectedLineIds.has(r.id)}
-          onCheckedChange={(checked) => {
-            const next = new Set(selectedLineIds);
-            checked ? next.add(r.id) : next.delete(r.id);
-            setSelectedLineIds(next);
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
-      ),
+      renderParent: () => null,
     },
     {
       id: "rfq",
@@ -348,15 +341,9 @@ export default function RFQTrackingBoard() {
       render: (r) => {
         const count = allResponses.filter((resp) => resp.rfq_line_id === r.id).length;
         return (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setPanelLine(r); }}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-semibold border ${count > 0 ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-muted text-muted-foreground border-border"}`}>
-              {count}
-            </span>
-          </button>
+          <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-semibold border ${count > 0 ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-muted text-muted-foreground border-border"}`}>
+            {count}
+          </span>
         );
       },
     },
@@ -421,11 +408,28 @@ export default function RFQTrackingBoard() {
               <DropdownMenuItem onClick={() => { navigate(`/projects/${projectId}/rfqs/${r.rfq_id}`); }}>
                 <ExternalLink className="w-3.5 h-3.5 mr-2" /> View RFQ
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setPanelLine(r)}>
-                Open Responses
-              </DropdownMenuItem>
               {canAward && (
-                <DropdownMenuItem onClick={() => { /* award logic will be in ResponsesPanel */ }}>
+                <DropdownMenuItem onClick={() => {
+                  setAwardingResponse(submittedResponses[0]);
+                  setAwardingLine(r);
+                  base44.entities.ProductCost.filter({
+                    status: 'active',
+                    project_id: rfqs.find((q) => q.id === r.rfq_id)?.project_id,
+                    product_id: r.product_id,
+                    product_color_id: r.product_color_id || null,
+                    product_color_and_more_id: r.product_color_and_more_id || null,
+                    routing_step_id: r.routing_step_id,
+                    supplier_id: r.recipient_supplier_id,
+                  }).then((priors) => {
+                    if (priors.length > 0) {
+                      base44.entities.RFQ.filter({ id: priors[0].source_rfq_id }).then((rfqList) => {
+                        setPriorCost({ ...priors[0], source_rfq: rfqList[0] });
+                      });
+                    } else {
+                      setPriorCost(null);
+                    }
+                  });
+                }}>
                   <Trophy className="w-3.5 h-3.5 mr-2" /> Award
                 </DropdownMenuItem>
               )}
@@ -449,11 +453,11 @@ export default function RFQTrackingBoard() {
     setOptions({
       items: [
         {
-          label: "Bulk Award",
+          label: `Award ${selectedResponseIds.size} response${selectedResponseIds.size !== 1 ? "s" : ""}`,
           icon: Trophy,
           onClick: () => setShowBulkAwardDialog(true),
-          badge: selectedLineIds.size > 0 ? selectedLineIds.size : null,
-          disabled: selectedLineIds.size === 0,
+          badge: selectedResponseIds.size > 0 ? selectedResponseIds.size : null,
+          disabled: selectedResponseIds.size === 0,
         },
         {
           label: "Quick Filters",
@@ -508,7 +512,7 @@ export default function RFQTrackingBoard() {
           )
         : null,
     });
-  }, [setOptions, selectedLineIds, showQF, showViewMenu, quickFilters, activeViewId, rfqs, productMap, supplierMap]);
+  }, [setOptions, selectedResponseIds, showQF, showViewMenu, quickFilters, activeViewId, rfqs, productMap, supplierMap]);
 
   if (loading) {
     return (
@@ -609,24 +613,118 @@ export default function RFQTrackingBoard() {
 
       {/* Data Table */}
       {filteredLines.length > 0 && (
-        <DataTable
-          columns={columns}
-          rows={filteredLines}
-          fixedColumns={["select", "product", "step"]}
-        />
-      )}
-
-      {/* Responses Side Panel */}
-      {panelLine && (
-        <ResponsesPanel
-          line={panelLine}
-          rfq={rfqs.find((r) => r.id === panelLine.rfq_id)}
+        <RFQTrackingTable
+          lines={filteredLines}
+          responses={allResponses}
+          rfqs={rfqs}
           productMap={productMap}
           stepMap={stepMap}
           supplierMap={supplierMap}
-          onClose={() => setPanelLine(null)}
-          onLineChanged={() => {
-            // Reload data
+          currencyMap={currencyMap}
+          columns={columns}
+          selectedResponseIds={selectedResponseIds}
+          onSelectedResponsesChange={setSelectedResponseIds}
+          onEditResponse={setEditingResponse}
+          onDeleteResponse={setDeletingResponse}
+          onAwardResponse={(response, line) => {
+            setAwardingResponse(response);
+            setAwardingLine(line);
+            base44.entities.ProductCost.filter({
+              status: 'active',
+              project_id: rfqs.find((q) => q.id === line.rfq_id)?.project_id,
+              product_id: line.product_id,
+              product_color_id: line.product_color_id || null,
+              product_color_and_more_id: line.product_color_and_more_id || null,
+              routing_step_id: line.routing_step_id,
+              supplier_id: line.recipient_supplier_id,
+            }).then((priors) => {
+              if (priors.length > 0) {
+                base44.entities.RFQ.filter({ id: priors[0].source_rfq_id }).then((rfqList) => {
+                  setPriorCost({ ...priors[0], source_rfq: rfqList[0] });
+                });
+              } else {
+                setPriorCost(null);
+              }
+            });
+          }}
+          onNavigate={navigate}
+          projectId={projectId}
+        />
+      )}
+
+      {/* Edit Response Dialog */}
+      {editingResponse && (
+        <AddResponseDialog
+          line={lines.find((l) => l.id === editingResponse.rfq_line_id)}
+          rfq={rfqs.find((r) => r.id === lines.find((l) => l.id === editingResponse.rfq_line_id)?.rfq_id)}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          existingResponse={editingResponse}
+          onSaved={() => {
+            setEditingResponse(null);
+            const rfqIds = rfqs.map((r) => r.id);
+            Promise.all([
+              base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
+              base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }),
+            ]).then(([newLines, newResponses]) => {
+              setLines(newLines);
+              setAllResponses(newResponses);
+            });
+          }}
+          onClose={() => setEditingResponse(null)}
+        />
+      )}
+
+      {/* Delete Response Confirm */}
+      {deletingResponse && (
+        <AlertDialog open={!!deletingResponse} onOpenChange={(o) => { if (!o) setDeletingResponse(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this response?</AlertDialogTitle>
+              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  await base44.entities.RFQResponse.delete(deletingResponse.id);
+                  setDeletingResponse(null);
+                  const rfqIds = rfqs.map((r) => r.id);
+                  Promise.all([
+                    base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
+                    base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }),
+                  ]).then(([newLines, newResponses]) => {
+                    setLines(newLines);
+                    setAllResponses(newResponses);
+                  });
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Award Response Dialog */}
+      {awardingResponse && awardingLine && (
+        <AwardConfirmDialog
+          open={!!awardingResponse}
+          onOpenChange={(open) => { if (!open) { setAwardingResponse(null); setAwardingLine(null); setPriorCost(null); } }}
+          response={awardingResponse}
+          line={awardingLine}
+          rfq={rfqs.find((r) => r.id === awardingLine.rfq_id)}
+          productMap={productMap}
+          stepMap={stepMap}
+          supplierMap={supplierMap}
+          currencyMap={currencyMap}
+          priorCost={priorCost}
+          onConfirmed={() => {
+            setAwardingResponse(null);
+            setAwardingLine(null);
+            setPriorCost(null);
             const rfqIds = rfqs.map((r) => r.id);
             Promise.all([
               base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
@@ -641,19 +739,19 @@ export default function RFQTrackingBoard() {
 
       {/* Bulk Award Dialog */}
       {showBulkAwardDialog && (
-        <BulkAwardDialog
+        <BulkAwardDialogResponses
           open={showBulkAwardDialog}
           onOpenChange={setShowBulkAwardDialog}
-          selectedLineIds={Array.from(selectedLineIds)}
-          lines={lines}
+          selectedResponseIds={Array.from(selectedResponseIds)}
           responses={allResponses}
-          rfq={null}
+          lines={lines}
+          rfqs={rfqs}
           productMap={productMap}
           stepMap={stepMap}
           supplierMap={supplierMap}
           currencyMap={currencyMap}
           onConfirmed={() => {
-            setSelectedLineIds(new Set());
+            setSelectedResponseIds(new Set());
             const rfqIds = rfqs.map((r) => r.id);
             Promise.all([
               base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
