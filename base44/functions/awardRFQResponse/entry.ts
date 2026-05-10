@@ -35,10 +35,10 @@ Deno.serve(async (req) => {
       rfq_line_id,
       id: { $ne: response_id },
     });
-    const toReject = siblings.filter((s) => ['submitted', 'under_review', 'draft'].includes(s.status));
+    const toReject = siblings.filter((s) => ['submitted', 'under_review', 'draft', 'awarded'].includes(s.status));
     await Promise.all(
       toReject.map((s) =>
-        base44.entities.RFQResponse.update(s.id, { status: 'rejected' })
+        base44.entities.RFQResponse.update(s.id, { status: 'rejected', is_awarded: false })
       )
     );
 
