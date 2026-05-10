@@ -40,6 +40,7 @@ import PendingReviewsPage from './pages/change-management/PendingReviewsPage';
 import ChangeManagementLayout from './pages/change-management/ChangeManagementLayout';
 import EcoDetailPage from './pages/change-management/EcoDetailPage';
 import BOMsLayout from './pages/boms/BOMsLayout';
+import Currencies from './pages/Currencies';
 import BomComparePage from './pages/boms/BomComparePage';
 
 const ProjectDocumentsRedirect = () => { const { id } = useParams(); return <Navigate to={`/projects/${id}`} replace />; };
@@ -102,6 +103,7 @@ const AuthenticatedApp = () => {
         <Route path="/code-generators" element={<SystemCodeGeneratorLibrary />} />
         <Route path="/translations" element={<Translations />} />
         <Route path="/config" element={<Config />} />
+        <Route path="/currencies" element={<Currencies />} />
         <Route path="/document-parsing-schemes" element={<DocumentParsingSchemes />} />
         <Route path="/entity-field-config" element={<EntityFieldConfigPage />} />
         <Route path="/projects/:projectId/boards/:boardId" element={<BoardEditor />} />

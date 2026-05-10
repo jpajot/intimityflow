@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3 } from "lucide-react";
+import { Search, Languages, ListCollapse, Hash, ChevronRight, FileJson, Grid3x3, Coins } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const CONFIG_ITEMS = [
@@ -33,6 +33,12 @@ const CONFIG_ITEMS = [
     label: "Document Parsing Schemes",
     description: "Define AI extraction prompts and JSON schemas per document type",
     icon: FileJson,
+  },
+  {
+    path: "/currencies",
+    label: "Currencies",
+    description: "Manage ISO 4217 currencies used across cost and sourcing fields",
+    icon: Coins,
   },
 ];
 

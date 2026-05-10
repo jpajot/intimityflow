@@ -1,0 +1,37 @@
+{
+  "name": "Currency",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "ISO 4217 code, 3 letters uppercase, e.g. EUR, USD, CNY. Must be unique."
+    },
+    "name": {
+      "type": "string",
+      "description": "Full name, e.g. Euro, US Dollar"
+    },
+    "symbol": {
+      "type": "string",
+      "description": "Display symbol, e.g. \u20ac, $, \u00a5"
+    },
+    "decimal_places": {
+      "type": "number",
+      "description": "Standard number of decimals for this currency",
+      "default": 2
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Inactive currencies are hidden from selectors",
+      "default": true
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "code",
+    "name",
+    "symbol"
+  ]
+}
