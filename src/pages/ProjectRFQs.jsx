@@ -270,45 +270,43 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Header with inline search */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-base">RFQs</h2>
-        <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
-          <Plus className="w-3.5 h-3.5" />
-          New RFQ
-        </Button>
-      </div>
-
-      {/* Collapsible Search Bar */}
-      <div className="flex items-center gap-1.5">
-        {showSearch && (
-          <div className="relative flex-1">
-            <Input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search code or name…"
-              className="h-7 text-xs pr-7"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearch(""); }}
-          className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-          title="Search"
-        >
-          <Search className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {showSearch && (
+            <div className="relative w-52">
+              <Input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search code or name…"
+                className="h-7 text-xs pr-7"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearch(""); }}
+            className={`p-1.5 rounded-md transition-colors border ${showSearch ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+            title="Search"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+          <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="w-3.5 h-3.5" />
+            New RFQ
+          </Button>
+        </div>
       </div>
 
       {/* Empty state */}
