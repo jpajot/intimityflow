@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
-import { ChevronDown, ChevronRight, MoreVertical, ExternalLink, Trophy, ArrowRight, Loader2, Edit3, Trash2 } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { ChevronDown, ChevronRight, ChevronUp, MoreVertical, ExternalLink, Trophy, ArrowRight, Loader2, Edit3, Trash2, Search, Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -28,6 +29,37 @@ const RESPONSE_STATUS_COLORS = {
   superseded: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
+function ResizeHandle({ colId, onResize }) {
+  const startX = useRef(null);
+
+  const startResize = (clientX) => {
+    startX.current = clientX;
+    const onMove = (e) => {
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      onResize(x - startX.current);
+      startX.current = x;
+    };
+    const onEnd = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onMove, { passive: true });
+    document.addEventListener("touchend", onEnd);
+  };
+
+  return (
+    <div
+      className="absolute top-0 right-0 h-full w-1 cursor-col-resize group/resize hover:bg-primary transition-colors"
+      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); startResize(e.clientX); }}
+      onTouchStart={(e) => { e.stopPropagation(); startResize(e.touches[0].clientX); }}
+    />
+  );
+}
+
 export default function RFQTrackingTable({
   lines,
   responses,
@@ -46,6 +78,31 @@ export default function RFQTrackingTable({
   projectId,
 }) {
   const [expandedLineIds, setExpandedLineIds] = useState(new Set());
+  const [allExpanded, setAllExpanded] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [colWidths, setColWidths] = useState({});
+  const [pinnedCols, setPinnedCols] = useState([]);
+  const [contextMenu, setContextMenu] = useState(null);
+  const resizeRef = useRef(null);
+
+  // Load persistent column widths and pinned columns
+  useEffect(() => {
+    const saved = localStorage.getItem("rfq_tracking_table_state");
+    if (saved) {
+      const { widths, pinned } = JSON.parse(saved);
+      setColWidths(widths || {});
+      setPinnedCols(pinned || []);
+    }
+  }, []);
+
+  // Save column state
+  const saveColumnState = (newWidths, newPinned) => {
+    localStorage.setItem("rfq_tracking_table_state", JSON.stringify({
+      widths: newWidths,
+      pinned: newPinned,
+    }));
+  };
 
   const toggleExpand = (lineId) => {
     setExpandedLineIds((prev) => {
@@ -55,8 +112,14 @@ export default function RFQTrackingTable({
     });
   };
 
-  const expandAll = () => setExpandedLineIds(new Set(lines.map((l) => l.id)));
-  const collapseAll = () => setExpandedLineIds(new Set());
+  const toggleAllExpand = () => {
+    if (allExpanded) {
+      setExpandedLineIds(new Set());
+    } else {
+      setExpandedLineIds(new Set(lines.map((l) => l.id)));
+    }
+    setAllExpanded(!allExpanded);
+  };
 
   const getLineResponses = (lineId) => responses.filter((r) => r.rfq_line_id === lineId);
 
@@ -69,47 +132,121 @@ export default function RFQTrackingTable({
     return `${amount.toFixed(curr?.decimal_places ?? 2)} ${curr?.code || "?"}`;
   };
 
+  const handleHeaderContextMenu = (e, colId) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, colId });
+  };
+
+  const togglePinColumn = (colId) => {
+    const newPinned = pinnedCols.includes(colId)
+      ? pinnedCols.filter((c) => c !== colId)
+      : [...pinnedCols, colId];
+    setPinnedCols(newPinned);
+    saveColumnState(colWidths, newPinned);
+    setContextMenu(null);
+  };
+
+  const getWidth = (col) => colWidths[col.id] ?? col.width ?? 120;
+
+  const filteredLines = useMemo(() => {
+    if (!searchText.trim()) return lines;
+    const q = searchText.toLowerCase();
+    return lines.filter((l) => {
+      const sup = supplierMap[l.recipient_supplier_id];
+      const prod = productMap[l.product_id];
+      const rfq = rfqs.find((r) => r.id === l.rfq_id);
+      return (
+        (sup?.name || "").toLowerCase().includes(q) ||
+        (prod?.name || "").toLowerCase().includes(q) ||
+        (rfq?.code || "").toLowerCase().includes(q)
+      );
+    });
+  }, [lines, searchText, supplierMap, productMap, rfqs]);
+
   return (
-    <div className="space-y-2">
-      {/* Expand/Collapse All Buttons */}
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1.5 text-xs h-7"
-          onClick={expandAll}
-        >
-          <ChevronDown className="w-3 h-3" /> Expand All
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1.5 text-xs h-7"
-          onClick={collapseAll}
-        >
-          <ChevronRight className="w-3 h-3" /> Collapse All
-        </Button>
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-2">
+        {showSearch && (
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search supplier, product, RFQ…"
+              className="h-7 text-xs pl-8"
+            />
+          </div>
+        )}
+        <div className="ml-auto flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs gap-1"
+            onClick={toggleAllExpand}
+          >
+            {allExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {allExpanded ? "Collapse" : "Expand"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0"
+            onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearchText(""); }}
+          >
+            <Search className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999 }}
+          className="bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px]"
+          onMouseLeave={() => setContextMenu(null)}
+        >
+          <button
+            type="button"
+            onClick={() => togglePinColumn(contextMenu.colId)}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+          >
+            {pinnedCols.includes(contextMenu.colId) ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+            {pinnedCols.includes(contextMenu.colId) ? "Unpin" : "Pin"}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="border border-border rounded-lg overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40">
-              <th className="w-8 px-3 py-2 text-left" />
-              {columns.map((col) => (
-                <th
-                  key={col.id}
-                  className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-left"
-                  style={{ width: col.width }}
-                >
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((line) => {
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-20">
+              <tr className="border-b border-border bg-muted/40">
+                <th className="w-8 px-3 py-2 text-left sticky left-0 z-30 bg-muted/40" />
+                {columns.map((col) => {
+                  const isPinned = pinnedCols.includes(col.id);
+                  return (
+                    <th
+                      key={col.id}
+                      className={`px-4 py-2.5 text-xs font-semibold text-muted-foreground text-left cursor-context-menu select-none relative ${isPinned ? "sticky left-8 z-30 bg-muted/40" : ""}`}
+                      style={{ width: getWidth(col), minWidth: getWidth(col) }}
+                      onContextMenu={(e) => handleHeaderContextMenu(e, col.id)}
+                    >
+                      {col.label}
+                      <ResizeHandle colId={col.id} onResize={(delta) => {
+                        const newWidths = { ...colWidths, [col.id]: Math.max(50, (colWidths[col.id] ?? col.width ?? 120) + delta) };
+                        setColWidths(newWidths);
+                        saveColumnState(newWidths, pinnedCols);
+                      }} />
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLines.map((line) => {
               const lineResponses = getLineResponses(line.id);
               const isExpanded = expandedLineIds.has(line.id);
               const hasResponses = lineResponses.length > 0;
@@ -153,11 +290,14 @@ export default function RFQTrackingTable({
                     </td>
 
                     {/* Parent Row Cells */}
-                    {columns.map((col) => (
-                      <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
-                        {col.renderParent ? col.renderParent(line) : col.render ? col.render(line) : "—"}
-                      </td>
-                    ))}
+                    {columns.map((col) => {
+                      const isPinned = pinnedCols.includes(col.id);
+                      return (
+                        <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-card" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
+                          {col.renderParent ? col.renderParent(line) : col.render ? col.render(line) : "—"}
+                        </td>
+                      );
+                    })}
                   </tr>
 
                   {/* Child Rows (Responses) */}
@@ -172,9 +312,10 @@ export default function RFQTrackingTable({
 
                         {/* Response Cells */}
                         {columns.map((col) => {
-                          if (col.id === "select") {
-                            return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                           const isPinned = pinnedCols.includes(col.id);
+                           if (col.id === "select") {
+                             return (
+                               <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 {isResponseAwardable(response) ? (
                                   <Checkbox
                                     checked={selectedResponseIds.has(response.id)}
@@ -192,19 +333,19 @@ export default function RFQTrackingTable({
 
                           if (col.id === "rfq") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "round") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "product") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 <div className="flex items-center gap-1.5 text-muted-foreground pl-4">
                                   <ArrowRight className="w-3.5 h-3.5" />
                                   <span className="text-xs">Response</span>
@@ -215,20 +356,20 @@ export default function RFQTrackingTable({
 
                           if (col.id === "granularity") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "step") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "supplier") {
                             const sup = supplierMap[line.recipient_supplier_id];
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 <span className="text-xs">{sup?.name || "—"}</span>
                               </td>
                             );
@@ -236,19 +377,19 @@ export default function RFQTrackingTable({
 
                           if (col.id === "qty") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "responses") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "best_quote") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 <span className="text-xs font-mono">
                                   {response.total_cost_supplier_ccy && response.supplier_currency_id ? (
                                     <>
@@ -265,7 +406,7 @@ export default function RFQTrackingTable({
 
                           if (col.id === "awarded_cost") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 {response.is_awarded ? (
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-mono">
@@ -282,7 +423,7 @@ export default function RFQTrackingTable({
 
                           if (col.id === "status") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium capitalize ${RESPONSE_STATUS_COLORS[response.status] || "bg-muted text-muted-foreground border-border"}`}>
                                   {(response.status || "").replace(/_/g, " ")}
                                 </span>
@@ -292,13 +433,13 @@ export default function RFQTrackingTable({
 
                           if (col.id === "rfq_status") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }} />
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }} />
                             );
                           }
 
                           if (col.id === "actions") {
                             return (
-                              <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                              <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                                 <div className="flex items-center gap-1">
                                   {isResponseAwardable(response) && (
                                     <Button
@@ -350,7 +491,7 @@ export default function RFQTrackingTable({
                           }
 
                           return (
-                            <td key={col.id} className="px-4 py-3" style={{ width: col.width }}>
+                            <td key={col.id} className={`px-4 py-3 ${isPinned ? "sticky left-8 z-10 bg-muted/5" : ""}`} style={{ width: getWidth(col), minWidth: getWidth(col) }}>
                               —
                             </td>
                           );
@@ -361,8 +502,9 @@ export default function RFQTrackingTable({
                       );
                       })}
                       </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+                      </table>
+                      </div>
+                      </div>
+                      </div>
+                      );
+                      }
