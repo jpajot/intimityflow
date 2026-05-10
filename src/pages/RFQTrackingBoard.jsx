@@ -438,7 +438,7 @@ export default function RFQTrackingBoard() {
         );
       },
     },
-  ], [projectId, rfqs, productMap, colorMap, pcamMap, stepMap, supplierMap, currencyMap, roundMap, allResponses, selectedLineIds, navigate]);
+  ], [projectId, rfqs, productMap, colorMap, pcamMap, stepMap, supplierMap, currencyMap, roundMap, allResponses, navigate]);
 
   // Register options
   useEffect(() => {
