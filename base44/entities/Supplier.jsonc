@@ -71,6 +71,15 @@
     },
     "notes": {
       "type": "string"
+    },
+    "portal_access_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, this supplier is allowed to have portal users. When false, portal sign-in is rejected for any user linked to this supplier."
+    },
+    "portal_notes": {
+      "type": "string",
+      "description": "Internal notes about portal access (e.g. 'primary contact prefers email, set up portal for backup')."
     }
   },
   "required": [

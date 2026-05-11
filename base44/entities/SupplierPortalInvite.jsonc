@@ -1,0 +1,74 @@
+{
+  "name": "SupplierPortalInvite",
+  "type": "object",
+  "properties": {
+    "supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier. Which supplier this invite is for."
+    },
+    "invited_email": {
+      "type": "string",
+      "description": "Email address invited."
+    },
+    "invited_name": {
+      "type": "string",
+      "description": "Display name of the invitee (e.g. 'Anna M\u00fcller \u2014 Sales Manager')."
+    },
+    "invited_role_label": {
+      "type": "string",
+      "description": "Free text label for context (e.g. 'Sales contact', 'Account manager'). Not a permission \u2014 display only."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "expired",
+        "revoked"
+      ],
+      "default": "pending",
+      "description": "Lifecycle status of the invite."
+    },
+    "invite_token": {
+      "type": "string",
+      "description": "A signed token / random identifier used in the invite link. Generated on send."
+    },
+    "invited_at": {
+      "type": "string",
+      "description": "ISO datetime when the invite was sent."
+    },
+    "invited_by": {
+      "type": "string",
+      "description": "Email of the internal user who issued the invite."
+    },
+    "accepted_at": {
+      "type": "string",
+      "description": "ISO datetime when the invitee first signed in via the invite link."
+    },
+    "accepted_user_id": {
+      "type": "string",
+      "description": "FK \u2192 User. Populated when the invitee completes signup; links the invite to the resulting User record."
+    },
+    "revoked_at": {
+      "type": "string",
+      "description": "ISO datetime when the invite was revoked."
+    },
+    "revoked_by": {
+      "type": "string",
+      "description": "Email of internal user who revoked."
+    },
+    "expires_at": {
+      "type": "string",
+      "description": "ISO datetime after which the invite token is invalid. Default: invited_at + 14 days, applied at send time."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes."
+    }
+  },
+  "required": [
+    "supplier_id",
+    "invited_email",
+    "status"
+  ]
+}
