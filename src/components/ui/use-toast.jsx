@@ -1,8 +1,15 @@
 // Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_LIMIT = 4;
+const TOAST_REMOVE_DELAY = 300; // ms after dismiss animation before removing from DOM
+
+// Auto-dismiss durations by variant
+const AUTO_DISMISS_DELAY = {
+  destructive: 7000,
+  warning: 6000,
+  default: 4000,
+};
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -46,11 +53,18 @@ const _clearFromRemoveQueue = (toastId) => {
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case actionTypes.ADD_TOAST:
+    case actionTypes.ADD_TOAST: {
+      // FIFO: if at limit, dismiss the oldest toast first
+      const existing = state.toasts;
+      if (existing.length >= TOAST_LIMIT) {
+        const oldest = existing[existing.length - 1];
+        addToRemoveQueue(oldest.id);
+      }
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+        toasts: [action.toast, ...existing].slice(0, TOAST_LIMIT),
       };
+    }
 
     case actionTypes.UPDATE_TOAST:
       return {
@@ -134,6 +148,10 @@ function toast({ ...props }) {
     },
   });
 
+  // Auto-dismiss after the appropriate delay
+  const delay = AUTO_DISMISS_DELAY[props.variant] ?? AUTO_DISMISS_DELAY.default;
+  setTimeout(() => dismiss(), delay);
+
   return {
     id,
     dismiss,
@@ -161,4 +179,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };
