@@ -6,9 +6,11 @@
       "type": "string",
       "enum": [
         "admin",
-        "user"
+        "user",
+        "supplier"
       ],
-      "default": "user"
+      "default": "user",
+      "description": "User role: admin (full access), user (internal app user, no admin functions), supplier (external supplier portal user \u2014 see linked_supplier_id)."
     },
     "pinned_nav_items": {
       "type": "array",
@@ -16,6 +18,13 @@
         "type": "object"
       },
       "description": "Pinned navigation items for cross-device persistence"
+    },
+    "linked_supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier. Set when role='supplier'. Identifies which Supplier this portal user belongs to. Null for admin/user roles. The single source of truth for RLS scoping on the supplier portal. Accessible via {{user.data.linked_supplier_id}}."
     }
-  }
+  },
+  "required": [
+    "pinned_nav_items"
+  ]
 }
