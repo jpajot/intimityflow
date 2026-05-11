@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import { usePageOptions } from "@/lib/PageOptionsContext";
+import PortalUsersPanel from "@/components/supplier/PortalUsersPanel";
 
 const EMPTY_SUPPLIER = {
   name: "", legal_name: "", country: "", region: "", city: "",
@@ -37,6 +38,7 @@ export default function SupplierDetail() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [currentUser, setCurrentUser] = useState(null);
   const autoSaveTimer = { current: null };
   const { toast } = useToast();
 
@@ -53,6 +55,7 @@ export default function SupplierDetail() {
   }, [setOptions]);
 
   useEffect(() => {
+    base44.auth.me().then((u) => setCurrentUser(u)).catch(() => {});
     Promise.all([
       base44.entities.ListOfValues.list("name", 5000),
       base44.entities.Currency.filter({ is_active: true }),
@@ -383,6 +386,9 @@ export default function SupplierDetail() {
             />
             <p className="text-xs text-muted-foreground">Internal only. Not visible to portal users.</p>
           </div>
+
+          {/* Portal Users sub-section */}
+          <PortalUsersPanel supplier={supplier} currentUser={currentUser} />
         </div>
       )}
 
