@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, Trash2, Info, Package, GitBranch, X, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Info, Package, GitBranch, X, Plus, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 
@@ -36,11 +38,13 @@ export default function SupplierDetail() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const autoSaveTimer = { current: null };
+  const { toast } = useToast();
 
   const subNavItems = isNew ? [] : [
     { id: "profile", label: "Profile", icon: Info },
     { id: "products", label: "Sourced Products", count: new Set(approvedLinks.map((a) => a.product_id)).size, icon: Package },
     { id: "routing", label: "Routing Participation", count: routingSteps.length, icon: GitBranch },
+    { id: "portal", label: "Portal Access", icon: ShieldCheck },
   ];
   useRegisterSubNav(subNavItems, activeTab, setActiveTab, supplier.name || "New Supplier");
 
@@ -108,6 +112,12 @@ export default function SupplierDetail() {
       navigate(`/suppliers/${created.id}`, { replace: true });
     }
     setSaving(false);
+  };
+
+  const handlePortalAccessToggle = async (enabled) => {
+    setSupplier((s) => ({ ...s, portal_access_enabled: enabled }));
+    await base44.entities.Supplier.update(supplier.id, { portal_access_enabled: enabled });
+    toast({ description: enabled ? "Portal access enabled." : "Portal access disabled." });
   };
 
   const handleDelete = async () => {
@@ -332,6 +342,47 @@ export default function SupplierDetail() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Portal Access Tab */}
+      {!isNew && activeTab === "portal" && (
+        <div className="bg-card rounded-xl border border-border p-5 space-y-5">
+          <div>
+            <h3 className="text-sm font-semibold">Portal Access</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Configure whether this supplier can access the supplier portal to respond to RFQs.</p>
+          </div>
+
+          {/* Toggle */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={!!supplier.portal_access_enabled}
+                onCheckedChange={handlePortalAccessToggle}
+                id="portal-access-toggle"
+              />
+              <Label htmlFor="portal-access-toggle" className="text-sm font-medium cursor-pointer">
+                Portal access enabled
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-[52px]">
+              {supplier.portal_access_enabled
+                ? "Portal users linked to this supplier can sign in and see their RFQs."
+                : "Portal sign-in is disabled for this supplier. Existing portal users cannot access the app."}
+            </p>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Internal notes about portal access</Label>
+            <Textarea
+              value={supplier.portal_notes || ""}
+              onChange={(e) => updateField("portal_notes", e.target.value)}
+              placeholder="e.g. primary contact prefers email, portal is backup access"
+              rows={4}
+            />
+            <p className="text-xs text-muted-foreground">Internal only. Not visible to portal users.</p>
+          </div>
         </div>
       )}
 
