@@ -691,9 +691,9 @@ export default function ListView() {
     Promise.all([
     base44.entities.Product.list("-created_date", 500),
     base44.entities.ProductColor.list("-created_date", 2000),
-    base44.entities.ProductColorAndMore.list("-created_date", 5000),
-    base44.entities.TechnicalColor.list("code", 2000),
-    base44.entities.CommercialColor.list("code", 2000),
+    base44.entities.ProductColorAndMore.list("-created_date", 2000),
+    base44.entities.TechnicalColor.list("code", 500),
+    base44.entities.CommercialColor.list("code", 500),
     base44.entities.SizeGrid.list("name", 200),
     base44.entities.Project.list("name", 500)]
     ).then(([prods, cws, vars, tcs, ccs, sgs, projs]) => {
