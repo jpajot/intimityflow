@@ -716,78 +716,81 @@ export default function ColorPalettes() {
                     </Button>
                   </div>
 
-                  {/* Color Picker */}
-                  {showColorPicker && (() => {
-                  const { techFiltered, commFiltered } = getAvailableColors();
-                  const items = colorTab === "technical" ?
-                  techFiltered.map((t) => {
-                    const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
-                    return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
-                  }) :
-                  commFiltered.map((c) => {
-                    const mainTech = techColors.find((t) => t.id === c.main_technical_color_id);
-                    const linkedHexes = c.linked_technical_color_ids?.length > 1 ?
-                    (c.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean) :
-                    null;
-                    const techCode = mainTech?.code;
-                    return { key: `commercial:${c.id}`, hex: mainTech?.hex || "#ccc", linkedHexes, label: c.color_name, sub: c.code, techCode };
-                  });
-                  return (
-                    <div className="border border-border rounded-lg overflow-hidden">
-                        <div className="flex border-b border-border">
-                          <button type="button" onClick={() => setColorTab("technical")}
-                        className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
-                            Technical ({techFiltered.length})
-                          </button>
-                          <button type="button" onClick={() => setColorTab("commercial")}
-                        className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
-                            Commercial ({commFiltered.length})
-                          </button>
-                        </div>
-                        <div className="p-2 border-b border-border">
-                          <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
-                        </div>
-                        <div className="max-h-52 overflow-y-auto">
-                          {items.map((item) => {
-                          const selected = selectedColorIds.has(item.key);
-                          return (
-                            <button key={item.key} type="button"
-                            onClick={() => toggleColorSelection(item.key)}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}>
-                                {item.linkedHexes?.length > 1 ?
-                              <div className="w-5 h-5 rounded-sm border border-border shrink-0 overflow-hidden flex">
-                                    {item.linkedHexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
-                                  </div> :
-
-                              <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
-                              }
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-xs font-medium block truncate">{item.label}</span>
-                                  <span className="text-[10px] text-muted-foreground font-mono">
-                                    {item.sub}
-                                    {item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}
-                                    {item.techCode ? <span className="ml-1.5 text-muted-foreground/70">· {item.techCode}</span> : null}
-                                  </span>
-                                </div>
-                                {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
-                              </button>);
-
-                        })}
-                          {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
-                        </div>
-                        <div className="p-2 border-t border-border flex gap-2">
-                          <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? openNewTech() : openNewComm()}>
-                            <Plus className="w-3 h-3" /> New
-                          </Button>
-                          <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors} onClick={handleAddSelectedColors}>
-                            {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
-                            Add {selectedColorIds.size > 0 ? `(${selectedColorIds.size})` : ""}
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
-                        </div>
-                      </div>);
-
-                })()}
+                  {/* Color Picker Dialog */}
+                  <Dialog open={showColorPicker} onOpenChange={(o) => { if (!o) setShowColorPicker(false); }}>
+                    <DialogContent className="max-w-md p-0 overflow-hidden">
+                      <DialogHeader className="px-4 pt-4 pb-2">
+                        <DialogTitle className="text-sm">Add Colors to Palette</DialogTitle>
+                      </DialogHeader>
+                      {(() => {
+                        const { techFiltered, commFiltered } = getAvailableColors();
+                        const items = colorTab === "technical" ?
+                          techFiltered.map((t) => {
+                            const linkedComm = commColors.find((c) => c.main_technical_color_id === t.id || (c.linked_technical_color_ids || []).includes(t.id));
+                            return { key: `technical:${t.id}`, hex: t.hex || "#ccc", label: t.name, sub: t.code, commCode: linkedComm?.code };
+                          }) :
+                          commFiltered.map((c) => {
+                            const mainTech = techColors.find((t) => t.id === c.main_technical_color_id);
+                            const linkedHexes = c.linked_technical_color_ids?.length > 1 ?
+                              (c.linked_technical_color_ids || []).map((id) => techColors.find((t) => t.id === id)?.hex).filter(Boolean) : null;
+                            return { key: `commercial:${c.id}`, hex: mainTech?.hex || "#ccc", linkedHexes, label: c.color_name, sub: c.code, techCode: mainTech?.code };
+                          });
+                        return (
+                          <div>
+                            <div className="flex border-b border-border">
+                              <button type="button" onClick={() => setColorTab("technical")}
+                                className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "technical" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
+                                Technical ({techFiltered.length})
+                              </button>
+                              <button type="button" onClick={() => setColorTab("commercial")}
+                                className={`flex-1 py-2 text-xs font-medium transition-colors ${colorTab === "commercial" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}>
+                                Commercial ({commFiltered.length})
+                              </button>
+                            </div>
+                            <div className="p-2 border-b border-border">
+                              <Input value={colorSearch} onChange={(e) => setColorSearch(e.target.value)} placeholder="Search colors…" className="h-8 text-xs" autoFocus />
+                            </div>
+                            <div className="max-h-64 overflow-y-auto">
+                              {items.map((item) => {
+                                const selected = selectedColorIds.has(item.key);
+                                return (
+                                  <button key={item.key} type="button" onClick={() => toggleColorSelection(item.key)}
+                                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}>
+                                    {item.linkedHexes?.length > 1 ?
+                                      <div className="w-5 h-5 rounded-sm border border-border shrink-0 overflow-hidden flex">
+                                        {item.linkedHexes.map((h, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: h }} />)}
+                                      </div> :
+                                      <div className="w-5 h-5 rounded-sm border border-border shrink-0" style={{ backgroundColor: item.hex }} />
+                                    }
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-xs font-medium block truncate">{item.label}</span>
+                                      <span className="text-[10px] text-muted-foreground font-mono">
+                                        {item.sub}
+                                        {item.commCode ? <span className="ml-1.5 text-primary/70">· {item.commCode}</span> : null}
+                                        {item.techCode ? <span className="ml-1.5 text-muted-foreground/70">· {item.techCode}</span> : null}
+                                      </span>
+                                    </div>
+                                    {selected && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full bg-white" /></div>}
+                                  </button>
+                                );
+                              })}
+                              {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No more colors to add</p>}
+                            </div>
+                            <div className="p-3 border-t border-border flex gap-2">
+                              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => colorTab === "technical" ? openNewTech() : openNewComm()}>
+                                <Plus className="w-3 h-3" /> New
+                              </Button>
+                              <Button size="sm" className="flex-1 text-xs gap-1.5" disabled={selectedColorIds.size === 0 || addingColors} onClick={handleAddSelectedColors}>
+                                {addingColors && <Loader2 className="w-3 h-3 animate-spin" />}
+                                Add {selectedColorIds.size > 0 ? `(${selectedColorIds.size})` : ""}
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowColorPicker(false)}>Cancel</Button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </DialogContent>
+                  </Dialog>
 
                   {/* Full color strip */}
                   {selectedSwatches.length > 0 &&
