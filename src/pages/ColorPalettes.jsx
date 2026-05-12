@@ -270,7 +270,7 @@ export default function ColorPalettes() {
     } else {
       setOptions({ items: [] });
     }
-  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, showTechQF, techQuickFilters, techActiveViewId, commViewMode, showCommViewMenu, showCommQF, commQuickFilters, commActiveViewId]);
+  }, [activeSection, selectedPaletteId, paletteCardSize, setOptions, techColors, techViewMode, showTechViewMenu, showTechQF, techQuickFilters, techActiveViewId, commViewMode, showCommViewMenu, showCommQF, commQuickFilters, commActiveViewId, openColorPicker]);
 
   useEffect(() => {loadData();}, []);
 
@@ -365,7 +365,7 @@ export default function ColorPalettes() {
     if (selectedPaletteId === palette.id) setSelectedPaletteId(null);
   };
 
-  const openColorPicker = async () => {
+  const openColorPicker = useCallback(async () => {
     setSelectedColorIds(new Set());
     setColorSearch("");
     setColorTab("technical");
@@ -377,7 +377,7 @@ export default function ColorPalettes() {
     );
     setTechColors(tc);
     setCommColors(cc);
-  };
+  }, []);
 
   const openNewTech = () => {
     setTechForm({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
