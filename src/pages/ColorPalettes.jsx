@@ -627,7 +627,7 @@ export default function ColorPalettes() {
       {activeSection === "palettes" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-hidden">
             {/* Palettes Panel */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-4 flex flex-col h-full">
+            <div className={`bg-card rounded-xl border border-border p-5 space-y-4 flex flex-col h-full ${selectedPaletteId ? "hidden lg:flex" : "flex"}`}>
               <div className="flex items-center justify-between flex-shrink-0">
                 <h3 className="font-semibold">Palettes ({palettes.length})</h3>
                 <Button onClick={openNew} size="sm" className="gap-1.5 h-8">
@@ -694,7 +694,7 @@ export default function ColorPalettes() {
             </div>
 
             {/* Detail Panel */}
-            <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4 lg:flex lg:flex-col lg:h-full lg:overflow-y-auto">
+            <div className={`lg:col-span-2 bg-card rounded-xl border border-border p-5 space-y-4 lg:flex lg:flex-col lg:h-full lg:overflow-y-auto ${selectedPaletteId ? "flex flex-col" : "hidden lg:flex"}`}>
               {!selectedPalette ?
               <div className="flex flex-col items-center justify-center py-20 text-center">
                   <Palette className="w-10 h-10 text-muted-foreground mb-3" />
@@ -703,13 +703,18 @@ export default function ColorPalettes() {
 
               <>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold">{selectedPalette.name}</h3>
-                      {selectedProject &&
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <FolderOpen className="w-3 h-3" />{selectedProject.name}
-                        </p>
-                    }
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setSelectedPaletteId(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-sm flex items-center gap-1">
+                        ← <span className="sr-only">Back</span>
+                      </button>
+                      <div>
+                        <h3 className="font-semibold">{selectedPalette.name}</h3>
+                        {selectedProject &&
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <FolderOpen className="w-3 h-3" />{selectedProject.name}
+                          </p>
+                        }
+                      </div>
                     </div>
                     <Button size="sm" variant="outline" className="gap-1.5 h-8 text-primary border-primary/40 hover:bg-primary/10" onClick={openColorPicker}>
                       <Plus className="w-3.5 h-3.5" /> Add Color
