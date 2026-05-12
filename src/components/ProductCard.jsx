@@ -20,6 +20,7 @@ export default function ProductCard({ product, colorVariants = [] }) {
           <img
             src={firstImage}
             alt={product.name}
+            referrerPolicy="no-referrer"
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
