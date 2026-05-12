@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, TrendingUp } from "lucide-react";
+import ProxiedImage from "@/components/ProxiedImage";
 
 export default function ProductCard({ product, colorVariants = [] }) {
   const totalVolume = colorVariants.reduce((sum, cv) => {
@@ -17,10 +18,9 @@ export default function ProductCard({ product, colorVariants = [] }) {
     >
       <div className="aspect-square relative overflow-hidden">
         {firstImage ? (
-          <img
+          <ProxiedImage
             src={firstImage}
             alt={product.name}
-            referrerPolicy="no-referrer"
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
           />
         ) : (

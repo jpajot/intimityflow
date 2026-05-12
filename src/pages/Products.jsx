@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Package, Loader2, LayoutGrid, List, Plus, Pin, PinOff } from "lucide-react";
+import ProxiedImage from "@/components/ProxiedImage";
 import DataTable from "@/components/DataTable";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { getPinnedItems, setPinnedItems } from "../components/Layout";
@@ -86,7 +87,7 @@ export default function Products() {
         const mainImage = product.images?.[0];
         return mainImage ? (
           <div className="w-10 h-10 rounded-md overflow-hidden border border-border">
-            <img src={mainImage} alt={product.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+            <ProxiedImage src={mainImage} alt={product.name} className="w-full h-full object-cover" />
           </div>
         ) : (
           <div className="w-10 h-10 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-semibold">
@@ -148,7 +149,7 @@ export default function Products() {
               <div key={cv.id} className="flex items-center gap-2">
                 {cv.image_url ? (
                   <div className="w-6 h-6 rounded-sm overflow-hidden border border-border shrink-0">
-                    <img src={cv.image_url} alt={cv.color_name} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                    <ProxiedImage src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded-sm border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
@@ -259,7 +260,7 @@ export default function Products() {
                     <div key={cv.id} className="flex items-center gap-2">
                       {cv.image_url ? (
                         <div className="w-6 h-6 rounded overflow-hidden border border-border shrink-0">
-                          <img src={cv.image_url} alt={cv.color_name} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                          <ProxiedImage src={cv.image_url} alt={cv.color_name} className="w-full h-full object-contain" />
                         </div>
                       ) : (
                         <div className="w-6 h-6 rounded border border-border shrink-0" style={{ backgroundColor: cv.color_hex || "#ccc" }} />
@@ -283,7 +284,7 @@ export default function Products() {
             return (
               <div className="relative w-full h-full">
                 {mainImage ? (
-                  <img src={mainImage} alt={product.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                  <ProxiedImage src={mainImage} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center text-sm font-semibold">
                     {product.name?.charAt(0)?.toUpperCase()}
