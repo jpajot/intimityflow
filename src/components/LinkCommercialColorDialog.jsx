@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
 
 /**
@@ -20,6 +20,8 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
   const [mode, setMode] = useState("choose"); // "choose" | "link" | "create"
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [codeError, setCodeError] = useState("");
 
   // Create new commercial color form
   const [commForm, setCommForm] = useState({
@@ -30,12 +32,22 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
     linked_technical_color_ids: techColor ? [techColor.id] : [],
   });
 
-  // Pre-fill code on mount
+  const generateNextCode = async () => {
+    setGeneratingCode(true);
+    setCodeError("");
+    try {
+      const res = await base44.functions.invoke("generateCode", { entity_name: "CommercialColor", entity_type: "" });
+      setCommForm((f) => ({ ...f, code: res.data.code }));
+    } catch {}
+    setGeneratingCode(false);
+  };
+
+  // Pre-fill code when entering create mode
   useEffect(() => {
-    base44.functions.invoke("generateCode", { entity_name: "CommercialColor", entity_type: "" })
-      .then((res) => setCommForm((f) => ({ ...f, code: res.data.code })))
-      .catch(() => {});
-  }, []);
+    if (mode === "create" && !commForm.code) {
+      generateNextCode();
+    }
+  }, [mode]);
 
   // ── Link to existing ──────────────────────────────────────────────────────────
 
@@ -62,8 +74,16 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setCodeError("");
+    // Check uniqueness
+    const trimmedCode = commForm.code.trim();
+    const duplicate = commColors.find((c) => c.code?.trim().toLowerCase() === trimmedCode.toLowerCase());
+    if (duplicate) {
+      setCodeError(`Code "${trimmedCode}" is already used by "${duplicate.color_name || duplicate.code}". Please use a different code.`);
+      return;
+    }
     setSaving(true);
-    const created = await base44.entities.CommercialColor.create(commForm);
+    const created = await base44.entities.CommercialColor.create({ ...commForm, code: trimmedCode });
     setCommColors((prev) => [...prev, created]);
     // Add the new commercial color to the palette
     if (paletteId && setPaletteColors) {
@@ -152,7 +172,21 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Commercial Code</Label>
-                <Input value={commForm.code} onChange={(e) => setCommForm((f) => ({ ...f, code: e.target.value }))} required />
+                <div className="flex gap-1">
+                  <Input
+                    value={commForm.code}
+                    onChange={(e) => { setCommForm((f) => ({ ...f, code: e.target.value })); setCodeError(""); }}
+                    required
+                    className={codeError ? "border-destructive" : ""}
+                    placeholder={generatingCode ? "Generating…" : ""}
+                    disabled={generatingCode}
+                  />
+                  <button type="button" onClick={generateNextCode} disabled={generatingCode}
+                    className="px-2 rounded-md border border-border hover:bg-muted transition-colors shrink-0" title="Regenerate code">
+                    {generatingCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />}
+                  </button>
+                </div>
+                {codeError && <p className="text-[11px] text-destructive">{codeError}</p>}
               </div>
             </div>
             <div className="space-y-1.5">
