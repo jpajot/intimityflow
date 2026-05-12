@@ -708,13 +708,18 @@ export default function ColorPalettes() {
                 </div> :
 
               <>
-                  <div>
-                    <h3 className="font-semibold">{selectedPalette.name}</h3>
-                    {selectedProject &&
-                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                        <FolderOpen className="w-3 h-3" />{selectedProject.name}
-                      </p>
-                  }
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">{selectedPalette.name}</h3>
+                      {selectedProject &&
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <FolderOpen className="w-3 h-3" />{selectedProject.name}
+                        </p>
+                    }
+                    </div>
+                    <Button size="sm" variant="outline" className="gap-1.5 h-8 text-primary border-primary/40 hover:bg-primary/10" onClick={openColorPicker}>
+                      <Plus className="w-3.5 h-3.5" /> Add Color
+                    </Button>
                   </div>
 
                   {/* Color Picker */}
