@@ -16,7 +16,7 @@ import { colorToHex, tcxDisplayName } from "../lib/pantone-tcx";
  *   setCommColors   – state setter to update parent's commColors list
  *   onClose         – called when dialog should close
  */
-export default function LinkCommercialColorDialog({ techColor, commColors, setCommColors, onClose }) {
+export default function LinkCommercialColorDialog({ techColor, commColors, setCommColors, onClose, paletteId, setPaletteColors }) {
   const [mode, setMode] = useState("choose"); // "choose" | "link" | "create"
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -41,7 +41,7 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
 
   const handleLinkToExisting = async (commColor) => {
     setSaving(true);
-    const newLinkedIds = commColor.linked_technical_color_ids || [];
+    const newLinkedIds = [...(commColor.linked_technical_color_ids || [])];
     if (!newLinkedIds.includes(techColor.id)) {
       newLinkedIds.push(techColor.id);
     }
@@ -49,6 +49,11 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
       linked_technical_color_ids: newLinkedIds,
     });
     setCommColors((prev) => prev.map((c) => c.id === commColor.id ? { ...c, ...updated } : c));
+    // If this commercial color isn't already in the palette, add it
+    if (paletteId && setPaletteColors) {
+      const linked = await base44.entities.ColorPaletteColor.create({ palette_id: paletteId, color_type: "commercial", color_id: commColor.id });
+      setPaletteColors((prev) => [...prev, linked]);
+    }
     setSaving(false);
     onClose();
   };
@@ -60,6 +65,11 @@ export default function LinkCommercialColorDialog({ techColor, commColors, setCo
     setSaving(true);
     const created = await base44.entities.CommercialColor.create(commForm);
     setCommColors((prev) => [...prev, created]);
+    // Add the new commercial color to the palette
+    if (paletteId && setPaletteColors) {
+      const linked = await base44.entities.ColorPaletteColor.create({ palette_id: paletteId, color_type: "commercial", color_id: created.id });
+      setPaletteColors((prev) => [...prev, linked]);
+    }
     setSaving(false);
     onClose();
   };

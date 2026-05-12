@@ -1029,6 +1029,8 @@ export default function ColorPalettes() {
         techColor={linkingTechColor}
         commColors={commColors}
         setCommColors={setCommColors}
+        paletteId={selectedPaletteId}
+        setPaletteColors={setPaletteColors}
         onClose={() => setLinkingTechColor(null)} />
 
       }
