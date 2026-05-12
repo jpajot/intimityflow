@@ -174,6 +174,19 @@ export default function ColorPalettes() {
     { id: "sub_type", label: "Type", getValue: (c) => c.sub_type },
   ];
 
+  const openColorPicker = useCallback(async () => {
+    setSelectedColorIds(new Set());
+    setColorSearch("");
+    setColorTab("technical");
+    setShowColorPicker(true);
+    const [tc, cc] = await Promise.all([
+      base44.entities.TechnicalColor.list("code", 2000),
+      base44.entities.CommercialColor.list("code", 2000)
+    ]);
+    setTechColors(tc);
+    setCommColors(cc);
+  }, []);
+
   useEffect(() => {
     if (activeSection === "palettes" && selectedPaletteId) {
       const swatches = getSwatchData(selectedPaletteId);
@@ -364,20 +377,6 @@ export default function ColorPalettes() {
     setPalettes((prev) => prev.filter((p) => p.id !== palette.id));
     if (selectedPaletteId === palette.id) setSelectedPaletteId(null);
   };
-
-  const openColorPicker = useCallback(async () => {
-    setSelectedColorIds(new Set());
-    setColorSearch("");
-    setColorTab("technical");
-    setShowColorPicker(true);
-    // Refresh colors in case new ones were added in Color Library
-    const [tc, cc] = await Promise.all([
-    base44.entities.TechnicalColor.list("code", 2000),
-    base44.entities.CommercialColor.list("code", 2000)]
-    );
-    setTechColors(tc);
-    setCommColors(cc);
-  }, []);
 
   const openNewTech = () => {
     setTechForm({ code: "", name: "", hex: "", rgb_r: "", rgb_g: "", rgb_b: "" });
