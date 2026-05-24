@@ -10,11 +10,12 @@
       "type": "string",
       "enum": [
         "BOM",
-        "BOL",
         "BOMLineVariant",
-        "BOMLine"
+        "BOMLine",
+        "SupplierRouting",
+        "SupplierRoutingStep"
       ],
-      "description": "Polymorphic type discriminator. Together with downstream_id identifies the downstream artifact. LOV: eco_downstream_type."
+      "description": "Polymorphic type discriminator. Together with downstream_id identifies the downstream artifact. Values: BOM, BOMLineVariant, BOMLine, SupplierRouting, SupplierRoutingStep."
     },
     "downstream_id": {
       "type": "string",
