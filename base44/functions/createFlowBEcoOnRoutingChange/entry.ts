@@ -2,12 +2,12 @@
  * createFlowBEcoOnRoutingChange
  *
  * Flow B propagation trigger: fires when a SupplierRouting or any of its
- * SupplierRoutingSteps are modified. Finds all BOLs whose source_routing_snapshot_at
- * predates the current moment (i.e. any BOL that took a snapshot before this trigger
- * fires is stale relative to the change), creates an ECO (status=applied,
- * origin=routing_change), one AffectedItem (the modified routing), and one
- * AffectedDownstream per stale-snapshot BOL. Supersedes any prior open Flow B
- * downstream rows for the same BOLs.
+ * SupplierRoutingSteps are modified. Finds all production BOMs whose
+ * selected_routing_id matches the changed routing (and whose status is
+ * non-terminal), creates an ECO (status=applied, origin=routing_change),
+ * one AffectedItem (the modified routing), and one AffectedDownstream per
+ * affected BOM (downstream_type="SupplierRouting"). Supersedes any prior
+ * open Flow B downstream rows targeting the same routing.
  *
  * Payload:
  *   supplier_routing_id  string   required
@@ -33,7 +33,6 @@ const NON_TERMINAL_DOWNSTREAM = ['pending', 'notified', 'under_review'];
 const BATCH_CAP = 200;
 
 // ── Inline code-generation helper with uniqueness guard ──────────────────────
-// Uniqueness guard added in Phase 5 #18-atomicity-fix
 async function generateEntityCodeInline(svc, entity_name, entity_type) {
   const generators = await svc.entities.SystemCodeGenerator.filter({ entity_name, entity_type });
   if (generators.length === 0) throw new Error(`No SystemCodeGenerator found for entity_name=${entity_name}, entity_type=${entity_type}.`);
@@ -44,7 +43,7 @@ async function generateEntityCodeInline(svc, entity_name, entity_type) {
   let code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
   while (excludedSet.has(code.toUpperCase())) { nextSeq++; code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`; }
 
-  // UNIQUENESS GUARD: Check if generated code already exists
+  // UNIQUENESS GUARD
   let attempts = 0;
   while (true) {
     const existing = await svc.entities.ECO.filter({ eco_number: code }, '-created_date', 1);
@@ -53,7 +52,7 @@ async function generateEntityCodeInline(svc, entity_name, entity_type) {
     code = `${gen.prefix}${String(nextSeq).padStart(padding, '0')}`;
     attempts++;
     if (attempts > 100) {
-      throw new Error(`Code generation collision storm: 100+ attempts to find unique eco_number starting from sequence ${gen.last_sequence}. Investigate SystemCodeGenerator drift.`);
+      throw new Error(`Code generation collision storm: 100+ attempts to find unique eco_number.`);
     }
   }
 
@@ -61,60 +60,54 @@ async function generateEntityCodeInline(svc, entity_name, entity_type) {
   return code;
 }
 
-// ── Inline BOM pending_eco_review_count increment ─────────────────────────────
+// ── Inline BOM pending_eco_review_count helpers ────────────────────────────────
 async function incrementBomCount(svc, bomId) {
   try {
     const records = await svc.entities.BOM.filter({ id: bomId });
-    if (records.length === 0) { console.warn(`[FlowB] BOM not found for increment: ${bomId}`); return; }
-    const current = records[0].pending_eco_review_count || 0;
-    await svc.entities.BOM.update(bomId, { pending_eco_review_count: current + 1 });
+    if (records.length === 0) { console.warn(`[FlowB] BOM not found: ${bomId}`); return; }
+    await svc.entities.BOM.update(bomId, { pending_eco_review_count: (records[0].pending_eco_review_count || 0) + 1 });
   } catch (err) {
     console.error(`[FlowB] Failed to increment BOM.pending_eco_review_count on ${bomId}: ${err.message}`);
   }
 }
 
-// ── Inline BOM pending_eco_review_count decrement ─────────────────────────────
 async function decrementBomCount(svc, bomId) {
   try {
     const records = await svc.entities.BOM.filter({ id: bomId });
-    if (records.length === 0) { console.warn(`[FlowB] BOM not found for decrement: ${bomId}`); return; }
-    const current = records[0].pending_eco_review_count || 0;
-    await svc.entities.BOM.update(bomId, { pending_eco_review_count: Math.max(0, current - 1) });
+    if (records.length === 0) { console.warn(`[FlowB] BOM not found: ${bomId}`); return; }
+    await svc.entities.BOM.update(bomId, { pending_eco_review_count: Math.max(0, (records[0].pending_eco_review_count || 0) - 1) });
   } catch (err) {
     console.error(`[FlowB] Failed to decrement BOM.pending_eco_review_count on ${bomId}: ${err.message}`);
   }
 }
 
-// ── Inline BOL pending_eco_review_count increment ─────────────────────────────
-async function incrementBolCount(svc, bolId) {
+// ── Inline SupplierRouting pending_eco_review_count helpers ──────────────────
+async function incrementRoutingCount(svc, routingId) {
   try {
-    const records = await svc.entities.BOL.filter({ id: bolId });
-    if (records.length === 0) { console.warn(`[FlowB] BOL not found for increment: ${bolId}`); return; }
-    const current = records[0].pending_eco_review_count || 0;
-    await svc.entities.BOL.update(bolId, { pending_eco_review_count: current + 1 });
+    const records = await svc.entities.SupplierRouting.filter({ id: routingId });
+    if (records.length === 0) { console.warn(`[FlowB] SupplierRouting not found: ${routingId}`); return; }
+    await svc.entities.SupplierRouting.update(routingId, { pending_eco_review_count: (records[0].pending_eco_review_count || 0) + 1 });
   } catch (err) {
-    console.error(`[FlowB] Failed to increment BOL.pending_eco_review_count on ${bolId}: ${err.message}`);
+    console.error(`[FlowB] Failed to increment SupplierRouting.pending_eco_review_count on ${routingId}: ${err.message}`);
   }
 }
 
-// ── Inline BOL pending_eco_review_count decrement ─────────────────────────────
-async function decrementBolCount(svc, bolId) {
+async function decrementRoutingCount(svc, routingId) {
   try {
-    const records = await svc.entities.BOL.filter({ id: bolId });
-    if (records.length === 0) { console.warn(`[FlowB] BOL not found for decrement: ${bolId}`); return; }
-    const current = records[0].pending_eco_review_count || 0;
-    await svc.entities.BOL.update(bolId, { pending_eco_review_count: Math.max(0, current - 1) });
+    const records = await svc.entities.SupplierRouting.filter({ id: routingId });
+    if (records.length === 0) { console.warn(`[FlowB] SupplierRouting not found: ${routingId}`); return; }
+    await svc.entities.SupplierRouting.update(routingId, { pending_eco_review_count: Math.max(0, (records[0].pending_eco_review_count || 0) - 1) });
   } catch (err) {
-    console.error(`[FlowB] Failed to decrement BOL.pending_eco_review_count on ${bolId}: ${err.message}`);
+    console.error(`[FlowB] Failed to decrement SupplierRouting.pending_eco_review_count on ${routingId}: ${err.message}`);
   }
 }
 
-// ── Supersede open Flow B downstream rows for a BOL (excluding newEcoId) ──────
-async function supersedeOpenFlowBDownstreams(svc, bolId, newEcoId, parentBomIdMap) {
+// ── Supersede open Flow B downstream rows for this routing (excluding newEcoId) ─
+async function supersedeOpenFlowBDownstreams(svc, routingId, newEcoId, affectedBomIds) {
   try {
     const candidates = await svc.entities.ECOAffectedDownstream.filter({
-      downstream_type: 'BOL',
-      downstream_id: bolId,
+      downstream_type: 'SupplierRouting',
+      downstream_id: routingId,
       propagation_status: { $in: NON_TERMINAL_DOWNSTREAM },
     });
     const toSupersede = candidates.filter(r => r.eco_id !== newEcoId);
@@ -125,35 +118,21 @@ async function supersedeOpenFlowBDownstreams(svc, bolId, newEcoId, parentBomIdMa
           propagation_status: 'superseded',
           reviewed_at: now,
         });
-        await decrementBolCount(svc, bolId);
-        // Decrement parent BOM too
-        const parentBomId = parentBomIdMap.get(bolId);
-        if (parentBomId) await decrementBomCount(svc, parentBomId);
+        await decrementRoutingCount(svc, routingId);
+        // Decrement parent BOMs too
+        for (const bomId of affectedBomIds) await decrementBomCount(svc, bomId);
       } catch (err) {
         console.error(`[FlowB] Failed to supersede downstream row ${row.id}: ${err.message}`);
       }
     }
     return toSupersede.length;
   } catch (err) {
-    console.error(`[FlowB] supersedeOpenFlowBDownstreams failed for BOL ${bolId}: ${err.message}`);
+    console.error(`[FlowB] supersedeOpenFlowBDownstreams failed for routing ${routingId}: ${err.message}`);
     return 0;
   }
 }
 
-// ── Batch fetch helper ─────────────────────────────────────────────────────────
-async function batchFetchById(entityObj, ids) {
-  const unique = [...new Set(ids.filter(Boolean))];
-  if (unique.length === 0) return new Map();
-  const chunks = [];
-  for (let i = 0; i < unique.length; i += BATCH_CAP) chunks.push(unique.slice(i, i + BATCH_CAP));
-  const results = await Promise.all(chunks.map(chunk => entityObj.filter({ id: { $in: chunk } }, '-created_date', BATCH_CAP).catch(() => [])));
-  const map = new Map();
-  for (const batch of results) for (const rec of batch) map.set(rec.id, rec);
-  return map;
-}
-
 // ── Main handler ───────────────────────────────────────────────────────────────
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -181,8 +160,8 @@ Deno.serve(async (req) => {
     if (routingRecords.length === 0) return Response.json({ error: `SupplierRouting not found: ${supplier_routing_id}` }, { status: 404 });
     const routing = routingRecords[0];
 
-    if (routing.status !== 'active') {
-      return Response.json({ success: true, eco_created: false, skipped_reason: 'SupplierRouting is not active' });
+    if (!['draft', 'in_review', 'released'].includes(routing.status)) {
+      return Response.json({ success: true, eco_created: false, skipped_reason: `SupplierRouting status '${routing.status}' is terminal — no propagation needed` });
     }
 
     // ── Step 2: Resolve product name ─────────────────────────────────────────
@@ -194,34 +173,18 @@ Deno.serve(async (req) => {
       console.warn(`[FlowB] Could not resolve product name: ${err.message}`);
     }
 
-    // ── Step 3: Find stale-snapshot BOLs ─────────────────────────────────────
-    // Any BOL with source_routing_id = this routing AND source_routing_snapshot_at < now
-    // (i.e. any BOL that has taken a snapshot — not null — is stale after this change)
-    const allBols = await svc.entities.BOL.filter({ source_routing_id: supplier_routing_id });
-    const bolsWithSnapshot = allBols.filter(b => b.source_routing_snapshot_at && b.source_routing_snapshot_at < now);
+    // ── Step 3: Find production BOMs using this routing ───────────────────────
+    const allBoms = await svc.entities.BOM.filter({ selected_routing_id: supplier_routing_id, bom_type: 'production' });
+    const eligibleBoms = allBoms.filter(b => !TERMINAL_BOM_STATUSES.includes(b.status));
 
-    if (bolsWithSnapshot.length === 0) {
-      return Response.json({ success: true, eco_created: false, skipped_reason: 'No active BOLs with stale routing snapshots' });
+    if (eligibleBoms.length === 0) {
+      return Response.json({ success: true, eco_created: false, skipped_reason: 'No active production BOMs reference this routing' });
     }
 
-    // Filter out BOLs whose parent BOM is terminal
-    const bomIds = [...new Set(bolsWithSnapshot.map(b => b.bom_id).filter(Boolean))];
-    const bomMap = await batchFetchById(svc.entities.BOM, bomIds);
-
-    const eligibleBols = bolsWithSnapshot.filter(bol => {
-      const bom = bomMap.get(bol.bom_id);
-      return bom && !TERMINAL_BOM_STATUSES.includes(bom.status);
-    });
-
-    if (eligibleBols.length === 0) {
-      return Response.json({ success: true, eco_created: false, skipped_reason: 'No active BOLs with stale routing snapshots' });
-    }
-
-    // Build parentBomId map for BOL id → BOM id (used in supersession count adjustments)
-    const parentBomIdMap = new Map(eligibleBols.map(bol => [bol.id, bol.bom_id]));
+    const affectedBomIds = eligibleBoms.map(b => b.id);
 
     // ── Step 4: Create ECO ────────────────────────────────────────────────────
-    const n = eligibleBols.length;
+    const n = eligibleBoms.length;
     const priority = n > 20 ? 'critical' : n > 5 ? 'high' : 'normal';
 
     let eco;
@@ -230,7 +193,7 @@ Deno.serve(async (req) => {
       eco = await svc.entities.ECO.create({
         eco_number,
         title: `Routing changed — ${routing.name} (${productName})`,
-        description: `Auto-generated by Flow B trigger. SupplierRouting '${routing.name}' was modified (${change_summary}). ${n} BOL(s) reference this routing with stale snapshots and require review.`,
+        description: `Auto-generated by Flow B trigger. SupplierRouting '${routing.name}' was modified (${change_summary}). ${n} production BOM(s) reference this routing and require review.`,
         reason_category: 'routing_update',
         priority,
         status: 'applied',
@@ -260,7 +223,6 @@ Deno.serve(async (req) => {
         after_snapshot: {
           name: routing.name,
           status: routing.status,
-          total_lead_time_days: routing.total_lead_time_days,
           change_summary,
           routing_step_id: routing_step_id || null,
           step_change_kind: step_change_kind || null,
@@ -272,67 +234,57 @@ Deno.serve(async (req) => {
       });
     } catch (err) {
       console.error(`[FlowB] AffectedItem creation failed: ${err.message}`);
-      // ECO was created — partial state acceptable; continue
     }
 
-    // ── Step 6: Create AffectedDownstream rows + supersede prior open rows ───
+    // ── Step 6: Supersede prior open rows + create new downstream row ─────────
+    await supersedeOpenFlowBDownstreams(svc, supplier_routing_id, eco.id, affectedBomIds);
+
     let affectedDownstreamCount = 0;
 
-    for (const bol of eligibleBols) {
+    // One downstream row targeting the SupplierRouting itself
+    try {
+      const downstreamLabel = `${routing.name} (${productName}) — ${n} prod BOM(s) affected`;
+      await svc.entities.ECOAffectedDownstream.create({
+        eco_id: eco.id,
+        downstream_type: 'SupplierRouting',
+        downstream_id: supplier_routing_id,
+        downstream_label: downstreamLabel,
+        flow_type: 'B_routing_change',
+        triggering_affected_item_id: affectedItem?.id || null,
+        propagation_status: 'pending',
+        priority,
+      });
+
+      await incrementRoutingCount(svc, supplier_routing_id);
+      affectedDownstreamCount++;
+    } catch (err) {
+      console.error(`[FlowB] Failed to create downstream row for routing ${supplier_routing_id}: ${err.message}`);
+    }
+
+    // ── Step 7: BOMChangeLog entries on each affected BOM ────────────────────
+    for (const bom of eligibleBoms) {
       try {
-        const parentBom = bomMap.get(bol.bom_id);
-
-        // Supersede prior open rows BEFORE inserting new one
-        await supersedeOpenFlowBDownstreams(svc, bol.id, eco.id, parentBomIdMap);
-
-        // Build downstream label
-        const bomLabel = parentBom
-          ? `Prod BOM rev ${parentBom.revision_code} v${parentBom.version} — ${productName}`
-          : `BOM:${bol.bom_id}`;
-        const downstreamLabel = `BOL for ${bomLabel}`;
-
-        // Insert downstream row
-        await svc.entities.ECOAffectedDownstream.create({
-          eco_id: eco.id,
-          downstream_type: 'BOL',
-          downstream_id: bol.id,
-          downstream_label: downstreamLabel,
-          flow_type: 'B_routing_change',
-          triggering_affected_item_id: affectedItem?.id || null,
-          propagation_status: 'pending',
-          priority,
+        await incrementBomCount(svc, bom.id);
+        await svc.entities.BOMChangeLog.create({
+          bom_id: bom.id,
+          change_type: 'routing_changed_upstream',
+          payload: {
+            eco_id: eco.id,
+            eco_number: eco.eco_number,
+            supplier_routing_id,
+            change_summary,
+            routing_step_id: routing_step_id || null,
+            step_change_kind: step_change_kind || null,
+          },
+          triggered_by,
+          triggered_at: now,
         });
-
-        // Increment counts on BOL and parent BOM
-        await incrementBolCount(svc, bol.id);
-        if (bol.bom_id) await incrementBomCount(svc, bol.bom_id);
-
-        // Step 7: BOMChangeLog entry on the Prod BOM
-        if (bol.bom_id) {
-          await svc.entities.BOMChangeLog.create({
-            bom_id: bol.bom_id,
-            change_type: 'routing_changed_upstream',
-            payload: {
-              eco_id: eco.id,
-              eco_number: eco.eco_number,
-              supplier_routing_id,
-              change_summary,
-              routing_step_id: routing_step_id || null,
-              step_change_kind: step_change_kind || null,
-            },
-            triggered_by,
-            triggered_at: now,
-          });
-        }
-
-        affectedDownstreamCount++;
       } catch (err) {
-        console.error(`[FlowB] Failed to process downstream for BOL ${bol.id}: ${err.message}`);
-        // Continue — partial success acceptable per spec
+        console.error(`[FlowB] Failed to log BOMChangeLog for BOM ${bom.id}: ${err.message}`);
       }
     }
 
-    console.log(`[FlowB] Done. eco_id=${eco.id} eco_number=${eco.eco_number} downstream_count=${affectedDownstreamCount}`);
+    console.log(`[FlowB] Done. eco_id=${eco.id} eco_number=${eco.eco_number} downstream_count=${affectedDownstreamCount} boms_notified=${eligibleBoms.length}`);
 
     return Response.json({
       success: true,

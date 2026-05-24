@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 
-export default function BOMCreateVersionDialog({ open, onClose, bom, bomLines, bomLineVariants, bol, bolOperations, user, viewStateId }) {
+export default function BOMCreateVersionDialog({ open, onClose, bom, bomLines, bomLineVariants, user, viewStateId }) {
   const [working, setWorking] = useState(false);
   const navigate = useNavigate();
 
@@ -39,16 +39,6 @@ export default function BOMCreateVersionDialog({ open, onClose, bom, bomLines, b
       if (!newLineId) continue;
       const { id: vid, created_date: _cd, updated_date: _ud, created_by: _cb, ...vBase } = v;
       await base44.entities.BOMLineVariant.create({ ...vBase, bom_line_id: newLineId });
-    }
-
-    // Clone BOL + operations for production BOMs
-    if (isProduction && bol) {
-      const { id: bolId, bom_id: _bid, created_date: _cd, updated_date: _ud, created_by: _cb, ...bolBase } = bol;
-      const newBol = await base44.entities.BOL.create({ ...bolBase, bom_id: newBom.id });
-      for (const op of (bolOperations || [])) {
-        const { id: _oid, bol_id: _bolId, created_date: _ocd, updated_date: _oud, created_by: _ocb, ...opBase } = op;
-        await base44.entities.BOLOperation.create({ ...opBase, bol_id: newBol.id });
-      }
     }
 
     // Clone view state for this user (so new version opens with same axis/filter config)
@@ -93,7 +83,7 @@ export default function BOMCreateVersionDialog({ open, onClose, bom, bomLines, b
           </p>
           <ul className="text-xs text-muted-foreground list-disc ml-4 space-y-0.5">
             <li>All {bomLines?.length || 0} component line{(bomLines?.length || 0) !== 1 ? "s" : ""} and variants will be cloned to v{nextVersion}</li>
-            {isProduction && bol && <li>BOL and operations will be cloned</li>}
+
             <li>The new version becomes your active editing target</li>
             <li>v{bom?.version} stays in the history but is no longer editable</li>
           </ul>

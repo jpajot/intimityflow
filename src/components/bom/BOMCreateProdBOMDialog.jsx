@@ -134,31 +134,7 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
       await base44.entities.BOMLineVariant.create({ ...vBase, bom_line_id: newLineId });
     }
 
-    // 4. Create BOL + BOLOperations (if routing selected)
-    if (selectedRoutingId && selectedSteps.length > 0) {
-      const newBol = await base44.entities.BOL.create({
-        bom_id: newBom.id,
-        source_routing_id: selectedRoutingId,
-        source_routing_snapshot_at: new Date().toISOString(),
-      });
-      for (const step of selectedSteps) {
-        await base44.entities.BOLOperation.create({
-          bol_id: newBol.id,
-          source_routing_step_id: step.id,
-          sequence: step.sequence,
-          step_type: step.step_type,
-          supplier_id: step.supplier_id,
-          description: step.description,
-          operation_status: "inherited",
-          unit_cost_override: null,
-          currency_override: null,
-          lead_time_override_days: null,
-          notes: step.notes || null,
-        });
-      }
-    }
-
-    // 5. BOMChangeLog
+    // 4. BOMChangeLog
     await base44.entities.BOMChangeLog.create({
       bom_id: newBom.id,
       change_type: "derived",
@@ -309,9 +285,7 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
                 <p className="font-medium text-foreground">Will be cloned</p>
                 <p className="text-muted-foreground">• {bomLines.length} BOMLine{bomLines.length !== 1 ? "s" : ""} (with variation flags, base quantities, UOMs)</p>
                 <p className="text-muted-foreground">• {bomLineVariants.length} BOMLineVariant{bomLineVariants.length !== 1 ? "s" : ""} (color resolutions, size mappings, supplier overrides)</p>
-                {selectedSteps.length > 0 && (
-                  <p className="text-muted-foreground">• New BOL with {selectedSteps.length} operation{selectedSteps.length !== 1 ? "s" : ""}</p>
-                )}
+
               </div>
               <div className="border-t border-border pt-2">
                 <p className="text-muted-foreground">The new Prod BOM starts as <strong className="text-foreground">Rev A · v1 in draft</strong> status.</p>
