@@ -263,8 +263,127 @@ function CreateRevisionDialog({ open, routing, allRoutings, onClose, onCreated }
   );
 }
 
+// ─── Derive Production Routing Dialog ────────────────────────────────────────
+function DeriveProductionDialog({ open, routing, onClose, onCreated }) {
+  const [name, setName] = useState(routing?.name || "");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Reset fields when routing changes
+  const routingId = routing?.id;
+  useState(() => { setName(routing?.name || ""); setNotes(""); }, [routingId]);
+
+  const isDev = routing?.routing_type === "development";
+  const sourceChipLabel = isDev ? "DEV" : "PROD";
+  const title = isDev
+    ? "Derive Production Routing from this Dev Routing"
+    : "Derive Alternate Production Routing";
+  const confirmLabel = isDev ? "Derive Production Routing" : "Derive Alternate Routing";
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    const newRouting = await base44.entities.SupplierRouting.create({
+      product_id: routing.product_id,
+      name: name.trim(),
+      routing_type: "production",
+      revision_code: "A",
+      version: 1,
+      status: "draft",
+      is_default: false,
+      derived_from_routing_id: routing.id,
+      derived_from_revision_code: routing.revision_code,
+      notes: notes || "",
+      pending_eco_review_count: 0,
+    });
+    // Clone steps
+    const sourceSteps = await base44.entities.SupplierRoutingStep.filter({ supplier_routing_id: routing.id });
+    if (sourceSteps.length > 0) {
+      await Promise.all(sourceSteps.map((s) =>
+        base44.entities.SupplierRoutingStep.create({
+          supplier_routing_id: newRouting.id,
+          sequence: s.sequence,
+          step_type: s.step_type,
+          supplier_id: s.supplier_id,
+          unit_cost: s.unit_cost,
+          currency_id: s.currency_id,
+          lead_time_days: s.lead_time_days,
+          ships_to_next: s.ships_to_next,
+          input_description: s.input_description,
+          output_description: s.output_description,
+          description: s.description,
+          notes: s.notes,
+        })
+      ));
+    }
+    setSaving(false);
+    onCreated(newRouting);
+  };
+
+  if (!routing) return null;
+
+  const chipCfg = ROUTING_TYPE_CHIP[routing.routing_type] || ROUTING_TYPE_CHIP.development;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+
+        {/* Read-only source summary */}
+        <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-muted-foreground">Source:</span>
+            <span className="font-medium">{routing.name}</span>
+            <span className="font-bold px-1 py-px rounded text-[9px]"
+              style={{ backgroundColor: chipCfg.bg, color: chipCfg.text }}>
+              {sourceChipLabel}
+            </span>
+            <span className="text-muted-foreground font-mono">
+              Rev {routing.revision_code || "—"} v{routing.version || "—"}
+            </span>
+            <StatusBadge status={routing.status} />
+          </div>
+          <p className="text-muted-foreground">
+            New Production Routing: <span className="font-medium text-foreground">Rev A · v1 (draft)</span>
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Name <span className="text-destructive">*</span></Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. EU Production Route"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Rename the production routing to distinguish it from the source if needed.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Notes (optional)</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Why this production routing? Any context to record."
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleCreate} disabled={saving || !name.trim()}>
+            {saving ? "Creating…" : confirmLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Routing Header ───────────────────────────────────────────────────────────
-function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusChange, onSelectRouting, onNewVersion, onNewRevision }) {
+function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusChange, onSelectRouting, onNewVersion, onNewRevision, onDeriveProduction }) {
   const [confirmDialog, setConfirmDialog] = useState(null); // { type, ... }
 
   const totalLeadTime = steps.reduce((sum, s) => sum + (Number(s.lead_time_days) || 0), 0);
@@ -345,19 +464,53 @@ function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusC
 
         {/* Lifecycle action buttons */}
         {routing.status === "draft" && (
-          <Button size="sm" className="h-7 text-xs ml-auto" onClick={() => onStatusChange(routing.id, "in_review", {})}>
-            Submit for Review
-          </Button>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <Button size="sm" className="h-7 text-xs" onClick={() => onStatusChange(routing.id, "in_review", {})}>
+              Submit for Review
+            </Button>
+            {routing.routing_type !== "sample" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={onDeriveProduction}>
+                    {routing.routing_type === "development"
+                      ? "Derive Production Routing from this Dev Routing"
+                      : "Derive Alternate Production Routing"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         )}
 
         {routing.status === "in_review" && (
-          <div className="flex gap-1.5 ml-auto">
+          <div className="flex gap-1.5 ml-auto items-center">
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onStatusChange(routing.id, "draft", {})}>
               Back to Draft
             </Button>
             <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => setConfirmDialog({ type: "release" })}>
               Release
             </Button>
+            {routing.routing_type !== "sample" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={onDeriveProduction}>
+                    {routing.routing_type === "development"
+                      ? "Derive Production Routing from this Dev Routing"
+                      : "Derive Alternate Production Routing"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         )}
 
@@ -371,6 +524,13 @@ function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusC
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onNewVersion}>Create New Version</DropdownMenuItem>
               <DropdownMenuItem onClick={onNewRevision}>Create New Revision</DropdownMenuItem>
+              {routing.routing_type !== "sample" && (
+                <DropdownMenuItem onClick={onDeriveProduction}>
+                  {routing.routing_type === "development"
+                    ? "Derive Production Routing from this Dev Routing"
+                    : "Derive Alternate Production Routing"}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDialog({ type: "obsolete" })}>
                 Mark Obsolete
               </DropdownMenuItem>
@@ -378,10 +538,45 @@ function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusC
           </DropdownMenu>
         )}
 
+        {routing.status === "superseded" && routing.routing_type !== "sample" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0 ml-auto">
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onDeriveProduction}>
+                {routing.routing_type === "development"
+                  ? "Derive Production Routing from this Dev Routing"
+                  : "Derive Alternate Production Routing"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {routing.status === "obsolete" && (
-          <Button variant="outline" size="sm" className="h-7 text-xs ml-auto" onClick={() => setConfirmDialog({ type: "restore" })}>
-            Restore to Draft
-          </Button>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setConfirmDialog({ type: "restore" })}>
+              Restore to Draft
+            </Button>
+            {routing.routing_type !== "sample" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={onDeriveProduction}>
+                    {routing.routing_type === "development"
+                      ? "Derive Production Routing from this Dev Routing"
+                      : "Derive Alternate Production Routing"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         )}
       </div>
 
@@ -518,6 +713,7 @@ export default function RoutingLifecycleSection({
 }) {
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [showCreateRevision, setShowCreateRevision] = useState(false);
+  const [showDeriveProduction, setShowDeriveProduction] = useState(false);
 
   const sorted = sortRoutings(routings);
   const selectedRouting = routings.find((r) => r.id === selectedRoutingId);
@@ -584,6 +780,7 @@ export default function RoutingLifecycleSection({
                 onSelectRouting={setSelectedRoutingId}
                 onNewVersion={() => setShowCreateVersion(true)}
                 onNewRevision={() => setShowCreateRevision(true)}
+                onDeriveProduction={() => setShowDeriveProduction(true)}
               />
             </div>
             {!isReadOnly && (
@@ -637,6 +834,15 @@ export default function RoutingLifecycleSection({
         onClose={() => setShowCreateRevision(false)}
         onCreated={(newR) => {
           setShowCreateRevision(false);
+          onNewRoutingAdded(newR);
+        }}
+      />
+      <DeriveProductionDialog
+        open={showDeriveProduction}
+        routing={selectedRouting}
+        onClose={() => setShowDeriveProduction(false)}
+        onCreated={(newR) => {
+          setShowDeriveProduction(false);
           onNewRoutingAdded(newR);
         }}
       />
