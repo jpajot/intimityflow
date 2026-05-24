@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import ProductColorSupplierLinkMatrix from "./bom/ProductColorSupplierLinkMatrix";
+import RoutingLifecycleSection from "./supplier/RoutingLifecycleSection";
 
 // ─── Sourcing Summary Banner ──────────────────────────────────────────────────
 function SourcingSummary({ approvedSuppliers, routings, colorOverrides, colorVariants, suppliers }) {
@@ -734,8 +735,6 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
 
   const primary = approvedSuppliers.find((a) => a.is_primary);
   const alternates = approvedSuppliers.filter((a) => !a.is_primary);
-  const selectedRouting = routings.find((r) => r.id === selectedRoutingId);
-  const selectedSteps = routingSteps.filter((s) => s.supplier_routing_id === selectedRoutingId).sort((a, b) => a.sequence - b.sequence);
 
   const STATUS_CHIP = {
     active: "bg-green-100 text-green-700 border-green-200",
@@ -877,99 +876,28 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         </button>
 
         {!collapseB && (
-          <div className="border-t border-border p-4 space-y-4">
-            {routings.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No routings defined. Add one for multi-supplier manufacturing.</p>
-            ) : (
-              <>
-                {/* Routing selector */}
-                <div className="flex gap-2 flex-wrap">
-                  {routings.map((r) => (
-                    <button key={r.id} type="button"
-                      onClick={() => setSelectedRoutingId(r.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${selectedRoutingId === r.id ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 border-border hover:bg-muted"}`}>
-                      {r.is_default && <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />}
-                      {r.name}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Routing detail */}
-                {selectedRouting && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-semibold">{selectedRouting.name}</span>
-                        <div className="flex items-center gap-1.5">
-                          <Switch
-                            id={`default-${selectedRouting.id}`}
-                            checked={selectedRouting.is_default}
-                            onCheckedChange={() => handleToggleDefaultRouting(selectedRouting)}
-                          />
-                          <Label htmlFor={`default-${selectedRouting.id}`} className="text-xs cursor-pointer">Default</Label>
-                        </div>
-                        {selectedRouting.total_lead_time_days && (
-                          <span className="text-xs text-muted-foreground">Total: {selectedRouting.total_lead_time_days}d</span>
-                        )}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${STATUS_CHIP[selectedRouting.status] || ""}`}>{selectedRouting.status?.replace(/_/g, " ")}</span>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-destructive h-7 text-xs" onClick={() => handleDeleteRouting(selectedRouting.id)}>
-                        <Trash2 className="w-3 h-3 mr-1" /> Delete routing
-                      </Button>
-                    </div>
-
-                    {/* Step sequence */}
-                    <div className="overflow-x-auto">
-                      <div className="flex gap-2 min-w-max pb-2">
-                        {selectedSteps.map((step, idx) => {
-                          const sup = allSuppliers.find((s) => s.id === step.supplier_id);
-                          return (
-                            <div key={step.id} className="flex items-center gap-2">
-                              <div
-                                className="w-44 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
-                                onClick={() => { setEditingStep(step); setTargetRoutingId(selectedRoutingId); setShowStepModal(true); }}
-                              >
-                                <div className="flex items-center gap-1.5 mb-1">
-                                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{step.sequence}</span>
-                                  <span className="text-xs font-semibold capitalize">{step.step_type?.replace(/_/g, " ")}</span>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground truncate">{sup?.name || "No supplier"}</p>
-                                <div className="flex gap-2 mt-1.5 text-[10px] text-muted-foreground">
-                                  {step.lead_time_days && <span>{step.lead_time_days}d</span>}
-                                  {step.unit_cost && <span>·</span>}
-                                  {step.unit_cost && <span>{step.unit_cost} {currencies.find((c) => c.id === step.currency_id)?.code || "—"}</span>}
-                                </div>
-                                {step.ships_to_next && idx < selectedSteps.length - 1 && (
-                                  <p className="text-[9px] text-primary mt-1">ships to next ↘</p>
-                                )}
-                              </div>
-                              {idx < selectedSteps.length - 1 && (
-                                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                              )}
-                            </div>
-                          );
-                        })}
-                        <Button variant="outline" size="sm" className="h-auto min-h-[88px] w-36 text-xs border-dashed flex-col gap-1"
-                          onClick={() => { setEditingStep(null); setTargetRoutingId(selectedRoutingId); setShowStepModal(true); }}>
-                          <Plus className="w-4 h-4" />
-                          Add step
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Cost summary */}
-                    {selectedSteps.some((s) => s.unit_cost) && (
-                      <div className="rounded-lg bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                        Total step cost: {selectedSteps.reduce((sum, s) => {
-                          const cost = Number(s.unit_cost) || 0;
-                          return sum + cost;
-                        }, 0).toFixed(2)} (mixed currencies may apply) · {selectedSteps.reduce((sum, s) => sum + (Number(s.lead_time_days) || 0), 0)}d total lead time
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
+          <div className="border-t border-border p-4">
+            <RoutingLifecycleSection
+              routings={routings}
+              routingSteps={routingSteps}
+              selectedRoutingId={selectedRoutingId}
+              setSelectedRoutingId={setSelectedRoutingId}
+              allSuppliers={allSuppliers}
+              currencies={currencies}
+              onToggleDefault={handleToggleDefaultRouting}
+              onStatusChange={async (id, newStatus, extra) => {
+                await base44.entities.SupplierRouting.update(id, { status: newStatus, ...extra });
+                setRoutings((prev) => prev.map((r) => r.id === id ? { ...r, status: newStatus, ...extra } : r));
+              }}
+              onAddStep={(routingId) => { setEditingStep(null); setTargetRoutingId(routingId); setShowStepModal(true); }}
+              onEditStep={(step) => { setEditingStep(step); setTargetRoutingId(step.supplier_routing_id); setShowStepModal(true); }}
+              onAddRouting={() => setShowAddRoutingModal(true)}
+              onDeleteRouting={handleDeleteRouting}
+              onNewRoutingAdded={(newR) => {
+                setRoutings((prev) => [...prev, newR]);
+                setSelectedRoutingId(newR.id);
+              }}
+            />
           </div>
         )}
       </div>
