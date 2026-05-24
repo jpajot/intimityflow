@@ -9,7 +9,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
 import BOMLineAddDialog from "../components/bom/BOMLineAddDialog";
-import RoutingLifecycleSection from "../components/supplier/RoutingLifecycleSection";
+import MfgOpsTab from "../components/bom/MfgOpsTab";
 import BOMChangeLogTab from "../components/bom/BOMChangeLogTab";
 import BOMInfoPanel from "../components/bom/BOMInfoPanel";
 import BOMOptionsContent from "../components/bom/BOMOptionsContent";
@@ -76,6 +76,7 @@ export default function BOMDetail() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const searchRef = useRef(null);
+  const changeRoutingDialogRef = useRef(null);
 
   // Dialog state
   const [linePicker, setLinePicker] = useState(null); // { mode: "tcx"|"name"|"size"|"clear"|"markNA"|"copy" }
@@ -586,6 +587,7 @@ export default function BOMDetail() {
       {/* BOM metadata row (routing, validity, etc.) */}
       <div className="px-2 pb-1 shrink-0">
         <BOMHeaderCard
+          ref={changeRoutingDialogRef}
           bom={bom}
           product={product}
           isReadOnly={isReadOnly}
@@ -669,19 +671,11 @@ export default function BOMDetail() {
       ) : (
         <div className="flex-1 overflow-y-auto px-2 py-3">
           {activeTab === "mfg_ops" && isProduction && (
-            bom.selected_routing_id ? (
-              <RoutingLifecycleSection
-                mode="single"
-                routingId={bom.selected_routing_id}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-                <p className="text-sm font-medium text-foreground">No routing linked to this BOM</p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  This production BOM has no SupplierRouting linked. Link a routing from the BOM header above to populate manufacturing operations.
-                </p>
-              </div>
-            )
+            <MfgOpsTab
+              bom={bom}
+              allProducts={allProducts}
+              changeRoutingDialogRef={changeRoutingDialogRef}
+            />
           )}
           {activeTab === "changelog" && (
             <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />

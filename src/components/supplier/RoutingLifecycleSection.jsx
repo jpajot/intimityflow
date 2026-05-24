@@ -779,7 +779,7 @@ function RoutingBody({
 }
 
 // ─── Single mode (BOM detail → Manufacturing Operations tab) ──────────────────
-function SingleModeSection({ routingId }) {
+function SingleModeSection({ routingId, onRoutingCreated }) {
   const navigate = useNavigate();
   const [routing, setRouting] = useState(null);
   const [steps, setSteps] = useState([]);
@@ -839,8 +839,9 @@ function SingleModeSection({ routingId }) {
 
   // In single mode: after a new routing version/revision is created, stay on original routing
   // but reload to get fresh data (the new routing may affect the list used by allRoutings for meta)
-  const handleNewRoutingAdded = async () => {
+  const handleNewRoutingAdded = async (newR) => {
     await load();
+    if (onRoutingCreated) onRoutingCreated(newR);
   };
 
   // Navigate to product suppliers tab — best-effort navigation without deep-link selection
@@ -1040,7 +1041,7 @@ export default function RoutingLifecycleSection(props) {
   const { mode } = props;
 
   if (mode === "single") {
-    return <SingleModeSection routingId={props.routingId} />;
+    return <SingleModeSection routingId={props.routingId} onRoutingCreated={props.onRoutingCreated} />;
   }
 
   // mode === "multi" — pass through all existing props

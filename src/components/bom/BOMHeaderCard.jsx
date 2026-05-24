@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,10 +35,10 @@ function routingCompactLabel(r) {
 }
 
 // ─── Change Routing Dialog ────────────────────────────────────────────────────
-function ChangeRoutingDialog({ open, bom, currentRouting, onClose, onSaved }) {
+function ChangeRoutingDialog({ open, bom, currentRouting, preselectedRoutingId, onClose, onSaved }) {
   const [routings, setRoutings] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedId, setSelectedId] = useState(currentRouting?.id || null);
+  const [selectedId, setSelectedId] = useState(preselectedRoutingId || currentRouting?.id || null);
   const [saving, setSaving] = useState(false);
 
   const typeChip = bom?.bom_type === "production" ? "PROD" : "DEV";
@@ -47,12 +47,13 @@ function ChangeRoutingDialog({ open, bom, currentRouting, onClose, onSaved }) {
   useEffect(() => {
     if (!open || !bom?.product_id) return;
     setLoading(true);
-    setSelectedId(currentRouting?.id || null);
+    // preselectedRoutingId takes priority, otherwise default to current
+    setSelectedId(preselectedRoutingId || currentRouting?.id || null);
     base44.entities.SupplierRouting.filter({ product_id: bom.product_id, routing_type: routingType }).then((rs) => {
       setRoutings(sortRoutingsByRevVersion(rs));
       setLoading(false);
     });
-  }, [open, bom?.product_id, bom?.bom_type, currentRouting?.id]);
+  }, [open, bom?.product_id, bom?.bom_type, currentRouting?.id, preselectedRoutingId]);
 
   const handleConfirm = async () => {
     if (!selectedId || selectedId === currentRouting?.id) { onClose(); return; }
@@ -158,11 +159,21 @@ function ValidityDateField({ label, value, onSave, canEdit }) {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-export default function BOMHeaderCard({ bom, product, isReadOnly, onBomUpdated }) {
+// changeRoutingDialogRef: optional ref that exposes openChangeRoutingDialog(preselectedId?)
+const BOMHeaderCard = forwardRef(function BOMHeaderCard({ bom, product, isReadOnly, onBomUpdated }, changeRoutingDialogRef) {
   const [linkedRouting, setLinkedRouting] = useState(null);
   const [showChangePicker, setShowChangePicker] = useState(false);
+  const [preselectedRoutingId, setPreselectedRoutingId] = useState(null);
 
   const canEditRouting = bom && ["draft", "in_review"].includes(bom.status);
+
+  // Expose openChangeRoutingDialog(preselectedId?) via ref
+  useImperativeHandle(changeRoutingDialogRef, () => ({
+    openChangeRoutingDialog: (preselectedId = null) => {
+      setPreselectedRoutingId(preselectedId);
+      setShowChangePicker(true);
+    },
+  }), []);
 
   useEffect(() => {
     if (!bom?.selected_routing_id) { setLinkedRouting(null); return; }
@@ -271,13 +282,17 @@ export default function BOMHeaderCard({ bom, product, isReadOnly, onBomUpdated }
         open={showChangePicker}
         bom={bom}
         currentRouting={linkedRouting}
-        onClose={() => setShowChangePicker(false)}
+        preselectedRoutingId={preselectedRoutingId}
+        onClose={() => { setShowChangePicker(false); setPreselectedRoutingId(null); }}
         onSaved={(updatedBom, newRouting) => {
           setShowChangePicker(false);
+          setPreselectedRoutingId(null);
           setLinkedRouting(newRouting);
           if (onBomUpdated) onBomUpdated(updatedBom);
         }}
       />
     </>
   );
-}
+});
+
+export default BOMHeaderCard;
