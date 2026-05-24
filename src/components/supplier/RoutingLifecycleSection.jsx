@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, ChevronRight, Trash2, MoreHorizontal, Loader2
+  Plus, ChevronRight, Trash2, MoreHorizontal, Loader2, Building2
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -778,6 +779,102 @@ function RoutingBody({
   );
 }
 
+// ─── Routing Step Modal (shared, used in both single and multi modes) ─────────
+function RoutingStepModal({ open, onClose, onSave, onDelete, suppliers, lovValues, currencies, existing }) {
+  const [form, setForm] = useState({ step_type: "", supplier_id: "", description: "", unit_cost: "", currency_id: "", lead_time_days: "", ships_to_next: true, input_description: "", output_description: "", notes: "" });
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    if (open) {
+      if (existing) setForm({ ...existing, unit_cost: existing.unit_cost || "", lead_time_days: existing.lead_time_days || "" });
+      else setForm({ step_type: "", supplier_id: "", description: "", unit_cost: "", currency_id: "", lead_time_days: "", ships_to_next: true, input_description: "", output_description: "", notes: "" });
+      setSearch(existing ? (suppliers.find((s) => s.id === existing.supplier_id)?.name || "") : "");
+    }
+  }, [open, existing]);
+
+  const getLov = (cat) => lovValues.filter((v) => v.category === cat).map((v) => v.name);
+  const filteredSuppliers = suppliers.filter((s) => !search || s.name?.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>{existing ? "Edit Step" : "Add Routing Step"}</DialogTitle></DialogHeader>
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Step Type *</Label>
+              <Select value={form.step_type || "none"} onValueChange={(v) => setForm((f) => ({ ...f, step_type: v === "none" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Select…</SelectItem>
+                  {getLov("routing_step_type").map((t) => <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Lead Time (days)</Label>
+              <Input type="number" value={form.lead_time_days || ""} onChange={(e) => setForm((f) => ({ ...f, lead_time_days: e.target.value }))} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Supplier</Label>
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search supplier…" className="h-8 text-xs mb-1" />
+            <div className="border border-border rounded-lg max-h-32 overflow-y-auto">
+              {filteredSuppliers.map((s) => (
+                <button key={s.id} type="button" onClick={() => { setForm((f) => ({ ...f, supplier_id: s.id })); setSearch(s.name); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2 ${form.supplier_id === s.id ? "bg-primary/10 text-primary" : ""}`}>
+                  <Building2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                  <span>{s.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Description</Label>
+            <Input value={form.description || ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What this supplier does at this step" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Unit Cost</Label>
+              <Input type="number" value={form.unit_cost || ""} onChange={(e) => setForm((f) => ({ ...f, unit_cost: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Currency</Label>
+              <Select value={form.currency_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, currency_id: v === "none" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {currencies.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Input description</Label>
+              <Input value={form.input_description || ""} onChange={(e) => setForm((f) => ({ ...f, input_description: e.target.value }))} placeholder="What arrives" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Output description</Label>
+              <Input value={form.output_description || ""} onChange={(e) => setForm((f) => ({ ...f, output_description: e.target.value }))} placeholder="What leaves" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch id="ships-next-single" checked={!!form.ships_to_next} onCheckedChange={(v) => setForm((f) => ({ ...f, ships_to_next: v }))} />
+            <Label htmlFor="ships-next-single" className="text-sm cursor-pointer">Ships directly to next step</Label>
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          {existing && onDelete && (
+            <Button variant="destructive" size="sm" onClick={onDelete} className="mr-auto">Delete step</Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => onSave(form)} disabled={!form.step_type}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Single mode (BOM detail → Manufacturing Operations tab) ──────────────────
 function SingleModeSection({ routingId, onRoutingCreated }) {
   const navigate = useNavigate();
@@ -785,14 +882,21 @@ function SingleModeSection({ routingId, onRoutingCreated }) {
   const [steps, setSteps] = useState([]);
   const [allSuppliers, setAllSuppliers] = useState([]);
   const [currencies, setCurrencies] = useState([]);
+  const [lovValues, setLovValues] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Step modal state
+  const [showStepModal, setShowStepModal] = useState(false);
+  const [editingStep, setEditingStep] = useState(null);
+  const [targetRoutingId, setTargetRoutingId] = useState(null);
 
   const load = async () => {
     setLoading(true);
-    const [routings, suppliersRes, currenciesRes] = await Promise.all([
+    const [routings, suppliersRes, currenciesRes, lovsRes] = await Promise.all([
       base44.entities.SupplierRouting.filter({ id: routingId }),
       base44.entities.Supplier.list("name", 500),
       base44.entities.Currency.filter({ is_active: true }),
+      base44.entities.ListOfValues.list("name", 2000),
     ]);
     const r = routings[0] || null;
     setRouting(r);
@@ -802,6 +906,7 @@ function SingleModeSection({ routingId, onRoutingCreated }) {
     }
     setAllSuppliers(suppliersRes);
     setCurrencies(currenciesRes);
+    setLovValues(lovsRes);
     setLoading(false);
   };
 
@@ -817,7 +922,6 @@ function SingleModeSection({ routingId, onRoutingCreated }) {
   const handleToggleDefault = async (r) => {
     const newVal = !r.is_default;
     if (newVal) {
-      // Clear default from siblings of same type (best-effort)
       const siblings = await base44.entities.SupplierRouting.filter({ product_id: r.product_id, routing_type: r.routing_type, is_default: true });
       await Promise.all(siblings.filter((s) => s.id !== r.id).map((s) =>
         base44.entities.SupplierRouting.update(s.id, { is_default: false })
@@ -827,14 +931,67 @@ function SingleModeSection({ routingId, onRoutingCreated }) {
     await load();
   };
 
-  const handleAddStep = async (rId) => {
-    // open a minimal add-step inline — placeholder: just reload
+  const handleAddStep = (rId) => {
+    setEditingStep(null);
+    setTargetRoutingId(rId);
+    setShowStepModal(true);
+  };
+
+  const handleEditStep = (step) => {
+    setEditingStep(step);
+    setTargetRoutingId(step.supplier_routing_id);
+    setShowStepModal(true);
+  };
+
+  const handleSaveStep = async (form) => {
+    const rId = targetRoutingId;
+    if (editingStep) {
+      await base44.entities.SupplierRoutingStep.update(editingStep.id, {
+        step_type: form.step_type,
+        supplier_id: form.supplier_id,
+        description: form.description,
+        unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
+        currency_id: form.currency_id || null,
+        lead_time_days: form.lead_time_days ? Number(form.lead_time_days) : null,
+        ships_to_next: form.ships_to_next,
+        input_description: form.input_description,
+        output_description: form.output_description,
+        notes: form.notes,
+      });
+    } else {
+      const seq = steps.filter((s) => s.supplier_routing_id === rId).length + 1;
+      await base44.entities.SupplierRoutingStep.create({
+        supplier_routing_id: rId,
+        sequence: seq,
+        step_type: form.step_type,
+        supplier_id: form.supplier_id,
+        description: form.description,
+        unit_cost: form.unit_cost ? Number(form.unit_cost) : null,
+        currency_id: form.currency_id || null,
+        lead_time_days: form.lead_time_days ? Number(form.lead_time_days) : null,
+        ships_to_next: form.ships_to_next,
+        input_description: form.input_description,
+        output_description: form.output_description,
+        notes: form.notes,
+      });
+    }
+    setShowStepModal(false);
+    setEditingStep(null);
     await load();
   };
 
-  const handleEditStep = async (step) => {
-    // editing is handled by parent ProductSuppliersTab — here it's surfaced as read-only
-    // so this is a no-op for released routings; if editable, do nothing until deeper integration
+  const handleDeleteStep = async () => {
+    const deletedStep = editingStep;
+    const rId = deletedStep.supplier_routing_id;
+    await base44.entities.SupplierRoutingStep.delete(deletedStep.id);
+    const remaining = steps.filter((s) => s.id !== deletedStep.id && s.supplier_routing_id === rId)
+      .sort((a, b) => a.sequence - b.sequence);
+    await Promise.all(remaining.map((s, i) =>
+      base44.entities.SupplierRoutingStep.update(s.id, { sequence: i + 1 })
+    ));
+    setShowStepModal(false);
+    setEditingStep(null);
+    await load();
   };
 
   // In single mode: after a new routing version/revision is created, stay on original routing
@@ -868,21 +1025,33 @@ function SingleModeSection({ routingId, onRoutingCreated }) {
   }
 
   return (
-    <RoutingBody
-      routing={routing}
-      steps={steps}
-      allRoutings={[routing]} // in single mode allRoutings only has this routing for header meta
-      allSuppliers={allSuppliers}
-      currencies={currencies}
-      onToggleDefault={handleToggleDefault}
-      onStatusChange={handleStatusChange}
-      onSelectRouting={handleSelectRouting}
-      onDeleteRouting={null} // no delete in single mode
-      onAddStep={handleAddStep}
-      onEditStep={handleEditStep}
-      onNewRoutingAdded={handleNewRoutingAdded}
-      disableAutoSwitch={true}
-    />
+    <>
+      <RoutingBody
+        routing={routing}
+        steps={steps}
+        allRoutings={[routing]}
+        allSuppliers={allSuppliers}
+        currencies={currencies}
+        onToggleDefault={handleToggleDefault}
+        onStatusChange={handleStatusChange}
+        onSelectRouting={handleSelectRouting}
+        onDeleteRouting={null}
+        onAddStep={handleAddStep}
+        onEditStep={handleEditStep}
+        onNewRoutingAdded={handleNewRoutingAdded}
+        disableAutoSwitch={true}
+      />
+      <RoutingStepModal
+        open={showStepModal}
+        onClose={() => { setShowStepModal(false); setEditingStep(null); }}
+        onSave={handleSaveStep}
+        onDelete={editingStep ? handleDeleteStep : null}
+        suppliers={allSuppliers}
+        lovValues={lovValues}
+        currencies={currencies}
+        existing={editingStep}
+      />
+    </>
   );
 }
 
