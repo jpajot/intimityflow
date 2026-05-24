@@ -68,10 +68,10 @@
       "type": "string",
       "enum": [
         "BOM",
-        "BOL",
-        "BOMLineVariant"
+        "BOMLineVariant",
+        "SupplierRouting"
       ],
-      "description": "Nullable. Identifies the type of artifact produced by the adoption (e.g. new Prod BOM revision for Flow A, updated BOL for Flow B, refreshed BOMLineVariant for Flow C). Null when no new artifact was produced (rejected, pinned in-place, superseded, not_applicable)."
+      "description": "Nullable. Identifies the type of artifact produced by the adoption (e.g. new Prod BOM revision for Flow A, updated SupplierRouting for Flow B, refreshed BOMLineVariant for Flow C). Null when no new artifact was produced (rejected, pinned in-place, superseded, not_applicable)."
     },
     "resulting_artifact_id": {
       "type": "string",
