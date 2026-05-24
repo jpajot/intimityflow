@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Loader2, Wrench, FileText, ClipboardList, Info, Search, X } from "lucide-react";
+import { ArrowLeft, Loader2, Wrench, FileText, ClipboardList, Info, Search, X, AlertTriangle } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
@@ -21,6 +21,7 @@ import BOMCreateVersionDialog from "../components/bom/BOMCreateVersionDialog";
 import BOMExportDialog from "../components/bom/BOMExportDialog";
 import BOMCreateProdBOMDialog from "../components/bom/BOMCreateProdBOMDialog";
 import BOMHeaderCard from "../components/bom/BOMHeaderCard";
+import BOMReleaseValidationDialog from "../components/bom/BOMReleaseValidationDialog";
 import { DEFAULT_FILTER_CONFIG, isFilterActive, applyFilterConfig } from "../components/bom/BOMQuickFilterGroup";
 
 const STATUS_COLORS = {
@@ -86,6 +87,8 @@ export default function BOMDetail() {
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showCreateProdBOM, setShowCreateProdBOM] = useState(false);
+  const [showReleaseValidation, setShowReleaseValidation] = useState(false);
+  const [linkedRoutingForBanner, setLinkedRoutingForBanner] = useState(null);
 
   // A BOM is read-only if: status is terminal, OR it has been superseded by a newer version
   const isSupersededByVersion = bom && !!bom.superseded_by_version_id;
@@ -221,7 +224,16 @@ export default function BOMDetail() {
     init();
   }, [id]);
 
+  // Intercept release: open validation dialog instead of committing directly
   const handleStatusTransition = async (toStatus) => {
+    if (toStatus === "released") {
+      setShowReleaseValidation(true);
+      return;
+    }
+    await commitStatusTransition(toStatus);
+  };
+
+  const commitStatusTransition = async (toStatus) => {
     const now = new Date().toISOString();
     const updates = { status: toStatus };
     if (toStatus === "released") {
@@ -430,6 +442,17 @@ export default function BOMDetail() {
 
   const filtersActive = isFilterActive(filterConfig);
 
+  // Load linked routing for post-release warning banner (prod BOMs only)
+  useEffect(() => {
+    if (!bom?.selected_routing_id || bom.bom_type !== "production") {
+      setLinkedRoutingForBanner(null);
+      return;
+    }
+    base44.entities.SupplierRouting.filter({ id: bom.selected_routing_id }).then((rs) => {
+      setLinkedRoutingForBanner(rs[0] || null);
+    });
+  }, [bom?.selected_routing_id, bom?.bom_type]);
+
   useEffect(() => {
     if (!bom) return;
     const transitions = STATUS_TRANSITIONS[bom.status] || [];
@@ -583,6 +606,34 @@ export default function BOMDetail() {
           </button>
         </div>
       </div>
+
+      {/* Post-release warning banner: prod BOM released against non-released routing */}
+      {bom.bom_type === "production" &&
+        ["released", "superseded", "obsolete"].includes(bom.status) &&
+        linkedRoutingForBanner &&
+        linkedRoutingForBanner.status !== "released" && (
+          <div className="flex items-start gap-3 bg-amber-50 border-b border-amber-200 px-4 py-3 text-xs shrink-0">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <p className="text-sm font-semibold text-amber-900">
+                Released against a {linkedRoutingForBanner.status} routing
+              </p>
+              <p className="text-amber-800">
+                This production BOM was released while its linked routing{" "}
+                <strong>"{linkedRoutingForBanner.name}"</strong> Rev {linkedRoutingForBanner.revision_code || "—"} v{linkedRoutingForBanner.version || "—"} was in status "{linkedRoutingForBanner.status}".
+                The routing should normally be released to lock the manufacturing operations.
+                Release the routing now to clear this warning.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 text-primary hover:underline text-xs font-medium"
+              onClick={() => navigate(`/products/${bom.product_id}?tab=suppliers`)}
+            >
+              Open routing →
+            </button>
+          </div>
+        )}
 
       {/* BOM metadata row (routing, validity, etc.) */}
       <div className="px-2 pb-1 shrink-0">
@@ -787,6 +838,25 @@ export default function BOMDetail() {
           bomLineVariants={bomLineVariants}
           user={user}
           lovValues={lovValues}
+        />
+      )}
+
+      {/* Release validation dialog */}
+      {showReleaseValidation && (
+        <BOMReleaseValidationDialog
+          open={true}
+          onClose={() => setShowReleaseValidation(false)}
+          onConfirm={async () => {
+            setShowReleaseValidation(false);
+            await commitStatusTransition("released");
+          }}
+          bom={bom}
+          bomLines={bomLines}
+          bomLineVariants={bomLineVariants}
+          colorVariants={colorVariants}
+          styleSizes={styleSizes}
+          colorAndMores={colorAndMores}
+          onOpenChangeRouting={() => changeRoutingDialogRef.current?.openChangeRoutingDialog()}
         />
       )}
 
