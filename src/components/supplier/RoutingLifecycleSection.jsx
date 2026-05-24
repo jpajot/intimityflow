@@ -1,9 +1,11 @@
 /**
  * RoutingLifecycleSection
- * Handles Section B (Manufacturing Routings) for the Product → Suppliers tab.
- * Covers: enriched dropdown, lifecycle header, status actions, create-version/revision dialogs, read-only step enforcement.
+ * Supports two modes:
+ *   mode="multi"  — lists all routings for a product (Product → Suppliers tab, Section B)
+ *   mode="single" — renders one specific routing by routingId (BOM → Manufacturing Operations tab)
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
-  Plus, ChevronRight, Building2, Trash2, MoreHorizontal
+  Plus, ChevronRight, Trash2, MoreHorizontal, Loader2
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -71,13 +73,11 @@ function sortRoutings(routings) {
 function computeNextRevisionCode(existingCodes) {
   if (!existingCodes || existingCodes.length === 0) return "A";
   const codes = existingCodes.filter(Boolean).map((c) => c.toUpperCase());
-  // Sort: single letters A-Z, then AA, AB... simple lexicographic for short codes
   codes.sort((a, b) => {
     if (a.length !== b.length) return a.length - b.length;
     return a.localeCompare(b);
   });
   const last = codes[codes.length - 1];
-  // Increment: "A"→"B", ..., "Z"→"AA", "AA"→"AB", ..., "AZ"→"BA"
   const chars = last.split("");
   let i = chars.length - 1;
   while (i >= 0) {
@@ -132,7 +132,6 @@ function CreateVersionDialog({ open, routing, onClose, onCreated }) {
       derived_from_revision_code: routing.revision_code,
       notes: notes || undefined,
     });
-    // Clone steps from source routing
     const sourceSteps = await base44.entities.SupplierRoutingStep.filter({ supplier_routing_id: routing.id });
     if (sourceSteps.length > 0) {
       await Promise.all(sourceSteps.map((s) =>
@@ -189,7 +188,6 @@ function CreateRevisionDialog({ open, routing, allRoutings, onClose, onCreated }
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Compute next revision code from all routings of same product+type
   const siblingCodes = allRoutings
     .filter((r) => r.product_id === routing?.product_id && r.routing_type === routing?.routing_type)
     .map((r) => r.revision_code)
@@ -211,7 +209,6 @@ function CreateRevisionDialog({ open, routing, allRoutings, onClose, onCreated }
       derived_from_revision_code: routing.revision_code,
       notes: notes,
     });
-    // Clone steps from source routing
     const sourceSteps = await base44.entities.SupplierRoutingStep.filter({ supplier_routing_id: routing.id });
     if (sourceSteps.length > 0) {
       await Promise.all(sourceSteps.map((s) =>
@@ -269,7 +266,6 @@ function DeriveProductionDialog({ open, routing, onClose, onCreated }) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Reset fields when routing changes
   const routingId = routing?.id;
   useState(() => { setName(routing?.name || ""); setNotes(""); }, [routingId]);
 
@@ -296,7 +292,6 @@ function DeriveProductionDialog({ open, routing, onClose, onCreated }) {
       notes: notes || "",
       pending_eco_review_count: 0,
     });
-    // Clone steps
     const sourceSteps = await base44.entities.SupplierRoutingStep.filter({ supplier_routing_id: routing.id });
     if (sourceSteps.length > 0) {
       await Promise.all(sourceSteps.map((s) =>
@@ -328,8 +323,6 @@ function DeriveProductionDialog({ open, routing, onClose, onCreated }) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-
-        {/* Read-only source summary */}
         <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 space-y-1 text-xs">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-muted-foreground">Source:</span>
@@ -347,30 +340,17 @@ function DeriveProductionDialog({ open, routing, onClose, onCreated }) {
             New Production Routing: <span className="font-medium text-foreground">Rev A · v1 (draft)</span>
           </p>
         </div>
-
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label className="text-xs">Name <span className="text-destructive">*</span></Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. EU Production Route"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Rename the production routing to distinguish it from the source if needed.
-            </p>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. EU Production Route" />
+            <p className="text-[11px] text-muted-foreground">Rename the production routing to distinguish it from the source if needed.</p>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Notes (optional)</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              placeholder="Why this production routing? Any context to record."
-            />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Why this production routing? Any context to record." />
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleCreate} disabled={saving || !name.trim()}>
@@ -382,9 +362,9 @@ function DeriveProductionDialog({ open, routing, onClose, onCreated }) {
   );
 }
 
-// ─── Routing Header ───────────────────────────────────────────────────────────
+// ─── Routing Header (shared between modes) ────────────────────────────────────
 function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusChange, onSelectRouting, onNewVersion, onNewRevision, onDeriveProduction }) {
-  const [confirmDialog, setConfirmDialog] = useState(null); // { type, ... }
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const totalLeadTime = steps.reduce((sum, s) => sum + (Number(s.lead_time_days) || 0), 0);
   const isReadOnly = ["released", "superseded", "obsolete"].includes(routing.status);
@@ -399,7 +379,7 @@ function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusC
       : null);
 
   const metaParts = [];
-  if (routing.status === "released" || routing.status === "superseded" || routing.status === "obsolete") {
+  if (["released", "superseded", "obsolete"].includes(routing.status)) {
     if (routing.released_by && routing.released_at) {
       metaParts.push(`Released by ${routing.released_by} on ${formatDate(routing.released_at)}`);
     }
@@ -433,7 +413,6 @@ function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusC
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-bold">{routing.name}</span>
 
-        {/* is_default toggle */}
         <div className="flex items-center gap-1">
           <Switch
             id={`default-${routing.id}`}
@@ -635,7 +614,7 @@ function RoutingHeader({ routing, steps, allRoutings, onToggleDefault, onStatusC
   );
 }
 
-// ─── Step Cards ───────────────────────────────────────────────────────────────
+// ─── Step Cards (shared between modes) ────────────────────────────────────────
 function StepCards({ steps, routing, allSuppliers, currencies, onAddStep, onEditStep }) {
   const isReadOnly = ["released", "superseded", "obsolete"].includes(routing?.status);
   const tooltip = isReadOnly
@@ -695,8 +674,219 @@ function StepCards({ steps, routing, allSuppliers, currencies, onAddStep, onEdit
   );
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
-export default function RoutingLifecycleSection({
+// ─── Shared routing body (header + step cards + dialogs) ──────────────────────
+function RoutingBody({
+  routing,
+  steps,
+  allRoutings,
+  allSuppliers,
+  currencies,
+  onToggleDefault,
+  onStatusChange,
+  onSelectRouting,
+  onDeleteRouting,
+  onAddStep,
+  onEditStep,
+  onNewRoutingAdded,
+  // In single mode, after create we do NOT auto-switch, so caller can pass a no-op
+  disableAutoSwitch,
+}) {
+  const [showCreateVersion, setShowCreateVersion] = useState(false);
+  const [showCreateRevision, setShowCreateRevision] = useState(false);
+  const [showDeriveProduction, setShowDeriveProduction] = useState(false);
+
+  const isReadOnly = ["released", "superseded", "obsolete"].includes(routing?.status);
+
+  if (!routing) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-2 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <RoutingHeader
+            routing={routing}
+            steps={steps}
+            allRoutings={allRoutings}
+            onToggleDefault={onToggleDefault}
+            onStatusChange={onStatusChange}
+            onSelectRouting={onSelectRouting}
+            onNewVersion={() => setShowCreateVersion(true)}
+            onNewRevision={() => setShowCreateRevision(true)}
+            onDeriveProduction={() => setShowDeriveProduction(true)}
+          />
+        </div>
+        {!isReadOnly && onDeleteRouting && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive h-7 text-xs shrink-0"
+            onClick={() => onDeleteRouting(routing.id)}
+          >
+            <Trash2 className="w-3 h-3 mr-1" /> Delete routing
+          </Button>
+        )}
+      </div>
+
+      <StepCards
+        steps={steps}
+        routing={routing}
+        allSuppliers={allSuppliers}
+        currencies={currencies}
+        onAddStep={() => onAddStep(routing.id)}
+        onEditStep={onEditStep}
+      />
+
+      {steps.some((s) => s.unit_cost) && (
+        <div className="rounded-lg bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          Total step cost:{" "}
+          {steps.reduce((sum, s) => sum + (Number(s.unit_cost) || 0), 0).toFixed(2)}{" "}
+          (mixed currencies may apply) ·{" "}
+          {steps.reduce((sum, s) => sum + (Number(s.lead_time_days) || 0), 0)}d total lead time
+        </div>
+      )}
+
+      <CreateVersionDialog
+        open={showCreateVersion}
+        routing={routing}
+        onClose={() => setShowCreateVersion(false)}
+        onCreated={(newR) => {
+          setShowCreateVersion(false);
+          if (!disableAutoSwitch) onNewRoutingAdded(newR);
+          else onNewRoutingAdded(newR); // always notify parent, parent decides what to do
+        }}
+      />
+      <CreateRevisionDialog
+        open={showCreateRevision}
+        routing={routing}
+        allRoutings={allRoutings}
+        onClose={() => setShowCreateRevision(false)}
+        onCreated={(newR) => {
+          setShowCreateRevision(false);
+          onNewRoutingAdded(newR);
+        }}
+      />
+      <DeriveProductionDialog
+        open={showDeriveProduction}
+        routing={routing}
+        onClose={() => setShowDeriveProduction(false)}
+        onCreated={(newR) => {
+          setShowDeriveProduction(false);
+          onNewRoutingAdded(newR);
+        }}
+      />
+    </div>
+  );
+}
+
+// ─── Single mode (BOM detail → Manufacturing Operations tab) ──────────────────
+function SingleModeSection({ routingId }) {
+  const navigate = useNavigate();
+  const [routing, setRouting] = useState(null);
+  const [steps, setSteps] = useState([]);
+  const [allSuppliers, setAllSuppliers] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const [routings, suppliersRes, currenciesRes] = await Promise.all([
+      base44.entities.SupplierRouting.filter({ id: routingId }),
+      base44.entities.Supplier.list("name", 500),
+      base44.entities.Currency.filter({ is_active: true }),
+    ]);
+    const r = routings[0] || null;
+    setRouting(r);
+    if (r) {
+      const stepsRes = await base44.entities.SupplierRoutingStep.filter({ supplier_routing_id: routingId });
+      setSteps(stepsRes.sort((a, b) => a.sequence - b.sequence));
+    }
+    setAllSuppliers(suppliersRes);
+    setCurrencies(currenciesRes);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (routingId) load();
+  }, [routingId]);
+
+  const handleStatusChange = async (rId, newStatus, extra) => {
+    await base44.entities.SupplierRouting.update(rId, { status: newStatus, ...extra });
+    await load();
+  };
+
+  const handleToggleDefault = async (r) => {
+    const newVal = !r.is_default;
+    if (newVal) {
+      // Clear default from siblings of same type (best-effort)
+      const siblings = await base44.entities.SupplierRouting.filter({ product_id: r.product_id, routing_type: r.routing_type, is_default: true });
+      await Promise.all(siblings.filter((s) => s.id !== r.id).map((s) =>
+        base44.entities.SupplierRouting.update(s.id, { is_default: false })
+      ));
+    }
+    await base44.entities.SupplierRouting.update(r.id, { is_default: newVal });
+    await load();
+  };
+
+  const handleAddStep = async (rId) => {
+    // open a minimal add-step inline — placeholder: just reload
+    await load();
+  };
+
+  const handleEditStep = async (step) => {
+    // editing is handled by parent ProductSuppliersTab — here it's surfaced as read-only
+    // so this is a no-op for released routings; if editable, do nothing until deeper integration
+  };
+
+  // In single mode: after a new routing version/revision is created, stay on original routing
+  // but reload to get fresh data (the new routing may affect the list used by allRoutings for meta)
+  const handleNewRoutingAdded = async () => {
+    await load();
+  };
+
+  // Navigate to product suppliers tab — best-effort navigation without deep-link selection
+  const handleSelectRouting = (linkedRoutingId) => {
+    if (routing?.product_id) {
+      navigate(`/products/${routing.product_id}?tab=suppliers`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!routing) {
+    return (
+      <div className="text-center py-16 text-muted-foreground text-sm">
+        Routing not found.
+      </div>
+    );
+  }
+
+  return (
+    <RoutingBody
+      routing={routing}
+      steps={steps}
+      allRoutings={[routing]} // in single mode allRoutings only has this routing for header meta
+      allSuppliers={allSuppliers}
+      currencies={currencies}
+      onToggleDefault={handleToggleDefault}
+      onStatusChange={handleStatusChange}
+      onSelectRouting={handleSelectRouting}
+      onDeleteRouting={null} // no delete in single mode
+      onAddStep={handleAddStep}
+      onEditStep={handleEditStep}
+      onNewRoutingAdded={handleNewRoutingAdded}
+      disableAutoSwitch={true}
+    />
+  );
+}
+
+// ─── Multi mode (Product → Suppliers tab, Section B) — existing behavior ──────
+function MultiModeSection({
   routings,
   routingSteps,
   selectedRoutingId,
@@ -711,15 +901,11 @@ export default function RoutingLifecycleSection({
   onDeleteRouting,
   onNewRoutingAdded,
 }) {
-  const [showCreateVersion, setShowCreateVersion] = useState(false);
-  const [showCreateRevision, setShowCreateRevision] = useState(false);
-  const [showDeriveProduction, setShowDeriveProduction] = useState(false);
   const [typeFilter, setTypeFilter] = useState("all");
   const [showObsolete, setShowObsolete] = useState(false);
 
   const sorted = sortRoutings(routings);
 
-  // Apply filters
   const HIDDEN_STATUSES = ["obsolete", "superseded"];
   const filteredSorted = sorted.filter((r) => {
     if (typeFilter !== "all" && r.routing_type !== typeFilter) return false;
@@ -727,23 +913,15 @@ export default function RoutingLifecycleSection({
     return true;
   });
 
-  // If selected routing is filtered out, fall back to first visible
   const visibleIds = new Set(filteredSorted.map((r) => r.id));
   const effectiveSelectedId = visibleIds.has(selectedRoutingId)
     ? selectedRoutingId
     : (filteredSorted[0]?.id || null);
 
-  // Sync back when selection shifts due to filter change
-  if (effectiveSelectedId !== selectedRoutingId) {
-    // Use effect-free approach: just use effectiveSelectedId for rendering
-  }
-
   const selectedRouting = routings.find((r) => r.id === effectiveSelectedId);
   const selectedSteps = routingSteps
     .filter((s) => s.supplier_routing_id === effectiveSelectedId)
     .sort((a, b) => a.sequence - b.sequence);
-
-  const isReadOnly = ["released", "superseded", "obsolete"].includes(selectedRouting?.status);
 
   const TYPE_FILTER_OPTIONS = [
     { value: "all", label: "All" },
@@ -754,7 +932,6 @@ export default function RoutingLifecycleSection({
 
   const filterRow = (
     <div className="flex items-center justify-between gap-3 flex-wrap">
-      {/* Left: type filter chips */}
       <div className="flex gap-1.5">
         {TYPE_FILTER_OPTIONS.map((opt) => (
           <button
@@ -771,7 +948,6 @@ export default function RoutingLifecycleSection({
           </button>
         ))}
       </div>
-      {/* Right: obsolete/superseded toggle */}
       <label className="flex items-center gap-1.5 cursor-pointer select-none">
         <input
           type="checkbox"
@@ -797,126 +973,92 @@ export default function RoutingLifecycleSection({
 
   return (
     <div className="space-y-4">
-      {/* ─── Filter row ────────────────────────────────────────────────────── */}
       {filterRow}
 
-      {/* ─── Routing selector ──────────────────────────────────────────────── */}
       {filteredSorted.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-3">No routings match the current filters.</p>
       ) : (
-      <div className="flex gap-2 flex-wrap">
-        {filteredSorted.map((r) => {
-          const chip = ROUTING_TYPE_CHIP[r.routing_type];
-          const revLabel = `Rev ${r.revision_code || "—"} v${r.version || "—"}`;
-          const isSelected = effectiveSelectedId === r.id;
-          return (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => setSelectedRoutingId(r.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 border-border hover:bg-muted"
-              }`}
-            >
-              {r.is_default && <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />}
-              <span>{r.name}</span>
-              {chip && (
-                <span
-                  className="text-[9px] font-bold px-1 py-px rounded"
-                  style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.25)" : chip.bg, color: isSelected ? "#fff" : chip.text }}
-                >
-                  {chip.label}
-                </span>
-              )}
-              <span className={isSelected ? "text-primary-foreground/70" : "text-muted-foreground"} style={{ fontSize: 10 }}>
-                {revLabel}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      )}
-
-      {/* ─── Selected routing detail ──────────────────────────────────────── */}
-      {selectedRouting && filteredSorted.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-2 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <RoutingHeader
-                routing={selectedRouting}
-                steps={selectedSteps}
-                allRoutings={routings}
-                onToggleDefault={onToggleDefault}
-                onStatusChange={onStatusChange}
-                onSelectRouting={setSelectedRoutingId}
-                onNewVersion={() => setShowCreateVersion(true)}
-                onNewRevision={() => setShowCreateRevision(true)}
-                onDeriveProduction={() => setShowDeriveProduction(true)}
-              />
-            </div>
-            {!isReadOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive h-7 text-xs shrink-0"
-                onClick={() => onDeleteRouting(selectedRouting.id)}
+        <div className="flex gap-2 flex-wrap">
+          {filteredSorted.map((r) => {
+            const chip = ROUTING_TYPE_CHIP[r.routing_type];
+            const revLabel = `Rev ${r.revision_code || "—"} v${r.version || "—"}`;
+            const isSelected = effectiveSelectedId === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setSelectedRoutingId(r.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                  isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 border-border hover:bg-muted"
+                }`}
               >
-                <Trash2 className="w-3 h-3 mr-1" /> Delete routing
-              </Button>
-            )}
-          </div>
-
-          {/* Step cards */}
-          <StepCards
-            steps={selectedSteps}
-            routing={selectedRouting}
-            allSuppliers={allSuppliers}
-            currencies={currencies}
-            onAddStep={() => onAddStep(effectiveSelectedId)}
-            onEditStep={onEditStep}
-          />
-
-          {/* Cost summary */}
-          {selectedSteps.some((s) => s.unit_cost) && (
-            <div className="rounded-lg bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              Total step cost:{" "}
-              {selectedSteps.reduce((sum, s) => sum + (Number(s.unit_cost) || 0), 0).toFixed(2)}{" "}
-              (mixed currencies may apply) ·{" "}
-              {selectedSteps.reduce((sum, s) => sum + (Number(s.lead_time_days) || 0), 0)}d total lead time
-            </div>
-          )}
+                {r.is_default && <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />}
+                <span>{r.name}</span>
+                {chip && (
+                  <span
+                    className="text-[9px] font-bold px-1 py-px rounded"
+                    style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.25)" : chip.bg, color: isSelected ? "#fff" : chip.text }}
+                  >
+                    {chip.label}
+                  </span>
+                )}
+                <span className={isSelected ? "text-primary-foreground/70" : "text-muted-foreground"} style={{ fontSize: 10 }}>
+                  {revLabel}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {/* ─── Create Version / Revision dialogs ──────────────────────────── */}
-      <CreateVersionDialog
-        open={showCreateVersion}
-        routing={selectedRouting}
-        onClose={() => setShowCreateVersion(false)}
-        onCreated={(newR) => {
-          setShowCreateVersion(false);
-          onNewRoutingAdded(newR);
-        }}
-      />
-      <CreateRevisionDialog
-        open={showCreateRevision}
-        routing={selectedRouting}
-        allRoutings={routings}
-        onClose={() => setShowCreateRevision(false)}
-        onCreated={(newR) => {
-          setShowCreateRevision(false);
-          onNewRoutingAdded(newR);
-        }}
-      />
-      <DeriveProductionDialog
-        open={showDeriveProduction}
-        routing={selectedRouting}
-        onClose={() => setShowDeriveProduction(false)}
-        onCreated={(newR) => {
-          setShowDeriveProduction(false);
-          onNewRoutingAdded(newR);
-        }}
-      />
+      {selectedRouting && filteredSorted.length > 0 && (
+        <RoutingBody
+          routing={selectedRouting}
+          steps={selectedSteps}
+          allRoutings={routings}
+          allSuppliers={allSuppliers}
+          currencies={currencies}
+          onToggleDefault={onToggleDefault}
+          onStatusChange={onStatusChange}
+          onSelectRouting={setSelectedRoutingId}
+          onDeleteRouting={onDeleteRouting}
+          onAddStep={onAddStep}
+          onEditStep={onEditStep}
+          onNewRoutingAdded={(newR) => {
+            onNewRoutingAdded(newR);
+            setSelectedRoutingId(newR.id); // multi mode: auto-switch to newly created routing
+          }}
+          disableAutoSwitch={false}
+        />
+      )}
     </div>
+  );
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+export default function RoutingLifecycleSection(props) {
+  const { mode } = props;
+
+  if (mode === "single") {
+    return <SingleModeSection routingId={props.routingId} />;
+  }
+
+  // mode === "multi" — pass through all existing props
+  return (
+    <MultiModeSection
+      routings={props.routings}
+      routingSteps={props.routingSteps}
+      selectedRoutingId={props.selectedRoutingId}
+      setSelectedRoutingId={props.setSelectedRoutingId}
+      allSuppliers={props.allSuppliers}
+      currencies={props.currencies}
+      onToggleDefault={props.onToggleDefault}
+      onStatusChange={props.onStatusChange}
+      onAddStep={props.onAddStep}
+      onEditStep={props.onEditStep}
+      onAddRouting={props.onAddRouting}
+      onDeleteRouting={props.onDeleteRouting}
+      onNewRoutingAdded={props.onNewRoutingAdded}
+    />
   );
 }

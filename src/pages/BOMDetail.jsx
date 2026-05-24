@@ -4,12 +4,12 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Loader2, GitBranch, FileText, ClipboardList, Info, Search, X } from "lucide-react";
+import { ArrowLeft, Loader2, Wrench, FileText, ClipboardList, Info, Search, X } from "lucide-react";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import BOMMatrixEditor from "../components/bom/BOMMatrixEditor.jsx";
 import BOMLineAddDialog from "../components/bom/BOMLineAddDialog";
-import BOLEditorTab from "../components/bom/BOLEditorTab";
+import RoutingLifecycleSection from "../components/supplier/RoutingLifecycleSection";
 import BOMChangeLogTab from "../components/bom/BOMChangeLogTab";
 import BOMInfoPanel from "../components/bom/BOMInfoPanel";
 import BOMOptionsContent from "../components/bom/BOMOptionsContent";
@@ -59,8 +59,7 @@ export default function BOMDetail() {
   const [allSizes, setAllSizes] = useState([]);
   const [lovValues, setLovValues] = useState([]);
   const [changeLog, setChangeLog] = useState([]);
-  const [bol, setBol] = useState(null);
-  const [bolOperations, setBolOperations] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [showAddLine, setShowAddLine] = useState(false);
   const [activeTab, setActiveTab] = useState("matrix");
@@ -94,7 +93,7 @@ export default function BOMDetail() {
 
   const subNavItems = bom ? [
     { id: "matrix", label: "Materials", icon: ClipboardList },
-    ...(isProduction ? [{ id: "bol", label: "Operations (BOL)", icon: GitBranch }] : []),
+    ...(isProduction ? [{ id: "mfg_ops", label: "Manufacturing Operations", icon: Wrench }] : []),
     { id: "changelog", label: "Change Log", icon: FileText },
   ] : [];
 
@@ -142,15 +141,6 @@ export default function BOMDetail() {
       setColorAndMores(cams.filter((c) => activeCws.some((cw) => cw.id === c.product_color_id)));
     }
 
-    // BOL (production only)
-    if (b.bom_type === "production") {
-      const bols = await base44.entities.BOL.filter({ bom_id: id });
-      if (bols[0]) {
-        setBol(bols[0]);
-        const ops = await base44.entities.BOLOperation.filter({ bol_id: bols[0].id });
-        setBolOperations(ops.sort((a, z) => a.sequence - z.sequence));
-      }
-    }
   }, [id]);
 
   useEffect(() => {
@@ -678,14 +668,20 @@ export default function BOMDetail() {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto px-2 py-3">
-          {activeTab === "bol" && isProduction && (
-            <BOLEditorTab
-              bol={bol}
-              operations={bolOperations}
-              bom={bom}
-              isReadOnly={isReadOnly}
-              onReload={reload}
-            />
+          {activeTab === "mfg_ops" && isProduction && (
+            bom.selected_routing_id ? (
+              <RoutingLifecycleSection
+                mode="single"
+                routingId={bom.selected_routing_id}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+                <p className="text-sm font-medium text-foreground">No routing linked to this BOM</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  This production BOM has no SupplierRouting linked. Link a routing from the BOM header above to populate manufacturing operations.
+                </p>
+              </div>
+            )
           )}
           {activeTab === "changelog" && (
             <BOMChangeLogTab changeLog={changeLog} allProducts={allProducts} />
@@ -770,8 +766,6 @@ export default function BOMDetail() {
           bom={bom}
           bomLines={bomLines}
           bomLineVariants={bomLineVariants}
-          bol={bol}
-          bolOperations={bolOperations}
           user={user}
           viewStateId={viewStateId}
         />

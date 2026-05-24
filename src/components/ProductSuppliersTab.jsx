@@ -918,6 +918,7 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
         {!collapseB && (
           <div className="border-t border-border p-4">
             <RoutingLifecycleSection
+              mode="multi"
               routings={routings}
               routingSteps={routingSteps}
               selectedRoutingId={selectedRoutingId}
