@@ -10,18 +10,79 @@
       "type": "string",
       "description": "e.g. EU production route"
     },
+    "routing_type": {
+      "type": "string",
+      "enum": [
+        "development",
+        "production",
+        "sample"
+      ],
+      "default": "development",
+      "description": "Type of routing. Mirrors BOM.bom_type. Sample routings carry independent revision lineage from production routings."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_review",
+        "released",
+        "superseded",
+        "obsolete"
+      ],
+      "default": "draft",
+      "description": "Lifecycle status. Mirrors BOM.status. Editing rules: routings in 'released' or later states are immutable \u2014 to change a released routing, create a new revision."
+    },
+    "revision_code": {
+      "type": "string",
+      "description": "Major structural revision letter (A, B, C...). Scoped per (product_id, routing_type). Auto-generated on insert in a later UI prompt."
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Pre-release iteration counter within a revision. Mirrors BOM.version."
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Start of validity window. Null = effective immediately upon release."
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "End of validity window. Null = no end date / effective indefinitely."
+    },
+    "released_at": {
+      "type": "string",
+      "description": "ISO datetime when status transitioned to released."
+    },
+    "released_by": {
+      "type": "string",
+      "description": "User email of releaser."
+    },
+    "superseded_by_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRouting (self-ref). Revision-level supersession at release time. Mirrors BOM.superseded_by_id."
+    },
+    "superseded_by_version_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRouting (self-ref). Version-level supersession within the same revision. Mirrors BOM.superseded_by_version_id."
+    },
+    "derived_from_routing_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRouting (self-ref). Set when this routing was created by deriving from another (e.g. production derived from development, sample derived from production)."
+    },
+    "derived_from_revision_code": {
+      "type": "string",
+      "description": "Snapshot of source routing's revision_code at derivation time."
+    },
     "is_default": {
       "type": "boolean",
       "default": false
     },
-    "status": {
-      "type": "string",
-      "description": "LOV: approved_supplier_status",
-      "default": "active"
-    },
-    "total_lead_time_days": {
+    "pending_eco_review_count": {
       "type": "number",
-      "description": "Computed: sum of step lead times"
+      "default": 0,
+      "description": "Derived count of ECOAffectedDownstream rows targeting this SupplierRouting where propagation_status is in a non-terminal state (pending, notified, under_review). Maintained by the ECO propagation layer. Source of truth is ECOAffectedDownstream itself; this integer is a denormalized cache for fast badge rendering. Mirrors BOM.pending_eco_review_count semantics."
     },
     "notes": {
       "type": "string"
@@ -29,6 +90,8 @@
   },
   "required": [
     "product_id",
-    "name"
+    "name",
+    "routing_type",
+    "status"
   ]
 }
