@@ -168,25 +168,38 @@ function ApprovedSupplierModal({ open, onClose, onSave, suppliers, lovValues, cu
 // ─── Add Routing Modal ────────────────────────────────────────────────────────
 function AddRoutingModal({ open, onClose, onSave }) {
   const [name, setName] = useState("");
+  const [routingType, setRoutingType] = useState("development");
   const [isDefault, setIsDefault] = useState(false);
-  useEffect(() => { if (open) { setName(""); setIsDefault(false); } }, [open]);
+  useEffect(() => { if (open) { setName(""); setRoutingType("development"); setIsDefault(false); } }, [open]);
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>New Manufacturing Routing</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Create New Routing</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Routing Name *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. EU production route" />
+            <Label className="text-xs">Name <span className="text-destructive">*</span></Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. EU Production Route" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Routing Type <span className="text-destructive">*</span></Label>
+            <Select value={routingType} onValueChange={setRoutingType}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="development">Development</SelectItem>
+                <SelectItem value="production">Production</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">Sample routings are created by deriving from a production routing in the sampling module.</p>
           </div>
           <div className="flex items-center gap-2">
             <Checkbox id="isDefault" checked={isDefault} onCheckedChange={setIsDefault} />
-            <Label htmlFor="isDefault" className="text-sm cursor-pointer">Set as default routing</Label>
+            <Label htmlFor="isDefault" className="text-sm cursor-pointer">Set as default routing for this product</Label>
           </div>
+          {isDefault && <p className="text-[11px] text-muted-foreground -mt-1">Only one default routing per routing type per product.</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => onSave({ name, is_default: isDefault })} disabled={!name.trim()}>Create</Button>
+          <Button onClick={() => onSave({ name, routing_type: routingType, is_default: isDefault })} disabled={!name.trim()}>Create Routing</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -566,29 +579,56 @@ export default function ProductSuppliersTab({ product, colorVariants }) {
   };
 
   // ─── Routing CRUD ────────────────────────────────────────────────────────────
-  const handleAddRouting = async ({ name, is_default }) => {
+  const handleAddRouting = async ({ name, routing_type, is_default }) => {
+    // Enforce single default per (product, routing_type)
     if (is_default) {
-      await Promise.all(routings.filter((r) => r.is_default).map((r) => base44.entities.SupplierRouting.update(r.id, { is_default: false })));
+      const conflicting = routings.filter((r) => r.routing_type === routing_type && r.is_default);
+      await Promise.all(conflicting.map((r) => base44.entities.SupplierRouting.update(r.id, { is_default: false })));
     }
-    const created = await base44.entities.SupplierRouting.create({ product_id: product.id, name, is_default, status: "active" });
-    setRoutings((prev) => [...prev, created]);
+    const created = await base44.entities.SupplierRouting.create({
+      product_id: product.id,
+      name,
+      routing_type: routing_type || "development",
+      revision_code: "A",
+      version: 1,
+      status: "draft",
+      is_default,
+      pending_eco_review_count: 0,
+    });
+    setRoutings((prev) => {
+      if (is_default) {
+        return [...prev.map((r) => r.routing_type === routing_type ? { ...r, is_default: false } : r), created];
+      }
+      return [...prev, created];
+    });
     setSelectedRoutingId(created.id);
     setShowAddRoutingModal(false);
   };
 
   const handleToggleDefaultRouting = async (routing) => {
-    if (routing.is_default) return;
-    await Promise.all(routings.map((r) => base44.entities.SupplierRouting.update(r.id, { is_default: r.id === routing.id })));
-    setRoutings((prev) => prev.map((r) => ({ ...r, is_default: r.id === routing.id })));
+    const newDefault = !routing.is_default;
+    if (newDefault) {
+      // Clear any other default for the same (product, routing_type)
+      const conflicting = routings.filter((r) => r.id !== routing.id && r.routing_type === routing.routing_type && r.is_default);
+      await Promise.all(conflicting.map((r) => base44.entities.SupplierRouting.update(r.id, { is_default: false })));
+    }
+    await base44.entities.SupplierRouting.update(routing.id, { is_default: newDefault });
+    setRoutings((prev) => prev.map((r) => {
+      if (r.id === routing.id) return { ...r, is_default: newDefault };
+      if (newDefault && r.routing_type === routing.routing_type) return { ...r, is_default: false };
+      return r;
+    }));
     // Flow B trigger — best-effort, non-blocking
-    try {
-      const me = await base44.auth.me();
-      await base44.functions.invoke("createFlowBEcoOnRoutingChange", {
-        supplier_routing_id: routing.id,
-        change_summary: "Default routing flag changed",
-        triggered_by: me?.email || "",
-      });
-    } catch (err) { console.error("[FlowB] Routing update trigger failed:", err); }
+    if (newDefault) {
+      try {
+        const me = await base44.auth.me();
+        await base44.functions.invoke("createFlowBEcoOnRoutingChange", {
+          supplier_routing_id: routing.id,
+          change_summary: "Default routing flag changed",
+          triggered_by: me?.email || "",
+        });
+      } catch (err) { console.error("[FlowB] Routing update trigger failed:", err); }
+    }
   };
 
   const handleDeleteRouting = async (id) => {

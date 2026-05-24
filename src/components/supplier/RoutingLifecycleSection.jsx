@@ -714,31 +714,101 @@ export default function RoutingLifecycleSection({
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [showCreateRevision, setShowCreateRevision] = useState(false);
   const [showDeriveProduction, setShowDeriveProduction] = useState(false);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [showObsolete, setShowObsolete] = useState(false);
 
   const sorted = sortRoutings(routings);
-  const selectedRouting = routings.find((r) => r.id === selectedRoutingId);
+
+  // Apply filters
+  const HIDDEN_STATUSES = ["obsolete", "superseded"];
+  const filteredSorted = sorted.filter((r) => {
+    if (typeFilter !== "all" && r.routing_type !== typeFilter) return false;
+    if (!showObsolete && HIDDEN_STATUSES.includes(r.status)) return false;
+    return true;
+  });
+
+  // If selected routing is filtered out, fall back to first visible
+  const visibleIds = new Set(filteredSorted.map((r) => r.id));
+  const effectiveSelectedId = visibleIds.has(selectedRoutingId)
+    ? selectedRoutingId
+    : (filteredSorted[0]?.id || null);
+
+  // Sync back when selection shifts due to filter change
+  if (effectiveSelectedId !== selectedRoutingId) {
+    // Use effect-free approach: just use effectiveSelectedId for rendering
+  }
+
+  const selectedRouting = routings.find((r) => r.id === effectiveSelectedId);
   const selectedSteps = routingSteps
-    .filter((s) => s.supplier_routing_id === selectedRoutingId)
+    .filter((s) => s.supplier_routing_id === effectiveSelectedId)
     .sort((a, b) => a.sequence - b.sequence);
 
   const isReadOnly = ["released", "superseded", "obsolete"].includes(selectedRouting?.status);
 
+  const TYPE_FILTER_OPTIONS = [
+    { value: "all", label: "All" },
+    { value: "development", label: "Development" },
+    { value: "production", label: "Production" },
+    { value: "sample", label: "Sample" },
+  ];
+
+  const filterRow = (
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      {/* Left: type filter chips */}
+      <div className="flex gap-1.5">
+        {TYPE_FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setTypeFilter(opt.value)}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+              typeFilter === opt.value
+                ? "bg-foreground text-background border-foreground"
+                : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {/* Right: obsolete/superseded toggle */}
+      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          className="w-3.5 h-3.5 accent-foreground"
+          checked={showObsolete}
+          onChange={(e) => setShowObsolete(e.target.checked)}
+        />
+        <span className="text-xs text-muted-foreground">Include obsolete and superseded</span>
+      </label>
+    </div>
+  );
+
   if (routings.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-4">
-        No routings defined. Add one for multi-supplier manufacturing.
-      </p>
+      <div className="space-y-3">
+        {filterRow}
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No routings defined. Add one for multi-supplier manufacturing.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {/* ─── Filter row ────────────────────────────────────────────────────── */}
+      {filterRow}
+
       {/* ─── Routing selector ──────────────────────────────────────────────── */}
+      {filteredSorted.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-3">No routings match the current filters.</p>
+      ) : (
       <div className="flex gap-2 flex-wrap">
-        {sorted.map((r) => {
+        {filteredSorted.map((r) => {
           const chip = ROUTING_TYPE_CHIP[r.routing_type];
           const revLabel = `Rev ${r.revision_code || "—"} v${r.version || "—"}`;
-          const isSelected = selectedRoutingId === r.id;
+          const isSelected = effectiveSelectedId === r.id;
           return (
             <button
               key={r.id}
@@ -765,9 +835,10 @@ export default function RoutingLifecycleSection({
           );
         })}
       </div>
+      )}
 
       {/* ─── Selected routing detail ──────────────────────────────────────── */}
-      {selectedRouting && (
+      {selectedRouting && filteredSorted.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2 flex-wrap">
             <div className="flex-1 min-w-0">
@@ -801,7 +872,7 @@ export default function RoutingLifecycleSection({
             routing={selectedRouting}
             allSuppliers={allSuppliers}
             currencies={currencies}
-            onAddStep={() => onAddStep(selectedRoutingId)}
+            onAddStep={() => onAddStep(effectiveSelectedId)}
             onEditStep={onEditStep}
           />
 
