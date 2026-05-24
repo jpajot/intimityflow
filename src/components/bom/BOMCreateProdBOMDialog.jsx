@@ -37,12 +37,18 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
     setRoutingsLoading(true);
     let cancelled = false;
     const load = async () => {
-      const rs = await base44.entities.SupplierRouting.filter({ product_id: bom.product_id, status: "active" });
+      // Filter: product_id + routing_type = production (no status filter)
+      const allRs = await base44.entities.SupplierRouting.filter({ product_id: bom.product_id, routing_type: "production" });
       if (cancelled) return;
+      // Sort: revision_code DESC, version DESC
+      const rs = [...allRs].sort((a, b) => {
+        const revCmp = (b.revision_code || "").localeCompare(a.revision_code || "");
+        if (revCmp !== 0) return revCmp;
+        return (b.version || 0) - (a.version || 0);
+      });
       setRoutings(rs);
-      // Pre-select default routing
-      const def = rs.find((r) => r.is_default) || rs[0] || null;
-      setSelectedRoutingId(def?.id || null);
+      // Pre-select first (highest rev+version), regardless of status
+      setSelectedRoutingId(rs[0]?.id || null);
 
       // Load steps for all routings
       const stepsMap = {};
@@ -237,16 +243,15 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
                 <Loader2 className="w-4 h-4 animate-spin" /> Loading routings…
               </div>
             ) : routings.length === 0 ? (
-              <div className="flex gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-800">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+              <div className="flex gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-xs text-destructive">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p>
-                  No routings defined for this product. The Production BOM will be created without a routing; BOL will not be generated.
-                  Add a routing in the Product's Sourcing tab to enable BOL generation later.
+                  No production routings exist for this product. Create one on <strong>Product → Suppliers → Manufacturing Routings</strong> before deriving a Production BOM.
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                <Label className="text-xs">Select routing</Label>
+                <Label className="text-xs">Select production routing <span className="text-destructive">*</span></Label>
                 {routings.map((r) => {
                   const steps = routingStepsMap[r.id] || [];
                   const isSelected = selectedRoutingId === r.id;
@@ -261,10 +266,8 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
                     >
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-semibold">{r.name}</span>
+                        <span className="text-muted-foreground font-mono">[PROD] · Rev {r.revision_code || "—"} v{r.version || "—"} · [{(r.status || "").toUpperCase()}]</span>
                         {r.is_default && <span className="px-1 py-0 rounded bg-primary/10 text-primary text-[10px]">default</span>}
-                        {r.total_lead_time_days != null && (
-                          <span className="text-muted-foreground">{r.total_lead_time_days} days</span>
-                        )}
                         <span className="text-muted-foreground">{steps.length} step{steps.length !== 1 ? "s" : ""}</span>
                       </div>
                       {steps.length > 0 && (
@@ -296,13 +299,10 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
                 <p className="font-medium text-foreground">Routing</p>
                 {selectedRouting ? (
                   <p className="text-muted-foreground">
-                    {selectedRouting.name}
-                    {selectedRouting.is_default && " (default)"}
-                    {selectedRouting.total_lead_time_days != null && `, ${selectedRouting.total_lead_time_days} days`}
-                    {selectedSteps.length > 0 && `, ${selectedSteps.length} steps`}
+                    {selectedRouting.name} · [PROD] · Rev {selectedRouting.revision_code || "—"} v{selectedRouting.version || "—"} · [{(selectedRouting.status || "").toUpperCase()}] · {selectedSteps.length} step{selectedSteps.length !== 1 ? "s" : ""}
                   </p>
                 ) : (
-                  <p className="text-muted-foreground italic">No routing — BOL will not be generated</p>
+                  <p className="text-muted-foreground italic">No routing selected</p>
                 )}
               </div>
               <div className="border-t border-border pt-2 space-y-0.5">
@@ -329,7 +329,11 @@ export default function BOMCreateProdBOMDialog({ open, onClose, bom, bomLines, b
           </div>
           <div>
             {step < 3 ? (
-              <Button size="sm" onClick={() => setStep((s) => s + 1)}>
+              <Button
+                size="sm"
+                onClick={() => setStep((s) => s + 1)}
+                disabled={step === 2 && (routingsLoading || routings.length === 0 || !selectedRoutingId)}
+              >
                 Next →
               </Button>
             ) : (

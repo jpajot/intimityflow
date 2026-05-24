@@ -20,6 +20,7 @@ import BOMCreateRevisionDialog from "../components/bom/BOMCreateRevisionDialog";
 import BOMCreateVersionDialog from "../components/bom/BOMCreateVersionDialog";
 import BOMExportDialog from "../components/bom/BOMExportDialog";
 import BOMCreateProdBOMDialog from "../components/bom/BOMCreateProdBOMDialog";
+import BOMHeaderCard from "../components/bom/BOMHeaderCard";
 import { DEFAULT_FILTER_CONFIG, isFilterActive, applyFilterConfig } from "../components/bom/BOMQuickFilterGroup";
 
 const STATUS_COLORS = {
@@ -590,6 +591,16 @@ export default function BOMDetail() {
             <Info className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      {/* BOM metadata row (routing, validity, etc.) */}
+      <div className="px-2 pb-1 shrink-0">
+        <BOMHeaderCard
+          bom={bom}
+          product={product}
+          isReadOnly={isReadOnly}
+          onBomUpdated={setBom}
+        />
       </div>
 
       {/* Version-superseded banner */}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,19 +7,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
+function sortRoutingsByRevVersion(rs) {
+  return [...rs].sort((a, b) => {
+    const revCmp = (b.revision_code || "").localeCompare(a.revision_code || "");
+    if (revCmp !== 0) return revCmp;
+    return (b.version || 0) - (a.version || 0);
+  });
+}
+
+function routingLabel(r, typeChip) {
+  return `${r.name} · [${typeChip}] · Rev ${r.revision_code || "—"} v${r.version || "—"} · [${(r.status || "").toUpperCase()}]`;
+}
+
 export default function NewBOMDialog({ open, onClose, products, preselectedProduct, onCreated }) {
   const [bomType, setBomType] = useState("development");
   const [productSearch, setProductSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(preselectedProduct || null);
   const [saving, setSaving] = useState(false);
 
+  // Dev routing picker state
+  const [devRoutings, setDevRoutings] = useState([]);
+  const [devRoutingsLoading, setDevRoutingsLoading] = useState(false);
+  const [selectedDevRoutingId, setSelectedDevRoutingId] = useState(null);
+
+  const productId = selectedProduct?.id;
+
+  // Load dev routings when product changes or bomType is development
+  useEffect(() => {
+    if (!open || bomType !== "development" || !productId) {
+      setDevRoutings([]); setSelectedDevRoutingId(null); return;
+    }
+    setDevRoutingsLoading(true);
+    base44.entities.SupplierRouting.filter({ product_id: productId, routing_type: "development" }).then((rs) => {
+      const sorted = sortRoutingsByRevVersion(rs);
+      setDevRoutings(sorted);
+      setSelectedDevRoutingId(sorted[0]?.id || null);
+      setDevRoutingsLoading(false);
+    });
+  }, [open, bomType, productId]);
+
   const filteredProducts = useMemo(() => {
     const q = productSearch.toLowerCase();
     return products.filter((p) => !q || p.name?.toLowerCase().includes(q) || p.code?.toLowerCase().includes(q)).slice(0, 50);
   }, [products, productSearch]);
 
+  const canSave = !!selectedProduct && (bomType !== "development" || (devRoutings.length > 0 && !!selectedDevRoutingId));
+
   const handleSave = async () => {
-    if (!selectedProduct) return;
+    if (!canSave) return;
     setSaving(true);
     const created = await base44.entities.BOM.create({
       bom_type: bomType,
@@ -27,6 +62,7 @@ export default function NewBOMDialog({ open, onClose, products, preselectedProdu
       revision_code: "A",
       version: 1,
       status: "draft",
+      selected_routing_id: bomType === "development" ? (selectedDevRoutingId || null) : null,
     });
     await base44.entities.BOMChangeLog.create({
       bom_id: created.id,
@@ -42,6 +78,7 @@ export default function NewBOMDialog({ open, onClose, products, preselectedProdu
 
   const reset = () => {
     setBomType("development"); setProductSearch(""); setSelectedProduct(preselectedProduct || null);
+    setDevRoutings([]); setSelectedDevRoutingId(null);
   };
 
   return (
@@ -61,6 +98,30 @@ export default function NewBOMDialog({ open, onClose, products, preselectedProdu
               </SelectContent>
             </Select>
           </div>
+
+          {/* Dev routing picker — shown when bomType = development and product is selected */}
+          {bomType === "development" && selectedProduct && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Linked Routing (Development) <span className="text-destructive">*</span></Label>
+              {devRoutingsLoading ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground py-1"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div>
+              ) : devRoutings.length === 0 ? (
+                <Select disabled>
+                  <SelectTrigger className="h-8 text-xs text-muted-foreground"><SelectValue placeholder="No development routings — create one on Product → Suppliers first" /></SelectTrigger>
+                  <SelectContent />
+                </Select>
+              ) : (
+                <Select value={selectedDevRoutingId || ""} onValueChange={setSelectedDevRoutingId}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {devRoutings.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>{routingLabel(r, "DEV")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
 
           {preselectedProduct ? (
             <div className="space-y-1.5">
@@ -110,7 +171,7 @@ export default function NewBOMDialog({ open, onClose, products, preselectedProdu
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => { reset(); onClose(); }}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!selectedProduct || saving} size="sm" className="gap-2">
+          <Button onClick={handleSave} disabled={!canSave || saving} size="sm" className="gap-2">
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Create BOM
           </Button>

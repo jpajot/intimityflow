@@ -24,6 +24,7 @@ const ALL_FIELDS = [
   { id: "version", label: "Version" },
   { id: "status", label: "Status" },
   { id: "bom_type", label: "Type" },
+  { id: "routing", label: "Routing" },
   { id: "released_at", label: "Released At" },
   { id: "valid_from", label: "Valid From" },
   { id: "valid_until", label: "Valid Until" },
@@ -31,10 +32,10 @@ const ALL_FIELDS = [
   { id: "open", label: "" },
 ];
 
-const DEFAULT_COLUMN_IDS = ["revision", "version", "status", "bom_type", "released_at", "notes", "open"];
+const DEFAULT_COLUMN_IDS = ["revision", "version", "status", "bom_type", "routing", "released_at", "notes", "open"];
 const DEFAULT_FIXED_IDS = ["revision"];
 
-function buildColumns(navigate) {
+function buildColumns(navigate, routingsMap) {
   return [
     {
       id: "revision",
@@ -73,6 +74,28 @@ function buildColumns(navigate) {
           {r.bom_type}
         </span>
       ),
+    },
+    {
+      id: "routing",
+      label: "Routing",
+      width: 220,
+      sortKey: (r) => {
+        const rt = routingsMap[r.selected_routing_id];
+        return rt ? `${rt.name} ${rt.revision_code || ""} ${rt.version || 0}` : "";
+      },
+      render: (r) => {
+        const rt = routingsMap[r.selected_routing_id];
+        if (!rt) return <span className="text-xs text-muted-foreground/40">—</span>;
+        return (
+          <span className="text-xs text-muted-foreground">
+            {rt.name} · Rev {rt.revision_code || "—"} v{rt.version || "—"}
+            {" "}
+            <span className={`text-[10px] px-1 py-px rounded border ${STATUS_COLORS[rt.status] || "bg-muted text-muted-foreground border-border"}`}>
+              {rt.status}
+            </span>
+          </span>
+        );
+      },
     },
     {
       id: "released_at",
@@ -132,6 +155,7 @@ export default function ProductBomsTab({ product }) {
   const navigate = useNavigate();
   const { setOptions } = usePageOptions();
   const [boms, setBoms] = useState([]);
+  const [routingsMap, setRoutingsMap] = useState({}); // id -> routing
   const [loading, setLoading] = useState(true);
   const [showNewBom, setShowNewBom] = useState(false);
   const [activeViewId, setActiveViewId] = useState("default");
@@ -147,8 +171,14 @@ export default function ProductBomsTab({ product }) {
 
   const loadBoms = async () => {
     setLoading(true);
-    const result = await base44.entities.BOM.filter({ product_id: product.id }, "-created_date", 100);
+    const [result, routings] = await Promise.all([
+      base44.entities.BOM.filter({ product_id: product.id }, "-created_date", 100),
+      base44.entities.SupplierRouting.filter({ product_id: product.id }),
+    ]);
     setBoms(result);
+    const rMap = {};
+    routings.forEach((r) => { rMap[r.id] = r; });
+    setRoutingsMap(rMap);
     setLoading(false);
   };
 
@@ -195,7 +225,7 @@ export default function ProductBomsTab({ product }) {
     navigate(`/boms/${newBom.id}`);
   };
 
-  const allColumns = buildColumns(navigate);
+  const allColumns = buildColumns(navigate, routingsMap);
   const columns = columnIds
     .map((id) => allColumns.find((c) => c.id === id))
     .filter(Boolean);
