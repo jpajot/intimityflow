@@ -9,6 +9,7 @@ import { usePageOptions } from "@/lib/PageOptionsContext";
 import ViewDrawerContent from "@/components/ViewDrawerContent";
 import QuickFiltersPanel from "@/components/QuickFiltersPanel";
 import RFQCreateDialog from "@/components/rfq/RFQCreateDialog";
+import RFQTrackingBoard from "./RFQTrackingBoard";
 
 const STATUS_COLORS = {
   draft:         "bg-gray-100 text-gray-600 border-gray-200",
@@ -120,6 +121,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
   const navigate = useNavigate();
   const { setOptions } = usePageOptions();
 
+  const [activeTab, setActiveTab] = useState("rfqs");
   const [rfqs, setRfqs] = useState([]);
   const [rounds, setRounds] = useState([]);
   const [currencies, setCurrencies] = useState([]);
@@ -271,9 +273,32 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
 
   return (
     <div className="space-y-4">
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 border-b border-border">
+        <button
+          type="button"
+          onClick={() => setActiveTab("rfqs")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "rfqs" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          RFQs
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("tracking")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "tracking" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          RFQ Tracking
+        </button>
+      </div>
+
+      {/* Tracking tab */}
+      {activeTab === "tracking" && <RFQTrackingBoard projectId={projectId} />}
+
+      {/* RFQs tab */}
+      {activeTab === "rfqs" && <div className="space-y-4">
       {/* Header with inline search */}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-semibold text-base">RFQs</h2>
+        <div />
         <div className="flex items-center gap-1.5">
           {showSearch && (
             <div className="relative w-52">
@@ -355,6 +380,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
           onClose={() => setShowCreateDialog(false)}
         />
       )}
+      </div>}
     </div>
   );
 }

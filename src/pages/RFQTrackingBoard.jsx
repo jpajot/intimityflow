@@ -36,8 +36,9 @@ const RFQ_STATUS_COLORS = {
   archived:      "bg-gray-100 text-gray-400 border-gray-200",
 };
 
-export default function RFQTrackingBoard() {
-  const { id: projectId } = useParams();
+export default function RFQTrackingBoard({ projectId: propProjectId }) {
+  const params = useParams();
+  const projectId = propProjectId || params.id;
   const navigate = useNavigate();
   const { setOptions } = usePageOptions();
 
