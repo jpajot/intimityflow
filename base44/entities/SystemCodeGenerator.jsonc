@@ -1,0 +1,59 @@
+{
+  "name": "SystemCodeGenerator",
+  "type": "object",
+  "properties": {
+    "entity_name": {
+      "type": "string",
+      "description": "Target entity name e.g. Product, ProductColor"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Type/sub-type within the entity e.g. Style, Material, Colorway"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Code prefix e.g. STY, MAT, COL"
+    },
+    "padding": {
+      "type": "number",
+      "description": "Zero-padding length for the numeric part e.g. 5 \u2192 00001. Used only when format_type='sequential'.",
+      "default": 5
+    },
+    "last_sequence": {
+      "type": "number",
+      "description": "Last used sequence number (auto-incremented by the system). Used only when format_type='sequential'.",
+      "default": 0
+    },
+    "excluded_codes": {
+      "type": "string",
+      "description": "Comma-separated list of codes to skip during generation e.g. STY00010,STY00013"
+    },
+    "format_type": {
+      "type": "string",
+      "enum": [
+        "sequential",
+        "hash"
+      ],
+      "default": "sequential",
+      "description": "Code generation strategy. 'sequential' produces {prefix}{padded_number} from last_sequence + 1. 'hash' produces {prefix}{hash_separator}{N random alphanumeric chars}, where N is taken from hash_length. Sequential is the legacy behavior preserved as default."
+    },
+    "hash_length": {
+      "type": "number",
+      "default": 6,
+      "description": "Number of random alphanumeric characters for hash-format codes. Ignored when format_type='sequential'. Default 6 (e.g. SMP-A7B3F2). The hash character set is uppercase letters A-Z plus digits 0-9, excluding ambiguous characters: I, O, 0, 1. Total alphabet size = 32 characters (ABCDEFGHJKLMNPQRSTUVWXYZ23456789)."
+    },
+    "hash_separator": {
+      "type": "string",
+      "default": "-",
+      "description": "Separator between prefix and hash. Default '-'. Set to empty string to produce codes without separator. Ignored when format_type='sequential'."
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "entity_name",
+    "entity_type",
+    "prefix"
+  ]
+}

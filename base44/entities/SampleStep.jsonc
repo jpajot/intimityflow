@@ -1,0 +1,102 @@
+{
+  "name": "SampleStep",
+  "type": "object",
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "FK \u2192 Sample."
+    },
+    "source_routing_step_id": {
+      "type": "string",
+      "description": "FK \u2192 SupplierRoutingStep. The step in the linked sample routing that this SampleStep mirrors. Populated when the sample routing is generated. Allows tracing back to the routing template; remains stable even if the user later edits the routing step."
+    },
+    "sequence": {
+      "type": "number",
+      "description": "Order in the routing, 1-indexed."
+    },
+    "step_type": {
+      "type": "string",
+      "description": "LOV routing_step_type. Same vocabulary as SupplierRoutingStep."
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "FK \u2192 Supplier. The supplier performing this step for this sample. Defaults to source routing step's supplier_id at generation time. Editable per sample (override)."
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Cost for development budget tracking only. NOT used for production costing."
+    },
+    "currency_id": {
+      "type": "string",
+      "description": "FK \u2192 Currency."
+    },
+    "lead_time_days": {
+      "type": "number",
+      "description": "Per-step lead time."
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date by which this step should be completed/shipped to the next supplier or back to the buyer."
+    },
+    "requested_quantity": {
+      "type": "number",
+      "description": "Inherited from parent Sample.requested_quantity at generation, editable per step (some steps may produce fewer units)."
+    },
+    "workflow_status": {
+      "type": "string",
+      "enum": [
+        "created",
+        "in_progress",
+        "blocked",
+        "sent",
+        "partially_sent",
+        "pending",
+        "shipped",
+        "partially_received",
+        "received"
+      ],
+      "default": "created",
+      "description": "Step-level workflow status. Transitions are open (no strict gate) at this stage; UI guidance defines typical transitions. Internal-only statuses (created, in_progress, blocked) precede supplier-facing statuses (sent, pending, shipped, received)."
+    },
+    "workflow_status_changed_at": {
+      "type": "string",
+      "description": "ISO datetime. Updated whenever workflow_status changes. Useful for tracking step lead time actuals."
+    },
+    "workflow_status_changed_by": {
+      "type": "string",
+      "description": "User email of whoever changed the status."
+    },
+    "conformity_status": {
+      "type": "string",
+      "enum": [
+        "not_assessed",
+        "pass",
+        "fail_minor",
+        "fail_major",
+        "pending_review"
+      ],
+      "default": "not_assessed",
+      "description": "Step-level conformity assessment. Independent of sample-level conformity."
+    },
+    "conformity_assessed_at": {
+      "type": "string",
+      "description": "ISO datetime."
+    },
+    "conformity_assessed_by": {
+      "type": "string",
+      "description": "User email."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Per-step commentary, e.g. shipment tracking number, supplier comments, internal observations."
+    }
+  },
+  "required": [
+    "sample_id",
+    "sequence",
+    "step_type",
+    "workflow_status",
+    "conformity_status"
+  ]
+}
