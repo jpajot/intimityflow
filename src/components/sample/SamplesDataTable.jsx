@@ -409,7 +409,7 @@ export default function SamplesDataTable({
     render: (r) => {
       const opts = makePcamOptions(r);
       const disabled = !r.product_color_id;
-      if (disabled) return <span className="text-xs text-muted-foreground/30">—</span>;
+      if (disabled) return <span className="text-xs text-muted-foreground/30 cursor-not-allowed" title="Pick a color first">—</span>;
       return (
         <InlineDropdown
           value={r.product_color_and_more_id}

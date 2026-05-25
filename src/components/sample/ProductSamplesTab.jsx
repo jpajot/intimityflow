@@ -57,7 +57,7 @@ export default function ProductSamplesTab({ product }) {
       setRfqsMap(rMap);
     }
 
-    // PCAMs
+    // PCAMs — load for ALL colors of this product so inline editing works even when sample has no PCAM yet
     const colorIds = colors.map((c) => c.id);
     if (colorIds.length) {
       const allPcams = await base44.entities.ProductColorAndMore.list("-created_date", 2000);
@@ -71,6 +71,8 @@ export default function ProductSamplesTab({ product }) {
       setPcamsMap(pcMap);
       setPcamsByColor(byColor);
     }
+
+
 
     // Sizes from product's size grid
     if (product.size_grid_id) {

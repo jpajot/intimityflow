@@ -29,13 +29,12 @@ export default function RFQSamplesTab({ rfq, project }) {
 
     if (results.length > 0) {
       const productIds = [...new Set(results.map((s) => s.product_id).filter(Boolean))];
-      const colorIds   = [...new Set(results.map((s) => s.product_color_id).filter(Boolean))];
       const sizeIds    = [...new Set(results.map((s) => s.size_id).filter(Boolean))];
 
-      const [allProds, allColors, allPcams, allSizes] = await Promise.all([
+      // Load products + ALL ProductColors for every product in the list (not just used ones)
+      const [allProds, allColors, allSizes] = await Promise.all([
         productIds.length ? base44.entities.Product.list("code", 2000) : Promise.resolve([]),
-        colorIds.length   ? base44.entities.ProductColor.list("-created_date", 2000) : Promise.resolve([]),
-        colorIds.length   ? base44.entities.ProductColorAndMore.list("-created_date", 2000) : Promise.resolve([]),
+        productIds.length ? base44.entities.ProductColor.list("colorway_code", 2000) : Promise.resolve([]),
         sizeIds.length    ? base44.entities.Size.list("name", 500) : Promise.resolve([]),
       ]);
 
@@ -43,9 +42,12 @@ export default function RFQSamplesTab({ rfq, project }) {
       allProds.filter((p) => productIds.includes(p.id)).forEach((p) => { pMap[p.id] = p; });
       setProductsMap(pMap);
 
+      // All colors for products in this sample list (for editing dropdown)
+      const productIdSet = new Set(productIds);
+      const relevantColors = allColors.filter((c) => productIdSet.has(c.product_id));
       const cMap = {};
       const byProduct = {};
-      allColors.filter((c) => colorIds.includes(c.id)).forEach((c) => {
+      relevantColors.forEach((c) => {
         cMap[c.id] = c;
         byProduct[c.product_id] = byProduct[c.product_id] || [];
         byProduct[c.product_id].push(c);
@@ -53,10 +55,14 @@ export default function RFQSamplesTab({ rfq, project }) {
       setColorsMap(cMap);
       setColorsByProduct(byProduct);
 
-      const pcamSet = new Set(results.map((s) => s.product_color_and_more_id).filter(Boolean));
+      // Load ALL PCAMs for all relevant colors (not just currently-assigned ones)
+      const allColorIds = relevantColors.map((c) => c.id);
+      const allPcams = allColorIds.length
+        ? await base44.entities.ProductColorAndMore.list("-created_date", 2000)
+        : [];
       const pcMap = {};
       const byColor = {};
-      allPcams.filter((pc) => colorIds.includes(pc.product_color_id)).forEach((pc) => {
+      allPcams.filter((pc) => allColorIds.includes(pc.product_color_id)).forEach((pc) => {
         pcMap[pc.id] = pc;
         byColor[pc.product_color_id] = byColor[pc.product_color_id] || [];
         byColor[pc.product_color_id].push(pc);
@@ -77,15 +83,12 @@ export default function RFQSamplesTab({ rfq, project }) {
               .then((gss) => ({ productId: p.id, sizeIds: gss.map((gs) => gs.size_id) }))
           )
         );
-        const allGridSizeIds = [...new Set(gridResults.flatMap((r) => r.sizeIds))];
-        if (allGridSizeIds.length) {
-          const gridSizeRecords = await base44.entities.Size.list("name", 500);
-          const byProd = {};
-          gridResults.forEach(({ productId, sizeIds: pSizeIds }) => {
-            byProd[productId] = gridSizeRecords.filter((s) => pSizeIds.includes(s.id));
-          });
-          setSizesByProduct(byProd);
-        }
+        const gridSizeRecords = await base44.entities.Size.list("name", 500);
+        const byProd = {};
+        gridResults.forEach(({ productId, sizeIds: pSizeIds }) => {
+          byProd[productId] = gridSizeRecords.filter((s) => pSizeIds.includes(s.id));
+        });
+        setSizesByProduct(byProd);
       }
     }
 
