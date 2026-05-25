@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2, GitCommit, ClipboardList } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, X, Palette, Ruler, Layers, Info, Building2, GitCommit, ClipboardList, FlaskConical } from "lucide-react";
 import ProductSuppliersTab from "../components/ProductSuppliersTab";
 import ProductBomsTab from "../components/bom/ProductBomsTab";
+import ProductSamplesTab from "../components/sample/ProductSamplesTab";
 import ImageLightbox from "../components/ImageLightbox";
 import { useRegisterSubNav } from "../hooks/useRegisterSubNav";
 import RevisionContextModal from "../components/RevisionContextModal";
@@ -81,6 +82,7 @@ export default function ProductDetail() {
     { id: "more", label: "More Variations", icon: Layers },
     { id: "suppliers", label: "Suppliers", icon: Building2 },
     { id: "boms", label: "BOMs", count: bomCount || undefined, icon: ClipboardList },
+    { id: "samples", label: "Samples", icon: FlaskConical },
   ];
   const productTitle = isNew ? `New ${product.type}` : [product.code, product.name].filter(Boolean).join(" ");
   useRegisterSubNav(subNavItems, activeTab, setActiveTab, productTitle);
@@ -770,6 +772,9 @@ export default function ProductDetail() {
       )}
       {!isNew && activeTab === "boms" && (
         <ProductBomsTab product={product} />
+      )}
+      {!isNew && activeTab === "samples" && (
+        <ProductSamplesTab product={product} />
       )}
 
       <ColorwayEditModal
