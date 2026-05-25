@@ -495,10 +495,22 @@ export default function SamplesDataTable({
     },
   };
 
+  // rfqCol variant that shows "Standalone" when no RFQ
+  const rfqWithStandaloneCol = {
+    id: "rfq", label: "RFQ", width: 120, sortKey: (r) => rfqsMap[r.rfq_id]?.code || "",
+    render: (r) => {
+      const rfq = rfqsMap[r.rfq_id];
+      return rfq
+        ? <span className="font-mono text-xs text-muted-foreground">{rfq.code}</span>
+        : <span className="text-xs text-muted-foreground/40 italic">Standalone</span>;
+    },
+  };
+
   // Section F column sets (with Workflow Status between Conformity and Created)
   const productColumns = [expandCol, codeCol, projectCol, rfqCol, sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, workflowStatusCol, createdCol, actionsCol];
   const rfqColumns    = [expandCol, codeCol, productCol, sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, workflowStatusCol, createdCol, actionsCol];
-  const columns = columnSet === "rfq_context" ? rfqColumns : productColumns;
+  const projectColumns = [expandCol, codeCol, productCol, rfqWithStandaloneCol, sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, workflowStatusCol, createdCol, actionsCol];
+  const columns = columnSet === "rfq_context" ? rfqColumns : columnSet === "project_context" ? projectColumns : productColumns;
 
   // ── Total column count for "colspan" in expansion rows ────────────────────────
   const colCount = columns.length;

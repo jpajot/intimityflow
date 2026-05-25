@@ -24,8 +24,9 @@ import ProjectPalettesTab from "../components/ProjectPalettesTab";
 import DCperCOTTab from "../components/DCperCOTTab";
 import DCperCOTIcon from "../components/icons/DCperCOTIcon";
 import ProjectSourcingDashboard from "../components/ProjectSourcingDashboard";
-import { Building2, ClipboardList, FileSearch } from "lucide-react";
+import { Building2, ClipboardList, FileSearch, FlaskConical } from "lucide-react";
 import ProjectRFQs from "./ProjectRFQs";
+import ProjectSamplesTab from "./ProjectSamplesTab";
 import ProjectBOMStatus from "./ProjectBOMStatus";
 import ViewDrawerContent from "../components/ViewDrawerContent";
 import QuickFiltersPanel from "../components/QuickFiltersPanel";
@@ -120,7 +121,8 @@ export default function ProjectDetail() {
   { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
   { id: "sourcing", label: "Sourcing", icon: Building2 },
   { id: "bom_status", label: "BOM/BOL Status", icon: ClipboardList },
-  { id: "rfqs", label: "RFQs", icon: FileSearch }];
+  { id: "rfqs", label: "RFQs", icon: FileSearch },
+  { id: "samples", label: "Samples", icon: FlaskConical }];
 
   useRegisterSubNav(subNavItems, activeSection, setActiveSection, project?.name);
 
@@ -668,6 +670,9 @@ export default function ProjectDetail() {
       )}
       {activeSection === "rfqs" && (
         <ProjectRFQs projectId={id} />
+      )}
+      {activeSection === "samples" && (
+        <ProjectSamplesTab projectId={id} />
       )}
       {activeSection === "dc_per_cot" &&
       <DCperCOTTab projectId={id} linkedVariations={linkedVariations} allVariations={allVariations} colorways={allColorways} products={allStyleProducts} techColors={techColors} commColors={commColors} onGenerateRef={(handler) => {window.dcPerCOTGenerate = handler;}} onExportRef={(handler) => {window.dcPerCOTExport = handler;}} onImportRef={(handler) => {window.dcPerCOTImport = handler;}} onViewRef={(viewState) => {window.dcPerCOTView = viewState;}} activeViewId={dcActiveViewId} onSelectView={setDCActiveViewId} quickFilters={dcQuickFilters} />

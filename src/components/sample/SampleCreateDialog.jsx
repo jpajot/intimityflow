@@ -39,7 +39,7 @@ async function generateUniqueSampleCode() {
   throw new Error("Failed to generate a unique sample code after 10 attempts.");
 }
 
-export default function SampleCreateDialog({ open, onClose, onCreated, preset = {} }) {
+export default function SampleCreateDialog({ open, onClose, onCreated, preset = {}, productOptions }) {
   const [saving, setSaving] = useState(false);
 
   // Form state
@@ -93,8 +93,12 @@ export default function SampleCreateDialog({ open, onClose, onCreated, preset = 
       setProjects(projs);
 
       if (!preset.product_id) {
-        const prods = await base44.entities.Product.list("name", 500);
-        setProducts(prods);
+        if (productOptions) {
+          setProducts(productOptions);
+        } else {
+          const prods = await base44.entities.Product.list("name", 500);
+          setProducts(prods);
+        }
       }
 
       if (preset.product_id) {
