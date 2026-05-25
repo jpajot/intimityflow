@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Plus, Loader2, FlaskConical } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import SampleCreateDialog from "@/components/sample/SampleCreateDialog";
 import SamplesDataTable from "@/components/sample/SamplesDataTable";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 
 export default function RFQSamplesTab({ rfq, project }) {
   const { setOptions } = usePageOptions();
+  const { user } = useAuth();
   const [samples, setSamples] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -17,6 +19,7 @@ export default function RFQSamplesTab({ rfq, project }) {
   const [colorsMap, setColorsMap]       = useState({});
   const [pcamsMap, setPcamsMap]         = useState({});
   const [sizesMap, setSizesMap]         = useState({});
+  const [suppliersArray, setSuppliersArray] = useState([]);
   // Per-product helpers for inline editing
   const [colorsByProduct, setColorsByProduct] = useState({});
   const [pcamsByColor, setPcamsByColor]       = useState({});
@@ -92,6 +95,10 @@ export default function RFQSamplesTab({ rfq, project }) {
       }
     }
 
+    // Suppliers for step editing
+    const suppliers = await base44.entities.Supplier.list("name", 500);
+    setSuppliersArray(suppliers);
+
     setLoading(false);
   }, [rfq.id]);
 
@@ -118,6 +125,10 @@ export default function RFQSamplesTab({ rfq, project }) {
   const handleRoutingGenerated = useCallback(() => {
     loadSamples();
   }, [loadSamples]);
+
+  const handleStepUpdate = useCallback(async (stepId, updates) => {
+    await base44.entities.SampleStep.update(stepId, updates);
+  }, []);
 
   if (loading) {
     return (
@@ -154,6 +165,9 @@ export default function RFQSamplesTab({ rfq, project }) {
         columnSet="rfq_context"
         onRowUpdate={handleUpdate}
         onRoutingGenerated={handleRoutingGenerated}
+        onStepUpdate={handleStepUpdate}
+        suppliersArray={suppliersArray}
+        currentUser={user}
         productsMap={productsMap}
         colorsMap={colorsMap}
         pcamsMap={pcamsMap}
