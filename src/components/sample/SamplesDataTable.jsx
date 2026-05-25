@@ -4,12 +4,13 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DataTable from "@/components/DataTable";
-import { FlaskConical, X, ChevronDown, Search } from "lucide-react";
+import { FlaskConical, X, ChevronDown, Search, MoreHorizontal, Route } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import GenerateSampleRoutingDialog from "./GenerateSampleRoutingDialog";
 import {
   derivePhase,
   SAMPLE_TYPE_OPTIONS,
@@ -161,6 +162,7 @@ export default function SamplesDataTable({
   columnSet,
   onRowUpdate,
   onRowDelete,
+  onRoutingGenerated,     // called after Generate Sample Routing succeeds — triggers parent refetch
   emptyState,
   // Reference data injected by parent (for edit dropdowns)
   colorsMap = {},         // { [colorId]: ProductColor }
@@ -175,6 +177,9 @@ export default function SamplesDataTable({
   sizesByProduct = {},    // { [productId]: Size[] }
 }) {
   const navigate = useNavigate();
+
+  // ── Dialog state ─────────────────────────────────────────────────────────────
+  const [routingDialogSample, setRoutingDialogSample] = useState(null);
 
   // ── Local optimistic rows ────────────────────────────────────────────────────
   const [localRows, setLocalRows] = useState(samples);
@@ -477,8 +482,41 @@ export default function SamplesDataTable({
       : <span className="text-xs text-muted-foreground/40">—</span>,
   };
 
-  const productColumns = [codeCol, projectCol, rfqCol, sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, createdCol];
-  const rfqColumns    = [codeCol, productCol,  sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, createdCol];
+  const actionsCol = {
+    id: "actions",
+    label: "",
+    width: 44,
+    sortKey: null,
+    render: (r) => {
+      const canGenerate = !r.linked_routing_id;
+      if (!canGenerate) return null;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[200px]">
+            <DropdownMenuItem
+              onSelect={() => setRoutingDialogSample(r)}
+              className="gap-2 text-xs"
+            >
+              <Route className="w-3.5 h-3.5" />
+              Generate Sample Routing
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  };
+
+  const productColumns = [codeCol, projectCol, rfqCol, sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, createdCol, actionsCol];
+  const rfqColumns    = [codeCol, productCol,  sampleTypeCol, phaseCol, colorCol, variationCol, sizeCol, qtyCol, conformityCol, createdCol, actionsCol];
 
   const columns = columnSet === "rfq_context" ? rfqColumns : productColumns;
 
@@ -608,6 +646,19 @@ export default function SamplesDataTable({
           rows={filteredRows}
           fixedColumns={["code"]}
           hideColumnToggle
+        />
+      )}
+
+      {/* ── Generate Sample Routing Dialog ── */}
+      {routingDialogSample && (
+        <GenerateSampleRoutingDialog
+          open={!!routingDialogSample}
+          onClose={() => setRoutingDialogSample(null)}
+          sample={routingDialogSample}
+          onGenerated={(newRouting) => {
+            setRoutingDialogSample(null);
+            if (onRoutingGenerated) onRoutingGenerated(newRouting);
+          }}
         />
       )}
     </div>

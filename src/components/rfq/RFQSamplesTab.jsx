@@ -115,6 +115,10 @@ export default function RFQSamplesTab({ rfq, project }) {
     toast.success("Sample updated");
   }, [loadSamples]);
 
+  const handleRoutingGenerated = useCallback(() => {
+    loadSamples();
+  }, [loadSamples]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -149,6 +153,7 @@ export default function RFQSamplesTab({ rfq, project }) {
         samples={samples}
         columnSet="rfq_context"
         onRowUpdate={handleUpdate}
+        onRoutingGenerated={handleRoutingGenerated}
         productsMap={productsMap}
         colorsMap={colorsMap}
         pcamsMap={pcamsMap}

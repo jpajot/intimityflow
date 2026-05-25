@@ -111,6 +111,10 @@ export default function ProductSamplesTab({ product }) {
     toast.success("Sample updated");
   }, [loadSamples]);
 
+  const handleRoutingGenerated = useCallback(() => {
+    loadSamples();
+  }, [loadSamples]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -133,6 +137,7 @@ export default function ProductSamplesTab({ product }) {
         samples={samples}
         columnSet="product_context"
         onRowUpdate={handleUpdate}
+        onRoutingGenerated={handleRoutingGenerated}
         colorsMap={colorsMap}
         pcamsMap={pcamsMap}
         sizesMap={sizesMap}
