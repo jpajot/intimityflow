@@ -12,11 +12,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import RFQEditHeaderDialog from "@/components/rfq/RFQEditHeaderDialog";
 import RFQCostsTab from "@/components/rfq/RFQCostsTab";
+import RFQSamplesTab from "@/components/rfq/RFQSamplesTab";
 import { usePageOptions } from "@/lib/PageOptionsContext";
 import { useAuth } from "@/lib/AuthContext";
 
 // ── Feature flags ──────────────────────────────────────────────────────────────
-const FEATURE_RFQ_SAMPLE_REQUESTS = false;
+const FEATURE_RFQ_SAMPLE_REQUESTS = true;
 const FEATURE_RFQ_SHARED_SPECS    = false;
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -277,6 +278,9 @@ export default function RFQDetail() {
                 .then(setRfqLines);
             }}
           />
+        )}
+        {activeTab === "sample_requests" && (
+          <RFQSamplesTab rfq={rfq} project={project} />
         )}
       </div>
 
