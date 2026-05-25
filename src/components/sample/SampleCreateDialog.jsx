@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Lock } from "lucide-react";
+import { derivePhase } from "./sampleUtils";
 
 const SAMPLE_TYPE_OPTIONS = [
   { value: "volume",        label: "Volume (Development)" },
@@ -17,12 +18,6 @@ const SAMPLE_TYPE_OPTIONS = [
   { value: "gold_seal",     label: "Gold Seal (Production)" },
   { value: "pps",           label: "PPS (Production)" },
 ];
-
-const PRODUCTION_TYPES = new Set(["gold_seal", "pps"]);
-
-function derivePhase(sampleType) {
-  return PRODUCTION_TYPES.has(sampleType) ? "production" : "development";
-}
 
 // Hash code generation: alphabet excludes ambiguous chars I, O, 0, 1
 const HASH_ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
