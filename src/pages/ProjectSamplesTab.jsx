@@ -12,20 +12,10 @@ import SampleCreateDialog from "@/components/sample/SampleCreateDialog";
 import GalleryView from "@/components/GalleryView";
 import WorkflowStatusBadge from "@/components/sample/WorkflowStatusBadge";
 import { CONFORMITY_OPTIONS, SAMPLE_TYPE_OPTIONS } from "@/components/sample/sampleUtils";
+import SamplesTrackingBoard from "@/components/sample/SamplesTrackingBoard";
 import { toast } from "sonner";
 
 const DISPLAY_MODE_KEY = (projectId) => `project_samples_display_mode_${projectId}`;
-
-// ── Samples Tracking placeholder ──────────────────────────────────────────────
-function SamplesTrackingPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
-      <FlaskConical className="w-12 h-12 opacity-20" />
-      <p className="text-base font-semibold text-foreground/70">Samples Tracking</p>
-      <p className="text-sm text-center max-w-xs">A consolidated tracking view of all samples in this project. Coming soon.</p>
-    </div>
-  );
-}
 
 // ── Gallery card fields ───────────────────────────────────────────────────────
 function buildGalleryAllFields(productsMap, colorsMap, rfqsMap) {
@@ -155,13 +145,13 @@ export default function ProjectSamplesTab({ projectId }) {
     if (results.length > 0) {
       const productIds = [...new Set(results.map((s) => s.product_id).filter(Boolean))];
       const sizeIds = [...new Set(results.map((s) => s.size_id).filter(Boolean))];
-      const rfqIds = [...new Set(results.map((s) => s.rfq_id).filter(Boolean))];
+      const srIds = [...new Set(results.map((s) => s.supplier_request_id).filter(Boolean))];
 
-      const [allProds, allColors, allSizes, allRfqs] = await Promise.all([
+      const [allProds, allColors, allSizes, allSRs] = await Promise.all([
         base44.entities.Product.list("code", 2000),
         base44.entities.ProductColor.list("colorway_code", 2000),
         sizeIds.length ? base44.entities.Size.list("name", 500) : Promise.resolve([]),
-        rfqIds.length ? base44.entities.RFQ.filter({ id: { $in: rfqIds } }) : Promise.resolve([]),
+        srIds.length ? base44.entities.SupplierRequest.filter({ id: { $in: srIds } }) : Promise.resolve([]),
       ]);
 
       const pMap = {};
@@ -197,7 +187,7 @@ export default function ProjectSamplesTab({ projectId }) {
       setSizesMap(sMap);
 
       const rMap = {};
-      allRfqs.forEach((r) => { rMap[r.id] = r; });
+      allSRs.forEach((r) => { rMap[r.id] = r; });
       setRfqsMap(rMap);
 
       // Sizes per product
@@ -248,7 +238,7 @@ export default function ProjectSamplesTab({ projectId }) {
     { id: "sample_type", label: "Sample Type", getValue: (s) => s.sample_type || "" },
     { id: "phase", label: "Phase", getValue: (s) => s.phase || "" },
     { id: "conformity_status", label: "Conformity", getValue: (s) => s.conformity_status || "" },
-    { id: "rfq", label: "RFQ", getValue: (s) => rfqsMap[s.rfq_id]?.code || "Standalone" },
+    { id: "rfq", label: "Supplier Request", getValue: (s) => rfqsMap[s.supplier_request_id]?.code || "Standalone" },
     { id: "product", label: "Product", getValue: (s) => productsMap[s.product_id]?.name || "" },
     { id: "color", label: "Color", getValue: (s) => colorsMap[s.product_color_id]?.color_name || "" },
     { id: "has_routing", label: "Has Routing", getValue: (s) => s.linked_routing_id ? "Yes" : "No" },
@@ -257,6 +247,7 @@ export default function ProjectSamplesTab({ projectId }) {
   // ── Register options menu ─────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== "samples") {
+      // Tracking tab: no options drawer content needed (filter bar is inline)
       setOptions({ items: [] });
       return;
     }
@@ -307,7 +298,7 @@ export default function ProjectSamplesTab({ projectId }) {
               allFields={[
                 { id: "code", label: "Code" },
                 { id: "product", label: "Product" },
-                { id: "rfq", label: "RFQ" },
+                { id: "rfq", label: "Supplier Request" },
                 { id: "sample_type", label: "Sample Type" },
                 { id: "phase", label: "Phase" },
                 { id: "color", label: "Color" },
@@ -382,8 +373,8 @@ export default function ProjectSamplesTab({ projectId }) {
         </button>
       </div>
 
-      {/* ── Tracking placeholder ── */}
-      {activeTab === "tracking" && <SamplesTrackingPlaceholder />}
+      {/* ── Tracking board ── */}
+      {activeTab === "tracking" && <SamplesTrackingBoard projectId={projectId} />}
 
       {/* ── Samples tab ── */}
       {activeTab === "samples" && (
@@ -453,7 +444,7 @@ export default function ProjectSamplesTab({ projectId }) {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={handleCreated}
-        preset={{ project_id: projectId, product_id: null, rfq_id: null }}
+        preset={{ project_id: projectId, product_id: null, supplier_request_id: null }}
         productOptions={projectProducts.length > 0 ? projectProducts : undefined}
       />
     </div>
