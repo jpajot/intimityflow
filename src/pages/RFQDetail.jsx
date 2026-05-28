@@ -30,8 +30,8 @@ const STATUS_COLORS = {
 };
 
 const TABS = [
-  { id: "costs",           label: "Costs",           visible: true },
-  { id: "sample_requests", label: "Sample Requests",  visible: FEATURE_RFQ_SAMPLE_REQUESTS },
+  { id: "costs",           label: "RFQ Lines",       visible: true },
+  { id: "sample_requests", label: "Samples",         visible: FEATURE_RFQ_SAMPLE_REQUESTS },
   { id: "shared_specs",    label: "Shared Specs",     visible: FEATURE_RFQ_SHARED_SPECS },
 ];
 

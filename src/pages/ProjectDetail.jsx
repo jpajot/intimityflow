@@ -121,7 +121,7 @@ export default function ProjectDetail() {
   { id: "palettes", label: "Color Palettes", count: palettes.length, icon: SwatchBook },
   { id: "sourcing", label: "Sourcing", icon: Building2 },
   { id: "bom_status", label: "BOM/BOL Status", icon: ClipboardList },
-  { id: "rfqs", label: "RFQs", icon: FileSearch },
+  { id: "rfqs", label: "Supplier Requests", icon: FileSearch },
   { id: "samples", label: "Samples", icon: FlaskConical }];
 
   useRegisterSubNav(subNavItems, activeSection, setActiveSection, project?.name);
