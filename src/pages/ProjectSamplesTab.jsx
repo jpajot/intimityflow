@@ -24,7 +24,7 @@ function buildGalleryAllFields(productsMap, colorsMap, rfqsMap) {
       id: "code",
       label: "Code",
       getValue: (s) => s.code || "—",
-      render: (s) => <span className="font-mono text-[11px] text-muted-foreground">{s.code || "—"}</span>,
+      render: (s) => <span className="font-mono text-[11px] text-primary hover:underline underline-offset-2 cursor-pointer">{s.code || "—"}</span>,
     },
     {
       id: "product_name",

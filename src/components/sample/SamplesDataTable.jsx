@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -336,7 +336,15 @@ export default function SamplesDataTable({
 
   const codeCol = {
     id: "code", label: "Code", width: 130, sortKey: (r) => r.code || "",
-    render: (r) => <span className="font-mono text-xs text-primary">{r.code || "—"}</span>,
+    render: (r) => (
+      <Link
+        to={`/samples/${r.id}`}
+        onClick={(e) => e.stopPropagation()}
+        className="font-mono text-xs text-primary hover:underline underline-offset-2"
+      >
+        {r.code || "—"}
+      </Link>
+    ),
   };
 
   const productCol = {

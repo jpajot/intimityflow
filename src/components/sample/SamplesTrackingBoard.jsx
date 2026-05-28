@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { Loader2, ChevronDown, ChevronRight, FlaskConical, AlertCircle, X } from "lucide-react";
@@ -245,7 +246,17 @@ function SupplierGroup({ supplier, steps, samplesMap, productsMap, colorsMap, si
                   >
                     {/* Sample Code */}
                     <td className="px-3 py-2">
-                      <span className="font-mono text-[11px] text-primary/80">{sample?.code || "—"}</span>
+                      {sample ? (
+                        <Link
+                          to={`/samples/${step.sample_id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-mono text-[11px] text-primary hover:underline underline-offset-2"
+                        >
+                          {sample.code}
+                        </Link>
+                      ) : (
+                        <span className="font-mono text-[11px] text-muted-foreground/40">—</span>
+                      )}
                     </td>
 
                     {/* Product */}
