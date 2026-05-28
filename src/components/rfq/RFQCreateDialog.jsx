@@ -79,11 +79,11 @@ export default function RFQCreateDialog({ projectId, onCreated, onClose }) {
     setSaving(true);
     let code = "";
     try {
-      const res = await base44.functions.invoke("generateCode", { entity_name: "RFQ", entity_type: "RFQ" });
+      const res = await base44.functions.invoke("generateCode", { entity_name: "SupplierRequest", entity_type: "SupplierRequest" });
       code = res.data?.code || "";
     } catch (_) {}
 
-    const created = await base44.entities.RFQ.create({
+    const created = await base44.entities.SupplierRequest.create({
       code,
       name: form.name.trim(),
       round_id: form.round_id,
@@ -104,7 +104,7 @@ export default function RFQCreateDialog({ projectId, onCreated, onClose }) {
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create RFQ</DialogTitle>
+          <DialogTitle>Create Supplier Request</DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -205,7 +205,7 @@ export default function RFQCreateDialog({ projectId, onCreated, onClose }) {
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button onClick={handleCreate} disabled={saving || loading} className="gap-2">
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Create RFQ
+            Create Supplier Request
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -53,7 +53,7 @@ export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setSaving(true);
-    const updated = await base44.entities.RFQ.update(rfq.id, {
+    const updated = await base44.entities.SupplierRequest.update(rfq.id, {
       name:               form.name.trim(),
       ...(isDraft && { round_id: form.round_id, target_currency_id: form.target_currency_id }),
       due_date:           form.due_date || null,
@@ -67,7 +67,7 @@ export default function RFQEditHeaderDialog({ rfq, onSaved, onClose }) {
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit RFQ Header</DialogTitle>
+          <DialogTitle>Edit Header</DialogTitle>
         </DialogHeader>
 
         {loading ? (

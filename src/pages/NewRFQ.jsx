@@ -90,7 +90,7 @@ export default function NewRFQ() {
     setSaving(true);
     let code = "";
     try {
-      const res = await base44.functions.invoke("generateCode", { entity_name: "RFQ", entity_type: "RFQ" });
+      const res = await base44.functions.invoke("generateCode", { entity_name: "SupplierRequest", entity_type: "SupplierRequest" });
       code = res.data?.code || "";
     } catch (_) {}
 
@@ -108,7 +108,7 @@ export default function NewRFQ() {
       shared_product_specs: [],
     };
 
-    const created = await base44.entities.RFQ.create(payload);
+    const created = await base44.entities.SupplierRequest.create(payload);
     navigate(`/projects/${projectId}/rfqs/${created.id}`);
   };
 
@@ -137,7 +137,7 @@ export default function NewRFQ() {
         <span className="text-foreground font-medium">New RFQ</span>
       </nav>
 
-      <h1 className="font-display text-2xl font-semibold tracking-tight">Create RFQ</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">Create Supplier Request</h1>
 
       <div className="bg-card rounded-xl border border-border p-5 space-y-5">
         {/* Code (read-only) */}
@@ -233,7 +233,7 @@ export default function NewRFQ() {
         </Button>
         <Button onClick={handleCreate} disabled={saving} className="gap-2">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          Create RFQ
+          Create Supplier Request
         </Button>
       </div>
     </div>

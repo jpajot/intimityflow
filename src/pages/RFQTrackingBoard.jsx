@@ -80,7 +80,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     const load = async () => {
       setLoading(true);
       const [rfqList, products, colors, pcams, steps, suppliers, currencies, rounds] = await Promise.all([
-        base44.entities.RFQ.filter({ project_id: projectId }),
+        base44.entities.SupplierRequest.filter({ project_id: projectId }),
         base44.entities.Product.list("code", 2000),
         base44.entities.ProductColor.list("-created_date", 2000),
         base44.entities.ProductColorAndMore.list("-created_date", 2000),
@@ -95,7 +95,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
 
       if (rfqList.length > 0) {
         const rfqIds = rfqList.map((r) => r.id);
-        const linesList = await base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }, "-created_date", 5000);
+        const linesList = await base44.entities.RFQLine.filter({ supplier_request_id: { $in: rfqIds } }, "-created_date", 5000);
         setLines(linesList || []);
         
         if (linesList?.length > 0) {
@@ -141,10 +141,10 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     if (searchText.trim()) {
       const q = searchText.toLowerCase();
       list = list.filter((line) => {
-        const prod = productMap[line.product_id];
-        const sup = supplierMap[line.recipient_supplier_id];
-        const step = stepMap[line.routing_step_id];
-        const rfq = rfqs.find((r) => r.id === line.rfq_id);
+      const prod = productMap[line.product_id];
+      const sup = supplierMap[line.recipient_supplier_id];
+      const step = stepMap[line.routing_step_id];
+      const rfq = rfqs.find((r) => r.id === line.supplier_request_id);
         return (
           (prod?.code || "").toLowerCase().includes(q) ||
           (prod?.name || "").toLowerCase().includes(q) ||
@@ -156,10 +156,10 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     }
 
     // Apply filters
-    if (filters.rfqs.length > 0) list = list.filter((l) => filters.rfqs.includes(l.rfq_id));
+    if (filters.rfqs.length > 0) list = list.filter((l) => filters.rfqs.includes(l.supplier_request_id));
     if (filters.rounds.length > 0) {
       list = list.filter((l) => {
-        const rfq = rfqs.find((r) => r.id === l.rfq_id);
+        const rfq = rfqs.find((r) => r.id === l.supplier_request_id);
         return filters.rounds.includes(rfq?.round_id);
       });
     }
@@ -167,7 +167,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     if (filters.statuses.length > 0) list = list.filter((l) => filters.statuses.includes(l.status));
     if (filters.rfqStatuses.length > 0) {
       list = list.filter((l) => {
-        const rfq = rfqs.find((r) => r.id === l.rfq_id);
+        const rfq = rfqs.find((r) => r.id === l.supplier_request_id);
         return filters.rfqStatuses.includes(rfq?.status);
       });
     }
@@ -213,7 +213,10 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     if (lineResponses.length === 0) return null;
     const best = lineResponses.reduce((min, r) => !min || (r.total_cost_target_ccy < min.total_cost_target_ccy) ? r : min);
     const curr = currencyMap[best.supplier_currency_id];
-    return `${best.total_cost_target_ccy?.toFixed(curr?.decimal_places ?? 2)} ${currencyMap[best.supplier_currency_id?.replace?.(/.*/, (c) => rfqs.find((q) => q.id === lines.find((l) => l.id === lineId)?.rfq_id)?.target_currency_id) || best.supplier_currency_id]?.code || "?"}`;
+    const line = lines.find((l) => l.id === lineId);
+    const sr = rfqs.find((q) => q.id === line?.supplier_request_id);
+    const targetCcy = currencyMap[sr?.target_currency_id];
+    return `${best.total_cost_target_ccy?.toFixed(targetCcy?.decimal_places ?? 2)} ${targetCcy?.code || "?"}`;
   };
 
   const getAwardedCost = (lineId) => {
@@ -221,7 +224,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     if (!line?.awarded_response_id) return null;
     const awardedResp = allResponses.find((r) => r.id === line.awarded_response_id);
     if (!awardedResp) return null;
-    const rfq = rfqs.find((r) => r.id === line.rfq_id);
+    const rfq = rfqs.find((r) => r.id === line.supplier_request_id);
     const curr = currencyMap[rfq?.target_currency_id];
     return `${awardedResp.total_cost_target_ccy?.toFixed(curr?.decimal_places ?? 2)} ${curr?.code || "?"}`;
   };
@@ -235,11 +238,11 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
     },
     {
       id: "rfq",
-      label: "RFQ",
+      label: "SR",
       width: 100,
-      sortKey: (r) => rfqs.find((q) => q.id === r.rfq_id)?.code || "",
+      sortKey: (r) => rfqs.find((q) => q.id === r.supplier_request_id)?.code || "",
       render: (r) => {
-        const rfq = rfqs.find((q) => q.id === r.rfq_id);
+      const rfq = rfqs.find((q) => q.id === r.supplier_request_id);
         return rfq ? (
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${projectId}/rfqs/${rfq.id}`); }} className="text-xs font-mono text-primary hover:underline">
             {rfq.code}
@@ -252,12 +255,12 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
       label: "Round",
       width: 100,
       sortKey: (r) => {
-        const rfq = rfqs.find((q) => q.id === r.rfq_id);
+        const rfq = rfqs.find((q) => q.id === r.supplier_request_id);
         const round = roundMap[rfq?.round_id];
         return round?.sequence || 0;
       },
       render: (r) => {
-        const rfq = rfqs.find((q) => q.id === r.rfq_id);
+        const rfq = rfqs.find((q) => q.id === r.supplier_request_id);
         const round = roundMap[rfq?.round_id];
         return <span className="text-xs">{round?.label || "—"}</span>;
       },
@@ -381,14 +384,14 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
       id: "rfq_status",
       label: "RFQ Status",
       width: 110,
-      sortKey: (r) => rfqs.find((q) => q.id === r.rfq_id)?.status || "",
+      sortKey: (r) => rfqs.find((q) => q.id === r.supplier_request_id)?.status || "",
       render: (r) => {
-        const rfq = rfqs.find((q) => q.id === r.rfq_id);
-        return (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium capitalize ${RFQ_STATUS_COLORS[rfq?.status] || "bg-muted text-muted-foreground border-border"}`}>
-            {(rfq?.status || "").replace(/_/g, " ")}
-          </span>
-        );
+      const sr = rfqs.find((q) => q.id === r.supplier_request_id);
+      return (
+        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium capitalize ${RFQ_STATUS_COLORS[sr?.status] || "bg-muted text-muted-foreground border-border"}`}>
+          {(sr?.status || "").replace(/_/g, " ")}
+        </span>
+      );
       },
     },
     {
@@ -406,8 +409,8 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { navigate(`/projects/${projectId}/rfqs/${r.rfq_id}`); }}>
-                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View RFQ
+              <DropdownMenuItem onClick={() => { navigate(`/projects/${projectId}/rfqs/${r.supplier_request_id}`); }}>
+                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View SR
               </DropdownMenuItem>
               {canAward && (
                 <DropdownMenuItem onClick={() => {
@@ -415,7 +418,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
                   setAwardingLine(r);
                   base44.entities.ProductCost.filter({
                     status: 'active',
-                    project_id: rfqs.find((q) => q.id === r.rfq_id)?.project_id,
+                    project_id: rfqs.find((q) => q.id === r.supplier_request_id)?.project_id,
                     product_id: r.product_id,
                     product_color_id: r.product_color_id || null,
                     product_color_and_more_id: r.product_color_and_more_id || null,
@@ -423,7 +426,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
                     supplier_id: r.recipient_supplier_id,
                   }).then((priors) => {
                     if (priors.length > 0) {
-                      base44.entities.RFQ.filter({ id: priors[0].source_rfq_id }).then((rfqList) => {
+                      base44.entities.SupplierRequest.filter({ id: priors[0].source_sr_id }).then((rfqList) => {
                         setPriorCost({ ...priors[0], source_rfq: rfqList[0] });
                       });
                     } else {
@@ -444,9 +447,9 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
   // Register options
   useEffect(() => {
     const qfFields = [
-      { id: "rfq_code", label: "RFQ Code", getValue: (l) => rfqs.find((r) => r.id === l.rfq_id)?.code || "" },
+      { id: "rfq_code", label: "SR Code", getValue: (l) => rfqs.find((r) => r.id === l.supplier_request_id)?.code || "" },
       { id: "status", label: "Line Status", getValue: (l) => l.status || "" },
-      { id: "rfq_status", label: "RFQ Status", getValue: (l) => rfqs.find((r) => r.id === l.rfq_id)?.status || "" },
+      { id: "rfq_status", label: "SR Status", getValue: (l) => rfqs.find((r) => r.id === l.supplier_request_id)?.status || "" },
       { id: "supplier", label: "Recipient Supplier", getValue: (l) => supplierMap[l.recipient_supplier_id]?.name || "" },
       { id: "product", label: "Product", getValue: (l) => productMap[l.product_id]?.name || "" },
     ];
@@ -501,7 +504,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
                 { id: "best_quote", label: "Best Quote" },
                 { id: "awarded_cost", label: "Awarded Cost" },
                 { id: "status", label: "Status" },
-                { id: "rfq_status", label: "RFQ Status" },
+                { id: "rfq_status", label: "SR Status" },
                 { id: "actions", label: "Actions" },
               ]}
             />
@@ -521,7 +524,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
   return (
     <div className="space-y-4 pb-20">
       {/* Header */}
-      <h2 className="font-semibold text-base">RFQ Tracking</h2>
+      <h2 className="font-semibold text-base">SR Tracking</h2>
 
       {/* KPI Cards - Collapsible */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -570,8 +573,8 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
       {/* Empty state */}
       {filteredLines.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 border border-dashed border-border rounded-xl text-muted-foreground">
-          <p className="text-sm font-medium">No RFQ lines found.</p>
-          <p className="text-xs">Create an RFQ to start collecting costs.</p>
+          <p className="text-sm font-medium">No lines found.</p>
+          <p className="text-xs">Create a Supplier Request to start collecting costs.</p>
         </div>
       )}
 
@@ -595,7 +598,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
             setAwardingLine(line);
             base44.entities.ProductCost.filter({
               status: 'active',
-              project_id: rfqs.find((q) => q.id === line.rfq_id)?.project_id,
+              project_id: rfqs.find((q) => q.id === line.supplier_request_id)?.project_id,
               product_id: line.product_id,
               product_color_id: line.product_color_id || null,
               product_color_and_more_id: line.product_color_and_more_id || null,
@@ -603,7 +606,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
               supplier_id: line.recipient_supplier_id,
             }).then((priors) => {
               if (priors.length > 0) {
-                base44.entities.RFQ.filter({ id: priors[0].source_rfq_id }).then((rfqList) => {
+                base44.entities.SupplierRequest.filter({ id: priors[0].source_sr_id }).then((rfqList) => {
                   setPriorCost({ ...priors[0], source_rfq: rfqList[0] });
                 });
               } else {
@@ -619,7 +622,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
       {editingResponse && (
         <AddResponseDialog
           line={lines.find((l) => l.id === editingResponse.rfq_line_id)}
-          rfq={rfqs.find((r) => r.id === lines.find((l) => l.id === editingResponse.rfq_line_id)?.rfq_id)}
+          rfq={rfqs.find((r) => r.id === lines.find((l) => l.id === editingResponse.rfq_line_id)?.supplier_request_id)}
           productMap={productMap}
           stepMap={stepMap}
           supplierMap={supplierMap}
@@ -628,7 +631,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
             setEditingResponse(null);
             const rfqIds = rfqs.map((r) => r.id);
             Promise.all([
-              base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
+              base44.entities.RFQLine.filter({ supplier_request_id: { $in: rfqIds } }),
               base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }),
             ]).then(([newLines, newResponses]) => {
               setLines(newLines);
@@ -655,7 +658,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
                   setDeletingResponse(null);
                   const rfqIds = rfqs.map((r) => r.id);
                   Promise.all([
-                    base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
+                    base44.entities.RFQLine.filter({ supplier_request_id: { $in: rfqIds } }),
                     base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }),
                   ]).then(([newLines, newResponses]) => {
                     setLines(newLines);
@@ -678,7 +681,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
           onOpenChange={(open) => { if (!open) { setAwardingResponse(null); setAwardingLine(null); setPriorCost(null); } }}
           response={awardingResponse}
           line={awardingLine}
-          rfq={rfqs.find((r) => r.id === awardingLine.rfq_id)}
+          rfq={rfqs.find((r) => r.id === awardingLine.supplier_request_id)}
           productMap={productMap}
           stepMap={stepMap}
           supplierMap={supplierMap}
@@ -690,7 +693,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
             setPriorCost(null);
             const rfqIds = rfqs.map((r) => r.id);
             Promise.all([
-              base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
+              base44.entities.RFQLine.filter({ supplier_request_id: { $in: rfqIds } }),
               base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }),
             ]).then(([newLines, newResponses]) => {
               setLines(newLines);
@@ -717,7 +720,7 @@ export default function RFQTrackingBoard({ projectId: propProjectId }) {
             setSelectedResponseIds(new Set());
             const rfqIds = rfqs.map((r) => r.id);
             Promise.all([
-              base44.entities.RFQLine.filter({ rfq_id: { $in: rfqIds } }),
+              base44.entities.RFQLine.filter({ supplier_request_id: { $in: rfqIds } }),
               base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lines.map((l) => l.id) } }),
             ]).then(([newLines, newResponses]) => {
               setLines(newLines);

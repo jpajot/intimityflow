@@ -6,8 +6,9 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { rfq_line_id, response_id, rfq_id } = await req.json();
-    if (!rfq_line_id || !response_id || !rfq_id) {
+    const { rfq_line_id, response_id, rfq_id, sr_id } = await req.json();
+    const supplierRequestId = sr_id || rfq_id; // support both old and new field name
+    if (!rfq_line_id || !response_id || !supplierRequestId) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -15,7 +16,7 @@ Deno.serve(async (req) => {
     const [line, response, rfq] = await Promise.all([
       base44.entities.RFQLine.filter({ id: rfq_line_id }).then((r) => r[0]),
       base44.entities.RFQResponse.filter({ id: response_id }).then((r) => r[0]),
-      base44.entities.RFQ.filter({ id: rfq_id }).then((r) => r[0]),
+      base44.entities.SupplierRequest.filter({ id: supplierRequestId }).then((r) => r[0]),
     ]);
 
     if (!line || !response || !rfq) {
@@ -99,7 +100,7 @@ Deno.serve(async (req) => {
       max_qty: response.max_qty,
       leadtime_days: response.leadtime_days,
       source_rfq_response_id: response_id,
-      source_rfq_id: rfq_id,
+      source_sr_id: supplierRequestId,
       awarded_at: now,
       awarded_by: user.email,
       status: 'active',

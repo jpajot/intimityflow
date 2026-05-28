@@ -357,7 +357,7 @@ export default function RFQLineBuilderDialog({ rfqId, projectId, existingLines, 
     if (!previewRows || validRows.length === 0) return;
     setSaving(true);
     const toCreate = validRows.map((r) => ({
-      rfq_id: rfqId,
+      supplier_request_id: rfqId,
       product_id: r.product_id,
       product_color_id: r.product_color_id || null,
       product_color_and_more_id: r.product_color_and_more_id || null,
@@ -393,7 +393,7 @@ export default function RFQLineBuilderDialog({ rfqId, projectId, existingLines, 
     <Dialog open onOpenChange={(open) => { if (!open && !saving) onClose(); }}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Lines to RFQ</DialogTitle>
+          <DialogTitle>Add Lines to Supplier Request</DialogTitle>
         </DialogHeader>
 
         {loading ? (

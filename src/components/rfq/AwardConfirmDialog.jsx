@@ -88,7 +88,7 @@ export default function AwardConfirmDialog({
                 <div className="text-xs text-amber-900">
                   <p className="font-semibold">Existing cost will be superseded</p>
                   <p className="mt-1">
-                    {priorCost.total_cost_target_ccy} {targetCcy?.code} from RFQ {priorCost.source_rfq?.code || "—"},
+                    {priorCost.total_cost_target_ccy} {targetCcy?.code} from SR {priorCost.source_rfq?.code || "—"},
                     awarded {priorCost.awarded_at ? new Date(priorCost.awarded_at).toLocaleString() : "—"}
                   </p>
                 </div>

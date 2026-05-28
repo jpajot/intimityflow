@@ -143,7 +143,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
     const load = async () => {
       setLoading(true);
       const [rfqList, roundList, currList] = await Promise.all([
-        base44.entities.RFQ.filter({ project_id: projectId }, "-created_date", 500),
+        base44.entities.SupplierRequest.filter({ project_id: projectId }, "-created_date", 500),
         base44.entities.RFQRound.list("sequence", 100),
         base44.entities.Currency.filter({ is_active: true }),
       ]);
@@ -280,14 +280,14 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
           onClick={() => setActiveTab("rfqs")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "rfqs" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
         >
-          RFQs
+          Supplier Requests
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("tracking")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "tracking" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
         >
-          RFQ Tracking
+          SR Tracking
         </button>
       </div>
 
@@ -330,7 +330,7 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
           </button>
           <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
             <Plus className="w-3.5 h-3.5" />
-            New RFQ
+            New Supplier Request
           </Button>
         </div>
       </div>
@@ -339,10 +339,10 @@ export default function ProjectRFQs({ projectId: propProjectId }) {
       {rfqs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 border border-dashed border-border rounded-xl text-muted-foreground">
           <FileSearch className="w-10 h-10 opacity-25" />
-          <p className="text-sm font-medium">No RFQs yet for this project.</p>
+          <p className="text-sm font-medium">No Supplier Requests yet for this project.</p>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
             <Plus className="w-3.5 h-3.5" />
-            New RFQ
+            New Supplier Request
           </Button>
         </div>
       ) : (

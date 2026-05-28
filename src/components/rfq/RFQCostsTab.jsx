@@ -482,7 +482,7 @@ export default function RFQCostsTab({ rfqId, projectId, rfq, lines, refData, onL
     });
     setAwardingResponse(response);
     if (priors.length > 0) {
-      const rfqList = await base44.entities.RFQ.filter({ id: priors[0].source_rfq_id });
+      const rfqList = await base44.entities.SupplierRequest.filter({ id: priors[0].source_sr_id });
       setPriorCost({ ...priors[0], source_rfq: rfqList[0] });
     } else {
       setPriorCost(null);

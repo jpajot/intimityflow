@@ -51,12 +51,12 @@ export default function ProductSamplesTab({ product }) {
       setProjectsMap(pMap);
     }
 
-    // RFQs
-    const rfqIds = [...new Set(results.map((s) => s.rfq_id).filter(Boolean))];
-    if (rfqIds.length) {
-      const rfqs = await base44.entities.RFQ.list("-created_date", 500);
+    // Supplier Requests
+    const srIds = [...new Set(results.map((s) => s.supplier_request_id).filter(Boolean))];
+    if (srIds.length) {
+      const srs = await base44.entities.SupplierRequest.list("-created_date", 500);
       const rMap = {};
-      rfqs.forEach((r) => { rMap[r.id] = r; });
+      srs.forEach((r) => { rMap[r.id] = r; });
       setRfqsMap(rMap);
     }
 
@@ -173,7 +173,7 @@ export default function ProductSamplesTab({ product }) {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={handleCreated}
-        preset={{ product_id: product.id, project_id: null, rfq_id: null }}
+        preset={{ product_id: product.id, project_id: null, supplier_request_id: null }}
       />
     </div>
   );

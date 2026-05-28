@@ -63,7 +63,7 @@ export default function RFQDetail() {
   const load = async () => {
     setLoading(true);
     const [rfqList, projList] = await Promise.all([
-      base44.entities.RFQ.filter({ id: rfqId }),
+      base44.entities.SupplierRequest.filter({ id: rfqId }),
       base44.entities.Project.filter({ id: projectId }),
     ]);
 
@@ -87,7 +87,7 @@ export default function RFQDetail() {
 
     // Load costs tab data in parallel
     const [linesData, products, colors, pcams, steps, suppliers, currencies] = await Promise.all([
-      base44.entities.RFQLine.filter({ rfq_id: rfqId }, "created_date", 1000),
+      base44.entities.RFQLine.filter({ supplier_request_id: rfqId }, "created_date", 1000),
       base44.entities.Product.list("code", 2000),
       base44.entities.ProductColor.list("-created_date", 2000),
       base44.entities.ProductColorAndMore.list("-created_date", 2000),
@@ -127,7 +127,7 @@ export default function RFQDetail() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    const updated = await base44.entities.RFQ.update(rfqId, {
+    const updated = await base44.entities.SupplierRequest.update(rfqId, {
       status: "submitted",
       submitted_at: new Date().toISOString(),
       submitted_by: user?.email || "",
@@ -140,14 +140,14 @@ export default function RFQDetail() {
   const handleDelete = async () => {
     setDeleting(true);
     // Cascade: get lines → get responses → delete responses → delete lines → delete RFQ
-    const lines = await base44.entities.RFQLine.filter({ rfq_id: rfqId });
+    const lines = await base44.entities.RFQLine.filter({ supplier_request_id: rfqId });
     const lineIds = lines.map((l) => l.id);
     if (lineIds.length > 0) {
       const responses = await base44.entities.RFQResponse.filter({ rfq_line_id: { $in: lineIds } });
       await Promise.all(responses.map((r) => base44.entities.RFQResponse.delete(r.id)));
       await Promise.all(lines.map((l) => base44.entities.RFQLine.delete(l.id)));
     }
-    await base44.entities.RFQ.delete(rfqId);
+    await base44.entities.SupplierRequest.delete(rfqId);
     navigate(`/projects/${projectId}/rfqs`);
   };
 
@@ -183,7 +183,7 @@ export default function RFQDetail() {
         </button>
         <ChevronRight className="w-3 h-3 shrink-0" />
         <button type="button" onClick={() => navigate(`/projects/${projectId}/rfqs`)} className="hover:text-foreground transition-colors">
-          RFQs
+          Supplier Requests
         </button>
         <ChevronRight className="w-3 h-3 shrink-0" />
         <span className="text-foreground font-medium font-mono">{rfq.code}</span>
@@ -209,7 +209,7 @@ export default function RFQDetail() {
                 title={rfqLines.length === 0 ? "Add at least one line first" : undefined}
                 onClick={() => setShowSubmitConfirm(true)}
               >
-                Submit RFQ
+                Submit
               </Button>
             )}
             <DropdownMenu>
@@ -226,7 +226,7 @@ export default function RFQDetail() {
                 {rfq.status === "draft" && (
                   <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-3.5 h-3.5 mr-2" />
-                    Delete RFQ
+                    Delete
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -274,7 +274,7 @@ export default function RFQDetail() {
             refData={costsRefData}
             locked={rfq.status !== "draft"}
             onLinesChange={() => {
-              base44.entities.RFQLine.filter({ rfq_id: rfqId }, "created_date", 1000)
+              base44.entities.RFQLine.filter({ supplier_request_id: rfqId }, "created_date", 1000)
                 .then(setRfqLines);
             }}
           />
@@ -297,7 +297,7 @@ export default function RFQDetail() {
       <AlertDialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit RFQ {rfq?.code}?</AlertDialogTitle>
+            <AlertDialogTitle>Submit {rfq?.code}?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-1 text-sm text-muted-foreground">
                 <p>
@@ -329,7 +329,7 @@ export default function RFQDetail() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this RFQ?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this Supplier Request?</AlertDialogTitle>
             <AlertDialogDescription>
               Lines and responses will be deleted too. This action cannot be undone.
             </AlertDialogDescription>

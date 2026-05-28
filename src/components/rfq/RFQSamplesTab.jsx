@@ -27,7 +27,7 @@ export default function RFQSamplesTab({ rfq, project }) {
 
   const loadSamples = useCallback(async () => {
     setLoading(true);
-    const results = await base44.entities.Sample.filter({ rfq_id: rfq.id }, "-created_date", 200);
+    const results = await base44.entities.Sample.filter({ supplier_request_id: rfq.id }, "-created_date", 200);
     setSamples(results);
 
     if (results.length > 0) {
@@ -155,7 +155,7 @@ export default function RFQSamplesTab({ rfq, project }) {
             </span>
           )}
           <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground font-mono">
-            RFQ: {rfq.code}
+            SR: {rfq.code}
           </span>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function RFQSamplesTab({ rfq, project }) {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={handleCreated}
-        preset={{ product_id: null, project_id: rfq.project_id, rfq_id: rfq.id }}
+        preset={{ product_id: null, project_id: rfq.project_id, supplier_request_id: rfq.id }}
       />
     </div>
   );

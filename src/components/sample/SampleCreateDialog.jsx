@@ -112,9 +112,9 @@ export default function SampleCreateDialog({ open, onClose, onCreated, preset = 
         setResolvedProject(proj || null);
       }
 
-      if (preset.rfq_id) {
-        const rfqs = await base44.entities.RFQ.filter({ id: preset.rfq_id });
-        setResolvedRfq(rfqs[0] || null);
+      if (preset.supplier_request_id) {
+        const srs = await base44.entities.SupplierRequest.filter({ id: preset.supplier_request_id });
+        setResolvedRfq(srs[0] || null);
       }
     };
     load();
@@ -184,7 +184,7 @@ export default function SampleCreateDialog({ open, onClose, onCreated, preset = 
     const me = await base44.auth.me();
     const record = await base44.entities.Sample.create({
       project_id: projectId,
-      rfq_id: preset.rfq_id || null,
+      supplier_request_id: preset.supplier_request_id || null,
       code,
       qr_code_data: code,
       product_id: productId,
@@ -277,13 +277,13 @@ export default function SampleCreateDialog({ open, onClose, onCreated, preset = 
             )}
           </div>
 
-          {/* RFQ (only when preset.rfq_id is set) */}
-          {preset.rfq_id && (
+          {/* Supplier Request (only when preset.supplier_request_id is set) */}
+          {preset.supplier_request_id && (
             <div className="space-y-1.5">
-              <Label className="text-xs">RFQ</Label>
+              <Label className="text-xs">Supplier Request</Label>
               <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm">
-                <span className="flex-1 font-mono font-medium">{resolvedRfq?.code || preset.rfq_id}</span>
-                <span className="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">Attached to this RFQ</span>
+                <span className="flex-1 font-mono font-medium">{resolvedRfq?.code || preset.supplier_request_id}</span>
+                <span className="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">Attached to this SR</span>
                 <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
               </div>
             </div>
