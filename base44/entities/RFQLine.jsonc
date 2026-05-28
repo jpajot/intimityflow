@@ -2,9 +2,9 @@
   "name": "RFQLine",
   "type": "object",
   "properties": {
-    "rfq_id": {
+    "supplier_request_id": {
       "type": "string",
-      "description": "FK \u2192 RFQ."
+      "description": "FK \u2192 SupplierRequest."
     },
     "routing_step_id": {
       "type": "string",
@@ -68,7 +68,7 @@
     }
   },
   "required": [
-    "rfq_id",
+    "supplier_request_id",
     "routing_step_id",
     "product_id",
     "recipient_supplier_id",
@@ -95,7 +95,7 @@
               }
             },
             {
-              "recipient_supplier_id": "{{user.data.linked_supplier_id}}"
+              "data.recipient_supplier_id": "{{user.data.linked_supplier_id}}"
             }
           ]
         }

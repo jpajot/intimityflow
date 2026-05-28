@@ -36,7 +36,7 @@
     },
     "target_currency_id": {
       "type": "string",
-      "description": "FK \u2192 Currency. The RFQ.target_currency_id at award time."
+      "description": "FK \u2192 Currency. The SupplierRequest.target_currency_id at award time."
     },
     "total_cost_target_ccy": {
       "type": "number",
@@ -81,9 +81,9 @@
       "type": "string",
       "description": "FK \u2192 RFQResponse. The response that was awarded to produce this cost record."
     },
-    "source_rfq_id": {
+    "source_sr_id": {
       "type": "string",
-      "description": "FK \u2192 RFQ. Denormalized for fast querying."
+      "description": "FK \u2192 SupplierRequest. Denormalized for fast querying."
     },
     "awarded_at": {
       "type": "string",
@@ -128,7 +128,7 @@
     "total_cost_target_ccy",
     "conversion_rate_used",
     "source_rfq_response_id",
-    "source_rfq_id",
+    "source_sr_id",
     "awarded_at",
     "awarded_by",
     "status"

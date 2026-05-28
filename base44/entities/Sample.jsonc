@@ -6,9 +6,9 @@
       "type": "string",
       "description": "FK \u2192 Project. Every sample is project-scoped."
     },
-    "rfq_id": {
+    "supplier_request_id": {
       "type": "string",
-      "description": "FK \u2192 RFQ. Optional \u2014 samples can exist standalone and be attached to an RFQ later, or never."
+      "description": "FK \u2192 SupplierRequest. Optional \u2014 samples can exist standalone and be attached to a Supplier Request later, or never."
     },
     "code": {
       "type": "string",
