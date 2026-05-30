@@ -1,0 +1,11 @@
+{
+  "type": "share_point",
+  "scopes": [
+    "Files.ReadWrite.All",
+    "Sites.ReadWrite.All",
+    "User.Read",
+    "profile",
+    "openid",
+    "email"
+  ]
+}
