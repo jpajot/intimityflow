@@ -1,0 +1,62 @@
+{
+  "name": "UploadedDocument",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "Linked Project ID"
+    },
+    "document_type": {
+      "type": "string",
+      "description": "Document type (from LOV)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of the uploaded PPTX file"
+    },
+    "original_filename": {
+      "type": "string",
+      "description": "Original file name"
+    },
+    "upload_date": {
+      "type": "string",
+      "description": "ISO date of upload"
+    },
+    "collection_name": {
+      "type": "string",
+      "description": "Collection name extracted from doc (e.g. CY26 HOLIDAY)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "uploaded",
+        "processing",
+        "staged",
+        "processed",
+        "error"
+      ],
+      "default": "uploaded",
+      "description": "Processing status"
+    },
+    "staged_data": {
+      "type": "object",
+      "description": "Raw extracted JSON data from the PPTX"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error details if status=error"
+    },
+    "processed_product_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of Product records created from this document"
+    }
+  },
+  "required": [
+    "project_id",
+    "document_type",
+    "file_url"
+  ]
+}

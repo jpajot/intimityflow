@@ -1,0 +1,18 @@
+{
+  "name": "Size",
+  "type": "object",
+  "properties": {
+    "size_code": {
+      "type": "string",
+      "description": "Size code e.g. XS, 36, 6"
+    },
+    "name": {
+      "type": "string",
+      "description": "Size display name"
+    }
+  },
+  "required": [
+    "size_code",
+    "name"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "SizeGrid",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Size grid code"
+    },
+    "name": {
+      "type": "string",
+      "description": "Size grid name"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "sample_size_id": {
+      "type": "string",
+      "description": "ID of the sample size"
+    },
+    "base_size_id": {
+      "type": "string",
+      "description": "ID of the base size"
+    }
+  },
+  "required": [
+    "code",
+    "name"
+  ]
+}

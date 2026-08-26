@@ -1,0 +1,22 @@
+{
+  "name": "StyleSize",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "Parent Product ID"
+    },
+    "size_id": {
+      "type": "string",
+      "description": "Linked Size ID"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "product_id",
+    "size_id"
+  ]
+}

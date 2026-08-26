@@ -1,0 +1,17 @@
+{
+  "name": "ColorPalette",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Palette name"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Linked project ID"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

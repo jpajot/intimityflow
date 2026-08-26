@@ -1,0 +1,38 @@
+{
+  "name": "CommercialColor",
+  "type": "object",
+  "properties": {
+    "sub_type": {
+      "type": "string",
+      "enum": [
+        "Solid",
+        "Combined"
+      ],
+      "description": "Commercial color sub-type"
+    },
+    "code": {
+      "type": "string",
+      "description": "Commercial color code"
+    },
+    "main_technical_color_id": {
+      "type": "string",
+      "description": "Reference to TechnicalColor"
+    },
+    "linked_technical_color_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "All linked TechnicalColor IDs"
+    },
+    "color_name": {
+      "type": "string",
+      "description": "Color name (inherits from technical, manually editable)"
+    }
+  },
+  "required": [
+    "sub_type",
+    "code",
+    "color_name"
+  ]
+}

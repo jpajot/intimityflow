@@ -1,0 +1,21 @@
+{
+  "name": "TypeOfLOV",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Unique code for the LOV type"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name (defaults to code)"
+    },
+    "depends_on_id": {
+      "type": "string",
+      "description": "Optional parent TypeOfLOV ID this depends on"
+    }
+  },
+  "required": [
+    "code"
+  ]
+}

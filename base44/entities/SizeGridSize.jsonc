@@ -1,0 +1,20 @@
+{
+  "name": "SizeGridSize",
+  "type": "object",
+  "properties": {
+    "size_grid_id": {
+      "type": "string"
+    },
+    "size_id": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "size_grid_id",
+    "size_id"
+  ]
+}
